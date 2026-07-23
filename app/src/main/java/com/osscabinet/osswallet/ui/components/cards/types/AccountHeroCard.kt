@@ -45,7 +45,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
@@ -219,8 +219,8 @@ fun AccountHeroCard(
                     .aeonDashedTopRule()
                     .padding(top = 12.dp)
             ) {
-                val flow = summary.currentPeriodFlow
-                val prevFlow = summary.previousPeriodFlow.takeIf { config.showComparison }
+            val flow = summary.currentPeriodMetrics
+                val prevFlow = summary.previousPeriodMetrics.takeIf { config.showComparison }
 
                 if (isAccounting) {
                     LedgerRow(
@@ -284,11 +284,11 @@ fun AccountHeroCard(
                     } else {
                         LedgerRow(
                             label = "Transfer",
-                            amount = flow.netTransfer,
+                            amount = flow.transfer,
                             currency = account.currencyCode,
                             badgeIcon = Icons.Rounded.SwapHoriz,
                             color = AppColors.contentPrimary,
-                            previousAmount = prevFlow?.netTransfer,
+                            previousAmount = prevFlow?.transfer,
                             forceShowPlus = true,
                             onClick = {
                                 callbacks.onClickTransfer?.invoke(
@@ -298,15 +298,13 @@ fun AccountHeroCard(
                         )
                     }
                 } else {
-                    val inflow = flow.income + flow.transferIn
-                    val outflow = flow.expense + flow.transferOut
                     LedgerRow(
                         label = "Inflow",
-                        amount = inflow,
+                        amount = flow.inflow,
                         currency = account.currencyCode,
                         badgeIcon = Icons.AutoMirrored.Rounded.TrendingUp,
                         color = AppColors.positive,
-                        previousAmount = prevFlow?.let { it.income + it.transferIn },
+                        previousAmount = prevFlow?.inflow,
                         forceShowPlus = true,
                         onClick = {
                             callbacks.onClickInflow?.invoke(
@@ -322,11 +320,11 @@ fun AccountHeroCard(
                     LedgerDivider()
                     LedgerRow(
                         label = "Outflow",
-                        amount = outflow,
+                        amount = flow.outflow,
                         currency = account.currencyCode,
                         badgeIcon = Icons.AutoMirrored.Rounded.TrendingDown,
                         color = AppColors.negative,
-                        previousAmount = prevFlow?.let { it.expense + it.transferOut },
+                        previousAmount = prevFlow?.outflow,
                         onClick = {
                             callbacks.onClickOutflow?.invoke(
                                 config.filter.copy(
@@ -760,13 +758,17 @@ private fun AccountHeroCardPreviewContent(theme: String) {
         ),
         balance = BigDecimal("-245800.50"),
         balanceInBase = BigDecimal("245800.50"),
-        currentPeriodFlow = AccountFlowMetrics(
+        currentPeriodMetrics = FinancialSummary(
             income = BigDecimal("15000.00"),
-            expense = BigDecimal("4200.00")
+            expense = BigDecimal("4200.00"),
+            transferIn = BigDecimal.ZERO,
+            transferOut = BigDecimal.ZERO
         ),
-        previousPeriodFlow = AccountFlowMetrics(
+        previousPeriodMetrics = FinancialSummary(
             income = BigDecimal("13350.00"),
-            expense = BigDecimal("4340.00")
+            expense = BigDecimal("4340.00"),
+            transferIn = BigDecimal.ZERO,
+            transferOut = BigDecimal.ZERO
         )
     )
     OssWalletTheme(theme = theme) {

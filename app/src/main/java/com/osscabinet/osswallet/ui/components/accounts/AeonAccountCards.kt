@@ -42,8 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
-import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
@@ -304,8 +304,8 @@ fun AeonAccountCardLarge(
                 horizontalAlignment = Alignment.Start,
             )
 
-            val flow = summary.currentPeriodFlow
-            val prevFlow = previousSummary?.currentPeriodFlow ?: summary.previousPeriodFlow
+            val flow = summary.currentPeriodMetrics
+            val prevFlow = previousSummary?.currentPeriodMetrics ?: summary.previousPeriodMetrics
 
             Row(
                 modifier = Modifier
@@ -361,11 +361,11 @@ fun AeonAccountCardLarge(
                         } else {
                             AccountFlowReadout(
                                 label = "TRF",
-                                amount = flow.netTransfer,
+                                amount = flow.transfer,
                                 currency = account.currencyCode,
                                 color = AppColors.accent,
                                 onClick = onClickTransfer,
-                                previousAmount = prevFlow?.netTransfer,
+                                previousAmount = prevFlow?.transfer,
                                 modifier = Modifier.weight(1f),
                                 forceShowPlus = true
                             )
@@ -373,26 +373,23 @@ fun AeonAccountCardLarge(
                     }
 
                     is com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.CashFlow -> {
-                        val prevInflow = prevFlow?.let { it.income + it.transferIn }
-                        val prevOutflow = prevFlow?.let { it.expense + it.transferOut }
-
                         AccountFlowReadout(
                             label = "IN",
-                            amount = flow.income + flow.transferIn,
+                            amount = flow.inflow,
                             currency = account.currencyCode,
                             color = AppColors.positive,
                             onClick = onClickInflow,
-                            previousAmount = prevInflow,
+                            previousAmount = prevFlow?.inflow,
                             modifier = Modifier.weight(1f)
                         )
                         AccountFlowSeparator()
                         AccountFlowReadout(
                             label = "OUT",
-                            amount = flow.expense + flow.transferOut,
+                            amount = flow.outflow,
                             currency = account.currencyCode,
                             color = AppColors.negative,
                             onClick = onClickOutflow,
-                            previousAmount = prevOutflow,
+                            previousAmount = prevFlow?.outflow,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -599,13 +596,17 @@ fun AeonAccountCardsPreview() {
         currencyBalances = mapOf("USD" to BigDecimal("1234.56")),
         balance = BigDecimal("1234.56"),
         balanceInBase = BigDecimal("1234.56"),
-        currentPeriodFlow = AccountFlowMetrics(
+        currentPeriodMetrics = FinancialSummary(
             income = BigDecimal("500.00"),
-            expense = BigDecimal("100.00")
+            expense = BigDecimal("100.00"),
+            transferIn = BigDecimal.ZERO,
+            transferOut = BigDecimal.ZERO
         ),
-        previousPeriodFlow = AccountFlowMetrics(
+        previousPeriodMetrics = FinancialSummary(
             income = BigDecimal("400.00"),
-            expense = BigDecimal("150.00")
+            expense = BigDecimal("150.00"),
+            transferIn = BigDecimal.ZERO,
+            transferOut = BigDecimal.ZERO
         )
     )
 
@@ -667,9 +668,11 @@ private fun mockSummary(account: Account) = AccountSummaryItem(
     currencyBalances = mapOf(account.currencyCode to BigDecimal("12345.67")),
     balance = BigDecimal("12345.67"),
     balanceInBase = BigDecimal("12345.67"),
-    currentPeriodFlow = AccountFlowMetrics(
+    currentPeriodMetrics = FinancialSummary(
         income = BigDecimal("5200.00"),
-        expense = BigDecimal("1840.50")
+        expense = BigDecimal("1840.50"),
+        transferIn = BigDecimal.ZERO,
+        transferOut = BigDecimal.ZERO
     )
 )
 
@@ -862,9 +865,11 @@ fun AeonAccountCardsDarkPreview() {
         currencyBalances = mapOf("USD" to BigDecimal("1234.56")),
         balance = BigDecimal("1234.56"),
         balanceInBase = BigDecimal("1234.56"),
-        currentPeriodFlow = AccountFlowMetrics(
+        currentPeriodMetrics = FinancialSummary(
             income = BigDecimal("500.00"),
-            expense = BigDecimal("100.00")
+            expense = BigDecimal("100.00"),
+            transferIn = BigDecimal.ZERO,
+            transferOut = BigDecimal.ZERO
         )
     )
 

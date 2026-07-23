@@ -7,8 +7,8 @@ function renderIncomeExpenseBarCard(d) {
 
   if (!pts.length) return '<p class="empty-state">No data.</p>';
 
-  const totalIncome  = pts.reduce((s,p)=>s+(p.income||0),0);
-  const totalExpense = pts.reduce((s,p)=>s+(p.expense||0),0);
+  const totalIncome  = pts.reduce((s,p)=>s+(p.metrics?.income||0),0);
+  const totalExpense = pts.reduce((s,p)=>s+(p.metrics?.expense||0),0);
   const netTotal = totalIncome + totalExpense;
   const netColor = netTotal >= 0 ? 'var(--income)' : 'var(--expense)';
 
@@ -34,12 +34,12 @@ function renderIncomeExpenseBarCard(d) {
   if (isCumulative) {
     let runInc = 0, runExp = 0;
     processedPoints = pts.map(p => {
-      runInc += (p.income || 0);
-      runExp += (p.expense || 0);
+      runInc += (p.metrics?.income || 0);
+      runExp += (p.metrics?.expense || 0);
       return { label: p.label, income: runInc, expense: runExp };
     });
   } else {
-    processedPoints = pts.map(b=>({ label:b.label, income:b.income||0, expense:b.expense||0 }));
+    processedPoints = pts.map(b=>({ label:b.label, income:b.metrics?.income||0, expense:b.metrics?.expense||0 }));
   }
 
   return `${summary}${svgBars(processedPoints,560,140,true,todayIdx)}

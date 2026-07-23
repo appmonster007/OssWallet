@@ -56,20 +56,18 @@ object CardAggregationService {
         val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
 
         // For absolute balances, we need cumulative totals up to the end of the period.
-        // excludeInternalTransfers is never applied to balance queries — balance reflects all transactions.
         val balanceFilter = currentFilter.toBalanceFilter()
 
-        val currentTotalsByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, balanceFilter)
+        val currentSummariesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, balanceFilter)
             .getOrDefault(emptyMap())
-            .mapValues { it.value.totalAmount }
 
         val netWorth = CurrencyService.calculateTotalInCurrency(
-            currencyTotals = currentTotalsByCurrency,
+            currencyTotals = currentSummariesByCurrency.mapValues { it.value.netFlow },
             targetCurrency = input.targetCurrency,
             exchangeRates = input.exchangeRates
         )
 
-        val cashFlow = computeCashFlowResult(queryService, profileId, input, currentFilter, excludeInternal).toPerspective(config.perspective)
+        val cashFlow = computeCashFlowResult(queryService, profileId, input, currentFilter, excludeInternal)
         val currentPeriodMetrics = NetWorthMetrics(netWorth, cashFlow)
 
         val previousPeriodMetrics: NetWorthMetrics? = if (config.showComparison) {
@@ -80,15 +78,14 @@ object CardAggregationService {
                 )
                 val prevBalanceFilter = prevFilter.toBalanceFilter()
 
-                val prevTotalsByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, prevBalanceFilter)
+                val prevSummariesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, prevBalanceFilter)
                     .getOrDefault(emptyMap())
-                    .mapValues { it.value.totalAmount }
                 val prevNetWorth = CurrencyService.calculateTotalInCurrency(
-                    currencyTotals = prevTotalsByCurrency,
+                    currencyTotals = prevSummariesByCurrency.mapValues { it.value.netFlow },
                     targetCurrency = input.targetCurrency,
                     exchangeRates = input.exchangeRates
                 )
-                val prevCashFlow = computeCashFlowResult(queryService, profileId, input, prevFilter, excludeInternal).toPerspective(config.perspective)
+                val prevCashFlow = computeCashFlowResult(queryService, profileId, input, prevFilter, excludeInternal)
                 NetWorthMetrics(prevNetWorth, prevCashFlow)
             } else null
         } else null
@@ -112,7 +109,7 @@ object CardAggregationService {
             accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
         )
         val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
-        val result = computeCashFlowResult(queryService, profileId, input, mergedFilter, excludeInternal).toPerspective(config.perspective)
+        val result = computeCashFlowResult(queryService, profileId, input, mergedFilter, excludeInternal)
 
         return CardRenderData.CashFlow(
             config = config,
@@ -133,62 +130,24 @@ object CardAggregationService {
 
         if (summariesByCurrency.isEmpty()) return CashFlowResult.empty()
 
-        var totalIncomeInBase = BigDecimal.ZERO
-        var totalExpenseInBase = BigDecimal.ZERO
-        var totalTransferInBase = BigDecimal.ZERO
-        var totalTransferInInBase = BigDecimal.ZERO
-        var totalTransferOutInBase = BigDecimal.ZERO
-        var totalCrossCcyTransferInInBase = BigDecimal.ZERO
-        var totalCrossCcyTransferOutInBase = BigDecimal.ZERO
-
         val breakdownItems = summariesByCurrency.map { (curr, summary) ->
-            val incomeInBase = CurrencyService.convertAmount(summary.income, curr, input.targetCurrency, input.exchangeRates, 10)
-            val expenseInBase = CurrencyService.convertAmount(summary.expense, curr, input.targetCurrency, input.exchangeRates, 10)
-            val transferInBase = CurrencyService.convertAmount(summary.transfer, curr, input.targetCurrency, input.exchangeRates, 10)
-            val transferInInBase = CurrencyService.convertAmount(summary.transferIn, curr, input.targetCurrency, input.exchangeRates, 10)
-            val transferOutInBase = CurrencyService.convertAmount(summary.transferOut, curr, input.targetCurrency, input.exchangeRates, 10)
-            val crossCcyInInBase = CurrencyService.convertAmount(summary.crossCcyTransferIn, curr, input.targetCurrency, input.exchangeRates, 10)
-            val crossCcyOutInBase = CurrencyService.convertAmount(summary.crossCcyTransferOut, curr, input.targetCurrency, input.exchangeRates, 10)
-
-            totalIncomeInBase = totalIncomeInBase.add(incomeInBase)
-            totalExpenseInBase = totalExpenseInBase.add(expenseInBase)
-            totalTransferInBase = totalTransferInBase.add(transferInBase)
-            totalTransferInInBase = totalTransferInInBase.add(transferInInBase)
-            totalTransferOutInBase = totalTransferOutInBase.add(transferOutInBase)
-            totalCrossCcyTransferInInBase = totalCrossCcyTransferInInBase.add(crossCcyInInBase)
-            totalCrossCcyTransferOutInBase = totalCrossCcyTransferOutInBase.add(crossCcyOutInBase)
+            val metricsInBase = CurrencyService.convertFinancialSummaryToBase(
+                summary, curr, input.targetCurrency, input.exchangeRates
+            ).setScale(CurrencyService.precision)
 
             CashFlowBreakdownItem(
                 currency = curr,
-                income = summary.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                incomeInBase = incomeInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                expense = summary.expense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                expenseInBase = expenseInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                transfer = summary.transfer.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                transferInBase = transferInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                transferIn = summary.transferIn.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                transferInInBase = transferInInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                transferOut = summary.transferOut.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                transferOutInBase = transferOutInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                crossCcyTransferIn = summary.crossCcyTransferIn.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                crossCcyTransferInInBase = crossCcyInInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                crossCcyTransferOut = summary.crossCcyTransferOut.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                crossCcyTransferOutInBase = crossCcyOutInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                metrics = summary.setScale(CurrencyService.precision),
+                metricsInBase = metricsInBase
             )
         }
 
+        val totalMetricsInBase = breakdownItems.fold(FinancialSummary.EMPTY) { acc, item ->
+            acc + item.metricsInBase
+        }
+
         return CashFlowResult(
-            totalIncomeInBase = totalIncomeInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            totalExpensesInBase = totalExpenseInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            totalTransfersInBase = totalTransferInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            totalTransferInInBase = totalTransferInInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            totalTransferOutInBase = totalTransferOutInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            totalCrossCcyTransferInInBase = totalCrossCcyTransferInInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            totalCrossCcyTransferOutInBase = totalCrossCcyTransferOutInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            netInBase = totalIncomeInBase
-                .add(totalExpenseInBase)
-                .add(totalTransferInBase)
-                .setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+            metricsInBase = totalMetricsInBase,
             breakdown = breakdownItems,
             filteredTransactions = emptyList()
         )
@@ -212,8 +171,8 @@ object CardAggregationService {
         val balances = summariesByCurrency.map { (curr, summary) ->
             CurrencyAggregationItem(
                 currency = curr,
-                amount = summary.totalAmount.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                amountInBase = CurrencyService.convertAmount(summary.totalAmount, curr, input.targetCurrency, input.exchangeRates, 10)
+                amount = summary.netFlow.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                amountInBase = CurrencyService.convertAmount(summary.netFlow, curr, input.targetCurrency, input.exchangeRates, 10)
                     .setScale(CurrencyService.precision, RoundingMode.HALF_UP)
             )
         }.sortedByDescending { it.amountInBase.abs() }
@@ -249,18 +208,13 @@ object CardAggregationService {
             currentFilter.copy(timelineRange = TimelineRange.CustomRange(prevStart, prevEnd))
         else null
 
-        // Launch current and previous period queries in parallel when comparison is enabled.
-        // supervisorScope so a failure in the previous-period query degrades to current-only
-        // rather than cancelling the current-period query and surfacing a card error.
         val accountSummaries = supervisorScope {
             val currentDeferred = async {
                 computeAccountStats(queryService, profileId, input, currentFilter, targetAccounts, excludeInternal)
-                    .mapValues { it.value.copy(currentPeriodFlow = it.value.currentPeriodFlow.toPerspective(config.perspective)) }
             }
             val previousDeferred = if (prevFilter != null) async {
                 runCatching {
                     computeAccountStats(queryService, profileId, input, prevFilter, targetAccounts, excludeInternal)
-                        .mapValues { it.value.copy(currentPeriodFlow = it.value.currentPeriodFlow.toPerspective(config.perspective)) }
                 }.getOrNull()
             } else null
 
@@ -268,7 +222,7 @@ object CardAggregationService {
             val previous = previousDeferred?.await()
             if (previous != null) {
                 current.mapValues { (id, summary) ->
-                    summary.copy(previousPeriodFlow = previous[id]?.currentPeriodFlow)
+                    summary.copy(previousPeriodMetrics = previous[id]?.currentPeriodMetrics)
                 }
             } else current
         }
@@ -296,8 +250,6 @@ object CardAggregationService {
     ): CardRenderData.Budgets {
         val now = System.currentTimeMillis()
 
-        // Budgets should NOT follow the global timeline filter (e.g. Dashboard "Today")
-        // but should respect global Account/Category filters if explicitly merged.
         val baseBudgetFilter = input.filter.copy(timelineRange = TimelineRange.AllTime())
         val mergedFilter = resolveEffectiveFilter(
             baseBudgetFilter,
@@ -334,7 +286,7 @@ object CardAggregationService {
             val spentSummaries = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, finalFilter)
                 .getOrDefault(emptyMap())
             val spentSummary = CurrencyService.calculateTotalFinancialSummary(spentSummaries, budget.currency, input.exchangeRates)
-            val spent = signedSpent(spentSummary.totalAmount, budget)
+            val spent = signedSpent(spentSummary.netFlow, budget)
 
             val rollover = if (budget.rollover) {
                 computeBudgetRollover(queryService, profileId, budget, input, effectiveFilter.accountIds, now, effectiveFilter.timelineRange.excludeFuture)
@@ -350,9 +302,6 @@ object CardAggregationService {
         )
     }
 
-    // Replaces the old recursive approach: collects up to 12 previous period ranges, queries
-    // all of them in parallel, then folds rollover in-memory from oldest period to newest.
-    // This reduces worst-case sequential DB round trips from 12×N to a single parallel batch.
     private suspend fun computeBudgetRollover(
         queryService: DatabaseQueryService,
         profileId: Int,
@@ -362,7 +311,6 @@ object CardAggregationService {
         now: Long,
         excludeFuture: Boolean
     ): BigDecimal {
-        // Walk backwards to collect up to 12 previous period ranges (index 0 = most recent past).
         val periodRanges = mutableListOf<Pair<Long, Long>>()
         var referenceNow = now
         var rangeForPrev = budget.timelineRange
@@ -375,7 +323,6 @@ object CardAggregationService {
         }
         if (periodRanges.isEmpty()) return BigDecimal.ZERO
 
-        // Query all periods in parallel.
         val spentByPeriod: List<BigDecimal> = coroutineScope {
             periodRanges.map { (start, end) ->
                 async {
@@ -387,12 +334,11 @@ object CardAggregationService {
                     ).copy(accountIds = if (budget.accountIds.isEmpty()) effectiveAccountIds else budget.accountIds)
                     val summaries = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, filter)
                         .getOrDefault(emptyMap())
-                    signedSpent(CurrencyService.calculateTotalFinancialSummary(summaries, budget.currency, input.exchangeRates).totalAmount, budget)
+                    signedSpent(CurrencyService.calculateTotalFinancialSummary(summaries, budget.currency, input.exchangeRates).netFlow, budget)
                 }
             }.awaitAll()
         }
 
-        // Fold from oldest period to most recent (periodRanges[0] is most recent, so reverse).
         var rollover = BigDecimal.ZERO
         for (spent in spentByPeriod.reversed()) {
             rollover = budget.limitAmount.add(rollover).subtract(spent).max(BigDecimal.ZERO)
@@ -433,11 +379,9 @@ object CardAggregationService {
 
             val totalPaid = summaryByCurrency.entries.fold(BigDecimal.ZERO) { acc, entry ->
                 val (curr, summary) = entry
-                // Match old amount.signum() logic: positive amounts (income + transferIn) repay
-                // LENT loans; negative amounts (expense + transferOut) repay BORROWED loans.
                 val repaymentAmount = when (loan.loanType) {
-                    LoanType.LENT -> summary.income.abs() + summary.transferIn.abs()
-                    LoanType.BORROWED -> summary.expense.abs() + summary.transferOut.abs()
+                    LoanType.LENT -> summary.inflow.abs()
+                    LoanType.BORROWED -> summary.outflow.abs()
                 }
                 val converted = CurrencyService.convertAmount(repaymentAmount, curr, loan.currency, input.exchangeRates)
                 acc + converted
@@ -473,8 +417,6 @@ object CardAggregationService {
         )
         val txs = queryService.observeFilteredTransactions(profileId, effectiveFilter, limit = 200).first()
 
-        // Fetch account balances at window start using the same account/currency scope as the card
-        // filter so baseline and deltas are computed on the same transaction population.
         val startingBalances: Map<String, BigDecimal> = if (txs.isNotEmpty()) {
             val windowStart = txs.minOf { it.timestamp }
             val balanceFilter = effectiveFilter.toBalanceFilter().copy(
@@ -484,7 +426,7 @@ object CardAggregationService {
                 queryService, profileId, balanceFilter
             ).getOrDefault(emptyMap()).mapValues { (accountId, byCurrency) ->
                 val accountCurrency = input.accounts.find { it.id == accountId }?.currencyCode ?: input.targetCurrency
-                CurrencyService.calculateTotalFinancialSummary(byCurrency, accountCurrency, input.exchangeRates).totalAmount
+                CurrencyService.calculateTotalFinancialSummary(byCurrency, accountCurrency, input.exchangeRates).netFlow
             }
         } else emptyMap()
 
@@ -516,18 +458,13 @@ object CardAggregationService {
         input: CardInput,
         config: CategoryPieChartCardConfig
     ): CardRenderData.CategoryPieChart {
-        val (tree, totals) = computeCategoryChartData(queryService, profileId, input, config.filter, config.filterRules, config.perspective, config.showComparison, config.excludeInternalTransfers)
+        val (tree, metrics, prevMetrics) = computeCategoryChartData(queryService, profileId, input, config.filter, config.filterRules, config.perspective, config.showComparison, config.excludeInternalTransfers)
         return CardRenderData.CategoryPieChart(
             config = config,
             items = tree,
             currency = input.targetCurrency,
-            previousTotal = totals.previousTotal,
-            incomeTotal = totals.incomeTotal,
-            expenseTotal = totals.expenseTotal,
-            transferTotal = totals.transferTotal,
-            previousIncomeTotal = totals.previousIncomeTotal,
-            previousExpenseTotal = totals.previousExpenseTotal,
-            previousTransferTotal = totals.previousTransferTotal
+            metrics = metrics,
+            previousMetrics = prevMetrics
         )
     }
 
@@ -537,29 +474,20 @@ object CardAggregationService {
         input: CardInput,
         config: CategoryTreemapCardConfig
     ): CardRenderData.CategoryTreemap {
-        val (tree, totals) = computeCategoryChartData(queryService, profileId, input, config.filter, config.filterRules, config.perspective, config.showComparison, config.excludeInternalTransfers)
+        val (tree, metrics, prevMetrics) = computeCategoryChartData(queryService, profileId, input, config.filter, config.filterRules, config.perspective, config.showComparison, config.excludeInternalTransfers)
         return CardRenderData.CategoryTreemap(
             config = config,
             items = tree,
             currency = input.targetCurrency,
-            previousTotal = totals.previousTotal,
-            incomeTotal = totals.incomeTotal,
-            expenseTotal = totals.expenseTotal,
-            transferTotal = totals.transferTotal,
-            previousIncomeTotal = totals.previousIncomeTotal,
-            previousExpenseTotal = totals.previousExpenseTotal,
-            previousTransferTotal = totals.previousTransferTotal
+            metrics = metrics,
+            previousMetrics = prevMetrics
         )
     }
 
-    private data class CategoryChartTotals(
-        val incomeTotal: BigDecimal,
-        val expenseTotal: BigDecimal,
-        val transferTotal: BigDecimal,
-        val previousTotal: BigDecimal?,
-        val previousIncomeTotal: BigDecimal?,
-        val previousExpenseTotal: BigDecimal?,
-        val previousTransferTotal: BigDecimal?
+    private data class CategoryChartResult(
+        val tree: List<CategoryTreeMetrics>,
+        val metrics: FinancialSummary,
+        val previousMetrics: FinancialSummary?
     )
 
     private suspend fun computeCategoryChartData(
@@ -571,26 +499,23 @@ object CardAggregationService {
         perspective: AccountingPerspective,
         showComparison: Boolean,
         excludeInternalTransfers: Boolean
-    ): Pair<List<CategoryTreeMetrics>, CategoryChartTotals> {
+    ): CategoryChartResult {
         val mergedFilter = resolveEffectiveFilter(input.filter, cardFilter ?: TransactionFilter(), filterRules, input.screenOwnsTimeline)
         val expandedCategoryIds = input.categoryHierarchy.expand(mergedFilter.categoryIds)
         val excludeInternal = excludeInternalTransfers && perspective is AccountingPerspective.CashFlow
         val finalFilter = mergedFilter.copy(
             accountIds = mergedFilter.accountIds.ifEmpty { input.effectiveAccountIds },
             categoryIds = expandedCategoryIds,
-            transactionTypes = emptySet() // Include all types to support Transfers-as-categories
+            transactionTypes = emptySet()
         )
         val tree = computeCategoryTree(queryService, profileId, input, finalFilter, perspective, showComparison, excludeInternal)
-        val totals = CategoryChartTotals(
-            incomeTotal = tree.sumOf { it.income },
-            expenseTotal = tree.sumOf { it.expense },
-            transferTotal = tree.sumOf { it.transfer },
-            previousTotal = if (showComparison) tree.sumOf { it.previousNetBalance ?: BigDecimal.ZERO } else null,
-            previousIncomeTotal = if (showComparison) tree.sumOf { it.previousIncome ?: BigDecimal.ZERO } else null,
-            previousExpenseTotal = if (showComparison) tree.sumOf { it.previousExpense ?: BigDecimal.ZERO } else null,
-            previousTransferTotal = if (showComparison) tree.sumOf { it.previousTransfer ?: BigDecimal.ZERO } else null
-        )
-        return tree to totals
+        
+        val metrics = tree.fold(FinancialSummary.EMPTY) { acc, item -> acc + item.metrics }
+        val prevMetrics = if (showComparison) {
+            tree.fold(FinancialSummary.EMPTY) { acc, item -> acc + (item.previousMetrics ?: FinancialSummary.EMPTY) }
+        } else null
+        
+        return CategoryChartResult(tree, metrics, prevMetrics)
     }
 
     private suspend fun computeCategoryTree(
@@ -619,11 +544,10 @@ object CardAggregationService {
                 val converted = byCurrency.mapValues { (curr, summary) ->
                     CurrencyService.convertFinancialSummaryToBase(summary, curr, input.targetCurrency, input.exchangeRates)
                 }
-                val perspectiveSummaries = converted.mapValues { it.value.toPerspective(perspective) }
                 FinancialMetrics(
                     key = categoryId,
-                    financialSummary = FinancialSummary.aggregate(perspectiveSummaries.values),
-                    currencyBreakdown = perspectiveSummaries
+                    metrics = FinancialSummary.aggregate(converted.values),
+                    currencyBreakdown = converted
                 )
             }
 
@@ -682,7 +606,6 @@ object CardAggregationService {
     ): Map<String, AccountSummaryItem> = supervisorScope {
         val balanceFilter = filter.toBalanceFilter()
 
-        // Run balance and period aggregation queries in parallel — they are independent.
         val balanceDeferred = async {
             TransactionAggregationService.getSummaryByAccountAndCurrency(queryService, profileId, balanceFilter)
                 .getOrDefault(emptyMap())
@@ -712,27 +635,20 @@ object CardAggregationService {
             )
 
             val balanceInBase = CurrencyService.calculateTotalInCurrency(
-                currencyTotals = balanceSummaries.mapValues { it.value.totalAmount },
+                currencyTotals = balanceSummaries.mapValues { it.value.netFlow },
                 targetCurrency = input.targetCurrency,
                 exchangeRates = input.exchangeRates,
                 precision = 10
             )
 
-            val currencyBalances = balanceSummaries.mapValues { it.value.totalAmount }
+            val currencyBalances = balanceSummaries.mapValues { it.value.netFlow }
 
             account.id to AccountSummaryItem(
                 account = account,
                 currencyBalances = currencyBalances,
-                balance = totalBalanceSummaryInAccountCurrency.totalAmount,
+                balance = totalBalanceSummaryInAccountCurrency.netFlow,
                 balanceInBase = balanceInBase,
-                currentPeriodFlow = AccountFlowMetrics(
-                    income = totalPeriodSummaryInAccountCurrency.income,
-                    expense = totalPeriodSummaryInAccountCurrency.expense,
-                    transferIn = totalPeriodSummaryInAccountCurrency.transferIn,
-                    transferOut = totalPeriodSummaryInAccountCurrency.transferOut,
-                    crossCcyTransferIn = totalPeriodSummaryInAccountCurrency.crossCcyTransferIn,
-                    crossCcyTransferOut = totalPeriodSummaryInAccountCurrency.crossCcyTransferOut
-                )
+                currentPeriodMetrics = totalPeriodSummaryInAccountCurrency
             )
         }
     }
@@ -750,11 +666,9 @@ object CardAggregationService {
         val account = input.accounts.find { it.id == targetAccountId }
             ?: error("Account not found: $targetAccountId")
 
-        // Period summary
         val periodFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
         val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
         
-        // Lifetime balance (base scope) - Always show the true account balance.
         val baseFilter = TransactionFilter(
             accountIds = setOf(targetAccountId),
             timelineRange = TimelineRange.AllTime(excludeFuture = periodFilter.timelineRange.excludeFuture)
@@ -774,18 +688,9 @@ object CardAggregationService {
             periodSummariesByCurrency,
             account.currencyCode,
             input.exchangeRates
-        )
+        ).setScale(CurrencyService.precision)
 
-        val currentFlow = AccountFlowMetrics(
-            income = periodSummary.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            expense = periodSummary.expense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            transferIn = periodSummary.transferIn.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            transferOut = periodSummary.transferOut.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            crossCcyTransferIn = periodSummary.crossCcyTransferIn.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            crossCcyTransferOut = periodSummary.crossCcyTransferOut.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
-        )
-
-        var previousFlow: AccountFlowMetrics? = null
+        var previousMetrics: FinancialSummary? = null
         if (config.showComparison) {
             val (prevStart, prevEnd) = TimelineService.getPreviousRange(periodFilter.timelineRange)
             if (prevStart != null && prevEnd != null) {
@@ -794,26 +699,17 @@ object CardAggregationService {
                 )
                 val prevSummariesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, prevFilter, excludeInternal)
                     .getOrDefault(emptyMap())
-                val prevSummary = CurrencyService.calculateTotalFinancialSummary(
+                previousMetrics = CurrencyService.calculateTotalFinancialSummary(
                     prevSummariesByCurrency,
                     account.currencyCode,
                     input.exchangeRates
-                )
-                previousFlow = AccountFlowMetrics(
-                    income = prevSummary.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                    expense = prevSummary.expense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                    transferIn = prevSummary.transferIn.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                    transferOut = prevSummary.transferOut.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                    crossCcyTransferIn = prevSummary.crossCcyTransferIn.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                    crossCcyTransferOut = prevSummary.crossCcyTransferOut.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
-                )
+                ).setScale(CurrencyService.precision)
             }
         }
 
         val balancesByCurrency = lifetimeSummariesByCurrency
-            .mapValues { it.value.totalAmount.setScale(CurrencyService.precision, RoundingMode.HALF_UP) }
+            .mapValues { it.value.netFlow.setScale(CurrencyService.precision, RoundingMode.HALF_UP) }
 
-        // Running balance across the filtered period, for the hero sparkline.
         val balanceHistory = computeAccountBalanceHistory(
             queryService = queryService,
             profileId = profileId,
@@ -827,15 +723,15 @@ object CardAggregationService {
         val summary = AccountSummaryItem(
             account = account,
             currencyBalances = balancesByCurrency,
-            balance = lifetimeSummary.totalAmount.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+            balance = lifetimeSummary.netFlow.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
             balanceInBase = CurrencyService.calculateTotalInCurrency(
                 currencyTotals = balancesByCurrency,
                 targetCurrency = input.targetCurrency,
                 exchangeRates = input.exchangeRates,
                 precision = 10
             ),
-            currentPeriodFlow = currentFlow.toPerspective(config.perspective),
-            previousPeriodFlow = previousFlow?.toPerspective(config.perspective),
+            currentPeriodMetrics = periodSummary,
+            previousPeriodMetrics = previousMetrics,
             balanceHistory = balanceHistory
         )
 
@@ -847,14 +743,6 @@ object CardAggregationService {
         )
     }
 
-    /**
-     * Builds a running-balance series across [periodFilter]'s window, in [accountCurrency].
-     *
-     * Reuses the income/expense-bar pipeline: [CardComputerUtils] for granularity + buckets and
-     * [TransactionAggregationService.getSummaryByCurrencyByDay] for a single-call daily aggregation.
-     * Seeds from the account's balance strictly before the window so the line reflects the true
-     * balance trajectory, then cumulates each bucket's net delta (FinancialSummary.totalAmount).
-     */
     private suspend fun computeAccountBalanceHistory(
         queryService: DatabaseQueryService,
         profileId: Int,
@@ -878,7 +766,6 @@ object CardAggregationService {
         val buckets = CardComputerUtils.generateBuckets(start, end, granularity)
         if (buckets.size < 2) return emptyList()
 
-        // Opening balance strictly before the window (0 when the window is all-time).
         val opening = if (rawStart == null) BigDecimal.ZERO else {
             val beforeFilter = TransactionFilter(
                 accountIds = setOf(accountId),
@@ -891,10 +778,9 @@ object CardAggregationService {
                 .getSummaryByCurrency(queryService, profileId, beforeFilter)
                 .getOrDefault(emptyMap())
             CurrencyService.calculateTotalFinancialSummary(beforeByCcy, accountCurrency, exchangeRates)
-                .totalAmount
+                .netFlow
         }
 
-        // Per-day deltas within the window in a single DB call, then folded into buckets.
         val dailyData = TransactionAggregationService.getSummaryByCurrencyByDay(
             queryService, profileId,
             periodFilter.copy(timelineRange = TimelineRange.CustomRange(start, end)),
@@ -905,7 +791,6 @@ object CardAggregationService {
         val bucketStarts = buckets.map { it.first }
         val perBucketDelta = Array(buckets.size) { BigDecimal.ZERO }
 
-        // One conversion factor per source currency → account currency.
         val anchor = exchangeRates.anchor
         val toRate = if (accountCurrency == anchor) BigDecimal.ONE else exchangeRates.rates[accountCurrency]
         fun factor(ccy: String): BigDecimal? {
@@ -926,7 +811,7 @@ object CardAggregationService {
             var delta = BigDecimal.ZERO
             byCcy.forEach { (ccy, summary) ->
                 val f = factor(ccy) ?: return@forEach
-                delta = delta.add(summary.totalAmount.multiply(f))
+                delta = delta.add(summary.netFlow.multiply(f))
             }
             perBucketDelta[idx] = perBucketDelta[idx].add(delta)
         }

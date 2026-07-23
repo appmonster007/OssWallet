@@ -32,7 +32,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -304,7 +304,7 @@ private fun AccountItemContent(
     filter: TransactionFilter = TransactionFilter(),
     modifier: Modifier = Modifier
 ) {
-    val stats = accountSummaries[account.id] ?: AccountSummaryItem(account)
+    val stats = accountSummaries[account.id] ?: AccountSummaryItem(account, currentPeriodMetrics = FinancialSummary.EMPTY)
     val prevStats = previousSummaries?.get(account.id)
 
     when (gridColumns) {
@@ -416,7 +416,7 @@ private fun AeonAddAccountCardContent(
         "Add",
         listOf("Add")
     )
-    val summary = AccountSummaryItem(placeholderAccount)
+    val summary = AccountSummaryItem(placeholderAccount, currentPeriodMetrics = FinancialSummary.EMPTY)
 
     when (gridColumns) {
         1 -> AeonAccountCardLarge(
@@ -472,10 +472,11 @@ fun AccountsCardPreview() {
             mapOf("USD" to BigDecimal("5000.00")),
             BigDecimal("5000.00"),
             BigDecimal("5000.00"),
-            currentPeriodFlow = AccountFlowMetrics(
+            currentPeriodMetrics = FinancialSummary(
                 income = BigDecimal("1000.00"),
                 expense = BigDecimal("200.00"),
-                transferIn = BigDecimal.ZERO
+                transferIn = BigDecimal.ZERO,
+                transferOut = BigDecimal.ZERO
             )
         ),
         "2" to AccountSummaryItem(
@@ -483,10 +484,11 @@ fun AccountsCardPreview() {
             mapOf("EUR" to BigDecimal("1200.00")),
             BigDecimal("1200.00"),
             BigDecimal("1320.00"),
-            currentPeriodFlow = AccountFlowMetrics(
+            currentPeriodMetrics = FinancialSummary(
                 income = BigDecimal("500.00"),
                 expense = BigDecimal("100.00"),
-                transferIn = BigDecimal.ZERO
+                transferIn = BigDecimal.ZERO,
+                transferOut = BigDecimal.ZERO
             )
         )
     )

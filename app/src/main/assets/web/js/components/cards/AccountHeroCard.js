@@ -34,17 +34,17 @@ function renderAccountHeroCard(d) {
   if (isAccounting) {
     flowGrid = `
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px">
-        ${renderItem('INCOME', d.income, ['INCOME'])}
-        ${renderItem('EXPENSE', d.expense, ['EXPENSE'])}
-        ${renderItem('TRF IN', d.transferIn, ['TRANSFER_INFLOW'])}
-        ${renderItem('TRF OUT', d.transferOut, ['TRANSFER_OUTFLOW'])}
+        ${renderItem('INCOME', d.metrics.income, ['INCOME'])}
+        ${renderItem('EXPENSE', d.metrics.expense, ['EXPENSE'])}
+        ${renderItem('TRF IN', d.metrics.transferIn, ['TRANSFER_INFLOW'])}
+        ${renderItem('TRF OUT', d.metrics.transferOut, ['TRANSFER_OUTFLOW'])}
       </div>
     `;
   } else {
     flowGrid = `
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px">
-        ${renderItem('INFLOW', (d.income || 0) + (d.transferIn || 0), ['INCOME', 'TRANSFER_INFLOW'])}
-        ${renderItem('OUTFLOW', (d.expense || 0) + (d.transferOut || 0), ['EXPENSE', 'TRANSFER_OUTFLOW'])}
+        ${renderItem('INFLOW', d.metrics.inflow, ['INCOME', 'TRANSFER_INFLOW'])}
+        ${renderItem('OUTFLOW', d.metrics.outflow, ['EXPENSE', 'TRANSFER_OUTFLOW'])}
       </div>
     `;
   }

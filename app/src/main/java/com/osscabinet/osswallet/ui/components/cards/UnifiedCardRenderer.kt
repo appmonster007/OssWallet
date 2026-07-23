@@ -252,34 +252,34 @@ private fun mapCategoryMetrics(
     val globalTotalAbs = when (selectedMetric) {
         ChartMetric.INCOME -> incomeTotal.abs()
         ChartMetric.EXPENSE -> expenseTotal.abs()
-        ChartMetric.NET -> items.sumOf { it.netBalance.abs() }
+        ChartMetric.NET -> items.sumOf { it.metrics.netFlow.abs() }
         ChartMetric.TRANSFER -> transferTotal.abs()
-        ChartMetric.TRANSFER_IN -> items.sumOf { it.transferIn.abs() }
-        ChartMetric.TRANSFER_OUT -> items.sumOf { it.transferOut.abs() }
-        ChartMetric.INFLOW -> items.sumOf { (it.income + it.transferIn).abs() }
-        ChartMetric.OUTFLOW -> items.sumOf { (it.expense + it.transferOut).abs() }
+        ChartMetric.TRANSFER_IN -> items.sumOf { it.metrics.transferIn.abs() }
+        ChartMetric.TRANSFER_OUT -> items.sumOf { it.metrics.transferOut.abs() }
+        ChartMetric.INFLOW -> items.sumOf { it.metrics.inflow.abs() }
+        ChartMetric.OUTFLOW -> items.sumOf { it.metrics.outflow.abs() }
     }
 
     fun mapOne(metric: CategoryTreeMetrics): CategoryChartData? {
         val amount = when (selectedMetric) {
-            ChartMetric.INCOME -> metric.income
-            ChartMetric.EXPENSE -> metric.expense
-            ChartMetric.NET -> metric.netBalance
-            ChartMetric.TRANSFER -> metric.transfer
-            ChartMetric.TRANSFER_IN -> metric.transferIn
-            ChartMetric.TRANSFER_OUT -> metric.transferOut
-            ChartMetric.INFLOW -> metric.income + metric.transferIn
-            ChartMetric.OUTFLOW -> metric.expense + metric.transferOut
+            ChartMetric.INCOME -> metric.metrics.income
+            ChartMetric.EXPENSE -> metric.metrics.expense
+            ChartMetric.NET -> metric.metrics.netFlow
+            ChartMetric.TRANSFER -> metric.metrics.transfer
+            ChartMetric.TRANSFER_IN -> metric.metrics.transferIn
+            ChartMetric.TRANSFER_OUT -> metric.metrics.transferOut
+            ChartMetric.INFLOW -> metric.metrics.inflow
+            ChartMetric.OUTFLOW -> metric.metrics.outflow
         }
         val prevAmount = when (selectedMetric) {
-            ChartMetric.INCOME -> metric.previousIncome
-            ChartMetric.EXPENSE -> metric.previousExpense
-            ChartMetric.NET -> metric.previousNetBalance
-            ChartMetric.TRANSFER -> metric.previousTransfer
-            ChartMetric.TRANSFER_IN -> metric.previousTransferIn
-            ChartMetric.TRANSFER_OUT -> metric.previousTransferOut
-            ChartMetric.INFLOW -> metric.previousIncome?.let { it + (metric.previousTransferIn ?: BigDecimal.ZERO) }
-            ChartMetric.OUTFLOW -> metric.previousExpense?.let { it + (metric.previousTransferOut ?: BigDecimal.ZERO) }
+            ChartMetric.INCOME -> metric.previousMetrics?.income
+            ChartMetric.EXPENSE -> metric.previousMetrics?.expense
+            ChartMetric.NET -> metric.previousMetrics?.netFlow
+            ChartMetric.TRANSFER -> metric.previousMetrics?.transfer
+            ChartMetric.TRANSFER_IN -> metric.previousMetrics?.transferIn
+            ChartMetric.TRANSFER_OUT -> metric.previousMetrics?.transferOut
+            ChartMetric.INFLOW -> metric.previousMetrics?.inflow
+            ChartMetric.OUTFLOW -> metric.previousMetrics?.outflow
         }
         val subData = metric.subcategoryData.asSequence().mapNotNull { mapOne(it) }
             .sortedByDescending { it.amount.abs() }.toList()

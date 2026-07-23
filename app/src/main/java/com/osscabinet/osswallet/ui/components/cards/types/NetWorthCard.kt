@@ -41,6 +41,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.isTransfer
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
@@ -186,7 +187,7 @@ fun NetWorthCard(
                         if (showIncome) {
                             NetWorthFlowColumn(
                                 label = "INC",
-                                amount = cf.totalIncomeInBase,
+                                amount = cf.metricsInBase.income,
                                 currency = displayCurrency,
                                 color = AppColors.positive,
                                 modifier = Modifier
@@ -200,14 +201,14 @@ fun NetWorthCard(
                                             )
                                         )
                                     },
-                                previousAmount = if (config.showComparison) prevCf?.totalIncomeInBase else null
+                                previousAmount = if (config.showComparison) prevCf?.metricsInBase?.income else null
                             )
                         }
                         if (showExpense) {
                             if (showIncome) NetWorthSeparator()
                             NetWorthFlowColumn(
                                 label = "EXP",
-                                amount = cf.totalExpensesInBase,
+                                amount = cf.metricsInBase.expense,
                                 currency = displayCurrency,
                                 color = AppColors.negative,
                                 modifier = Modifier
@@ -221,7 +222,7 @@ fun NetWorthCard(
                                             )
                                         )
                                     },
-                                previousAmount = if (config.showComparison) prevCf?.totalExpensesInBase else null
+                                previousAmount = if (config.showComparison) prevCf?.metricsInBase?.expense else null
                             )
                         }
                         if (showTransfer) {
@@ -229,7 +230,7 @@ fun NetWorthCard(
                             if (config.splitTransfers) {
                                 NetWorthFlowColumn(
                                     label = "TRF IN",
-                                    amount = cf.totalTransferInInBase,
+                                    amount = cf.metricsInBase.transferIn,
                                     currency = displayCurrency,
                                     color = AppColors.accent,
                                     modifier = Modifier
@@ -239,13 +240,13 @@ fun NetWorthCard(
                                                 config.filter.copy(transactionTypes = setOf(TransactionType.TRANSFER_INFLOW))
                                             )
                                         },
-                                    previousAmount = if (config.showComparison) prevCf?.totalTransferInInBase else null,
+                                    previousAmount = if (config.showComparison) prevCf?.metricsInBase?.transferIn else null,
                                     forceShowPlus = true
                                 )
                                 NetWorthSeparator()
                                 NetWorthFlowColumn(
                                     label = "TRF OUT",
-                                    amount = cf.totalTransferOutInBase,
+                                    amount = cf.metricsInBase.transferOut,
                                     currency = displayCurrency,
                                     color = AppColors.accent,
                                     modifier = Modifier
@@ -255,12 +256,12 @@ fun NetWorthCard(
                                                 config.filter.copy(transactionTypes = setOf(TransactionType.TRANSFER_OUTFLOW))
                                             )
                                         },
-                                    previousAmount = if (config.showComparison) prevCf?.totalTransferOutInBase else null
+                                    previousAmount = if (config.showComparison) prevCf?.metricsInBase?.transferOut else null
                                 )
                             } else {
                                 NetWorthFlowColumn(
                                     label = "TRF",
-                                    amount = cf.totalNetTransferInBase,
+                                    amount = cf.metricsInBase.transfer,
                                     currency = displayCurrency,
                                     color = AppColors.accent,
                                     modifier = Modifier
@@ -270,7 +271,7 @@ fun NetWorthCard(
                                                 config.filter.copy(transactionTypes = TransactionType.TRANSFER_TYPES)
                                             )
                                         },
-                                    previousAmount = if (config.showComparison) prevCf?.totalNetTransferInBase else null,
+                                    previousAmount = if (config.showComparison) prevCf?.metricsInBase?.transfer else null,
                                     forceShowPlus = true
                                 )
                             }
@@ -278,14 +279,14 @@ fun NetWorthCard(
                     }
 
                     is AccountingPerspective.CashFlow -> {
-                        // toPerspective() absorbs transferIn into income and zeroes
-                        // totalTransferInInBase, so treat showTransfer as showInflow.
+                        // In CashFlow perspective, inflow/outflow properties already absorb
+                        // transfers, so treat showTransfer as showInflow.
                         val showInflow  = showIncome || showTransfer
                         val showOutflow = showExpense || showTransfer
-                        val inflow      = if (showInflow)  cf.totalInflowInBase  else BigDecimal.ZERO
-                        val outflow     = if (showOutflow) cf.totalOutflowInBase else BigDecimal.ZERO
-                        val prevInflow  = if (showInflow)  prevCf?.totalInflowInBase  else null
-                        val prevOutflow = if (showOutflow) prevCf?.totalOutflowInBase else null
+                        val inflow      = if (showInflow)  cf.metricsInBase.inflow  else BigDecimal.ZERO
+                        val outflow     = if (showOutflow) cf.metricsInBase.outflow else BigDecimal.ZERO
+                        val prevInflow  = if (showInflow)  prevCf?.metricsInBase?.inflow  else null
+                        val prevOutflow = if (showOutflow) prevCf?.metricsInBase?.outflow else null
 
                         NetWorthFlowColumn(
                             label = "IN",
@@ -486,12 +487,12 @@ fun NetWorthCardGlassPreview() {
     val currentPeriodMetrics = NetWorthMetrics(
         netWorth = BigDecimal("152500.75"),
         cashFlow = CashFlowResult(
-            totalIncomeInBase = BigDecimal("4500.00"),
-            totalExpensesInBase = BigDecimal("-2350.50"),
-            totalTransfersInBase = BigDecimal("500.00"),
-            totalTransferInInBase = BigDecimal("1000.00"),
-            totalTransferOutInBase = BigDecimal("-500.00"),
-            netInBase = BigDecimal("2649.50"),
+            metricsInBase = FinancialSummary(
+                income = BigDecimal("4500.00"),
+                expense = BigDecimal("-2350.50"),
+                transferIn = BigDecimal("1000.00"),
+                transferOut = BigDecimal("-500.00")
+            ),
             breakdown = emptyList(),
             filteredTransactions = emptyList()
         )
@@ -499,12 +500,12 @@ fun NetWorthCardGlassPreview() {
     val previousPeriodMetrics = NetWorthMetrics(
         netWorth = BigDecimal("14100.25"),
         cashFlow = CashFlowResult(
-            totalIncomeInBase = BigDecimal("4200.00"),
-            totalExpensesInBase = BigDecimal("-2100.00"),
-            totalTransfersInBase = BigDecimal("400.00"),
-            totalTransferInInBase = BigDecimal("800.00"),
-            totalTransferOutInBase = BigDecimal("-400.00"),
-            netInBase = BigDecimal("2500.00"),
+            metricsInBase = FinancialSummary(
+                income = BigDecimal("4200.00"),
+                expense = BigDecimal("-2100.00"),
+                transferIn = BigDecimal("800.00"),
+                transferOut = BigDecimal("-400.00")
+            ),
             breakdown = emptyList(),
             filteredTransactions = emptyList()
         )
@@ -566,12 +567,12 @@ private fun NetWorthCardPreviewContent() {
     val currentPeriodMetrics = NetWorthMetrics(
         netWorth = BigDecimal("15250.75"),
         cashFlow = CashFlowResult(
-            totalIncomeInBase = BigDecimal("4500.00"),
-            totalExpensesInBase = BigDecimal("-2350.50"),
-            totalTransfersInBase = BigDecimal("500.00"),
-            totalTransferInInBase = BigDecimal("1000.00"),
-            totalTransferOutInBase = BigDecimal("-500.00"),
-            netInBase = BigDecimal("2649.50"),
+            metricsInBase = FinancialSummary(
+                income = BigDecimal("4500.00"),
+                expense = BigDecimal("-2350.50"),
+                transferIn = BigDecimal("1000.00"),
+                transferOut = BigDecimal("-500.00")
+            ),
             breakdown = emptyList(),
             filteredTransactions = emptyList()
         )
@@ -579,12 +580,12 @@ private fun NetWorthCardPreviewContent() {
     val previousPeriodMetrics = NetWorthMetrics(
         netWorth = BigDecimal("14100.25"),
         cashFlow = CashFlowResult(
-            totalIncomeInBase = BigDecimal("4200.00"),
-            totalExpensesInBase = BigDecimal("-2100.00"),
-            totalTransfersInBase = BigDecimal("400.00"),
-            totalTransferInInBase = BigDecimal("800.00"),
-            totalTransferOutInBase = BigDecimal("-400.00"),
-            netInBase = BigDecimal("2500.00"),
+            metricsInBase = FinancialSummary(
+                income = BigDecimal("4200.00"),
+                expense = BigDecimal("-2100.00"),
+                transferIn = BigDecimal("800.00"),
+                transferOut = BigDecimal("-400.00")
+            ),
             breakdown = emptyList(),
             filteredTransactions = emptyList()
         )

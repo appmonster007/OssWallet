@@ -51,10 +51,9 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
         }.getOrNull()
 
         val result = renderData?.result
-        val incomeInBase = result?.totalIncomeInBase ?: BigDecimal.ZERO
-        val expenseInBase = result?.totalExpensesInBase ?: BigDecimal.ZERO
-        result?.totalTransfersInBase ?: BigDecimal.ZERO
-        val netInBase = result?.netInBase ?: BigDecimal.ZERO
+        val incomeInBase = result?.metricsInBase?.income ?: BigDecimal.ZERO
+        val expenseInBase = result?.metricsInBase?.expense ?: BigDecimal.ZERO
+        val netInBase = result?.metricsInBase?.netFlow ?: BigDecimal.ZERO
 
         val incomeFormatted = formatCurrency(incomeInBase, common.baseCurrency)
         val expenseFormatted = formatCurrency(expenseInBase, common.baseCurrency)
@@ -86,7 +85,7 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
                         ),
                         config = CashFlowCardConfig(cardId = "cf_widget_prev_$widgetId")
                     )
-                }.getOrNull()?.result?.netInBase
+                }.getOrNull()?.result?.metricsInBase?.netFlow
             } else null
         } else null
         
@@ -99,12 +98,10 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
                 arr.put(
                     JSONObject().apply {
                         put("code", item.currency)
-                        put("income", formatCurrency(item.income, item.currency))
-                        put("incomeBase", formatCurrency(item.incomeInBase, common.baseCurrency))
-                        put("expense", formatCurrency(item.expense, item.currency))
-                        put("expenseBase", formatCurrency(item.expenseInBase, common.baseCurrency))
-//                        put("transfer", formatCurrency(item.transfer, item.currency))
-//                        put("transferBase", formatCurrency(item.transferInBase, common.baseCurrency))
+                        put("income", formatCurrency(item.metrics.income, item.currency))
+                        put("incomeBase", formatCurrency(item.metricsInBase.income, common.baseCurrency))
+                        put("expense", formatCurrency(item.metrics.expense, item.currency))
+                        put("expenseBase", formatCurrency(item.metricsInBase.expense, common.baseCurrency))
                     }
                 )
             }

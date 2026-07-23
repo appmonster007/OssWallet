@@ -77,7 +77,7 @@ class CategorySpendingTrendCardComputer(
         }.toMap()
 
         // Group daily rows by bucket index.
-        val byBucket: Map<Int, Map<Long, Map<String, com.osscabinet.ossWallet.domain.service.financial.FinancialSummary>>> =
+        val byBucket: Map<Int, Map<Long, Map<String, FinancialSummary>>> =
             buildMap {
                 dayToBucketIdx.forEach { (dayKey, bucketIdx) ->
                     val daySummaries = dailyData[dayKey] ?: return@forEach
@@ -86,17 +86,7 @@ class CategorySpendingTrendCardComputer(
                         val merged = existing.getOrDefault(catId, emptyMap()).toMutableMap()
                         byCurrency.forEach { (currency, summary) ->
                             val prev = merged[currency]
-                            merged[currency] = if (prev == null) summary else FinancialSummary(
-                                totalAmount = prev.totalAmount.add(summary.totalAmount),
-                                income = prev.income.add(summary.income),
-                                expense = prev.expense.add(summary.expense),
-                                transfer = prev.transfer.add(summary.transfer),
-                                transferIn = prev.transferIn.add(summary.transferIn),
-                                transferOut = prev.transferOut.add(summary.transferOut),
-                                crossCcyTransferIn = prev.crossCcyTransferIn.add(summary.crossCcyTransferIn),
-                                crossCcyTransferOut = prev.crossCcyTransferOut.add(summary.crossCcyTransferOut),
-                                transactionCount = prev.transactionCount + summary.transactionCount
-                            )
+                            merged[currency] = if (prev == null) summary else prev + summary
                         }
                         existing[catId] = merged
                     }
@@ -113,7 +103,7 @@ class CategorySpendingTrendCardComputer(
                 if (config.selectedNatures.size < CategoryNature.entries.size && nature !in config.selectedNatures) return@forEach
 
                 val summary = CurrencyService.calculateTotalFinancialSummary(byCurrency, input.targetCurrency, input.exchangeRates)
-                val amount = config.selectedMetric.extractFrom(summary.toPerspective(config.perspective))
+                val amount = config.selectedMetric.extractFrom(summary)
                 if (amount.signum() != 0) {
                     amountsByCategory[catId] = (amountsByCategory[catId] ?: BigDecimal.ZERO).add(amount)
                     categoryTotalsMap[catId] = (categoryTotalsMap[catId] ?: BigDecimal.ZERO).add(amount)

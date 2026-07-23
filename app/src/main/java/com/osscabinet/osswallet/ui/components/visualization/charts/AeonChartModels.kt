@@ -61,8 +61,12 @@ data class AeonUpSetSet(
     val income: BigDecimal = BigDecimal.ZERO,
     val expense: BigDecimal = BigDecimal.ZERO,
     val transfer: BigDecimal = BigDecimal.ZERO,
+    val inflow: BigDecimal = BigDecimal.ZERO,
+    val outflow: BigDecimal = BigDecimal.ZERO,
     val incomeByCurrency: Map<String, BigDecimal> = emptyMap(),
     val expenseByCurrency: Map<String, BigDecimal> = emptyMap(),
+    val inflowByCurrency: Map<String, BigDecimal> = emptyMap(),
+    val outflowByCurrency: Map<String, BigDecimal> = emptyMap(),
     val transactionCount: Int = 0
 )
 
@@ -72,8 +76,12 @@ data class AeonUpSetIntersection(
     val income: BigDecimal = BigDecimal.ZERO,
     val expense: BigDecimal = BigDecimal.ZERO,
     val transfer: BigDecimal = BigDecimal.ZERO,
+    val inflow: BigDecimal = BigDecimal.ZERO,
+    val outflow: BigDecimal = BigDecimal.ZERO,
     val incomeByCurrency: Map<String, BigDecimal> = emptyMap(),
     val expenseByCurrency: Map<String, BigDecimal> = emptyMap(),
+    val inflowByCurrency: Map<String, BigDecimal> = emptyMap(),
+    val outflowByCurrency: Map<String, BigDecimal> = emptyMap(),
     val count: Int
 )
 
@@ -110,7 +118,7 @@ data class AeonLegendItemData(
     val isEnabled: Boolean,
     val isDashed: Boolean = false,
     val alpha: Float = 1f,
-    val onClick: () -> Unit = {},
+    val onClick: (() -> Unit)? = null,
     val id: String = "",
     val metadata: Map<String, Any> = emptyMap()
 )

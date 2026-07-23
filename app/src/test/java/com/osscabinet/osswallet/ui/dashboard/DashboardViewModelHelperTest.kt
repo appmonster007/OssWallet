@@ -18,9 +18,9 @@ class DashboardViewModelHelperTest {
     fun `CashFlowResult empty returns correct default values`() {
         val emptyResult = CashFlowResult.empty()
 
-        assertEquals(BigDecimal.ZERO, emptyResult.totalIncomeInBase)
-        assertEquals(BigDecimal.ZERO, emptyResult.totalExpensesInBase)
-        assertEquals(BigDecimal.ZERO, emptyResult.netInBase)
+        assertEquals(BigDecimal.ZERO, emptyResult.metricsInBase.income)
+        assertEquals(BigDecimal.ZERO, emptyResult.metricsInBase.expense)
+        assertEquals(BigDecimal.ZERO, emptyResult.metricsInBase.netFlow)
         assertTrue(emptyResult.breakdown.isEmpty())
         assertTrue(emptyResult.filteredTransactions.isEmpty())
     }

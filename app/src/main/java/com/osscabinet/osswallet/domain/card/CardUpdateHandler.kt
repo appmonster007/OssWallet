@@ -74,7 +74,7 @@ interface CardUpdateHandler {
                 fun labelsForUpdated(splitTransfers: Boolean) =
                     AccountingPerspective.labelsFor(perspective, splitTransfers)
 
-                fun <C : CardConfig> adjustMetric(config: C, selectedMetric: ChartMetric, splitTransfers: Boolean): ChartMetric {
+                fun adjustMetric(selectedMetric: ChartMetric, splitTransfers: Boolean): ChartMetric {
                     val labels = labelsForUpdated(splitTransfers)
                     if (selectedMetric in labels) return selectedMetric
                     
@@ -83,18 +83,22 @@ interface CardUpdateHandler {
                         perspective is AccountingPerspective.CashFlow && selectedMetric == ChartMetric.EXPENSE -> ChartMetric.OUTFLOW
                         perspective is AccountingPerspective.Accounting && selectedMetric == ChartMetric.INFLOW -> ChartMetric.INCOME
                         perspective is AccountingPerspective.Accounting && selectedMetric == ChartMetric.OUTFLOW -> ChartMetric.EXPENSE
+                        // Preserve transfer metrics even if not in current labels (they'll be hidden but not lost)
+                        selectedMetric == ChartMetric.TRANSFER || 
+                        selectedMetric == ChartMetric.TRANSFER_IN || 
+                        selectedMetric == ChartMetric.TRANSFER_OUT -> selectedMetric
                         else -> ChartMetric.NET
                     }
                 }
 
                 when (updated) {
-                    is CategoryPieChartCardConfig -> updated.copy(selectedMetric = adjustMetric(updated, updated.selectedMetric, updated.splitTransfers))
-                    is CategoryTreemapCardConfig -> updated.copy(selectedMetric = adjustMetric(updated, updated.selectedMetric, updated.splitTransfers))
-                    is CashFlowComparisonCardConfig -> updated.copy(selectedMetric = adjustMetric(updated, updated.selectedMetric, updated.splitTransfers))
-                    is CategorySpendingTrendCardConfig -> updated.copy(selectedMetric = adjustMetric(updated, updated.selectedMetric, updated.splitTransfers))
-                    is TagUpSetPlotCardConfig -> updated.copy(selectedMetric = adjustMetric(updated, updated.selectedMetric, updated.splitTransfers))
+                    is CategoryPieChartCardConfig -> updated.copy(selectedMetric = adjustMetric(updated.selectedMetric, updated.splitTransfers))
+                    is CategoryTreemapCardConfig -> updated.copy(selectedMetric = adjustMetric(updated.selectedMetric, updated.splitTransfers))
+                    is CashFlowComparisonCardConfig -> updated.copy(selectedMetric = adjustMetric(updated.selectedMetric, updated.splitTransfers))
+                    is CategorySpendingTrendCardConfig -> updated.copy(selectedMetric = adjustMetric(updated.selectedMetric, updated.splitTransfers))
+                    is TagUpSetPlotCardConfig -> updated.copy(selectedMetric = adjustMetric(updated.selectedMetric, updated.splitTransfers))
                     is IncomeExpenseBarCardConfig -> {
-                        val remapped = updated.visibleMetrics.map { m -> adjustMetric(updated, m, updated.splitTransfers) }.toSet()
+                        val remapped = updated.visibleMetrics.map { m -> adjustMetric(m, updated.splitTransfers) }.toSet()
                         updated.copy(visibleMetrics = remapped)
                     }
                     else -> updated

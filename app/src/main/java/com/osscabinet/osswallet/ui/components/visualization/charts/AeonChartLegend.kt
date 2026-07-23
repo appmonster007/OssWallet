@@ -46,7 +46,13 @@ fun AeonLegendItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier
-            .clickable(onClick = item.onClick)
+            .then(
+                if (item.onClick != null) {
+                    Modifier.clickable(onClick = item.onClick)
+                } else {
+                    Modifier
+                }
+            )
             .alpha(if (item.isEnabled) 1f else 0.4f)
     ) {
         if (item.isDashed) {
@@ -65,7 +71,7 @@ fun AeonLegendItem(
                 modifier = Modifier
                     .size(width = 16.dp, height = 3.dp)
                     .background(
-                        color = if (item.isEnabled) item.color.copy(alpha = item.alpha) else item.color.copy(alpha = 0.4f),
+                        color = item.color.copy(alpha = item.alpha),
                         shape = RoundedCornerShape(2.dp)
                     )
             )

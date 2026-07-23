@@ -40,15 +40,15 @@ function renderNetWorthCard(d) {
   };
 
   if (perspective === 'Accounting') {
-    html += renderCol('INC', d.income, d.previousIncome, 'var(--income)', { transactionTypes: ['INCOME'] });
-    html += renderCol('EXP', d.expense, d.previousExpense, 'var(--expense)', { transactionTypes: ['EXPENSE'] });
-    html += renderCol('TRF', d.transfer, d.previousTransfer, 'var(--transfer)', { transactionTypes: ['TRANSFER'] });
+    html += renderCol('INC', d.current.income, d.previous?.income, 'var(--income)', { transactionTypes: ['INCOME'] });
+    html += renderCol('EXP', d.current.expense, d.previous?.expense, 'var(--expense)', { transactionTypes: ['EXPENSE'] });
+    html += renderCol('TRF', d.current.transfer, d.previous?.transfer, 'var(--transfer)', { transactionTypes: ['TRANSFER'] });
   } else {
     // NetWorth DTO has no transferIn/Out split — approximate as income/expense only
-    const inflow  = d.income  || 0;
-    const outflow = d.expense || 0;
-    const prevInflow  = d.previousIncome  ?? null;
-    const prevOutflow = d.previousExpense ?? null;
+    const inflow  = d.current.inflow  || 0;
+    const outflow = d.current.outflow || 0;
+    const prevInflow  = d.previous?.inflow  ?? null;
+    const prevOutflow = d.previous?.outflow ?? null;
     html += renderCol('IN',  inflow,  prevInflow,  'var(--income)',  { transactionTypes: ['INCOME','TRANSFER_INFLOW'] });
     html += renderCol('OUT', outflow, prevOutflow, 'var(--expense)', { transactionTypes: ['EXPENSE','TRANSFER_OUTFLOW'] });
   }

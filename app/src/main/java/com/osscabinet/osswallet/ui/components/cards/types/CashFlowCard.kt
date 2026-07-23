@@ -38,6 +38,7 @@ import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -142,9 +143,9 @@ private fun CashFlowTable(
                 if (showIncome) add(
                     TableColumn(
                         label = "INCOME", key = "inc", color = positiveColor,
-                        totalInBase = result.totalIncomeInBase,
-                        previousTotalInBase = previousResult?.totalIncomeInBase,
-                        nativeOf = { it.income }, baseOf = { it.incomeInBase },
+                        totalInBase = result.metricsInBase.income,
+                        previousTotalInBase = previousResult?.metricsInBase?.income,
+                        nativeOf = { it.metrics.income }, baseOf = { it.metricsInBase.income },
                         onCellClick = { ccy ->
                             callbacks.onClickIncome?.invoke(
                                 baseFilterForDrill.copy(
@@ -158,9 +159,9 @@ private fun CashFlowTable(
                 if (showExpense) add(
                     TableColumn(
                         label = "EXPENSE", key = "exp", color = negativeColor,
-                        totalInBase = result.totalExpensesInBase,
-                        previousTotalInBase = previousResult?.totalExpensesInBase,
-                        nativeOf = { it.expense }, baseOf = { it.expenseInBase },
+                        totalInBase = result.metricsInBase.expense,
+                        previousTotalInBase = previousResult?.metricsInBase?.expense,
+                        nativeOf = { it.metrics.expense }, baseOf = { it.metricsInBase.expense },
                         onCellClick = { ccy ->
                             callbacks.onClickExpense?.invoke(
                                 baseFilterForDrill.copy(
@@ -175,10 +176,10 @@ private fun CashFlowTable(
                     add(
                         TableColumn(
                             label = "TRF IN", key = "trfIn", color = accentColor,
-                            totalInBase = result.totalTransferInInBase,
-                            previousTotalInBase = previousResult?.totalTransferInInBase,
-                            nativeOf = { it.transferIn },
-                            baseOf = { it.transferInInBase },
+                            totalInBase = result.metricsInBase.transferIn,
+                            previousTotalInBase = previousResult?.metricsInBase?.transferIn,
+                            nativeOf = { it.metrics.transferIn },
+                            baseOf = { it.metricsInBase.transferIn },
                             onCellClick = { ccy ->
                                 callbacks.onClickTransfer?.invoke(
                                     baseFilterForDrill.copy(
@@ -193,10 +194,10 @@ private fun CashFlowTable(
                     add(
                         TableColumn(
                             label = "TRF OUT", key = "trfOut", color = accentColor,
-                            totalInBase = result.totalTransferOutInBase,
-                            previousTotalInBase = previousResult?.totalTransferOutInBase,
-                            nativeOf = { it.transferOut },
-                            baseOf = { it.transferOutInBase },
+                            totalInBase = result.metricsInBase.transferOut,
+                            previousTotalInBase = previousResult?.metricsInBase?.transferOut,
+                            nativeOf = { it.metrics.transferOut },
+                            baseOf = { it.metricsInBase.transferOut },
                             onCellClick = { ccy ->
                                 callbacks.onClickTransfer?.invoke(
                                     baseFilterForDrill.copy(
@@ -211,10 +212,10 @@ private fun CashFlowTable(
                 } else if (showTransfer) add(
                     TableColumn(
                         label = "TRANSFER", key = "trf", color = accentColor,
-                        totalInBase = result.totalNetTransferInBase,
-                        previousTotalInBase = previousResult?.totalNetTransferInBase,
-                        nativeOf = { it.netTransfer },
-                        baseOf = { it.netTransferInBase },
+                        totalInBase = result.metricsInBase.transfer,
+                        previousTotalInBase = previousResult?.metricsInBase?.transfer,
+                        nativeOf = { it.metrics.transfer },
+                        baseOf = { it.metricsInBase.transfer },
                         onCellClick = { ccy ->
                             callbacks.onClickTransfer?.invoke(
                                 baseFilterForDrill.copy(
@@ -237,23 +238,23 @@ private fun CashFlowTable(
                     if (showExpense) add(TransactionType.EXPENSE)
                     if (showTransfer) add(TransactionType.TRANSFER_OUTFLOW)
                 }
-                // In CashFlow perspective, toPerspective() absorbs transferIn into income and
-                // zeroes totalTransferInInBase/it.transferIn. Treat showTransfer as showInflow
-                // so transfer-only filters show the absorbed contribution rather than 0.
+                // In CashFlow perspective, inflow/outflow properties already absorb transfers.
+                // Treat showTransfer as showInflow so transfer-only filters show the
+                // absorbed contribution rather than 0.
                 val showInflow  = showIncome || showTransfer
                 val showOutflow = showExpense || showTransfer
-                val currentInflow  = if (showInflow)  result.totalInflowInBase  else BigDecimal.ZERO
-                val prevInflow     = if (showInflow)  previousResult?.totalInflowInBase  else null
-                val currentOutflow = if (showOutflow) result.totalOutflowInBase else BigDecimal.ZERO
-                val prevOutflow    = if (showOutflow) previousResult?.totalOutflowInBase else null
+                val currentInflow  = if (showInflow)  result.metricsInBase.inflow  else BigDecimal.ZERO
+                val prevInflow     = if (showInflow)  previousResult?.metricsInBase?.inflow  else null
+                val currentOutflow = if (showOutflow) result.metricsInBase.outflow else BigDecimal.ZERO
+                val prevOutflow    = if (showOutflow) previousResult?.metricsInBase?.outflow else null
 
                 listOf(
                     TableColumn(
                         label = "INFLOW", key = "in", color = positiveColor,
                         totalInBase = currentInflow,
                         previousTotalInBase = prevInflow,
-                        nativeOf = { if (showInflow)  it.income  else BigDecimal.ZERO },
-                        baseOf   = { if (showInflow)  it.incomeInBase  else BigDecimal.ZERO },
+                        nativeOf = { if (showInflow)  it.metrics.inflow  else BigDecimal.ZERO },
+                        baseOf   = { if (showInflow)  it.metricsInBase.inflow  else BigDecimal.ZERO },
                         onCellClick = { ccy ->
                             callbacks.onClickInflow?.invoke(
                                 baseFilterForDrill.copy(
@@ -267,8 +268,8 @@ private fun CashFlowTable(
                         label = "OUTFLOW", key = "out", color = negativeColor,
                         totalInBase = currentOutflow,
                         previousTotalInBase = prevOutflow,
-                        nativeOf = { if (showOutflow) it.expense  else BigDecimal.ZERO },
-                        baseOf   = { if (showOutflow) it.expenseInBase else BigDecimal.ZERO },
+                        nativeOf = { if (showOutflow) it.metrics.outflow  else BigDecimal.ZERO },
+                        baseOf   = { if (showOutflow) it.metricsInBase.outflow else BigDecimal.ZERO },
                         onCellClick = { ccy ->
                             callbacks.onClickOutflow?.invoke(
                                 baseFilterForDrill.copy(
@@ -640,38 +641,42 @@ private fun CashFlowCardPreviewContent() {
     val sampleBreakdown = listOf(
         CashFlowBreakdownItem(
             currency = "USD",
-            income = BigDecimal("5000.00"),
-            incomeInBase = BigDecimal("5000.00"),
-            expense = BigDecimal("-3500.00"),
-            expenseInBase = BigDecimal("-3500.00"),
-            transfer = BigDecimal("200.00"),
-            transferInBase = BigDecimal("200.00"),
-            transferIn = BigDecimal("400.00"),
-            transferInInBase = BigDecimal("400.00"),
-            transferOut = BigDecimal("-200.00"),
-            transferOutInBase = BigDecimal("-200.00")
+            metrics = FinancialSummary(
+                income = BigDecimal("5000.00"),
+                expense = BigDecimal("-3500.00"),
+                transferIn = BigDecimal("400.00"),
+                transferOut = BigDecimal("-200.00")
+            ),
+            metricsInBase = FinancialSummary(
+                income = BigDecimal("5000.00"),
+                expense = BigDecimal("-3500.00"),
+                transferIn = BigDecimal("400.00"),
+                transferOut = BigDecimal("-200.00")
+            )
         ),
         CashFlowBreakdownItem(
             currency = "EUR",
-            income = BigDecimal("1000.00"),
-            incomeInBase = BigDecimal("1100.00"),
-            expense = BigDecimal("-800.00"),
-            expenseInBase = BigDecimal("-880.00"),
-            transfer = BigDecimal("100.00"),
-            transferInBase = BigDecimal("110.00"),
-            transferIn = BigDecimal("200.00"),
-            transferInInBase = BigDecimal("220.00"),
-            transferOut = BigDecimal("-100.00"),
-            transferOutInBase = BigDecimal("-110.00")
+            metrics = FinancialSummary(
+                income = BigDecimal("1000.00"),
+                expense = BigDecimal("-800.00"),
+                transferIn = BigDecimal("200.00"),
+                transferOut = BigDecimal("-100.00")
+            ),
+            metricsInBase = FinancialSummary(
+                income = BigDecimal("1100.00"),
+                expense = BigDecimal("-880.00"),
+                transferIn = BigDecimal("220.00"),
+                transferOut = BigDecimal("-110.00")
+            )
         )
     )
     val result = CashFlowResult(
-        totalIncomeInBase = BigDecimal("6100.00"),
-        totalExpensesInBase = BigDecimal("-4380.00"),
-        totalTransfersInBase = BigDecimal("310.00"),
-        totalTransferInInBase = BigDecimal("620.00"),
-        totalTransferOutInBase = BigDecimal("-310.00"),
-        netInBase = BigDecimal("1720.00"),
+        metricsInBase = FinancialSummary(
+            income = BigDecimal("6100.00"),
+            expense = BigDecimal("-4380.00"),
+            transferIn = BigDecimal("620.00"),
+            transferOut = BigDecimal("-310.00")
+        ),
         breakdown = sampleBreakdown,
         filteredTransactions = emptyList()
     )

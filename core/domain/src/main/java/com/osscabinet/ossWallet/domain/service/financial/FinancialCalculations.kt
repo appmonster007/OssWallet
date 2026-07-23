@@ -31,8 +31,7 @@ object FinancialCalculations {
         return FinancialDelta(
             absoluteChange = amountDelta,
             percentageChange = percentageDelta,
-            incomeChange = current.income - previous.income,
-            expenseChange = current.expense - previous.expense
+            delta = current - previous
         )
     }
 

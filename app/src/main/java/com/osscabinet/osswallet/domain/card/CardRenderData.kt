@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.model.util.BigDecimalSerializer
 import com.osscabinet.ossWallet.domain.service.*
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
@@ -22,19 +23,8 @@ enum class CashFlowComparisonGranularity { DAY, WEEK, MONTH }
 data class CashFlowTimePoint(
     val label: String,
     val epochMillis: Long,
-    @Serializable(with = BigDecimalSerializer::class)
-    val income: BigDecimal,
-    @Serializable(with = BigDecimalSerializer::class)
-    val expense: BigDecimal,
-    @Serializable(with = BigDecimalSerializer::class)
-    val transfer: BigDecimal,
-    @Serializable(with = BigDecimalSerializer::class)
-    val net: BigDecimal,
-    val bucketEnd: Long = 0L,
-    @Serializable(with = BigDecimalSerializer::class)
-    val transferIn: BigDecimal = BigDecimal.ZERO,
-    @Serializable(with = BigDecimalSerializer::class)
-    val transferOut: BigDecimal = BigDecimal.ZERO
+    val metrics: FinancialSummary,
+    val bucketEnd: Long = 0L
 )
 
 @Serializable
@@ -113,22 +103,15 @@ sealed class CardRenderData {
         val config: CategoryPieChartCardConfig,
         val items: List<CategoryTreeMetrics>,
         val currency: String,
-        @Serializable(with = BigDecimalSerializer::class)
-        val previousTotal: BigDecimal? = null,
-        @Serializable(with = BigDecimalSerializer::class)
-        val incomeTotal: BigDecimal = BigDecimal.ZERO,
-        @Serializable(with = BigDecimalSerializer::class)
-        val expenseTotal: BigDecimal = BigDecimal.ZERO,
-        @Serializable(with = BigDecimalSerializer::class)
-        val transferTotal: BigDecimal = BigDecimal.ZERO,
-        @Serializable(with = BigDecimalSerializer::class)
-        val previousIncomeTotal: BigDecimal? = null,
-        @Serializable(with = BigDecimalSerializer::class)
-        val previousExpenseTotal: BigDecimal? = null,
-        @Serializable(with = BigDecimalSerializer::class)
-        val previousTransferTotal: BigDecimal? = null
+        val metrics: FinancialSummary,
+        val previousMetrics: FinancialSummary? = null
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.CATEGORY_PIE_CHART
+        
+        // Backward compatibility
+        val incomeTotal: BigDecimal get() = metrics.income
+        val expenseTotal: BigDecimal get() = metrics.expense
+        val transferTotal: BigDecimal get() = metrics.transfer
     }
 
     @Serializable
@@ -136,22 +119,15 @@ sealed class CardRenderData {
         val config: CategoryTreemapCardConfig,
         val items: List<CategoryTreeMetrics>,
         val currency: String,
-        @Serializable(with = BigDecimalSerializer::class)
-        val previousTotal: BigDecimal? = null,
-        @Serializable(with = BigDecimalSerializer::class)
-        val incomeTotal: BigDecimal = BigDecimal.ZERO,
-        @Serializable(with = BigDecimalSerializer::class)
-        val expenseTotal: BigDecimal = BigDecimal.ZERO,
-        @Serializable(with = BigDecimalSerializer::class)
-        val transferTotal: BigDecimal = BigDecimal.ZERO,
-        @Serializable(with = BigDecimalSerializer::class)
-        val previousIncomeTotal: BigDecimal? = null,
-        @Serializable(with = BigDecimalSerializer::class)
-        val previousExpenseTotal: BigDecimal? = null,
-        @Serializable(with = BigDecimalSerializer::class)
-        val previousTransferTotal: BigDecimal? = null
+        val metrics: FinancialSummary,
+        val previousMetrics: FinancialSummary? = null
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.CATEGORY_TREEMAP
+
+        // Backward compatibility
+        val incomeTotal: BigDecimal get() = metrics.income
+        val expenseTotal: BigDecimal get() = metrics.expense
+        val transferTotal: BigDecimal get() = metrics.transfer
     }
 
     @Serializable
@@ -268,43 +244,36 @@ sealed class CardRenderData {
 @Serializable
 data class TagUpSetSet(
     val tagName: String,
-    @Serializable(with = BigDecimalSerializer::class)
-    val totalAmount: BigDecimal,
-    @Serializable(with = BigDecimalSerializer::class)
-    val income: BigDecimal = BigDecimal.ZERO,
-    @Serializable(with = BigDecimalSerializer::class)
-    val expense: BigDecimal = BigDecimal.ZERO,
-    @Serializable(with = BigDecimalSerializer::class)
-    val transfer: BigDecimal = BigDecimal.ZERO,
-    @Serializable(with = BigDecimalSerializer::class)
-    val transferIn: BigDecimal = BigDecimal.ZERO,
-    @Serializable(with = BigDecimalSerializer::class)
-    val transferOut: BigDecimal = BigDecimal.ZERO,
-    val incomeByCurrency: Map<String, @Serializable(with = BigDecimalSerializer::class) BigDecimal> = emptyMap(),
-    val expenseByCurrency: Map<String, @Serializable(with = BigDecimalSerializer::class) BigDecimal> = emptyMap(),
-    val transactionCount: Int = 0,
+    val metrics: FinancialSummary,
+    val metricsByCurrency: Map<String, FinancialSummary>,
     val colorHex: Int = -1
-)
+) {
+    // Accessors
+    val totalAmount: BigDecimal get() = metrics.totalAmount
+    val transactionCount: Int get() = metrics.transactionCount
+    
+    val incomeByCurrency: Map<String, BigDecimal> get() = metricsByCurrency.mapValues { it.value.income }
+    val expenseByCurrency: Map<String, BigDecimal> get() = metricsByCurrency.mapValues { it.value.expense }
+    val inflowByCurrency: Map<String, BigDecimal> get() = metricsByCurrency.mapValues { it.value.inflow }
+    val outflowByCurrency: Map<String, BigDecimal> get() = metricsByCurrency.mapValues { it.value.outflow }
+}
 
 @Serializable
 data class TagUpSetIntersection(
     val tags: Set<String>,
-    @Serializable(with = BigDecimalSerializer::class)
-    val amount: BigDecimal,
-    @Serializable(with = BigDecimalSerializer::class)
-    val income: BigDecimal = BigDecimal.ZERO,
-    @Serializable(with = BigDecimalSerializer::class)
-    val expense: BigDecimal = BigDecimal.ZERO,
-    @Serializable(with = BigDecimalSerializer::class)
-    val transfer: BigDecimal = BigDecimal.ZERO,
-    @Serializable(with = BigDecimalSerializer::class)
-    val transferIn: BigDecimal = BigDecimal.ZERO,
-    @Serializable(with = BigDecimalSerializer::class)
-    val transferOut: BigDecimal = BigDecimal.ZERO,
-    val incomeByCurrency: Map<String, @Serializable(with = BigDecimalSerializer::class) BigDecimal> = emptyMap(),
-    val expenseByCurrency: Map<String, @Serializable(with = BigDecimalSerializer::class) BigDecimal> = emptyMap(),
-    val transactionCount: Int
-)
+    val metrics: FinancialSummary,
+    val metricsByCurrency: Map<String, FinancialSummary>
+) {
+    // Accessors
+    val amount: BigDecimal get() = metrics.totalAmount
+    val transactionCount: Int get() = metrics.transactionCount
+    val count: Int get() = transactionCount
+
+    val incomeByCurrency: Map<String, BigDecimal> get() = metricsByCurrency.mapValues { it.value.income }
+    val expenseByCurrency: Map<String, BigDecimal> get() = metricsByCurrency.mapValues { it.value.expense }
+    val inflowByCurrency: Map<String, BigDecimal> get() = metricsByCurrency.mapValues { it.value.inflow }
+    val outflowByCurrency: Map<String, BigDecimal> get() = metricsByCurrency.mapValues { it.value.outflow }
+}
 
 @Serializable
 data class CategorySpendingBucket(

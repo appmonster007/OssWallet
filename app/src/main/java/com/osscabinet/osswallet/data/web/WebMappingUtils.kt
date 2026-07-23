@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import io.ktor.http.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -142,13 +143,25 @@ internal fun TransactionFilter.toFilterSummaryDto(): FilterSummaryDto {
     )
 }
 
+internal fun FinancialSummary.toDto() = FinancialSummaryDto(
+    income = income.toDouble(),
+    expense = expense.toDouble(),
+    transferIn = transferIn.toDouble(),
+    transferOut = transferOut.toDouble(),
+    netFlow = netFlow.toDouble(),
+    transfer = transfer.toDouble(),
+    inflow = inflow.toDouble(),
+    outflow = outflow.toDouble(),
+    transactionCount = transactionCount
+)
+
 internal fun CategoryTreeMetrics.toCategoryBreakdownDto(total: Double, metric: ChartMetric): CategoryBreakdownDto {
     val amountVal = when (metric) {
-        ChartMetric.INCOME -> income.toDouble()
-        ChartMetric.EXPENSE -> expense.abs().toDouble()
-        ChartMetric.INFLOW -> (income + transferIn).toDouble()
-        ChartMetric.OUTFLOW -> (expense + transferOut).abs().toDouble()
-        else -> netBalance.abs().toDouble()
+        ChartMetric.INCOME -> metrics.income.toDouble()
+        ChartMetric.EXPENSE -> metrics.expense.abs().toDouble()
+        ChartMetric.INFLOW -> metrics.inflow.toDouble()
+        ChartMetric.OUTFLOW -> metrics.outflow.abs().toDouble()
+        else -> metrics.netFlow.abs().toDouble()
     }
     val percentageVal = if (total > 0.0 && amountVal.isFinite() && total.isFinite()) {
         runCatching {
@@ -175,14 +188,8 @@ internal fun CardRenderData.toPayloadDto(
 ): CardPayloadDto? = when (this) {
     is CardRenderData.NetWorth -> CardPayloadDto.NetWorth(
         netWorth = currentPeriodMetrics.netWorth.toDouble(),
-        income = currentPeriodMetrics.cashFlow.totalIncomeInBase.toDouble(),
-        expense = currentPeriodMetrics.cashFlow.totalExpensesInBase.toDouble(),
-        transfer = currentPeriodMetrics.cashFlow.totalNetTransferInBase.toDouble(),
-        cashFlow = currentPeriodMetrics.cashFlow.netInBase.toDouble(),
-        previousNetWorth = previousPeriodMetrics?.netWorth?.toDouble(),
-        previousIncome = previousPeriodMetrics?.cashFlow?.totalIncomeInBase?.toDouble(),
-        previousExpense = previousPeriodMetrics?.cashFlow?.totalExpensesInBase?.toDouble(),
-        previousTransfer = previousPeriodMetrics?.cashFlow?.totalNetTransferInBase?.toDouble(),
+        current = currentPeriodMetrics.cashFlow.metricsInBase.toDto(),
+        previous = previousPeriodMetrics?.cashFlow?.metricsInBase?.toDto(),
         currency = this.currency,
         fontSize = config.fontSize,
         perspective = when {
@@ -194,10 +201,7 @@ internal fun CardRenderData.toPayloadDto(
     )
 
     is CardRenderData.CashFlow -> CardPayloadDto.CashFlow(
-        income = result.totalIncomeInBase.toDouble(),
-        expense = result.totalExpensesInBase.toDouble(),
-        transfer = result.totalTransfersInBase.toDouble(),
-        net = result.netInBase.toDouble(),
+        metrics = result.metricsInBase.toDto(),
         currency = this.currency,
         perspective = when {
             config.perspective is AccountingPerspective.Accounting -> "Accounting"
@@ -209,16 +213,8 @@ internal fun CardRenderData.toPayloadDto(
         breakdown = result.breakdown.map { item ->
             CardPayloadDto.CashFlowBreakdownItemDto(
                 currency = item.currency,
-                income = item.income.toDouble(),
-                incomeInBase = item.incomeInBase.toDouble(),
-                expense = item.expense.toDouble(),
-                expenseInBase = item.expenseInBase.toDouble(),
-                transfer = item.transfer.toDouble(),
-                transferInBase = item.transferInBase.toDouble(),
-                transferIn = item.transferIn.toDouble(),
-                transferInInBase = item.transferInInBase.toDouble(),
-                transferOut = item.transferOut.toDouble(),
-                transferOutInBase = item.transferOutInBase.toDouble()
+                metrics = item.metrics.toDto(),
+                metricsInBase = item.metricsInBase.toDto()
             )
         }
     )
@@ -244,9 +240,7 @@ internal fun CardRenderData.toPayloadDto(
                 name = stats.account.name,
                 currency = stats.account.currencyCode,
                 balance = stats.balance.toDouble(),
-                income = stats.currentPeriodFlow.income.toDouble(),
-                expense = stats.currentPeriodFlow.expense.toDouble(),
-                transfer = stats.currentPeriodFlow.netTransfer.toDouble(),
+                metrics = stats.currentPeriodMetrics.toDto(),
                 balanceInBase = stats.balanceInBase.toDouble()
             )
         },
@@ -357,11 +351,11 @@ internal fun CardRenderData.toPayloadDto(
         val metric = config.selectedMetric
         val total = items.sumOf {
             when (metric) {
-                ChartMetric.INCOME -> it.income.toDouble()
-                ChartMetric.EXPENSE -> it.expense.abs().toDouble()
-                ChartMetric.INFLOW -> (it.income + it.transferIn).toDouble()
-                ChartMetric.OUTFLOW -> (it.expense + it.transferOut).abs().toDouble()
-                else -> it.netBalance.abs().toDouble()
+                ChartMetric.INCOME -> it.metrics.income.toDouble()
+                ChartMetric.EXPENSE -> it.metrics.expense.abs().toDouble()
+                ChartMetric.INFLOW -> it.metrics.inflow.toDouble()
+                ChartMetric.OUTFLOW -> it.metrics.outflow.abs().toDouble()
+                else -> it.metrics.netFlow.abs().toDouble()
             }
         }
         CardPayloadDto.CategoryBreakdown(
@@ -374,11 +368,11 @@ internal fun CardRenderData.toPayloadDto(
         val metric = config.selectedMetric
         val total = items.sumOf {
             when (metric) {
-                ChartMetric.INCOME -> it.income.toDouble()
-                ChartMetric.EXPENSE -> it.expense.abs().toDouble()
-                ChartMetric.INFLOW -> (it.income + it.transferIn).toDouble()
-                ChartMetric.OUTFLOW -> (it.expense + it.transferOut).abs().toDouble()
-                else -> it.netBalance.abs().toDouble()
+                ChartMetric.INCOME -> it.metrics.income.toDouble()
+                ChartMetric.EXPENSE -> it.metrics.expense.abs().toDouble()
+                ChartMetric.INFLOW -> it.metrics.inflow.toDouble()
+                ChartMetric.OUTFLOW -> it.metrics.outflow.abs().toDouble()
+                else -> it.metrics.netFlow.abs().toDouble()
             }
         }
         CardPayloadDto.CategoryBreakdown(
@@ -392,27 +386,21 @@ internal fun CardRenderData.toPayloadDto(
             CashFlowPointDto(
                 label = p.label,
                 epochMillis = p.epochMillis,
-                income = p.income.toDouble(),
-                expense = p.expense.toDouble(),
-                net = p.net.toDouble()
+                metrics = p.metrics.toDto()
             )
         },
         previous = previousSeries.points.map { p ->
             CashFlowPointDto(
                 label = p.label,
                 epochMillis = p.epochMillis,
-                income = p.income.toDouble(),
-                expense = p.expense.toDouble(),
-                net = p.net.toDouble()
+                metrics = p.metrics.toDto()
             )
         },
         lastYear = lastYearSeries.points.map { p ->
             CashFlowPointDto(
                 label = p.label,
                 epochMillis = p.epochMillis,
-                income = p.income.toDouble(),
-                expense = p.expense.toDouble(),
-                net = p.net.toDouble()
+                metrics = p.metrics.toDto()
             )
         },
         granularity = granularity.name,
@@ -430,9 +418,7 @@ internal fun CardRenderData.toPayloadDto(
             CashFlowPointDto(
                 label = p.label,
                 epochMillis = p.epochMillis,
-                income = p.income.toDouble(),
-                expense = p.expense.toDouble(),
-                net = p.net.toDouble()
+                metrics = p.metrics.toDto()
             )
         },
         granularity = granularity.name,
@@ -479,16 +465,14 @@ internal fun CardRenderData.toPayloadDto(
         sets = sets.map { s ->
             CardPayloadDto.TagSetDto(
                 tagName = s.tagName, totalAmount = s.totalAmount.toDouble(),
-                income = s.income.toDouble(), expense = s.expense.toDouble(),
-                transactionCount = s.transactionCount,
+                metrics = s.metrics.toDto(),
                 colorHex = if (s.colorHex != -1) "#${(s.colorHex and 0xFFFFFF).toString(16).padStart(6, '0')}" else null
             )
         },
         intersections = intersections.map { i ->
             CardPayloadDto.TagIntersectionDto(
                 tags = i.tags.toList(), amount = i.amount.toDouble(),
-                income = i.income.toDouble(), expense = i.expense.toDouble(),
-                transactionCount = i.transactionCount
+                metrics = i.metrics.toDto()
             )
         },
         baseCurrency = this.currency,
@@ -506,10 +490,7 @@ internal fun CardRenderData.toPayloadDto(
         colorHex = summary.account.colorHex,
         iconName = summary.account.icon,
         structureType = summary.account.structureType.name,
-        income = summary.currentPeriodFlow.income.toDouble(),
-        expense = summary.currentPeriodFlow.expense.toDouble(),
-        transferIn = summary.currentPeriodFlow.transferIn.toDouble(),
-        transferOut = summary.currentPeriodFlow.transferOut.toDouble(),
+        metrics = summary.currentPeriodMetrics.toDto(),
         distribution = summary.currencyBalances.mapValues { it.value.toDouble() },
         showCurrencyBadges = config.showCurrencyBadges,
         showComparison = config.showComparison,

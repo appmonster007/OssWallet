@@ -59,6 +59,19 @@ data class FilterSummaryDto(
     val excludeFuture: Boolean = true
 )
 
+@Serializable
+data class FinancialSummaryDto(
+    val income: Double = 0.0,
+    val expense: Double = 0.0,
+    val transferIn: Double = 0.0,
+    val transferOut: Double = 0.0,
+    val netFlow: Double = 0.0,
+    val transfer: Double = 0.0,
+    val inflow: Double = 0.0,
+    val outflow: Double = 0.0,
+    val transactionCount: Int = 0
+)
+
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @JsonClassDiscriminator("type")
@@ -66,14 +79,8 @@ sealed class CardPayloadDto {
     @Serializable
     data class NetWorth(
         val netWorth: Double,
-        val income: Double,
-        val expense: Double,
-        val transfer: Double = 0.0,
-        val cashFlow: Double,
-        val previousNetWorth: Double? = null,
-        val previousIncome: Double? = null,
-        val previousExpense: Double? = null,
-        val previousTransfer: Double? = null,
+        val current: FinancialSummaryDto,
+        val previous: FinancialSummaryDto? = null,
         val currency: String,
         val fontSize: String = "Medium",
         val perspective: String = "Accounting",
@@ -82,10 +89,7 @@ sealed class CardPayloadDto {
 
     @Serializable
     data class CashFlow(
-        val income: Double,
-        val expense: Double,
-        val transfer: Double = 0.0,
-        val net: Double,
+        val metrics: FinancialSummaryDto,
         val currency: String,
         val perspective: String = "Accounting",
         val showNetColumn: Boolean = false,
@@ -96,16 +100,8 @@ sealed class CardPayloadDto {
     @Serializable
     data class CashFlowBreakdownItemDto(
         val currency: String,
-        val income: Double,
-        val incomeInBase: Double,
-        val expense: Double,
-        val expenseInBase: Double,
-        val transfer: Double,
-        val transferInBase: Double,
-        val transferIn: Double,
-        val transferInInBase: Double,
-        val transferOut: Double,
-        val transferOutInBase: Double
+        val metrics: FinancialSummaryDto,
+        val metricsInBase: FinancialSummaryDto
     )
 
     @Serializable
@@ -140,9 +136,7 @@ sealed class CardPayloadDto {
         val name: String,
         val currency: String,
         val balance: Double,
-        val income: Double,
-        val expense: Double,
-        val transfer: Double = 0.0,
+        val metrics: FinancialSummaryDto,
         val balanceInBase: Double? = null
     )
 
@@ -262,9 +256,7 @@ sealed class CardPayloadDto {
     data class TagSetDto(
         val tagName: String,
         val totalAmount: Double,
-        val income: Double,
-        val expense: Double,
-        val transactionCount: Int,
+        val metrics: FinancialSummaryDto,
         val colorHex: String? = null
     )
 
@@ -272,9 +264,7 @@ sealed class CardPayloadDto {
     data class TagIntersectionDto(
         val tags: List<String>,
         val amount: Double,
-        val income: Double,
-        val expense: Double,
-        val transactionCount: Int
+        val metrics: FinancialSummaryDto
     )
 
     @Serializable
@@ -287,10 +277,7 @@ sealed class CardPayloadDto {
         val colorHex: String,
         val iconName: String,
         val structureType: String,
-        val income: Double,
-        val expense: Double,
-        val transferIn: Double,
-        val transferOut: Double,
+        val metrics: FinancialSummaryDto,
         val distribution: Map<String, Double> = emptyMap(),
         val showCurrencyBadges: Boolean = true,
         val showComparison: Boolean = false,

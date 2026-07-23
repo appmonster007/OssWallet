@@ -211,17 +211,7 @@ class CashFlowComparisonCardComputer(
                 val existing = getOrDefault(bucketIdx, emptyMap()).toMutableMap()
                 daySummaries.forEach { (currency, summary) ->
                     val prev = existing[currency]
-                    existing[currency] = if (prev == null) summary else FinancialSummary(
-                        totalAmount = prev.totalAmount.add(summary.totalAmount),
-                        income = prev.income.add(summary.income),
-                        expense = prev.expense.add(summary.expense),
-                        transfer = prev.transfer.add(summary.transfer),
-                        transferIn = prev.transferIn.add(summary.transferIn),
-                        transferOut = prev.transferOut.add(summary.transferOut),
-                        crossCcyTransferIn = prev.crossCcyTransferIn.add(summary.crossCcyTransferIn),
-                        crossCcyTransferOut = prev.crossCcyTransferOut.add(summary.crossCcyTransferOut),
-                        transactionCount = prev.transactionCount + summary.transactionCount
-                    )
+                    existing[currency] = if (prev == null) summary else prev + summary
                 }
                 put(bucketIdx, existing)
             }
@@ -261,23 +251,17 @@ class CashFlowComparisonCardComputer(
             }
 
             val ps = FinancialSummary(
-                totalAmount = BigDecimal.ZERO,
-                income = rawIncome, expense = rawExpense,
-                transfer = rawTrfIn.add(rawTrfOut),
-                transferIn = rawTrfIn, transferOut = rawTrfOut,
-                transactionCount = 0
-            ).toPerspective(perspective)
+                income = rawIncome,
+                expense = rawExpense,
+                transferIn = rawTrfIn,
+                transferOut = rawTrfOut
+            )
 
             points.add(
                 CashFlowTimePoint(
                     label = label,
                     epochMillis = bucketStart,
-                    income   = ps.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                    expense  = ps.expense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                    transfer = ps.transfer.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                    net      = (ps.income + ps.expense + ps.transfer).setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                    transferIn  = ps.transferIn.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                    transferOut = ps.transferOut.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                    metrics = ps.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
                 )
             )
         }

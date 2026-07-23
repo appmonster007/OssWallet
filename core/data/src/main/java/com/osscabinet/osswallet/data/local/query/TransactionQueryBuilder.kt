@@ -163,12 +163,12 @@ class TransactionQueryBuilder {
         // Amount Filters
         val minAmount = filter.minAmount
         if (minAmount != null) {
-            where.append(" AND amount >= ?")
+            where.append(" AND ABS(CAST(amount AS REAL)) >= ?")
             args.add(minAmount)
         }
         val maxAmount = filter.maxAmount
         if (maxAmount != null) {
-            where.append(" AND amount <= ?")
+            where.append(" AND ABS(CAST(amount AS REAL)) <= ?")
             args.add(maxAmount)
         }
 

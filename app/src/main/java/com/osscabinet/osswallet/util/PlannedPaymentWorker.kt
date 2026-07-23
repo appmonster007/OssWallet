@@ -16,6 +16,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
@@ -39,12 +40,7 @@ class PlannedPaymentWorker(
 
         due.filter { it.status == PlannedPaymentStatus.ACTIVE }.forEach { payment ->
             if (payment.autoConfirm) {
-                val amount =
-                    if (payment.entryMode == EntryMode.INCOME || payment.entryMode == EntryMode.TRANSFER) {
-                        payment.amount.abs()
-                    } else {
-                        payment.amount.abs().negate()
-                    }
+                val amount = TransactionEntryService.getSignedAmount(payment.amount, payment.entryMode)
 
                 val request = TransactionRequest(
                     name = allCategories.find { it.id == payment.categoryId }?.name

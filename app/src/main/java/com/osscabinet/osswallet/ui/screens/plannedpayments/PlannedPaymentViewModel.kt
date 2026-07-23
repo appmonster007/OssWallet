@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -212,7 +213,7 @@ class PlannedPaymentViewModel @Inject constructor(
 
         return TransactionRequest(
             name = categoryName,
-            amount = amount,
+            amount = TransactionEntryService.getSignedAmount(amount, entryMode),
             entryMode = entryMode,
             accountId = accountId,
             currency = currency,

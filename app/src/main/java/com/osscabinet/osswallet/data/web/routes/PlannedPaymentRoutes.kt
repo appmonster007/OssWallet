@@ -13,8 +13,8 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
-import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import io.ktor.http.*
 import io.ktor.server.request.*
@@ -26,7 +26,6 @@ import java.math.BigDecimal
 fun Route.plannedPaymentRoutes(
     authSessionManager: AuthSessionManager,
     plannedPaymentRepository: PlannedPaymentRepository,
-    transactionRepository: TransactionRepository,
     accountRepository: AccountRepository,
     categoryRepository: CategoryRepository,
     settingsRepository: SettingsRepository,
@@ -228,27 +227,35 @@ fun Route.plannedPaymentRoutes(
                     )
                 val now = System.currentTimeMillis()
 
-                // Create transaction from the planned payment
-                val tx = Transaction(
+                val request = TransactionRequest(
                     name = payment.name,
-                    amount = payment.amount,
-                    timestamp = now,
+                    amount = TransactionEntryService.getSignedAmount(payment.amount, payment.entryMode),
+                    entryMode = payment.entryMode,
+                    accountId = payment.accountId.takeIf { !it.isNullOrBlank() } ?: return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiResponse<Unit>(success = false, error = "Account not set on payment")
+                    ),
                     currency = payment.currency,
-                    transactionType = when (payment.entryMode) {
-                        com.osscabinet.ossWallet.domain.model.EntryMode.EXPENSE -> com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE
-                        com.osscabinet.ossWallet.domain.model.EntryMode.INCOME -> com.osscabinet.ossWallet.domain.model.TransactionType.INCOME
-                        com.osscabinet.ossWallet.domain.model.EntryMode.TRANSFER -> com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_OUTFLOW
-                    },
-                    accountId = payment.accountId,
                     categoryId = payment.categoryId,
                     tags = payment.tags,
                     paymentMethod = payment.paymentMethod ?: PaymentMethod.CASH,
+                    timestamp = now,
                     payee = payment.payee ?: "",
                     note = payment.note ?: "",
-                    status = payment.transactionStatus,
-                    sourcePlannedPaymentId = payment.id
+                    targetAccountId = payment.targetAccountId,
+                    targetCurrency = payment.targetCurrency,
+                    transferRate = payment.transferRate,
+                    sourcePlannedPaymentId = payment.id,
+                    status = payment.transactionStatus
                 )
-                transactionRepository.insertTransaction(tx, profileId)
+
+                transactionManager.handleSaveTransaction(
+                    existingTransaction = null,
+                    request = request,
+                    profileId = profileId,
+                    sourcePlannedPaymentId = id,
+                    scheduledDate = now
+                )
 
                 // Advance next due date
                 val nextDue = PlannedPaymentService.calculateNextDueDate(payment, now)
@@ -325,7 +332,7 @@ fun Route.plannedPaymentRoutes(
 
                 val request = TransactionRequest(
                     name = payment.name,
-                    amount = payment.amount,
+                    amount = TransactionEntryService.getSignedAmount(payment.amount, payment.entryMode),
                     entryMode = payment.entryMode,
                     accountId = payment.accountId,
                     categoryId = payment.categoryId,

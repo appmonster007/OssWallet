@@ -92,10 +92,10 @@ abstract class TransactionDao {
     @Query("SELECT * FROM transactions WHERE profileId = :profileId")
     abstract suspend fun getAllTransactionsSync(profileId: Int): List<TransactionEntity>
 
-    @Query("SELECT currency, SUM(CASE WHEN transactionType = 'income' THEN amount ELSE 0 END) as totalIncome, SUM(CASE WHEN transactionType = 'expense' THEN amount ELSE 0 END) as totalExpense FROM transactions WHERE profileId = :profileId GROUP BY currency")
+    @Query("SELECT currency, SUM(CASE WHEN transactionType = 'income' THEN CAST(amount AS REAL) ELSE 0 END) as totalIncome, SUM(CASE WHEN transactionType = 'expense' THEN CAST(amount AS REAL) ELSE 0 END) as totalExpense FROM transactions WHERE profileId = :profileId GROUP BY currency")
     abstract suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary>
 
-    @Query("SELECT currency, SUM(CASE WHEN transactionType = 'income' THEN amount ELSE 0 END) as totalIncome, SUM(CASE WHEN transactionType = 'expense' THEN amount ELSE 0 END) as totalExpense FROM transactions WHERE profileId = :profileId AND timestamp >= :start AND timestamp <= :end GROUP BY currency")
+    @Query("SELECT currency, SUM(CASE WHEN transactionType = 'income' THEN CAST(amount AS REAL) ELSE 0 END) as totalIncome, SUM(CASE WHEN transactionType = 'expense' THEN CAST(amount AS REAL) ELSE 0 END) as totalExpense FROM transactions WHERE profileId = :profileId AND timestamp >= :start AND timestamp <= :end GROUP BY currency")
     abstract suspend fun getCurrencySummariesInRange(
         profileId: Int,
         start: Long,

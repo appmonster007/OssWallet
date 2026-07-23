@@ -15,6 +15,7 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
@@ -216,7 +217,7 @@ fun Route.transactionRoutes(
 
                 val domainRequest = TransactionRequest(
                     name = req.name,
-                    amount = BigDecimal.valueOf(req.amount),
+                    amount = TransactionEntryService.getSignedAmount(BigDecimal.valueOf(req.amount), txType),
                     timestamp = req.timestamp,
                     currency = req.currency,
                     entryMode = txType,
@@ -332,7 +333,7 @@ fun Route.transactionRoutes(
 
                 val domainRequest = TransactionRequest(
                     name = req.name ?: old.name,
-                    amount = req.amount?.let { BigDecimal.valueOf(it) } ?: old.amount,
+                    amount = req.amount?.let { TransactionEntryService.getSignedAmount(BigDecimal.valueOf(it), txType) } ?: old.amount,
                     timestamp = req.timestamp ?: old.timestamp,
                     currency = req.currency ?: old.currency,
                     entryMode = txType,
@@ -465,17 +466,11 @@ fun Route.transactionRoutes(
                 txCal.get(Calendar.YEAR) == year && txCal.get(Calendar.MONTH) + 1 == month
             }
 
-            val netWorth = accounts.sumOf { account ->
-                allTransactions
-                    .filter { it.accountId == account.id }
-                    .fold(BigDecimal.ZERO) { acc, tx ->
-                        when (tx.transactionType) {
-                            TransactionType.INCOME -> acc + tx.amount
-                            TransactionType.EXPENSE -> acc - tx.amount
-                            TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> acc + tx.amount
-                        }
-                    }.toDouble()
-            }
+                val netWorth = accounts.sumOf { account ->
+                    allTransactions
+                        .filter { it.accountId == account.id }
+                        .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+                }
 
             val income = monthlyTx
                 .filter { it.transactionType == TransactionType.INCOME }

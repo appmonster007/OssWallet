@@ -42,6 +42,7 @@ import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.category.CategoryHierarchyCache
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
@@ -646,7 +647,7 @@ class DashboardViewModel @Inject constructor(
             val profileId = settingsRepository.currentProfileId.first()
             val request = TransactionRequest(
                 name = payment.name,
-                amount = payment.amount,
+                amount = TransactionEntryService.getSignedAmount(payment.amount, payment.entryMode),
                 entryMode = payment.entryMode,
                 accountId = payment.accountId.takeIf { !it.isNullOrBlank() } ?: return@launch,
                 currency = payment.currency,

@@ -392,7 +392,7 @@ class TransactionManager(
             accountId = accountId,
             categoryId = categoryId
         )).copy(
-            amount = amount,
+            amount = TransactionEntryService.getSignedAmount(amount, entryMode),
             transactionType = defaultType,
             accountId = accountId,
             currency = currency,

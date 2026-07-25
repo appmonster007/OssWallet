@@ -1,9 +1,14 @@
 package com.osscabinet.ossWallet.ui.navigation.graphs
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import com.osscabinet.ossWallet.ui.navigation.ACCOUNT_ENTRY_RESULT_KEY
+import com.osscabinet.ossWallet.ui.navigation.AccountEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.AccountListRoute
 import com.osscabinet.ossWallet.ui.navigation.CategoryListRoute
 import com.osscabinet.ossWallet.ui.navigation.CsvImportRoute
@@ -45,6 +50,7 @@ import com.osscabinet.ossWallet.ui.screens.settings.ShortlistedCurrenciesActions
 import com.osscabinet.ossWallet.ui.screens.settings.ShortlistedCurrenciesScreen
 import com.osscabinet.ossWallet.ui.screens.smartsuggestions.SmartSuggestionsActions
 import com.osscabinet.ossWallet.ui.screens.smartsuggestions.SmartSuggestionsScreen
+import kotlinx.serialization.json.Json
 
 fun NavGraphBuilder.settingsGraph(
     navController: NavHostController,
@@ -168,8 +174,18 @@ fun NavGraphBuilder.settingsGraph(
         exitTransition = { ExitTransitionSpec },
         popEnterTransition = { PopEnterTransitionSpec },
         popExitTransition = { PopExitTransitionSpec }
-    ) {
+    ) { backStackEntry ->
         val vm: CsvImportViewModel = hiltViewModel()
+        val savedStateHandle = backStackEntry.savedStateHandle
+        val accountDraftJson by savedStateHandle
+            .getStateFlow<String?>(ACCOUNT_ENTRY_RESULT_KEY, null)
+            .collectAsStateWithLifecycle()
+        LaunchedEffect(accountDraftJson) {
+            accountDraftJson?.let { json ->
+                vm.onAccountDraftReceived(Json.decodeFromString(json))
+                savedStateHandle[ACCOUNT_ENTRY_RESULT_KEY] = null
+            }
+        }
         CsvImportScreen(
             viewModel = vm,
             onNavigateBack = { navController.popBackStack() },
@@ -177,6 +193,15 @@ fun NavGraphBuilder.settingsGraph(
                 navController.navigate(DashboardRoute()) {
                     popUpTo(0) { inclusive = true }
                 }
+            },
+            onCreateNewAccount = { csvName, currency ->
+                navController.navigate(
+                    AccountEntryRoute(
+                        prefillName = csvName,
+                        prefillCurrency = currency,
+                        isDraftMode = true
+                    )
+                )
             }
         )
     }

@@ -17,6 +17,7 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.CsvImportService
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryDraft
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -90,6 +91,37 @@ class CsvImportViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf("INR", "USD", "EUR"))
 
     private var pendingUri: String? = null
+
+    // Name of the CSV account currently being configured via the real AccountEntryScreen,
+    // awaiting a result on `onAccountDraftReceived`. The screen runs in draft mode for this
+    // flow, so nothing is written to the database until the final "Import" step — there is no
+    // orphan-account case to guard against.
+    private var pendingAccountCreationName: String? = null
+
+    /** Call before navigating to the real AccountEntryScreen to configure a new account for [csvName]. */
+    fun beginAccountCreation(csvName: String) {
+        pendingAccountCreationName = csvName
+    }
+
+    /** Call when the real AccountEntryScreen returns a configured (not yet persisted) [draft]. */
+    fun onAccountDraftReceived(draft: AccountEntryDraft) {
+        val csvName = pendingAccountCreationName ?: return
+        pendingAccountCreationName = null
+        val existing = _accountMappings.value[csvName]
+            ?: EntityMapping(csvName, null, EntityMapping.EntityType.ACCOUNT)
+        updateAccountMapping(
+            csvName,
+            existing.copy(
+                existingId = null,
+                currencyCode = draft.primaryCurrency,
+                allowedCurrencies = draft.allowedCurrencies,
+                openingBalances = draft.initialBalances,
+                structureType = draft.structureType,
+                iconName = draft.iconName,
+                colorHex = draft.colorHex
+            )
+        )
+    }
 
     fun loadFile(uriString: String, context: Context) {
         pendingUri = uriString

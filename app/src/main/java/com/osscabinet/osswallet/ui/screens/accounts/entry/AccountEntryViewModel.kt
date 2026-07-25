@@ -2,9 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.accounts.entry
 
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
@@ -144,14 +142,22 @@ class AccountEntryViewModel @Inject constructor(
         }
     }
 
-    fun initialize(accountId: String? = null) {
+    fun initialize(
+        accountId: String? = null,
+        prefillName: String? = null,
+        prefillCurrency: String? = null,
+        isDraftMode: Boolean = false
+    ) {
         if (accountId == null) {
             _state.update {
+                val currency = prefillCurrency ?: it.defaultCurrency
                 it.copy(
                     isEditMode = false,
+                    isDraftMode = isDraftMode,
                     accountId = null,
-                    primaryCurrency = it.defaultCurrency,
-                    allowedCurrencies = if (it.defaultCurrency.isNotBlank()) setOf(it.defaultCurrency) else emptySet()
+                    accountName = prefillName ?: it.accountName,
+                    primaryCurrency = currency,
+                    allowedCurrencies = if (currency.isNotBlank()) setOf(currency) else emptySet()
                 )
             }
             return
@@ -202,6 +208,7 @@ class AccountEntryViewModel @Inject constructor(
                     accentColorHex = event.type.colorHex
                 )
             }
+
             is AccountEntryEvent.SetPrimaryCurrency -> _state.update { it.copy(primaryCurrency = event.currency) }
             is AccountEntryEvent.SetAllowedCurrencies -> {
                 _state.update { state ->
@@ -382,19 +389,45 @@ class AccountEntryViewModel @Inject constructor(
                 )
             }
 
-            is AccountEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
+            is AccountEntryEvent.TriggerNavigation -> _state.update {
+                val accountId = (event.result as? AccountEntryResult.Persisted)?.accountId
+                it.copy(
+                    accountId = accountId ?: it.accountId,
+                    pendingResult = event.result,
+                    navTriggered = true
+                )
+            }
+
             is AccountEntryEvent.DeleteAccount -> {
                 // Handled via separate callback to allow navigation control
             }
         }
     }
 
-    fun saveAccount(onSuccess: () -> Unit) {
+    fun saveAccount(onSuccess: (AccountEntryResult) -> Unit) {
         val s = _state.value
         if (!s.canSave) return
 
+        if (s.isDraftMode) {
+            onSuccess(
+                AccountEntryResult.Draft(
+                    AccountEntryDraft(
+                        name = s.accountName,
+                        structureType = s.structureType.name,
+                        primaryCurrency = s.primaryCurrency,
+                        allowedCurrencies = s.allowedCurrencies.toList(),
+                        initialBalances = s.initialBalances,
+                        iconName = s.selectedIconName,
+                        colorHex = s.accentColorHex
+                    )
+                )
+            )
+            return
+        }
+
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
+            val savedAccountId: String
             if (s.isEditMode && s.existingAccount != null) {
                 accountRepository.updateAccount(
                     s.existingAccount.copy(
@@ -408,15 +441,21 @@ class AccountEntryViewModel @Inject constructor(
                     profileId
                 )
                 s.pendingAdjustmentDeltas.forEach { (currency, delta) ->
-                    accountUseCases.createBalanceAdjustment(s.accountId!!, currency, delta, profileId)
+                    accountUseCases.createBalanceAdjustment(
+                        s.accountId!!,
+                        currency,
+                        delta,
+                        profileId
+                    )
                 }
                 s.allowedCurrencies.forEach { currency ->
                     val signed =
                         s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
                     accountUseCases.upsertInitialBalance(s.accountId!!, currency, signed, profileId)
                 }
+                savedAccountId = s.accountId!!
             } else {
-                accountUseCases.createAccountWithInitialBalances(
+                savedAccountId = accountUseCases.createAccountWithInitialBalances(
                     name = s.accountName,
                     initialBalances = s.initialBalances,
                     currency = s.primaryCurrency,
@@ -427,7 +466,7 @@ class AccountEntryViewModel @Inject constructor(
                     profileId = profileId
                 )
             }
-            onSuccess()
+            onSuccess(AccountEntryResult.Persisted(savedAccountId))
         }
     }
 

@@ -10,6 +10,7 @@ import com.osscabinet.ossWallet.test.FakeAccountRepository
 import com.osscabinet.ossWallet.test.FakeCategoryRepository
 import com.osscabinet.ossWallet.test.FakeCsvImportService
 import com.osscabinet.ossWallet.test.FakeSettingsRepository
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryDraft
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
@@ -124,17 +125,62 @@ class CsvImportViewModelTest {
     }
 
     @Test
-    fun `selectAllNewAccounts preserves a previously configured mapping's other fields`() = runViewModelTest {
-        loadFileAndGeneratePreview()
-        viewModel.updateAccountMapping(
-            "Cash",
-            viewModel.accountMappings.value.getValue("Cash").copy(currencyCode = "EUR")
-        )
+    fun `selectAllNewAccounts preserves a previously configured mapping's other fields`() =
+        runViewModelTest {
+            loadFileAndGeneratePreview()
+            viewModel.updateAccountMapping(
+                "Cash",
+                viewModel.accountMappings.value.getValue("Cash").copy(currencyCode = "EUR")
+            )
 
-        viewModel.selectAllNewAccounts()
+            viewModel.selectAllNewAccounts()
+
+            val cashMapping = viewModel.accountMappings.value.getValue("Cash")
+            assertNull(cashMapping.existingId)
+            assertEquals("EUR", cashMapping.currencyCode)
+        }
+
+    @Test
+    fun `onAccountDraftReceived maps the draft onto the pending csv account`() = runViewModelTest {
+        loadFileAndGeneratePreview()
+
+        viewModel.beginAccountCreation("Cash")
+        viewModel.onAccountDraftReceived(
+            AccountEntryDraft(
+                name = "Cash",
+                structureType = "CASH",
+                primaryCurrency = "EUR",
+                allowedCurrencies = listOf("EUR"),
+                initialBalances = mapOf("EUR" to "50"),
+                iconName = "wallet",
+                colorHex = "#123456"
+            )
+        )
 
         val cashMapping = viewModel.accountMappings.value.getValue("Cash")
         assertNull(cashMapping.existingId)
         assertEquals("EUR", cashMapping.currencyCode)
+        assertEquals("CASH", cashMapping.structureType)
+        assertEquals("#123456", cashMapping.colorHex)
+    }
+
+    @Test
+    fun `onAccountDraftReceived without a pending creation is a no-op`() = runViewModelTest {
+        loadFileAndGeneratePreview()
+        val before = viewModel.accountMappings.value
+
+        viewModel.onAccountDraftReceived(
+            AccountEntryDraft(
+                name = "Stray",
+                structureType = "CASH",
+                primaryCurrency = "EUR",
+                allowedCurrencies = listOf("EUR"),
+                initialBalances = emptyMap(),
+                iconName = "wallet",
+                colorHex = "#123456"
+            )
+        )
+
+        assertEquals(before, viewModel.accountMappings.value)
     }
 }

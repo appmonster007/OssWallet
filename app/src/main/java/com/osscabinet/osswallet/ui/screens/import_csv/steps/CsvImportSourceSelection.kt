@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -179,6 +180,8 @@ private fun SourceAppSelectionContent(
         )
     }
 
+    BackupWarningCard()
+
     AdvancedDelimiterEncodingSection(session, onApplyDelimiterAndEncoding)
 
     Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
@@ -289,6 +292,41 @@ private fun AdvancedDelimiterEncodingSection(
                 style = AppTextStyles.caption,
                 color = AppColors.contentSecondary
             )
+        }
+    }
+}
+
+@Composable
+private fun BackupWarningCard() {
+    Surface(
+        color = AppColors.errorContainer.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        border = BorderStroke(0.5.dp, AppColors.error.copy(alpha = 0.5f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Warning,
+                contentDescription = null,
+                tint = AppColors.error,
+                modifier = Modifier.size(20.dp)
+            )
+            Column {
+                Text(
+                    "Recommendation: Take a Backup",
+                    style = AppTextStyles.listItemTitle,
+                    color = AppColors.error
+                )
+                Text(
+                    "Large imports can significantly change your data. We recommend taking a manual backup from Data Management settings before proceeding, as imports cannot be easily undone.",
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary
+                )
+            }
         }
     }
 }

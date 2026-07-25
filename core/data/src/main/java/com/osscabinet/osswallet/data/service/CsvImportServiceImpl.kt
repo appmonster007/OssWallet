@@ -7,14 +7,12 @@ import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
-import com.osscabinet.ossWallet.data.local.dao.ImportBatchDao
 import com.osscabinet.ossWallet.data.local.dao.ProfileDao
 import com.osscabinet.ossWallet.data.local.dao.TagDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.data.local.entity.ImportBatchEntity
 import com.osscabinet.ossWallet.data.local.entity.TagEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity
@@ -65,7 +63,6 @@ class CsvImportServiceImpl @Inject constructor(
     private val assetLoader: BudgetBakersAssetLoader,
     private val transactionLinkDao: TransactionLinkDao,
     private val dispatcherProvider: DispatcherProvider,
-    private val importBatchDao: ImportBatchDao,
     private val json: Json
 ) : CsvImportService {
 
@@ -272,8 +269,7 @@ class CsvImportServiceImpl @Inject constructor(
         existingAccounts: Map<String, AccountEntity>,
         existingCats: List<CategoryEntity>,
         profileId: Int,
-        profileBaseCurrency: String,
-        batchId: String
+        profileBaseCurrency: String
     ): ResolvedEntities {
         val accountMap = existingAccounts.mapValues { it.value.id }.toMutableMap()
         val accountCurrencyMap = existingAccounts.mapValues { it.value.currencyCode }.toMutableMap()
@@ -327,8 +323,7 @@ class CsvImportServiceImpl @Inject constructor(
                                             payee = "",
                                             note = "Opening balance before import",
                                             profileId = profileId,
-                                            status = TransactionStatus.CLEARED,
-                                            importBatchId = batchId
+                                            status = TransactionStatus.CLEARED
                                         )
                                     )
                                 }
@@ -798,7 +793,6 @@ class CsvImportServiceImpl @Inject constructor(
         val profileId = settingsDataStore.currentProfileId.first()
         val profile = profileDao.getProfileById(profileId)
         val profileBaseCurrency = profile?.baseCurrency ?: "INR"
-        val batchId = UUID.randomUUID().toString()
 
         database.withTransaction {
             val existingAccounts =
@@ -814,8 +808,7 @@ class CsvImportServiceImpl @Inject constructor(
                 existingAccounts,
                 existingCats,
                 profileId,
-                profileBaseCurrency,
-                batchId
+                profileBaseCurrency
             )
             val accountMap = resolved.accountMap
             val categoryMap = resolved.categoryMap
@@ -854,8 +847,7 @@ class CsvImportServiceImpl @Inject constructor(
                                                 null,
                                                 profileId,
                                                 existingTags,
-                                                existingKeys,
-                                                batchId
+                                                existingKeys
                                             )
                                             imported++; rerouted++
                                         } else skipped++
@@ -878,8 +870,7 @@ class CsvImportServiceImpl @Inject constructor(
                                                 null,
                                                 profileId,
                                                 existingTags,
-                                                existingKeys,
-                                                batchId
+                                                existingKeys
                                             )
                                             imported++; rerouted++
                                         } else skipped += 2
@@ -902,8 +893,7 @@ class CsvImportServiceImpl @Inject constructor(
                                                 tid,
                                                 profileId,
                                                 existingTags,
-                                                existingKeys,
-                                                batchId
+                                                existingKeys
                                             )
                                             imported += 2
                                         } else skipped += 2
@@ -960,8 +950,7 @@ class CsvImportServiceImpl @Inject constructor(
                                                 location = row["payee"]?.takeIf { it.isNotBlank() },
                                                 warrantyExpiration = row["warranty_in_month"]?.toIntOrNull()
                                                     ?.let { timestamp + (it * 2592000000L) },
-                                                status = TransactionStatus.CLEARED,
-                                                importBatchId = batchId
+                                                status = TransactionStatus.CLEARED
                                             )
                                         )
                                         existingKeys.add(getDuplicateKey(timestamp, amount, note))
@@ -992,25 +981,14 @@ class CsvImportServiceImpl @Inject constructor(
                             null,
                             profileId,
                             existingTags,
-                            existingKeys,
-                            batchId
+                            existingKeys
                         )
                         imported++
                     } else skipped++
                 }
             }
             onProgress(1.0f)
-            importBatchDao.insertBatch(
-                ImportBatchEntity(
-                    id = batchId,
-                    sourceApp = session.sourceApp?.name ?: "GENERIC",
-                    createdAt = System.currentTimeMillis(),
-                    transactionCount = imported,
-                    createdAccountIds = resolved.createdAccountIds,
-                    createdCategoryIds = resolved.createdCategoryIds
-                )
-            )
-            Result.success(ImportSummary(imported, skipped, errors, rerouted, batchId))
+            Result.success(ImportSummary(imported, skipped, errors, rerouted))
         }
     }
 
@@ -1025,7 +1003,6 @@ class CsvImportServiceImpl @Inject constructor(
     ): Result<ImportSummary> = withContext(dispatcherProvider.io) {
         val profileId = settingsDataStore.currentProfileId.first()
         val profileBaseCurrency = profileDao.getProfileById(profileId)?.baseCurrency ?: "INR"
-        val batchId = UUID.randomUUID().toString()
 
         database.withTransaction {
             val existingAccounts =
@@ -1041,8 +1018,7 @@ class CsvImportServiceImpl @Inject constructor(
                 existingAccounts,
                 existingCats,
                 profileId,
-                profileBaseCurrency,
-                batchId
+                profileBaseCurrency
             )
             val accountMap = resolved.accountMap
             val categoryMap = resolved.categoryMap
@@ -1097,8 +1073,7 @@ class CsvImportServiceImpl @Inject constructor(
                                                 null,
                                                 profileId,
                                                 existingTags,
-                                                existingKeys,
-                                                batchId
+                                                existingKeys
                                             )
                                             imported++; rerouted++
                                         } else skipped++
@@ -1121,8 +1096,7 @@ class CsvImportServiceImpl @Inject constructor(
                                                 null,
                                                 profileId,
                                                 existingTags,
-                                                existingKeys,
-                                                batchId
+                                                existingKeys
                                             )
                                             imported++; rerouted++
                                         } else skipped += 2
@@ -1145,8 +1119,7 @@ class CsvImportServiceImpl @Inject constructor(
                                                 tid,
                                                 profileId,
                                                 existingTags,
-                                                existingKeys,
-                                                batchId
+                                                existingKeys
                                             )
                                             imported += 2
                                         } else skipped += 2
@@ -1213,8 +1186,7 @@ class CsvImportServiceImpl @Inject constructor(
                                                 paymentMethod = PaymentMethod.MOBILE_PAYMENT,
                                                 note = note,
                                                 profileId = profileId,
-                                                status = TransactionStatus.CLEARED,
-                                                importBatchId = batchId
+                                                status = TransactionStatus.CLEARED
                                             )
                                         )
                                         existingKeys.add(getDuplicateKey(timestamp, amount, note))
@@ -1245,25 +1217,14 @@ class CsvImportServiceImpl @Inject constructor(
                             null,
                             profileId,
                             existingTags,
-                            existingKeys,
-                            batchId
+                            existingKeys
                         )
                         imported++
                     } else skipped++
                 }
             }
             onProgress(1.0f)
-            importBatchDao.insertBatch(
-                ImportBatchEntity(
-                    id = batchId,
-                    sourceApp = session.sourceApp?.name ?: "GENERIC",
-                    createdAt = System.currentTimeMillis(),
-                    transactionCount = imported,
-                    createdAccountIds = resolved.createdAccountIds,
-                    createdCategoryIds = resolved.createdCategoryIds
-                )
-            )
-            Result.success(ImportSummary(imported, skipped, errors, rerouted, batchId))
+            Result.success(ImportSummary(imported, skipped, errors, rerouted))
         }
     }
 
@@ -1278,7 +1239,6 @@ class CsvImportServiceImpl @Inject constructor(
     ): Result<ImportSummary> = withContext(dispatcherProvider.io) {
         val profileId = settingsDataStore.currentProfileId.first()
         val profileBaseCurrency = profileDao.getProfileById(profileId)?.baseCurrency ?: "INR"
-        val batchId = UUID.randomUUID().toString()
 
         database.withTransaction {
             val existingAccounts =
@@ -1294,8 +1254,7 @@ class CsvImportServiceImpl @Inject constructor(
                 existingAccounts,
                 existingCats,
                 profileId,
-                profileBaseCurrency,
-                batchId
+                profileBaseCurrency
             )
             val accountMap = resolved.accountMap
             val categoryMap = resolved.categoryMap
@@ -1381,8 +1340,7 @@ class CsvImportServiceImpl @Inject constructor(
                                 )] ?: "",
                                 note = note,
                                 profileId = profileId,
-                                status = TransactionStatus.CLEARED,
-                                importBatchId = batchId
+                                status = TransactionStatus.CLEARED
                             )
                         )
                         existingKeys.add(getDuplicateKey(timestamp, amount, note))
@@ -1394,17 +1352,7 @@ class CsvImportServiceImpl @Inject constructor(
                 }
             }
             onProgress(1.0f)
-            importBatchDao.insertBatch(
-                ImportBatchEntity(
-                    id = batchId,
-                    sourceApp = session.sourceApp?.name ?: "GENERIC",
-                    createdAt = System.currentTimeMillis(),
-                    transactionCount = imported,
-                    createdAccountIds = resolved.createdAccountIds,
-                    createdCategoryIds = resolved.createdCategoryIds
-                )
-            )
-            Result.success(ImportSummary(imported, skipped, errors, batchId = batchId))
+            Result.success(ImportSummary(imported, skipped, errors))
         }
     }
 
@@ -1446,11 +1394,10 @@ class CsvImportServiceImpl @Inject constructor(
         targetAid: String?,
         profileId: Int,
         existingTags: MutableList<TagEntity>,
-        existingKeys: MutableSet<String>,
-        batchId: String
+        existingKeys: MutableSet<String>
     ) {
         transactionDao.insertTransaction(
-            createTx(t, aid, type, amount, targetAid, profileId, existingTags, batchId = batchId)
+            createTx(t, aid, type, amount, targetAid, profileId, existingTags)
         )
         existingKeys.add(getDuplicateKey(t.timestamp, t.amount, t.note))
     }
@@ -1462,8 +1409,7 @@ class CsvImportServiceImpl @Inject constructor(
         tid: String,
         profileId: Int,
         existingTags: MutableList<TagEntity>,
-        existingKeys: MutableSet<String>,
-        batchId: String
+        existingKeys: MutableSet<String>
     ) {
         val rate = if (source.currency != target.currency && source.amount.signum() != 0) {
             target.amount.abs().divide(source.amount.abs(), 8, RoundingMode.HALF_UP)
@@ -1479,8 +1425,7 @@ class CsvImportServiceImpl @Inject constructor(
                 profileId,
                 existingTags,
                 target.currency,
-                rate,
-                batchId
+                rate
             )
         )
         val targetTxId = transactionDao._insertTransaction(
@@ -1497,8 +1442,7 @@ class CsvImportServiceImpl @Inject constructor(
                     rate,
                     8,
                     RoundingMode.HALF_UP
-                ) else BigDecimal.ONE,
-                batchId
+                ) else BigDecimal.ONE
             )
         )
         if (sourceTxId > 0 && targetTxId > 0) {
@@ -1521,8 +1465,7 @@ class CsvImportServiceImpl @Inject constructor(
         profileId: Int,
         existingTags: MutableList<TagEntity>,
         targetCurrency: String? = null,
-        rate: BigDecimal = BigDecimal.ONE,
-        batchId: String? = null
+        rate: BigDecimal = BigDecimal.ONE
     ) =
         TransactionEntity(
             id = 0,
@@ -1545,8 +1488,7 @@ class CsvImportServiceImpl @Inject constructor(
             status = TransactionStatus.CLEARED,
             targetAccountId = targetAid,
             targetCurrency = targetCurrency,
-            transferRate = rate,
-            importBatchId = batchId
+            transferRate = rate
         )
 
     private fun handleDup(

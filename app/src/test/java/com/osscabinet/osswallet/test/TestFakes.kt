@@ -15,7 +15,6 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
-import com.osscabinet.ossWallet.domain.repository.ImportBatchRepository
 import com.osscabinet.ossWallet.domain.repository.RateRefreshError
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
@@ -251,30 +250,6 @@ class FakeTagRepository : TagRepository {
     override suspend fun deleteTagAndRemoveFromTransactions(tag: Tag) {}
     override suspend fun getTransactionCountForTag(tagName: String, profileId: Int): Int = 0
     override suspend fun updateTag(oldName: String, newTag: Tag) {}
-}
-
-// ── FakeImportBatchRepository ────────────────────────────────────────────────
-
-class FakeImportBatchRepository(
-    var undoResult: Boolean = true
-) : ImportBatchRepository {
-    val recordedBatches = mutableListOf<String>()
-    val undoCalls = mutableListOf<String>()
-
-    override suspend fun recordBatch(
-        batchId: String,
-        sourceApp: String,
-        transactionCount: Int,
-        createdAccountIds: List<String>,
-        createdCategoryIds: List<Long>
-    ) {
-        recordedBatches.add(batchId)
-    }
-
-    override suspend fun undoImport(batchId: String): Boolean {
-        undoCalls.add(batchId)
-        return undoResult
-    }
 }
 
 // ── FakeCsvImportService ─────────────────────────────────────────────────────

@@ -60,8 +60,6 @@ fun CsvImportScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val result by viewModel.result.collectAsStateWithLifecycle()
-    val resultTimestamp by viewModel.resultTimestamp.collectAsStateWithLifecycle()
-    val undoCompleted by viewModel.undoCompleted.collectAsStateWithLifecycle()
     val importProgress by viewModel.importProgress.collectAsStateWithLifecycle()
     val errorMessage by viewModel.error.collectAsStateWithLifecycle()
 
@@ -82,16 +80,9 @@ fun CsvImportScreen(
         uri?.let { viewModel.loadFile(it.toString(), context) }
     }
 
-    if (undoCompleted) {
-        onNavigateBack()
-        return
-    }
-
     if (result != null) {
         ImportResultScreen(
             result = result!!,
-            resultTimestamp = resultTimestamp,
-            onUndo = { viewModel.undoImport() },
             onViewTransactions = onNavigateToDashboard,
             onReviewMappings = { viewModel.resetToColumnMapping() },
             onBack = onNavigateBack

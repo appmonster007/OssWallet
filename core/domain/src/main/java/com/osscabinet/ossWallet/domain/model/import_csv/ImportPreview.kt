@@ -13,8 +13,7 @@ data class ImportSummary(
     val imported: Int,
     val skipped: Int,
     val errors: List<ParseError>,
-    val transfersRerouted: Int = 0,
-    val batchId: String = ""
+    val transfersRerouted: Int = 0
 )
 
 data class CategoryToMap(

@@ -71,7 +71,6 @@ class CsvImportServiceInstrumentedTest {
             assetLoader = BudgetBakersAssetLoader(context),
             transactionLinkDao = db.transactionLinkDao(),
             dispatcherProvider = com.osscabinet.ossWallet.core.util.RealDispatcherProvider(),
-            importBatchDao = db.importBatchDao(),
             json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
         )
     }

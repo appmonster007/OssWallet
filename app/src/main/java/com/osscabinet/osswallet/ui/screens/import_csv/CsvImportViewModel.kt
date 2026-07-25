@@ -15,7 +15,6 @@ import com.osscabinet.ossWallet.domain.model.import_csv.ImportSummary
 import com.osscabinet.ossWallet.domain.model.import_csv.OssWalletField
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
-import com.osscabinet.ossWallet.domain.repository.ImportBatchRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.CsvImportService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,8 +33,7 @@ class CsvImportViewModel @Inject constructor(
     private val csvImportService: CsvImportService,
     private val settingsRepository: SettingsRepository,
     private val accountRepository: AccountRepository,
-    private val categoryRepository: CategoryRepository,
-    private val importBatchRepository: ImportBatchRepository
+    private val categoryRepository: CategoryRepository
 ) : ViewModel() {
 
     sealed class Step {
@@ -62,12 +60,6 @@ class CsvImportViewModel @Inject constructor(
 
     private val _result = MutableStateFlow<ImportSummary?>(null)
     val result: StateFlow<ImportSummary?> = _result
-
-    private val _resultTimestamp = MutableStateFlow<Long?>(null)
-    val resultTimestamp: StateFlow<Long?> = _resultTimestamp
-
-    private val _undoCompleted = MutableStateFlow(false)
-    val undoCompleted: StateFlow<Boolean> = _undoCompleted
 
     private val _importProgress = MutableStateFlow(0f)
     val importProgress: StateFlow<Float> = _importProgress
@@ -257,7 +249,6 @@ class CsvImportViewModel @Inject constructor(
                 )
                 if (result.isSuccess) {
                     _result.value = result.getOrNull()
-                    _resultTimestamp.value = System.currentTimeMillis()
                 } else {
                     _error.value = result.exceptionOrNull()?.message ?: "Import failed"
                 }
@@ -271,24 +262,6 @@ class CsvImportViewModel @Inject constructor(
         }
     }
 
-    /** Reverses the just-completed import, within the client-enforced undo window. */
-    fun undoImport() {
-        val batchId = _result.value?.batchId?.takeIf { it.isNotBlank() } ?: return
-        viewModelScope.launch {
-            _isLoading.value = true
-            _loadingMessage.value = "Undoing import…"
-            try {
-                if (importBatchRepository.undoImport(batchId)) {
-                    _undoCompleted.value = true
-                }
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Undo failed"
-            } finally {
-                _isLoading.value = false
-                _loadingMessage.value = null
-            }
-        }
-    }
 
     private fun resolveFinalMappings(): List<EntityMapping> {
         val preview = _preview.value ?: return emptyList()

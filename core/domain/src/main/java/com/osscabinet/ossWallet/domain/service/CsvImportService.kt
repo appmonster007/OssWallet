@@ -15,6 +15,7 @@ interface CsvImportService {
         inputStream: InputStream,
         duplicatePolicy: DuplicatePolicy,
         entityMappings: List<EntityMapping>,
-        selectedDuplicateRowIndices: Set<Int>
+        selectedDuplicateRowIndices: Set<Int>,
+        onProgress: (Float) -> Unit = {}
     ): Result<ImportSummary>
 }

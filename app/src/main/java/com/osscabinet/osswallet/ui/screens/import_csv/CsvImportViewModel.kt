@@ -61,6 +61,9 @@ class CsvImportViewModel @Inject constructor(
     private val _result = MutableStateFlow<ImportSummary?>(null)
     val result: StateFlow<ImportSummary?> = _result
 
+    private val _importProgress = MutableStateFlow(0f)
+    val importProgress: StateFlow<Float> = _importProgress
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
@@ -191,6 +194,7 @@ class CsvImportViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             _loadingMessage.value = "Importing transactions…"
+            _importProgress.value = 0f
             _error.value = null
             try {
                 val stream = context.contentResolver.openInputStream(pendingUri!!.toUri())!!
@@ -203,7 +207,8 @@ class CsvImportViewModel @Inject constructor(
                     stream,
                     _duplicatePolicy.value,
                     finalMappings,
-                    _selectedDuplicates.value
+                    _selectedDuplicates.value,
+                    onProgress = { progress -> _importProgress.value = progress }
                 )
                 if (result.isSuccess) {
                     _result.value = result.getOrNull()
@@ -215,6 +220,7 @@ class CsvImportViewModel @Inject constructor(
             } finally {
                 _isLoading.value = false
                 _loadingMessage.value = null
+                _importProgress.value = 0f
             }
         }
     }

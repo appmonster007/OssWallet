@@ -125,7 +125,6 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     // CSV and document file (web routes, backup UI in :app)
-    implementation(libs.commons.csv)
     implementation(libs.univocity.parsers)
     implementation(libs.androidx.documentfile)
 

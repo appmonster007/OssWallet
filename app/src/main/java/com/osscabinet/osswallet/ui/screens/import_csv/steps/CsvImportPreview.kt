@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.import_csv.DuplicatePolicy
 import com.osscabinet.ossWallet.domain.model.import_csv.ImportPreview
 import com.osscabinet.ossWallet.ui.components.AeonDashedButton
+import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -98,6 +99,8 @@ fun PreviewStep(
                 onToggleDetail = { showErrorsDetail = !showErrorsDetail }
             )
         }
+
+        SampleTransactionsSection(preview)
 
         Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
         AeonDashedButton(
@@ -386,6 +389,120 @@ private fun ParseErrorsSection(
                     style = AppTextStyles.caption,
                     color = AppColors.error
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SampleTransactionsSection(preview: ImportPreview) {
+    HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
+    AeonSectionHeader(title = "SAMPLE RESULT")
+    Text(
+        "Here is how some transactions will look in the app after import.",
+        style = AppTextStyles.caption,
+        color = AppColors.contentSecondary
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
+        preview.duplicates.take(2).forEach { dup ->
+            SampleTransactionItem(
+                title = dup.existingNote.ifBlank { "Transaction" },
+                category = "Matched Category",
+                amount = dup.incomingValues.find { it.contains(".") || it.toIntOrNull() != null }
+                    ?: "0.00",
+                date = "Oct 24, 2023",
+                isDuplicate = true
+            )
+        }
+        // If not enough duplicates, show some generic ones
+        if (preview.duplicates.size < 3) {
+            SampleTransactionItem(
+                title = "Grocery Shopping",
+                category = "Food & Drinks",
+                amount = "-45.00",
+                date = "Oct 25, 2023",
+                isDuplicate = false
+            )
+        }
+    }
+}
+
+@Composable
+private fun SampleTransactionItem(
+    title: String,
+    category: String,
+    amount: String,
+    date: String,
+    isDuplicate: Boolean
+) {
+    Surface(
+        color = AppColors.cardSurface,
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        border = BorderStroke(0.5.dp, AppColors.outlineVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(AeonTheme.dimensions.cardPadding),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = AppColors.surfaceContainerHigh
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.AutoAwesome,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .size(24.dp),
+                    tint = AppColors.primary
+                )
+            }
+            Spacer(Modifier.width(AeonTheme.dimensions.spacingMd))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    title,
+                    style = AppTextStyles.listItemTitle,
+                    color = AppColors.contentPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    category,
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    amount,
+                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
+                    color = if (amount.startsWith("-")) AppColors.error else AppColors.primary
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (isDuplicate) {
+                        Surface(
+                            color = AppColors.accentContainer,
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            Text(
+                                "Duplicate",
+                                modifier = Modifier.padding(horizontal = 4.dp),
+                                style = AppTextStyles.overlineLabel,
+                                color = AppColors.onAccentContainer
+                            )
+                        }
+                    }
+                    Text(
+                        date,
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary
+                    )
+                }
             }
         }
     }

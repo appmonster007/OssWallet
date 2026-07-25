@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.import_csv
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -59,6 +60,7 @@ fun CsvImportScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val result by viewModel.result.collectAsStateWithLifecycle()
+    val importProgress by viewModel.importProgress.collectAsStateWithLifecycle()
     val errorMessage by viewModel.error.collectAsStateWithLifecycle()
 
     // Collecting ViewModel states for transient UI logic
@@ -130,7 +132,7 @@ fun CsvImportScreen(
                             )
 
                             if (isLoading) {
-                                LoadingBanner(loadingMessage)
+                                LoadingBanner(loadingMessage, importProgress)
                             }
                         }
                     }
@@ -159,7 +161,7 @@ private fun StepContent(
     isLoading: Boolean,
     errorMessage: String?,
     accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
-    categories: List<com.osscabinet.ossWallet.domain.model.Category>,
+    categories: List<Category>,
     shortlistedCurrencies: List<String>,
     accountMappings: Map<String, com.osscabinet.ossWallet.domain.model.import_csv.EntityMapping>,
     categoryMappings: Map<String, com.osscabinet.ossWallet.domain.model.import_csv.EntityMapping>,
@@ -239,7 +241,7 @@ private fun StepContent(
 }
 
 @Composable
-private fun LoadingBanner(message: String?) {
+private fun LoadingBanner(message: String?, progress: Float) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -248,23 +250,34 @@ private fun LoadingBanner(message: String?) {
         shape = androidx.compose.foundation.shape.RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         shadowElevation = 4.dp
     ) {
-        Row(
-            modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(
-                AeonTheme.dimensions.spacingMd
-            )
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(20.dp),
-                strokeWidth = 2.dp,
-                color = AppColors.primary
-            )
-            Text(
-                text = message ?: "Working…",
-                style = AppTextStyles.listItemTitle,
-                color = AppColors.contentPrimary
-            )
+        Column(modifier = Modifier.padding(AeonTheme.dimensions.cardPadding)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(
+                    AeonTheme.dimensions.spacingMd
+                )
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = AppColors.primary
+                )
+                Text(
+                    text = message ?: "Working…",
+                    style = AppTextStyles.listItemTitle,
+                    color = AppColors.contentPrimary
+                )
+            }
+            if (progress > 0f) {
+                Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
+                androidx.compose.material3.LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = AppColors.primary,
+                    trackColor = AppColors.outlineVariant,
+                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                )
+            }
         }
     }
 }

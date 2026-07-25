@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
@@ -162,16 +163,49 @@ private fun CsvPreviewTable(session: CsvImportSession) {
     ) {
         Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
             Column {
+                // Mapping labels row
+                Row(modifier = Modifier.background(AppColors.surfaceContainerLow)) {
+                    session.headers.forEachIndexed { index, _ ->
+                        val mappedField = session.mapping.entries.find { it.value == index }?.key
+                        Box(
+                            modifier = Modifier
+                                .width(120.dp)
+                                .height(32.dp)
+                                .padding(horizontal = 4.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (mappedField != null) {
+                                Surface(
+                                    color = AppColors.primaryContainer,
+                                    shape = RoundedCornerShape(4.dp)
+                                ) {
+                                    Text(
+                                        text = mappedField.displayName.take(12),
+                                        modifier = Modifier.padding(horizontal = 4.dp),
+                                        style = AppTextStyles.overlineLabel,
+                                        color = AppColors.primary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Header row
                 Row(modifier = Modifier.background(AppColors.cardSurfaceRaised)) {
-                    session.headers.forEach { header ->
+                    session.headers.forEachIndexed { index, header ->
+                        val isMapped = session.mapping.values.contains(index)
                         Text(
                             text = header,
                             modifier = Modifier
                                 .width(120.dp)
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
-                            style = AppTextStyles.tableColumnHeader,
-                            color = AppColors.contentSecondary,
+                            style = AppTextStyles.tableColumnHeader.copy(
+                                fontWeight = if (isMapped) FontWeight.Bold else FontWeight.Normal
+                            ),
+                            color = if (isMapped) AppColors.contentPrimary else AppColors.contentSecondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             softWrap = false
@@ -183,14 +217,17 @@ private fun CsvPreviewTable(session: CsvImportSession) {
                     val rowBg =
                         if (rowIdx % 2 == 0) AppColors.cardSurface else AppColors.cardSurfaceRaised
                     Row(modifier = Modifier.background(rowBg)) {
-                        row.forEach { cell ->
+                        row.forEachIndexed { colIdx, cell ->
+                            val isMapped = session.mapping.values.contains(colIdx)
                             Text(
                                 text = cell,
                                 modifier = Modifier
                                     .width(120.dp)
                                     .padding(horizontal = 12.dp, vertical = 8.dp),
                                 style = AppTextStyles.caption,
-                                color = AppColors.contentSecondary,
+                                color = if (isMapped) AppColors.contentPrimary else AppColors.contentSecondary.copy(
+                                    alpha = 0.6f
+                                ),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 softWrap = false

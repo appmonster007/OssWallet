@@ -745,11 +745,17 @@ class BackupRepositoryImpl @Inject constructor(
         settings.ignoreLeadingWhitespaces = true
         settings.ignoreTrailingWhitespaces = true
         val parser = CsvParser(settings)
-        file.reader(Charsets.UTF_8).use { reader ->
-            val records = parser.parseAllRecords(reader)
-            val headers = parser.getContext().headers()?.map { it.trim() } ?: return
-            records.forEach { record ->
-                action(headers.zip(record.values).toMap())
+        withContext(Dispatchers.IO) {
+            file.reader(Charsets.UTF_8).use { reader ->
+                val headers = mutableListOf<String>()
+                val iterator = parser.iterateRecords(reader).iterator()
+                if (iterator.hasNext()) {
+                    headers.addAll(parser.getContext().headers()?.map { it.trim() } ?: emptyList())
+                    while (iterator.hasNext()) {
+                        val record = iterator.next()
+                        action(headers.zip(record.values).toMap())
+                    }
+                }
             }
         }
     }
@@ -952,10 +958,19 @@ class BackupRepositoryImpl @Inject constructor(
         )
     }
 
-    private fun parseTagNames(s: String?): Set<String> =
-        if (s.isNullOrBlank()) emptySet() else s.trim().removePrefix("[").removeSuffix("]")
+    private fun parseTagNames(s: String?): Set<String> {
+        if (s.isNullOrBlank()) return emptySet()
+        if (s.startsWith("[")) {
+            try {
+                return json.decodeFromString<Set<String>>(s)
+            } catch (e: Exception) {
+                // fall through to legacy split
+            }
+        }
+        return s.trim().removePrefix("[").removeSuffix("]")
             .split("|", ";", ",").map { it.trim().removePrefix("\"").removeSuffix("\"").trim() }
             .filter { it.isNotBlank() }.toSet()
+    }
 
     private suspend fun restoreLoans(file: File) = parseCsv(file) { p ->
         p["filterId"]?.toLongOrNull()?.let { fid ->

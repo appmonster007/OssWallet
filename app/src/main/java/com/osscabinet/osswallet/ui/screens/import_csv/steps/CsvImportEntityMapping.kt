@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -35,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.CategoryNature
@@ -210,6 +212,10 @@ private fun MainEntityMappingContent(
         CategoriesSection(filteredGroups, categoryMappings, onSelectGroup)
     }
 
+    if (filteredAccounts.isEmpty() && filteredGroups.isEmpty() && searchQuery.isNotBlank()) {
+        NoSearchResultsState(searchQuery)
+    }
+
     Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
     AeonDashedButton(
         onClick = onConfirm,
@@ -217,6 +223,36 @@ private fun MainEntityMappingContent(
         icon = Icons.AutoMirrored.Rounded.ArrowForward
     )
     Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
+}
+
+@Composable
+private fun NoSearchResultsState(searchQuery: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = AeonTheme.dimensions.spacingXl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.SearchOff,
+            contentDescription = null,
+            tint = AppColors.contentSecondary,
+            modifier = Modifier.size(48.dp)
+        )
+        Text(
+            "No matches for \"$searchQuery\"",
+            style = AppTextStyles.listItemTitle,
+            color = AppColors.contentPrimary
+        )
+        Text(
+            "Try a different search term, or clear the search to see all accounts and categories.",
+            style = AppTextStyles.caption,
+            color = AppColors.contentSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingLg)
+        )
+    }
 }
 
 @Composable
@@ -517,6 +553,57 @@ private fun EntityMappingStepPreview() {
                 categoryMappings = emptyMap(),
                 parentGroupMappings = emptyMap(),
                 searchQuery = "",
+                onSearchQueryChange = {},
+                onSelectAllNewAccounts = {},
+                onUpdateAccountMapping = { _, _ -> },
+                onUpdateCategoryMapping = { _, _ -> },
+                onUpdateParentGroupMapping = { _, _ -> },
+                onCreateNewAccount = {},
+                onConfirmMappings = {}
+            )
+        }
+    }
+}
+
+@ThemePreviews
+@Composable
+private fun EntityMappingStepNoSearchResultsPreview() {
+    OssWalletTheme {
+        Surface(color = AppColors.screenBackground) {
+            EntityMappingStep(
+                preview = ImportPreview(
+                    totalRows = 10,
+                    validRows = 8,
+                    allCsvAccounts = listOf(
+                        com.osscabinet.ossWallet.domain.model.import_csv.AccountToMap(
+                            "HDFC CSV",
+                            "1",
+                            "HDFC Bank",
+                            5,
+                            true
+                        )
+                    ),
+                    newCategories = listOf(
+                        com.osscabinet.ossWallet.domain.model.import_csv.CategoryToMap(
+                            "Dining",
+                            null,
+                            true,
+                            "Food"
+                        )
+                    ),
+                    duplicates = emptyList(),
+                    parseErrors = emptyList(),
+                    unpairedTransferRows = 0
+                ),
+                accounts = listOf("1" to "HDFC Bank"),
+                categories = listOf("10" to "Food"),
+                rootCategories = listOf("10" to "Food"),
+                fullCategories = emptyList(),
+                shortlistedCurrencies = listOf("INR", "USD"),
+                accountMappings = emptyMap(),
+                categoryMappings = emptyMap(),
+                parentGroupMappings = emptyMap(),
+                searchQuery = "zzz no match",
                 onSearchQueryChange = {},
                 onSelectAllNewAccounts = {},
                 onUpdateAccountMapping = { _, _ -> },

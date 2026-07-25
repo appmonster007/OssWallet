@@ -261,7 +261,7 @@ private fun DuplicatePolicySection(
     }
 
     AnimatedVisibility(visible = showDetail) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
             preview.duplicates.forEachIndexed { idx, dup ->
                 DuplicateRowItem(
                     idx = idx,
@@ -352,7 +352,10 @@ private fun DuplicateRowItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = AeonTheme.dimensions.cardPadding, vertical = 8.dp),
+                .padding(
+                    horizontal = AeonTheme.dimensions.cardPadding,
+                    vertical = AeonTheme.dimensions.spacingSm
+                ),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
@@ -396,7 +399,7 @@ private fun ParseErrorsSection(
         )
     }
     AnimatedVisibility(visible = showDetail) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
             errors.forEach { err ->
                 Text(
                     "Row ${err.rowIndex}: ${err.reason}",

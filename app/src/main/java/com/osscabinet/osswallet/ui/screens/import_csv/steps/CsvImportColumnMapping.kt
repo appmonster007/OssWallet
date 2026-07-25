@@ -116,7 +116,10 @@ private fun SourceAppDropdown(
                 border = BorderStroke(1.dp, AppColors.outlineVariant)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(
+                        horizontal = AeonTheme.dimensions.spacingMd,
+                        vertical = AeonTheme.dimensions.spacingSm
+                    ),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
@@ -273,7 +276,7 @@ private fun ReadOnlyMappings(session: CsvImportSession, onCustomise: () -> Unit)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = AeonTheme.dimensions.spacingXs),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -323,7 +326,7 @@ private fun FieldMappingItem(
                 style = AppTextStyles.listItemTitle,
                 color = AppColors.contentPrimary
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(AeonTheme.dimensions.spacingSm))
             Box(modifier = Modifier.weight(1.5f)) {
                 Surface(
                     onClick = { expanded = true },
@@ -333,7 +336,10 @@ private fun FieldMappingItem(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(
+                            horizontal = AeonTheme.dimensions.spacingMd,
+                            vertical = AeonTheme.dimensions.spacingSm
+                        ),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -415,6 +421,36 @@ private fun ColumnMappingStepPreview() {
                     headers = listOf("date", "account", "category", "amount", "note"),
                     previewRows = listOf(
                         listOf("2023-10-01", "HDFC", "Food", "500", "Dinner"),
+                        listOf("2023-10-02", "Cash", "Travel", "100", "Bus")
+                    ),
+                    mapping = mapOf(
+                        OssWalletField.DATE to 0,
+                        OssWalletField.ACCOUNT to 1,
+                        OssWalletField.CATEGORY to 2,
+                        OssWalletField.AMOUNT to 3,
+                        OssWalletField.NOTE to 4
+                    ),
+                    sourceApp = ImportSourceApp.GENERIC
+                ),
+                onUpdateMapping = { _, _ -> },
+                onApplyPreset = {},
+                onNext = {},
+                isLoading = false
+            )
+        }
+    }
+}
+
+@ThemePreviews
+@Composable
+private fun ColumnMappingStepNonNumericAmountPreview() {
+    OssWalletTheme {
+        Surface(color = AppColors.screenBackground) {
+            ColumnMappingStep(
+                session = CsvImportSession(
+                    headers = listOf("date", "account", "category", "amount", "note"),
+                    previewRows = listOf(
+                        listOf("2023-10-01", "HDFC", "Food", "N/A", "Dinner"),
                         listOf("2023-10-02", "Cash", "Travel", "100", "Bus")
                     ),
                     mapping = mapOf(

@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
@@ -44,6 +45,7 @@ import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.DefaultAccentColorHex
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
@@ -87,11 +89,15 @@ private fun FileNotLoadedContent(fileLoadError: String?, onLoadFile: () -> Unit)
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
     ) {
         if (fileLoadError != null) {
+            val errorColor = AppColors.error
+            val errorAccentHex = remember(errorColor) {
+                String.format("#%06X", 0xFFFFFF and errorColor.toArgb())
+            }
             AeonHeroHeader(
                 title = "File Error",
                 subtitle = "Could not open CSV file",
                 iconName = "BrokenImage",
-                accentColorHex = "#E53935",
+                accentColorHex = errorAccentHex,
                 isLeftAligned = false
             )
             Text(
@@ -106,7 +112,7 @@ private fun FileNotLoadedContent(fileLoadError: String?, onLoadFile: () -> Unit)
                 title = "Import Transactions",
                 subtitle = "Supports BudgetBakers, Cashew and Generic CSV",
                 iconName = "FileOpen",
-                accentColorHex = "#004D5F",
+                accentColorHex = DefaultAccentColorHex,
                 isLeftAligned = false
             )
             Text(
@@ -139,7 +145,10 @@ private fun SupportedAppsChips() {
             ) {
                 Text(
                     label,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    modifier = Modifier.padding(
+                        horizontal = AeonTheme.dimensions.spacingMd,
+                        vertical = 6.dp
+                    ),
                     style = AppTextStyles.chipLabel,
                     color = AppColors.contentSecondary
                 )
@@ -228,7 +237,11 @@ private fun AdvancedDelimiterEncodingSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Delimiter", style = AppTextStyles.overlineLabel, color = AppColors.contentSecondary)
+                Text(
+                    "Delimiter",
+                    style = AppTextStyles.overlineLabel,
+                    color = AppColors.contentSecondary
+                )
                 Box {
                     Surface(
                         onClick = { delimiterMenuOpen = true },
@@ -236,12 +249,18 @@ private fun AdvancedDelimiterEncodingSection(
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
                     ) {
                         Text(
-                            delimiterOptions.find { it.first == delimiter }?.second ?: delimiter.toString(),
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            delimiterOptions.find { it.first == delimiter }?.second
+                                ?: delimiter.toString(),
+                            modifier = Modifier.padding(
+                                horizontal = AeonTheme.dimensions.spacingMd,
+                                vertical = AeonTheme.dimensions.spacingSm
+                            ),
                             style = AppTextStyles.caption
                         )
                     }
-                    DropdownMenu(expanded = delimiterMenuOpen, onDismissRequest = { delimiterMenuOpen = false }) {
+                    DropdownMenu(
+                        expanded = delimiterMenuOpen,
+                        onDismissRequest = { delimiterMenuOpen = false }) {
                         delimiterOptions.forEach { (char, label) ->
                             DropdownMenuItem(
                                 text = { Text(label, style = AppTextStyles.caption) },
@@ -260,7 +279,11 @@ private fun AdvancedDelimiterEncodingSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Encoding", style = AppTextStyles.overlineLabel, color = AppColors.contentSecondary)
+                Text(
+                    "Encoding",
+                    style = AppTextStyles.overlineLabel,
+                    color = AppColors.contentSecondary
+                )
                 Box {
                     Surface(
                         onClick = { encodingMenuOpen = true },
@@ -269,11 +292,16 @@ private fun AdvancedDelimiterEncodingSection(
                     ) {
                         Text(
                             encoding,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(
+                                horizontal = AeonTheme.dimensions.spacingMd,
+                                vertical = AeonTheme.dimensions.spacingSm
+                            ),
                             style = AppTextStyles.caption
                         )
                     }
-                    DropdownMenu(expanded = encodingMenuOpen, onDismissRequest = { encodingMenuOpen = false }) {
+                    DropdownMenu(
+                        expanded = encodingMenuOpen,
+                        onDismissRequest = { encodingMenuOpen = false }) {
                         commonEncodings.forEach { enc ->
                             DropdownMenuItem(
                                 text = { Text(enc, style = AppTextStyles.caption) },
@@ -410,6 +438,21 @@ private fun SourceSelectionStepPreview() {
                 onLoadFile = {},
                 onConfirm = {},
                 fileLoadError = null
+            )
+        }
+    }
+}
+
+@ThemePreviews
+@Composable
+private fun SourceSelectionStepFileErrorPreview() {
+    OssWalletTheme {
+        Surface(color = AppColors.screenBackground) {
+            SourceSelectionStep(
+                session = null,
+                onLoadFile = {},
+                onConfirm = {},
+                fileLoadError = "Unable to read the selected file."
             )
         }
     }

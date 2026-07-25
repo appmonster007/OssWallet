@@ -63,7 +63,7 @@ fun StepProgressIndicator(stepIndex: Int) {
                 )
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
         Text(
             text = when (stepIndex) {
                 0 -> "Step 1: Source App"
@@ -124,7 +124,7 @@ fun EntityMappingRow(
                         color = if (isError) AppColors.error else AppColors.contentPrimary
                     )
                     if (badgeText != null || chipText != null) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
                             if (chipText != null) {
                                 Surface(
                                     color = AppColors.accentContainer,
@@ -151,7 +151,7 @@ fun EntityMappingRow(
                         }
                     }
                 }
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(AeonTheme.dimensions.spacingSm))
                 Box(modifier = Modifier.weight(1.4f)) {
                     Surface(
                         onClick = { expanded = true },
@@ -171,7 +171,10 @@ fun EntityMappingRow(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(
+                                horizontal = AeonTheme.dimensions.spacingMd,
+                                vertical = AeonTheme.dimensions.spacingSm
+                            ),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -258,9 +261,12 @@ fun EntityMappingRow(
                             border = BorderStroke(1.dp, AppColors.outlineVariant)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(
+                                    horizontal = AeonTheme.dimensions.spacingSm,
+                                    vertical = AeonTheme.dimensions.spacingXs
+                                ),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                             ) {
                                 Text(currencyCode, style = AppTextStyles.caption)
                                 Icon(

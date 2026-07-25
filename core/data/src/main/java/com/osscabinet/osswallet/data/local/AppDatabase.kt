@@ -5,7 +5,6 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.BudgetDao
@@ -13,8 +12,6 @@ import com.osscabinet.ossWallet.data.local.dao.CardCacheDao
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.data.local.dao.CurrencyDao
 import com.osscabinet.ossWallet.data.local.dao.FilterDao
-import com.osscabinet.ossWallet.data.local.dao.ImportBatchDao
-import com.osscabinet.ossWallet.data.local.dao.ImportTemplateDao
 import com.osscabinet.ossWallet.data.local.dao.LoanDao
 import com.osscabinet.ossWallet.data.local.dao.LoanPaymentDao
 import com.osscabinet.ossWallet.data.local.dao.PlannedPaymentDao
@@ -30,8 +27,6 @@ import com.osscabinet.ossWallet.data.local.entity.CardCacheEntity
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
-import com.osscabinet.ossWallet.data.local.entity.ImportBatchEntity
-import com.osscabinet.ossWallet.data.local.entity.ImportTemplateEntity
 import com.osscabinet.ossWallet.data.local.entity.LoanEntity
 import com.osscabinet.ossWallet.data.local.entity.LoanPaymentEntity
 import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentEntity
@@ -64,11 +59,9 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         BudgetEntity::class,
         LoanEntity::class,
         LoanPaymentEntity::class,
-        CardCacheEntity::class,
-        ImportBatchEntity::class,
-        ImportTemplateEntity::class
+        CardCacheEntity::class
     ],
-    version = 2,
+    version = 1,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -88,8 +81,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun loanDao(): LoanDao
     abstract fun loanPaymentDao(): LoanPaymentDao
     abstract fun cardCacheDao(): CardCacheDao
-    abstract fun importBatchDao(): ImportBatchDao
-    abstract fun importTemplateDao(): ImportTemplateDao
 
     companion object {
         init {
@@ -144,39 +135,6 @@ abstract class AppDatabase : RoomDatabase() {
             db.execSQL("INSERT INTO transactions_fts(docid, note, payee, name) SELECT id, note, payee, name FROM `transactions`")
         }
 
-        /**
-         * v1 -> v2: adds CSV-import undo support (a nullable `importBatchId` column on
-         * `transactions`, plus new `import_batches` and `import_templates` tables). Fresh installs
-         * never run this — Room creates the v2 schema directly from the entity annotations above;
-         * this only applies to existing v1 databases being upgraded.
-         */
-        val MIGRATION_1_2 = Migration(1, 2) { db ->
-            db.execSQL("ALTER TABLE transactions ADD COLUMN importBatchId TEXT")
-            db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_importBatchId ON transactions(importBatchId)")
-            db.execSQL(
-                """
-                CREATE TABLE IF NOT EXISTS import_batches (
-                    id TEXT NOT NULL PRIMARY KEY,
-                    sourceApp TEXT NOT NULL,
-                    createdAt INTEGER NOT NULL,
-                    transactionCount INTEGER NOT NULL,
-                    createdAccountIds TEXT NOT NULL,
-                    createdCategoryIds TEXT NOT NULL
-                )
-                """.trimIndent()
-            )
-            db.execSQL(
-                """
-                CREATE TABLE IF NOT EXISTS import_templates (
-                    sourceApp TEXT NOT NULL PRIMARY KEY,
-                    mappingJson TEXT NOT NULL,
-                    duplicatePolicy TEXT NOT NULL,
-                    updatedAt INTEGER NOT NULL
-                )
-                """.trimIndent()
-            )
-        }
-
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -190,7 +148,6 @@ abstract class AppDatabase : RoomDatabase() {
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
                     .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
-                    .addMigrations(MIGRATION_1_2)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

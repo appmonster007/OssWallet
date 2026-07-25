@@ -9,8 +9,6 @@ import com.osscabinet.ossWallet.data.local.dao.CardCacheDao
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.data.local.dao.CurrencyDao
 import com.osscabinet.ossWallet.data.local.dao.FilterDao
-import com.osscabinet.ossWallet.data.local.dao.ImportBatchDao
-import com.osscabinet.ossWallet.data.local.dao.ImportTemplateDao
 import com.osscabinet.ossWallet.data.local.dao.LoanDao
 import com.osscabinet.ossWallet.data.local.dao.LoanPaymentDao
 import com.osscabinet.ossWallet.data.local.dao.PlannedPaymentDao
@@ -106,12 +104,4 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideCardCacheDao(db: AppDatabase): CardCacheDao = db.cardCacheDao()
-
-    @Provides
-    @Singleton
-    fun provideImportBatchDao(db: AppDatabase): ImportBatchDao = db.importBatchDao()
-
-    @Provides
-    @Singleton
-    fun provideImportTemplateDao(db: AppDatabase): ImportTemplateDao = db.importTemplateDao()
 }

@@ -14,13 +14,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.AttachFile
-import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,20 +34,15 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import com.osscabinet.ossWallet.ui.theme.WarningColor
-import kotlinx.coroutines.delay
-
-private const val UNDO_WINDOW_MILLIS = 10 * 60 * 1000L
 
 @Composable
 fun ImportResultScreen(
     result: ImportSummary,
-    resultTimestamp: Long? = null,
-    onUndo: (() -> Unit)? = null,
     onViewTransactions: () -> Unit,
     onReviewMappings: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
-    val isFullSuccess = result.imported > 0 && result.errors.isEmpty()
+    val isFullSuccess = (result.imported > 0) && result.errors.isEmpty()
     val isPartial = result.imported > 0 && result.errors.isNotEmpty()
     val isZero = result.imported == 0
 
@@ -120,10 +112,6 @@ fun ImportResultScreen(
 
         Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
 
-        if (!isZero && onUndo != null && resultTimestamp != null) {
-            UndoImportButton(resultTimestamp = resultTimestamp, onUndo = onUndo)
-        }
-
         if (!isZero) {
             AeonDashedButton(
                 onClick = onViewTransactions,
@@ -149,31 +137,8 @@ fun ImportResultScreen(
 }
 
 @Composable
-private fun UndoImportButton(resultTimestamp: Long, onUndo: () -> Unit) {
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(resultTimestamp) {
-        while (true) {
-            now = System.currentTimeMillis()
-            delay(1000)
-        }
-    }
-    val remainingMillis = (resultTimestamp + UNDO_WINDOW_MILLIS - now).coerceAtLeast(0)
-    if (remainingMillis <= 0) return
-
-    val remainingSeconds = remainingMillis / 1000
-    val label = "Undo this import (${remainingSeconds / 60}:${(remainingSeconds % 60).toString().padStart(2, '0')} left)"
-
-    AeonDashedButton(
-        onClick = onUndo,
-        text = label,
-        icon = Icons.AutoMirrored.Rounded.Undo
-    )
-    Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
-}
-
-@Composable
 private fun ErrorDetails(errors: List<com.osscabinet.ossWallet.domain.model.import_csv.ParseError>) {
-    var showErrors by remember { mutableStateOf(false) }
+    var showErrors by remember { mutableStateOf(value = false) }
     TextButton(onClick = { showErrors = !showErrors }) {
         Text(
             if (showErrors) "Hide errors" else "Show ${errors.size} errors",

@@ -262,7 +262,6 @@ class CsvImportViewModel @Inject constructor(
         }
     }
 
-
     private fun resolveFinalMappings(): List<EntityMapping> {
         val preview = _preview.value ?: return emptyList()
 

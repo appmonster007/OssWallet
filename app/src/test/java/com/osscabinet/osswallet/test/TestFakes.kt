@@ -15,6 +15,7 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
+import com.osscabinet.ossWallet.domain.repository.ImportBatchRepository
 import com.osscabinet.ossWallet.domain.repository.RateRefreshError
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
@@ -22,11 +23,19 @@ import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
+import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
+import com.osscabinet.ossWallet.domain.model.import_csv.DuplicatePolicy
+import com.osscabinet.ossWallet.domain.model.import_csv.EntityMapping
+import com.osscabinet.ossWallet.domain.model.import_csv.ImportPreview
+import com.osscabinet.ossWallet.domain.model.import_csv.ImportSourceApp
+import com.osscabinet.ossWallet.domain.model.import_csv.ImportSummary
+import com.osscabinet.ossWallet.domain.service.CsvImportService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import java.io.InputStream
 import java.math.BigDecimal
 
 // ── FakeSettingsRepository ──────────────────────────────────────────────────
@@ -242,6 +251,71 @@ class FakeTagRepository : TagRepository {
     override suspend fun deleteTagAndRemoveFromTransactions(tag: Tag) {}
     override suspend fun getTransactionCountForTag(tagName: String, profileId: Int): Int = 0
     override suspend fun updateTag(oldName: String, newTag: Tag) {}
+}
+
+// ── FakeImportBatchRepository ────────────────────────────────────────────────
+
+class FakeImportBatchRepository(
+    var undoResult: Boolean = true
+) : ImportBatchRepository {
+    val recordedBatches = mutableListOf<String>()
+    val undoCalls = mutableListOf<String>()
+
+    override suspend fun recordBatch(
+        batchId: String,
+        sourceApp: String,
+        transactionCount: Int,
+        createdAccountIds: List<String>,
+        createdCategoryIds: List<Long>
+    ) {
+        recordedBatches.add(batchId)
+    }
+
+    override suspend fun undoImport(batchId: String): Boolean {
+        undoCalls.add(batchId)
+        return undoResult
+    }
+}
+
+// ── FakeCsvImportService ─────────────────────────────────────────────────────
+
+class FakeCsvImportService(
+    var sessionToReturn: CsvImportSession = CsvImportSession(
+        headers = listOf("date", "account", "amount"),
+        previewRows = emptyList(),
+        mapping = emptyMap(),
+        sourceApp = ImportSourceApp.GENERIC
+    ),
+    var previewToReturn: ImportPreview = ImportPreview(
+        totalRows = 0,
+        validRows = 0,
+        duplicates = emptyList(),
+        allCsvAccounts = emptyList(),
+        newCategories = emptyList(),
+        parseErrors = emptyList()
+    ),
+    var executeImportResult: Result<ImportSummary> = Result.success(ImportSummary(0, 0, emptyList()))
+) : CsvImportService {
+    override suspend fun parseHeaders(
+        inputStream: InputStream,
+        delimiter: Char?,
+        encoding: String
+    ): CsvImportSession = sessionToReturn
+
+    override suspend fun generatePreview(
+        session: CsvImportSession,
+        inputStream: InputStream
+    ): ImportPreview = previewToReturn
+
+    override suspend fun executeImport(
+        session: CsvImportSession,
+        inputStream: InputStream,
+        duplicatePolicy: DuplicatePolicy,
+        entityMappings: List<EntityMapping>,
+        selectedDuplicateRowIndices: Set<Int>,
+        totalRows: Int,
+        onProgress: (Float) -> Unit
+    ): Result<ImportSummary> = executeImportResult
 }
 
 // ── FakeSharedWalletRepository ──────────────────────────────────────────────

@@ -60,6 +60,8 @@ fun CsvImportScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val result by viewModel.result.collectAsStateWithLifecycle()
+    val resultTimestamp by viewModel.resultTimestamp.collectAsStateWithLifecycle()
+    val undoCompleted by viewModel.undoCompleted.collectAsStateWithLifecycle()
     val importProgress by viewModel.importProgress.collectAsStateWithLifecycle()
     val errorMessage by viewModel.error.collectAsStateWithLifecycle()
 
@@ -72,6 +74,7 @@ fun CsvImportScreen(
     val parentGroupMappings by viewModel.parentGroupMappings.collectAsStateWithLifecycle()
     val selectedDuplicates by viewModel.selectedDuplicates.collectAsStateWithLifecycle()
     val duplicatePolicy by viewModel.duplicatePolicy.collectAsStateWithLifecycle()
+    val entitySearchQuery by viewModel.entitySearchQuery.collectAsStateWithLifecycle()
 
     val fileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -79,9 +82,16 @@ fun CsvImportScreen(
         uri?.let { viewModel.loadFile(it.toString(), context) }
     }
 
+    if (undoCompleted) {
+        onNavigateBack()
+        return
+    }
+
     if (result != null) {
         ImportResultScreen(
             result = result!!,
+            resultTimestamp = resultTimestamp,
+            onUndo = { viewModel.undoImport() },
             onViewTransactions = onNavigateToDashboard,
             onReviewMappings = { viewModel.resetToColumnMapping() },
             onBack = onNavigateBack
@@ -126,6 +136,7 @@ fun CsvImportScreen(
                                 parentGroupMappings = parentGroupMappings,
                                 selectedDuplicates = selectedDuplicates,
                                 duplicatePolicy = duplicatePolicy,
+                                entitySearchQuery = entitySearchQuery,
                                 viewModel = viewModel,
                                 fileLauncher = fileLauncher,
                                 context = context
@@ -168,6 +179,7 @@ private fun StepContent(
     parentGroupMappings: Map<String, String?>,
     selectedDuplicates: Set<Int>,
     duplicatePolicy: com.osscabinet.ossWallet.domain.model.import_csv.DuplicatePolicy,
+    entitySearchQuery: String,
     viewModel: CsvImportViewModel,
     fileLauncher: androidx.activity.result.ActivityResultLauncher<String>,
     context: android.content.Context
@@ -183,7 +195,10 @@ private fun StepContent(
                     session = session,
                     onLoadFile = { fileLauncher.launch("*/*") },
                     onConfirm = { app -> viewModel.confirmSourceApp(app) },
-                    fileLoadError = if (session == null) errorMessage else null
+                    fileLoadError = if (session == null) errorMessage else null,
+                    onApplyDelimiterAndEncoding = { delimiter, encoding ->
+                        viewModel.applyDelimiterAndEncoding(context, delimiter, encoding)
+                    }
                 )
 
                 is CsvImportViewModel.Step.ColumnMapping -> ColumnMappingStep(
@@ -201,10 +216,14 @@ private fun StepContent(
                     rootCategories = categories
                         .filter { it.parentId == null && !Category.isSystemCategory(it.id) }
                         .map { it.id.toString() to it.name },
+                    fullCategories = categories,
                     shortlistedCurrencies = shortlistedCurrencies,
                     accountMappings = accountMappings,
                     categoryMappings = categoryMappings,
                     parentGroupMappings = parentGroupMappings,
+                    searchQuery = entitySearchQuery,
+                    onSearchQueryChange = { viewModel.updateEntitySearchQuery(it) },
+                    onSelectAllNewAccounts = { viewModel.selectAllNewAccounts() },
                     onUpdateAccountMapping = { name, mapping ->
                         viewModel.updateAccountMapping(
                             name,
@@ -228,6 +247,7 @@ private fun StepContent(
 
                 is CsvImportViewModel.Step.Preview -> PreviewStep(
                     preview = preview,
+                    session = session,
                     duplicatePolicy = duplicatePolicy,
                     selectedDuplicates = selectedDuplicates,
                     onSetDuplicatePolicy = { viewModel.setDuplicatePolicy(it) },

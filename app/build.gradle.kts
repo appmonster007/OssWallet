@@ -59,6 +59,14 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+
+    sourceSets {
+        // Room schema JSON files (used by MigrationTestHelper) are exported by :core:data's KSP
+        // task into that module's schemas/ dir; expose them here as an androidTest asset.
+        getByName("androidTest") {
+            assets.directories.add("../core/data/schemas")
+        }
+    }
 }
 
 dependencies {
@@ -145,6 +153,7 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.runner)
+    androidTestImplementation(libs.androidx.room.testing)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.glance.appwidget.preview)

@@ -73,7 +73,6 @@ fun ColumnMappingStep(
     ) {
         SourceAppDropdown(session.sourceApp, onApplyPreset)
 
-        AeonSectionHeader(title = "Preview \u2014 first ${session.previewRows.size} rows")
         CsvPreviewTable(session)
 
         HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
@@ -156,6 +155,27 @@ private fun SourceAppDropdown(
 
 @Composable
 private fun CsvPreviewTable(session: CsvImportSession) {
+    var showAll by remember { mutableStateOf(false) }
+    val defaultCount = 5
+    val rowsToShow = if (showAll) session.previewRows else session.previewRows.take(defaultCount)
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AeonSectionHeader(title = "Preview — showing ${rowsToShow.size} of ${session.previewRows.size} rows")
+        if (session.previewRows.size > defaultCount) {
+            TextButton(onClick = { showAll = !showAll }) {
+                Text(
+                    if (showAll) "Show less" else "Show all",
+                    style = AppTextStyles.buttonLabel,
+                    color = AppColors.primary
+                )
+            }
+        }
+    }
+
     Surface(
         color = AppColors.cardSurface,
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
@@ -213,7 +233,7 @@ private fun CsvPreviewTable(session: CsvImportSession) {
                     }
                 }
                 // Data rows
-                session.previewRows.take(3).forEachIndexed { rowIdx, row ->
+                rowsToShow.forEachIndexed { rowIdx, row ->
                     val rowBg =
                         if (rowIdx % 2 == 0) AppColors.cardSurface else AppColors.cardSurfaceRaised
                     Row(modifier = Modifier.background(rowBg)) {
@@ -369,6 +389,20 @@ private fun FieldMappingItem(
                 color = AppColors.contentSecondary,
                 modifier = Modifier.padding(start = 2.dp, top = 2.dp)
             )
+        }
+
+        if (field == OssWalletField.AMOUNT && currentColIndex != null) {
+            val samples = session.previewRows.mapNotNull { it.getOrNull(currentColIndex) }
+                .filter { it.isNotBlank() }
+            val nonNumericCount = samples.count { it.any { c -> c.isLetter() } }
+            if (samples.isNotEmpty() && nonNumericCount > 0) {
+                Text(
+                    "$nonNumericCount of ${samples.size} sample values in this column don't look numeric — they may land in Parse Errors.",
+                    style = AppTextStyles.caption,
+                    color = AppColors.error,
+                    modifier = Modifier.padding(start = 2.dp, top = 2.dp)
+                )
+            }
         }
     }
 }

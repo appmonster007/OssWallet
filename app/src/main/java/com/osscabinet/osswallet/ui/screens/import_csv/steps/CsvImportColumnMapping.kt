@@ -159,22 +159,20 @@ private fun CsvPreviewTable(session: CsvImportSession) {
     val defaultCount = 5
     val rowsToShow = if (showAll) session.previewRows else session.previewRows.take(defaultCount)
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        AeonSectionHeader(title = "Preview — showing ${rowsToShow.size} of ${session.previewRows.size} rows")
-        if (session.previewRows.size > defaultCount) {
-            TextButton(onClick = { showAll = !showAll }) {
-                Text(
-                    if (showAll) "Show less" else "Show all",
-                    style = AppTextStyles.buttonLabel,
-                    color = AppColors.primary
-                )
+    AeonSectionHeader(
+        title = "Preview — showing ${rowsToShow.size} of ${session.previewRows.size} rows",
+        trailing = if (session.previewRows.size > defaultCount) {
+            {
+                TextButton(onClick = { showAll = !showAll }) {
+                    Text(
+                        if (showAll) "Show less" else "Show all",
+                        style = AppTextStyles.buttonLabel,
+                        color = AppColors.primary
+                    )
+                }
             }
-        }
-    }
+        } else null
+    )
 
     Surface(
         color = AppColors.cardSurface,

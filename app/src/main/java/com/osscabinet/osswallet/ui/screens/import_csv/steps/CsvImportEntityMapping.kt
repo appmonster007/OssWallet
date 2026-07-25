@@ -230,16 +230,14 @@ private fun AccountsSection(
     }
 
     Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        AeonSectionHeader(title = "ACCOUNTS — ${csvAccounts.size} found")
-        TextButton(onClick = onSelectAllNewAccounts) {
-            Text("Select all new", style = AppTextStyles.caption, color = AppColors.primary)
+    AeonSectionHeader(
+        title = "ACCOUNTS — ${csvAccounts.size} found",
+        trailing = {
+            TextButton(onClick = onSelectAllNewAccounts) {
+                Text("Select all new", style = AppTextStyles.caption, color = AppColors.primary)
+            }
         }
-    }
+    )
     csvAccounts.forEach { acc ->
         val em = accountMappings[acc.name] ?: EntityMapping(
             acc.name,

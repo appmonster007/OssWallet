@@ -6,13 +6,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
-import com.osscabinet.ossWallet.data.service.BudgetBakersAssetLoader
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
-import com.osscabinet.ossWallet.domain.model.PaymentMethod
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
 import com.osscabinet.ossWallet.domain.model.import_csv.DuplicatePolicy
 import com.osscabinet.ossWallet.domain.model.import_csv.EntityMapping
 import com.osscabinet.ossWallet.domain.model.import_csv.OssWalletField
@@ -45,7 +41,7 @@ class CsvImportServiceInstrumentedTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        
+
         // Insert system categories as executeImport defaults to Category.SYSTEM_OTHERS (1000L)
         runBlocking {
             com.osscabinet.ossWallet.domain.model.SystemCategory.entries.forEach { sc ->
@@ -74,7 +70,8 @@ class CsvImportServiceInstrumentedTest {
             settingsDataStore = settingsDataStore,
             assetLoader = BudgetBakersAssetLoader(context),
             transactionLinkDao = db.transactionLinkDao(),
-            dispatcherProvider = com.osscabinet.ossWallet.core.util.RealDispatcherProvider()
+            dispatcherProvider = com.osscabinet.ossWallet.core.util.RealDispatcherProvider(),
+            json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
         )
     }
 
@@ -89,16 +86,21 @@ class CsvImportServiceInstrumentedTest {
 
     @Test
     fun parseHeaders_budgetBakers_detectsSemicolonDelimiter() = runBlocking {
-        val csv = "$budgetBakersHeader\nSavings;Food;INR;-500;;Expenses;Cash;;Groceries;2024-03-15 10:00:00;;;;;0;false;;"
+        val csv =
+            "$budgetBakersHeader\nSavings;Food;INR;-500;;Expenses;Cash;;Groceries;2024-03-15 10:00:00;;;;;0;false;;"
         val session = service.parseHeaders(ByteArrayInputStream(csv.toByteArray()))
 
-        assertEquals(com.osscabinet.ossWallet.domain.model.import_csv.ImportSourceApp.BUDGET_BAKERS, session.sourceApp)
+        assertEquals(
+            com.osscabinet.ossWallet.domain.model.import_csv.ImportSourceApp.BUDGET_BAKERS,
+            session.sourceApp
+        )
         assertEquals(';', session.delimiter)
     }
 
     @Test
     fun parseHeaders_budgetBakers_mapsKeyFields() = runBlocking {
-        val csv = "$budgetBakersHeader\nSavings;Food;INR;-500;;Expenses;Cash;;Groceries;2024-03-15 10:00:00;;;;;0;false;;"
+        val csv =
+            "$budgetBakersHeader\nSavings;Food;INR;-500;;Expenses;Cash;;Groceries;2024-03-15 10:00:00;;;;;0;false;;"
         val session = service.parseHeaders(ByteArrayInputStream(csv.toByteArray()))
 
         assertTrue("DATE should be mapped", session.mapping[OssWalletField.DATE] != null)
@@ -150,7 +152,8 @@ class CsvImportServiceInstrumentedTest {
         )
 
         // CSV with two accounts: "Savings" (exists) and "NewWallet" (new)
-        val csv = "account,date,amount,note\nSavings,2024-03-15,-100,Coffee\nNewWallet,2024-03-16,-200,Lunch"
+        val csv =
+            "account,date,amount,note\nSavings,2024-03-15,-100,Coffee\nNewWallet,2024-03-16,-200,Lunch"
         val session = service.parseHeaders(ByteArrayInputStream(csv.toByteArray()))
         val preview = service.generatePreview(session, ByteArrayInputStream(csv.toByteArray()))
 

@@ -1,8 +1,8 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -48,33 +49,33 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
 import com.osscabinet.ossWallet.domain.repository.BackupScope
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.RestorableEntity
-import androidx.compose.material3.SnackbarHostState
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
-import com.osscabinet.ossWallet.ui.components.AeonSnackbarHost
-import com.osscabinet.ossWallet.ui.components.AeonSnackbarType
-import com.osscabinet.ossWallet.ui.components.showAeonSnackbar
 import com.osscabinet.ossWallet.ui.components.AeonDashedButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
+import com.osscabinet.ossWallet.ui.components.AeonSnackbarHost
+import com.osscabinet.ossWallet.ui.components.AeonSnackbarType
 import com.osscabinet.ossWallet.ui.components.AeonStepperField
 import com.osscabinet.ossWallet.ui.components.AeonTextField
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
+import com.osscabinet.ossWallet.ui.components.showAeonSnackbar
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -150,7 +151,11 @@ fun DataManagementScreen(
 
     LaunchedEffect(Unit) {
         viewModel.backupMessage.collect { message ->
-            val type = if (message.contains("failed", ignoreCase = true) || message.contains("error", ignoreCase = true)) {
+            val type = if (message.contains("failed", ignoreCase = true) || message.contains(
+                    "error",
+                    ignoreCase = true
+                )
+            ) {
                 AeonSnackbarType.ERROR
             } else {
                 AeonSnackbarType.SUCCESS
@@ -705,59 +710,131 @@ private fun ImportDialog(
 }
 
 @Composable
-private fun RestorableEntitySelectorDialog(
+internal fun RestorableEntitySelectorDialog(
     selectedEntities: Set<RestorableEntity>,
     onSelectionChanged: (Set<RestorableEntity>) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val groups = remember {
+        listOf(
+            "Foundational Data" to listOf(
+                RestorableEntity.PROFILES to "User profiles and base currencies",
+                RestorableEntity.ACCOUNTS to "Bank accounts, wallets, and cash",
+                RestorableEntity.CATEGORIES to "Expense and income categories",
+                RestorableEntity.TAGS to "Labels and custom tags",
+                RestorableEntity.CURRENCY_RATES to "Downloaded exchange rates"
+            ),
+            "Records" to listOf(
+                RestorableEntity.TRANSACTIONS to "All transaction history and transfers"
+            ),
+            "Financial Planning" to listOf(
+                RestorableEntity.BUDGETS to "Monthly budgets and alerts",
+                RestorableEntity.LOANS to "Debts, loans, and loan payments",
+                RestorableEntity.PLANNED_PAYMENTS to "Scheduled recurring transactions",
+                RestorableEntity.TEMPLATES to "Transaction quick-entry templates",
+                RestorableEntity.FILTERS to "Saved search and report filters"
+            )
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Select Data to Restore", style = AppTextStyles.cardTitle) },
-        text = {
+        title = {
             Column {
+                Text("Restore Selection", style = AppTextStyles.cardTitle)
+                Text(
+                    "Choose which data components to restore from this backup.",
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val allSelected = selectedEntities.size == RestorableEntity.entries.size
                     TextButton(
-                        onClick = { onSelectionChanged(RestorableEntity.entries.toSet()) }
+                        onClick = {
+                            if (allSelected) onSelectionChanged(emptySet())
+                            else onSelectionChanged(RestorableEntity.entries.toSet())
+                        }
                     ) {
                         Text(
-                            "Select All",
+                            if (allSelected) "Deselect All" else "Select All",
                             style = AppTextStyles.buttonLabel,
-                            color = AppColors.primary
-                        )
-                    }
-                    TextButton(
-                        onClick = { onSelectionChanged(emptySet()) }
-                    ) {
-                        Text(
-                            "Deselect All",
-                            style = AppTextStyles.buttonLabel,
-                            color = AppColors.contentSecondary
+                            color = if (allSelected) AppColors.contentSecondary else AppColors.primary
                         )
                     }
                 }
-                RestorableEntity.entries.forEach { entity ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Checkbox(
-                            checked = entity in selectedEntities,
-                            onCheckedChange = { checked ->
-                                onSelectionChanged(
-                                    if (checked) selectedEntities + entity else selectedEntities - entity
-                                )
-                            }
-                        )
+
+                groups.forEach { (groupName, entities) ->
+                    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
                         Text(
-                            text = entity.name.replace('_', ' ').lowercase()
-                                .replaceFirstChar { it.uppercase() },
-                            style = AppTextStyles.listItemTitle,
-                            color = AppColors.contentPrimary
+                            text = groupName.uppercase(),
+                            style = AppTextStyles.overlineLabel,
+                            color = AppColors.primary,
+                            modifier = Modifier.padding(start = 4.dp, top = 8.dp)
                         )
+
+                        entities.forEach { (entity, description) ->
+                            val isSelected = entity in selectedEntities
+                            Surface(
+                                onClick = {
+                                    onSelectionChanged(
+                                        if (isSelected) selectedEntities - entity else selectedEntities + entity
+                                    )
+                                },
+                                color = if (isSelected) AppColors.primaryContainer.copy(alpha = 0.1f) else Color.Transparent,
+                                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                                border = BorderStroke(
+                                    0.5.dp,
+                                    if (isSelected) AppColors.primary.copy(alpha = 0.5f) else AppColors.outlineVariant.copy(
+                                        alpha = 0.3f
+                                    )
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = isSelected,
+                                        onCheckedChange = { checked ->
+                                            onSelectionChanged(
+                                                if (checked) selectedEntities + entity else selectedEntities - entity
+                                            )
+                                        },
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = entity.name.replace('_', ' ').lowercase()
+                                                .replaceFirstChar { it.uppercase() },
+                                            style = AppTextStyles.listItemTitle,
+                                            color = if (isSelected) AppColors.contentPrimary else AppColors.contentSecondary
+                                        )
+                                        Text(
+                                            text = description,
+                                            style = AppTextStyles.metaLabel,
+                                            color = AppColors.contentSecondary
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -780,4 +857,17 @@ private fun RestorableEntitySelectorDialog(
             }
         }
     )
+}
+
+@ThemePreviews
+@Composable
+private fun RestorableEntitySelectorDialogPreview() {
+    OssWalletTheme {
+        RestorableEntitySelectorDialog(
+            selectedEntities = setOf(RestorableEntity.TRANSACTIONS, RestorableEntity.ACCOUNTS),
+            onSelectionChanged = {},
+            onConfirm = {},
+            onDismiss = {}
+        )
+    }
 }

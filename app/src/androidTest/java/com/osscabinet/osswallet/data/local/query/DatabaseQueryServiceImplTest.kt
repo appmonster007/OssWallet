@@ -51,6 +51,7 @@ class DatabaseQueryServiceImplTest {
             queryBuilder = TransactionQueryBuilder(),
             planner = AggregationPlanner(),
             cache = QueryCache(),
+            json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true },
             invalidationTracker = db.invalidationTracker
         )
 
@@ -63,7 +64,13 @@ class DatabaseQueryServiceImplTest {
             )
         )
         db.categoryDao().insertCategory(
-            CategoryEntity(id = 1L, name = "Food", iconName = "food", colorHex = 0, isDefault = false)
+            CategoryEntity(
+                id = 1L,
+                name = "Food",
+                iconName = "food",
+                colorHex = 0,
+                isDefault = false
+            )
         )
     }
 
@@ -79,7 +86,14 @@ class DatabaseQueryServiceImplTest {
     @Test
     fun observeFilteredTransactions_returnsOnlyMatchingProfileTransactions() = runBlocking {
         insert(tx("T1", profileId = profileId, amount = "100.00", type = TransactionType.INCOME))
-        insert(tx("T2", profileId = otherProfileId, amount = "200.00", type = TransactionType.INCOME))
+        insert(
+            tx(
+                "T2",
+                profileId = otherProfileId,
+                amount = "200.00",
+                type = TransactionType.INCOME
+            )
+        )
 
         val results = service.observeFilteredTransactions(
             profileId = profileId,
@@ -93,8 +107,12 @@ class DatabaseQueryServiceImplTest {
     @Test
     fun observeFilteredTransactions_respectsLimitParameter() = runBlocking {
         repeat(5) { i ->
-            insert(tx("T$i", profileId = profileId, timestamp = i.toLong(),
-                amount = "10.00", type = TransactionType.INCOME))
+            insert(
+                tx(
+                    "T$i", profileId = profileId, timestamp = i.toLong(),
+                    amount = "10.00", type = TransactionType.INCOME
+                )
+            )
         }
 
         val results = service.observeFilteredTransactions(
@@ -112,10 +130,18 @@ class DatabaseQueryServiceImplTest {
 
     @Test
     fun getMinTransactionTimestamp_returnsEarliestTimestamp() = runBlocking {
-        insert(tx("Early", profileId = profileId, timestamp = 1000L,
-            amount = "10.00", type = TransactionType.INCOME))
-        insert(tx("Late", profileId = profileId, timestamp = 9000L,
-            amount = "10.00", type = TransactionType.INCOME))
+        insert(
+            tx(
+                "Early", profileId = profileId, timestamp = 1000L,
+                amount = "10.00", type = TransactionType.INCOME
+            )
+        )
+        insert(
+            tx(
+                "Late", profileId = profileId, timestamp = 9000L,
+                amount = "10.00", type = TransactionType.INCOME
+            )
+        )
 
         val result = service.getMinTransactionTimestamp(profileId)
 
@@ -130,10 +156,18 @@ class DatabaseQueryServiceImplTest {
 
     @Test
     fun getMinTransactionTimestamp_isolatesProfileData() = runBlocking {
-        insert(tx("OtherProfile", profileId = otherProfileId, timestamp = 500L,
-            amount = "10.00", type = TransactionType.INCOME))
-        insert(tx("ThisProfile", profileId = profileId, timestamp = 2000L,
-            amount = "10.00", type = TransactionType.INCOME))
+        insert(
+            tx(
+                "OtherProfile", profileId = otherProfileId, timestamp = 500L,
+                amount = "10.00", type = TransactionType.INCOME
+            )
+        )
+        insert(
+            tx(
+                "ThisProfile", profileId = profileId, timestamp = 2000L,
+                amount = "10.00", type = TransactionType.INCOME
+            )
+        )
 
         val result = service.getMinTransactionTimestamp(profileId)
 
@@ -146,12 +180,24 @@ class DatabaseQueryServiceImplTest {
 
     @Test
     fun aggregate_sumsByCurrency_producesCorrectTotals() = runBlocking {
-        insert(tx("USD1", profileId = profileId, amount = "100.00",
-            type = TransactionType.INCOME, currency = "USD"))
-        insert(tx("USD2", profileId = profileId, amount = "50.00",
-            type = TransactionType.INCOME, currency = "USD"))
-        insert(tx("EUR1", profileId = profileId, amount = "80.00",
-            type = TransactionType.INCOME, currency = "EUR"))
+        insert(
+            tx(
+                "USD1", profileId = profileId, amount = "100.00",
+                type = TransactionType.INCOME, currency = "USD"
+            )
+        )
+        insert(
+            tx(
+                "USD2", profileId = profileId, amount = "50.00",
+                type = TransactionType.INCOME, currency = "USD"
+            )
+        )
+        insert(
+            tx(
+                "EUR1", profileId = profileId, amount = "80.00",
+                type = TransactionType.INCOME, currency = "EUR"
+            )
+        )
 
         val result = service.aggregate(
             profileId = profileId,
@@ -172,10 +218,18 @@ class DatabaseQueryServiceImplTest {
 
     @Test
     fun aggregate_isolatesProfileData() = runBlocking {
-        insert(tx("P1", profileId = profileId, amount = "200.00",
-            type = TransactionType.INCOME, currency = "USD"))
-        insert(tx("P2", profileId = otherProfileId, amount = "999.00",
-            type = TransactionType.INCOME, currency = "USD"))
+        insert(
+            tx(
+                "P1", profileId = profileId, amount = "200.00",
+                type = TransactionType.INCOME, currency = "USD"
+            )
+        )
+        insert(
+            tx(
+                "P2", profileId = otherProfileId, amount = "999.00",
+                type = TransactionType.INCOME, currency = "USD"
+            )
+        )
 
         val result = service.aggregate(
             profileId = profileId,
@@ -190,10 +244,18 @@ class DatabaseQueryServiceImplTest {
 
     @Test
     fun aggregate_separatesIncomeAndExpenseMetrics() = runBlocking {
-        insert(tx("Income", profileId = profileId, amount = "500.00",
-            type = TransactionType.INCOME, currency = "USD"))
-        insert(tx("Expense", profileId = profileId, amount = "-200.00",
-            type = TransactionType.EXPENSE, currency = "USD"))
+        insert(
+            tx(
+                "Income", profileId = profileId, amount = "500.00",
+                type = TransactionType.INCOME, currency = "USD"
+            )
+        )
+        insert(
+            tx(
+                "Expense", profileId = profileId, amount = "-200.00",
+                type = TransactionType.EXPENSE, currency = "USD"
+            )
+        )
 
         val result = service.aggregate(
             profileId = profileId,

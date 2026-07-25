@@ -26,6 +26,7 @@ class DatabaseQueryServiceImpl(
     private val queryBuilder: TransactionQueryBuilder,
     private val planner: AggregationPlanner,
     private val cache: QueryCache,
+    private val json: kotlinx.serialization.json.Json,
     invalidationTracker: InvalidationTracker
 ) : DatabaseQueryService {
 
@@ -59,10 +60,7 @@ class DatabaseQueryServiceImpl(
         return try {
             val plan = planner.plan(dimensions, metrics, timeGranularity, useCase)
             val query = queryBuilder.buildAggregationQuery(
-                profileId,
-                filter,
-                plan,
-                excludeInternalTransfers
+                profileId, filter, plan, excludeInternalTransfers
             )
 
             val rawResults = transactionDao.aggregateTransactionsSync(query)
@@ -92,9 +90,7 @@ class DatabaseQueryServiceImpl(
     }
 
     override fun observeFilteredTransactions(
-        profileId: Int,
-        filter: TransactionFilter,
-        limit: Int?
+        profileId: Int, filter: TransactionFilter, limit: Int?
     ): Flow<List<Transaction>> {
         val query = queryBuilder.buildListQuery(profileId, filter, limit)
         return transactionDao.getFilteredTransactions(query).map { entities ->
@@ -106,8 +102,7 @@ class DatabaseQueryServiceImpl(
         transactionDao.getMinTransactionTimestamp(profileId)
 
     private fun processResults(
-        raw: List<RawAggregateResult>,
-        plan: AggregationPlanner.AggregationPlan
+        raw: List<RawAggregateResult>, plan: AggregationPlanner.AggregationPlan
     ): List<AggregatedData> {
         val mapped = raw.map { row ->
             val dimMap = plan.sqlDimensions.take(AggregationLimits.MAX_DIMENSIONS)
@@ -118,20 +113,20 @@ class DatabaseQueryServiceImpl(
                     dim to (value ?: "unspecified")
                 }.toMap()
 
-            val metMap = plan.metrics.take(AggregationLimits.MAX_METRICS)
-                .mapIndexedNotNull { i, met ->
-                    val rawValue = when (i) {
-                        0 -> row.m1; 1 -> row.m2; 2 -> row.m3; 3 -> row.m4; 4 -> row.m5
-                        5 -> row.m6; 6 -> row.m7; 7 -> row.m8; 8 -> row.m9; 9 -> row.m10
-                        else -> null
-                    }
-                    val decimalValue = try {
-                        rawValue?.let { BigDecimal(it) } ?: BigDecimal.ZERO
-                    } catch (e: Exception) {
-                        BigDecimal.ZERO
-                    }
-                    met.name to decimalValue
-                }.toMap()
+            val metMap =
+                plan.metrics.take(AggregationLimits.MAX_METRICS).mapIndexedNotNull { i, met ->
+                        val rawValue = when (i) {
+                            0 -> row.m1; 1 -> row.m2; 2 -> row.m3; 3 -> row.m4; 4 -> row.m5
+                            5 -> row.m6; 6 -> row.m7; 7 -> row.m8; 8 -> row.m9; 9 -> row.m10
+                            else -> null
+                        }
+                        val decimalValue = try {
+                            rawValue?.let { BigDecimal(it) } ?: BigDecimal.ZERO
+                        } catch (e: Exception) {
+                            BigDecimal.ZERO
+                        }
+                        met.name to decimalValue
+                    }.toMap()
 
             AggregatedData(dimMap, metMap, row.count)
         }
@@ -147,12 +142,18 @@ class DatabaseQueryServiceImpl(
         if (plan.sqlDimensions.contains(AggregationDimension.TAG_COMBINATIONS)) {
             result = result.map { row ->
                 val rawVal = row.dimensions[AggregationDimension.TAG_COMBINATIONS] ?: ""
-                val cleanVal = rawVal.removePrefix("[").removeSuffix("]")
-                    .split(",")
-                    .map { it.trim().removeSurrounding("\"") }
-                    .filter { it.isNotEmpty() }
-                    .sorted()
-                    .joinToString(",")
+                val tags = if (rawVal.startsWith("[")) {
+                    try {
+                        json.decodeFromString<Set<String>>(rawVal)
+                    } catch (e: Exception) {
+                        rawVal.removePrefix("[").removeSuffix("]").split(",")
+                            .map { it.trim().removeSurrounding("\"") }.filter { it.isNotEmpty() }
+                    }
+                } else {
+                    rawVal.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                }
+
+                val cleanVal = tags.sorted().joinToString(",")
 
                 row.copy(dimensions = row.dimensions.toMutableMap().apply {
                     put(AggregationDimension.TAG_COMBINATIONS, cleanVal)
@@ -164,8 +165,7 @@ class DatabaseQueryServiceImpl(
     }
 
     private fun expandAndReaggregate(
-        data: List<AggregatedData>,
-        target: AggregationDimension
+        data: List<AggregatedData>, target: AggregationDimension
     ): List<AggregatedData> {
         val expanded = mutableListOf<AggregatedData>()
 
@@ -176,10 +176,12 @@ class DatabaseQueryServiceImpl(
             } else {
                 // Support both legacy comma-separated and new JSON array format
                 val tags = if (rawValue.startsWith("[")) {
-                    rawValue.removePrefix("[").removeSuffix("]")
-                        .split(",")
-                        .map { it.trim().removeSurrounding("\"") }
-                        .filter { it.isNotEmpty() }
+                    try {
+                        json.decodeFromString<Set<String>>(rawValue)
+                    } catch (e: Exception) {
+                        rawValue.removePrefix("[").removeSuffix("]").split(",")
+                            .map { it.trim().removeSurrounding("\"") }.filter { it.isNotEmpty() }
+                    }
                 } else {
                     rawValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
                 }
@@ -187,8 +189,7 @@ class DatabaseQueryServiceImpl(
                 tags.forEach { tag ->
                     expanded.add(
                         row.copy(
-                            dimensions = row.dimensions.toMutableMap().apply { put(target, tag) }
-                        ))
+                        dimensions = row.dimensions.toMutableMap().apply { put(target, tag) }))
                 }
             }
         }

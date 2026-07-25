@@ -61,7 +61,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     // CSV (for CsvProcessor / CsvImportServiceImpl)
-    implementation(libs.commons.csv)
     implementation(libs.univocity.parsers)
 
     // AndroidX Core (for BackupRepositoryImpl)

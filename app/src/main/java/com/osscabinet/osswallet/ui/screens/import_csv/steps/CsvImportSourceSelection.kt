@@ -205,7 +205,7 @@ private fun AutoDetectedBadge(appName: String) {
 }
 
 @Composable
-private fun SourceAppItem(
+fun SourceAppItem(
     app: ImportSourceApp,
     isSelected: Boolean,
     onClick: () -> Unit

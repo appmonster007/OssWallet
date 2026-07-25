@@ -40,13 +40,15 @@ object DataModule {
     fun provideDatabaseQueryService(
         transactionDao: TransactionDao,
         queryCache: QueryCache,
-        db: AppDatabase
+        db: AppDatabase,
+        json: Json
     ): DatabaseQueryService {
         return DatabaseQueryServiceImpl(
             transactionDao,
             TransactionQueryBuilder(),
             AggregationPlanner(),
             queryCache,
+            json,
             db.invalidationTracker
         )
     }

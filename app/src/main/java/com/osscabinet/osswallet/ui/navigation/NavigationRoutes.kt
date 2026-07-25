@@ -50,7 +50,21 @@ data class AccountDetailRoute(
 )
 
 @Serializable
-data class AccountEntryRoute(val accountId: String? = null)
+data class AccountEntryRoute(
+    val accountId: String? = null,
+    val prefillName: String? = null,
+    val prefillCurrency: String? = null,
+    val isDraftMode: Boolean = false
+)
+
+/**
+ * SavedStateHandle key used to relay an Account Entry result (a persisted account id, or in draft
+ * mode a JSON-encoded [com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryDraft]) back
+ * to the caller that navigated to [AccountEntryRoute] (e.g. the CSV import wizard). Shared between
+ * the producer (AccountsNavGraph's onDone) and consumer (the caller's composable) to avoid a
+ * stringly-typed key mismatch.
+ */
+const val ACCOUNT_ENTRY_RESULT_KEY = "createdAccountId"
 
 // ── Templates ─────────────────────────────────────────────────────────────────
 

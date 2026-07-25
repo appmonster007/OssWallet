@@ -45,7 +45,6 @@ import com.osscabinet.ossWallet.ui.components.AeonDashedButton
 import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
 import com.osscabinet.ossWallet.ui.screens.categories.list.components.CategoryEditSheet
 import com.osscabinet.ossWallet.ui.screens.import_csv.components.EntityMappingRow
-import com.osscabinet.ossWallet.ui.screens.import_csv.components.ImportAccountConfigDialog
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -70,6 +69,7 @@ fun EntityMappingStep(
     onUpdateAccountMapping: (String, EntityMapping) -> Unit,
     onUpdateCategoryMapping: (String, EntityMapping) -> Unit,
     onUpdateParentGroupMapping: (String, String?) -> Unit,
+    onCreateNewAccount: (com.osscabinet.ossWallet.domain.model.import_csv.AccountToMap) -> Unit,
     onConfirmMappings: () -> Unit
 ) {
     if (preview == null) return
@@ -113,6 +113,7 @@ fun EntityMappingStep(
                 onSearchQueryChange = onSearchQueryChange,
                 onSelectAllNewAccounts = onSelectAllNewAccounts,
                 onUpdateAccountMapping = onUpdateAccountMapping,
+                onCreateNewAccount = onCreateNewAccount,
                 onSelectGroup = { activeCategoryGroupKey = it.ifEmpty { "__ROOT__" } },
                 onConfirm = onConfirmMappings
             )
@@ -156,6 +157,7 @@ private fun MainEntityMappingContent(
     onSearchQueryChange: (String) -> Unit,
     onSelectAllNewAccounts: () -> Unit,
     onUpdateAccountMapping: (String, EntityMapping) -> Unit,
+    onCreateNewAccount: (com.osscabinet.ossWallet.domain.model.import_csv.AccountToMap) -> Unit,
     onSelectGroup: (String) -> Unit,
     onConfirm: () -> Unit
 ) {
@@ -188,7 +190,7 @@ private fun MainEntityMappingContent(
         if (searchQuery.isBlank()) categoryGroups
         else categoryGroups.filter { group ->
             (group.parentName?.fuzzyMatch(searchQuery) == true) ||
-                group.items.any { (_, cat) -> cat.name.fuzzyMatch(searchQuery) }
+                    group.items.any { (_, cat) -> cat.name.fuzzyMatch(searchQuery) }
         }
     }
 
@@ -199,7 +201,8 @@ private fun MainEntityMappingContent(
             accountMappings,
             shortlistedCurrencies,
             onSelectAllNewAccounts,
-            onUpdateAccountMapping
+            onUpdateAccountMapping,
+            onCreateNewAccount
         )
     }
 
@@ -223,12 +226,9 @@ private fun AccountsSection(
     accountMappings: Map<String, EntityMapping>,
     shortlistedCurrencies: List<String>,
     onSelectAllNewAccounts: () -> Unit,
-    onUpdateAccountMapping: (String, EntityMapping) -> Unit
+    onUpdateAccountMapping: (String, EntityMapping) -> Unit,
+    onCreateNewAccount: (com.osscabinet.ossWallet.domain.model.import_csv.AccountToMap) -> Unit
 ) {
-    var configuringAccount by remember {
-        mutableStateOf<com.osscabinet.ossWallet.domain.model.import_csv.AccountToMap?>(null)
-    }
-
     Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
     AeonSectionHeader(
         title = "ACCOUNTS — ${csvAccounts.size} found",
@@ -258,7 +258,7 @@ private fun AccountsSection(
             selectedId = em.existingId,
             onSelect = { id ->
                 if (id == null) {
-                    configuringAccount = acc
+                    onCreateNewAccount(acc)
                 } else {
                     onUpdateAccountMapping(acc.name, em.copy(existingId = id))
                 }
@@ -272,20 +272,6 @@ private fun AccountsSection(
                 )
             },
             supportedCurrencies = shortlistedCurrencies
-        )
-    }
-
-    configuringAccount?.let { acc ->
-        ImportAccountConfigDialog(
-            csvName = acc.name,
-            rowCount = acc.rowCount,
-            initialPrimaryCurrency = accountMappings[acc.name]?.currencyCode ?: "INR",
-            shortlistedCurrencies = shortlistedCurrencies,
-            onDismiss = { configuringAccount = null },
-            onSave = { mapping ->
-                onUpdateAccountMapping(acc.name, mapping)
-                configuringAccount = null
-            }
         )
     }
 }
@@ -536,6 +522,7 @@ private fun EntityMappingStepPreview() {
                 onUpdateAccountMapping = { _, _ -> },
                 onUpdateCategoryMapping = { _, _ -> },
                 onUpdateParentGroupMapping = { _, _ -> },
+                onCreateNewAccount = {},
                 onConfirmMappings = {}
             )
         }

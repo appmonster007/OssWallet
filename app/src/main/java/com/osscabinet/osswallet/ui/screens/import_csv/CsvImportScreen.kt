@@ -51,7 +51,8 @@ import com.osscabinet.ossWallet.ui.theme.HazeLayer
 fun CsvImportScreen(
     viewModel: CsvImportViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToDashboard: () -> Unit
+    onNavigateToDashboard: () -> Unit,
+    onCreateNewAccount: (csvName: String, currency: String?) -> Unit
 ) {
     val context = LocalContext.current
     val step by viewModel.step.collectAsStateWithLifecycle()
@@ -130,7 +131,8 @@ fun CsvImportScreen(
                                 entitySearchQuery = entitySearchQuery,
                                 viewModel = viewModel,
                                 fileLauncher = fileLauncher,
-                                context = context
+                                context = context,
+                                onCreateNewAccount = onCreateNewAccount
                             )
 
                             if (isLoading) {
@@ -173,7 +175,8 @@ private fun StepContent(
     entitySearchQuery: String,
     viewModel: CsvImportViewModel,
     fileLauncher: androidx.activity.result.ActivityResultLauncher<String>,
-    context: android.content.Context
+    context: android.content.Context,
+    onCreateNewAccount: (csvName: String, currency: String?) -> Unit
 ) {
     if (isLoading && session == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -232,6 +235,10 @@ private fun StepContent(
                             name,
                             id
                         )
+                    },
+                    onCreateNewAccount = { acc ->
+                        viewModel.beginAccountCreation(acc.name)
+                        onCreateNewAccount(acc.name, accountMappings[acc.name]?.currencyCode)
                     },
                     onConfirmMappings = { viewModel.proceedFromEntityMapping() }
                 )

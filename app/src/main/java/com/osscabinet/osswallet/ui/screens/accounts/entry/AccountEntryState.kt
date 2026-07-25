@@ -42,6 +42,12 @@ data class AccountEntryState(
     val accountId: String? = null,
     val navTriggered: Boolean = false,
 
+    // When true, saveAccount() never touches the repository — it just hands the configured
+    // fields back via AccountEntryResult.Draft for the caller to persist on its own timeline
+    // (e.g. the CSV import wizard defers account creation to its final "Import" step).
+    val isDraftMode: Boolean = false,
+    val pendingResult: AccountEntryResult? = null,
+
     // External data
     val existingAccount: Account? = null,
     val currencyUsageMap: Map<String, Boolean> = emptyMap(),

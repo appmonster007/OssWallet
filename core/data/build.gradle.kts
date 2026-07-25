@@ -29,8 +29,8 @@ android {
 }
 
 ksp {
-    // Room schema history, used by androidx.room:room-testing's MigrationTestHelper (consumed from
-    // :app's androidTest via an asset source dir pointing at this folder).
+    // Exports Room schema history on every build — useful groundwork if a real migration (and a
+    // MigrationTestHelper test) is ever needed again.
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 

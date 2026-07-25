@@ -259,9 +259,7 @@ class CsvImportServiceImpl @Inject constructor(
     private data class ResolvedEntities(
         val accountMap: MutableMap<String, String>,
         val categoryMap: MutableMap<String, Long>,
-        val accountCurrencyMap: MutableMap<String, String>,
-        val createdAccountIds: List<String>,
-        val createdCategoryIds: List<Long>
+        val accountCurrencyMap: MutableMap<String, String>
     )
 
     private suspend fun resolveAndCreateEntities(
@@ -275,8 +273,6 @@ class CsvImportServiceImpl @Inject constructor(
         val accountCurrencyMap = existingAccounts.mapValues { it.value.currencyCode }.toMutableMap()
         val categoryMap = existingCats.associateBy({ it.name.lowercase() }, { it.id }).toMutableMap()
         val newCategoryColorMap = mutableMapOf<Long, Int>()
-        val createdAccountIds = mutableListOf<String>()
-        val createdCategoryIds = mutableListOf<Long>()
 
         entityMappings
             .sortedBy { if (it.entityType == EntityMapping.EntityType.ACCOUNT) -1 else 0 }
@@ -305,7 +301,6 @@ class CsvImportServiceImpl @Inject constructor(
                                     displayOrder = 999
                                 )
                             )
-                            createdAccountIds.add(id)
                             em.openingBalances.forEach { (currency, amountStr) ->
                                 val amount = amountStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
                                 if (amount.signum() != 0) {
@@ -365,13 +360,12 @@ class CsvImportServiceImpl @Inject constructor(
                             val insertedId = categoryDao.getCategoryByName(em.unknownName)?.id
                                 ?: Category.SYSTEM_OTHERS
                             categoryMap[em.unknownName.lowercase()] = insertedId
-                            createdCategoryIds.add(insertedId)
                             if (parentId == null) newCategoryColorMap[insertedId] = color
                         }
                     }
                 }
             }
-        return ResolvedEntities(accountMap, categoryMap, accountCurrencyMap, createdAccountIds, createdCategoryIds)
+        return ResolvedEntities(accountMap, categoryMap, accountCurrencyMap)
     }
 
     // ──────────────────────────────────────────────────────────────────────────

@@ -8,7 +8,11 @@ import com.osscabinet.ossWallet.domain.model.import_csv.ImportSummary
 import java.io.InputStream
 
 interface CsvImportService {
-    suspend fun parseHeaders(inputStream: InputStream): CsvImportSession
+    suspend fun parseHeaders(
+        inputStream: InputStream,
+        delimiter: Char? = null,
+        encoding: String = "UTF-8"
+    ): CsvImportSession
     suspend fun generatePreview(session: CsvImportSession, inputStream: InputStream): ImportPreview
     suspend fun executeImport(
         session: CsvImportSession,
@@ -16,6 +20,7 @@ interface CsvImportService {
         duplicatePolicy: DuplicatePolicy,
         entityMappings: List<EntityMapping>,
         selectedDuplicateRowIndices: Set<Int>,
+        totalRows: Int = 0,
         onProgress: (Float) -> Unit = {}
     ): Result<ImportSummary>
 }

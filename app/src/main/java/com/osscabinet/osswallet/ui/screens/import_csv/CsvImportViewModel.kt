@@ -15,6 +15,7 @@ import com.osscabinet.ossWallet.domain.model.import_csv.ImportSummary
 import com.osscabinet.ossWallet.domain.model.import_csv.OssWalletField
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
+import com.osscabinet.ossWallet.domain.repository.ImportBatchRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.CsvImportService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,7 +34,8 @@ class CsvImportViewModel @Inject constructor(
     private val csvImportService: CsvImportService,
     private val settingsRepository: SettingsRepository,
     private val accountRepository: AccountRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val importBatchRepository: ImportBatchRepository
 ) : ViewModel() {
 
     sealed class Step {
@@ -61,6 +63,12 @@ class CsvImportViewModel @Inject constructor(
     private val _result = MutableStateFlow<ImportSummary?>(null)
     val result: StateFlow<ImportSummary?> = _result
 
+    private val _resultTimestamp = MutableStateFlow<Long?>(null)
+    val resultTimestamp: StateFlow<Long?> = _resultTimestamp
+
+    private val _undoCompleted = MutableStateFlow(false)
+    val undoCompleted: StateFlow<Boolean> = _undoCompleted
+
     private val _importProgress = MutableStateFlow(0f)
     val importProgress: StateFlow<Float> = _importProgress
 
@@ -73,6 +81,7 @@ class CsvImportViewModel @Inject constructor(
     private val _parentGroupMappings = MutableStateFlow<Map<String, String?>>(emptyMap())
     private val _selectedDuplicates = MutableStateFlow<Set<Int>>(emptySet())
     private val _duplicatePolicy = MutableStateFlow(DuplicatePolicy.SKIP)
+    private val _entitySearchQuery = MutableStateFlow("")
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val accounts: StateFlow<List<Account>> = settingsRepository.currentProfileId
@@ -102,6 +111,25 @@ class CsvImportViewModel @Inject constructor(
                 _step.value = Step.SourceSelection
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to load file"
+            } finally {
+                _isLoading.value = false
+                _loadingMessage.value = null
+            }
+        }
+    }
+
+    /** Re-parses the already-loaded file with an explicit delimiter/encoding override. */
+    fun applyDelimiterAndEncoding(context: Context, delimiter: Char, encoding: String) {
+        val uri = pendingUri ?: return
+        viewModelScope.launch {
+            _isLoading.value = true
+            _loadingMessage.value = "Re-reading file…"
+            _error.value = null
+            try {
+                val stream = context.contentResolver.openInputStream(uri.toUri())!!
+                _session.value = csvImportService.parseHeaders(stream, delimiter, encoding)
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Failed to re-read file"
             } finally {
                 _isLoading.value = false
                 _loadingMessage.value = null
@@ -176,6 +204,22 @@ class CsvImportViewModel @Inject constructor(
         _parentGroupMappings.update { it + (parentName to existingId) }
     }
 
+    fun updateEntitySearchQuery(query: String) {
+        _entitySearchQuery.value = query
+    }
+
+    /** Forces every CSV account to "create new", discarding any suggested existing matches. */
+    fun selectAllNewAccounts() {
+        val preview = _preview.value ?: return
+        _accountMappings.update { current ->
+            preview.allCsvAccounts.associate { acc ->
+                val existing = current[acc.name]
+                acc.name to (existing?.copy(existingId = null)
+                    ?: EntityMapping(acc.name, null, EntityMapping.EntityType.ACCOUNT))
+            }
+        }
+    }
+
     fun proceedFromEntityMapping() {
         _step.value = Step.Preview
     }
@@ -208,10 +252,12 @@ class CsvImportViewModel @Inject constructor(
                     _duplicatePolicy.value,
                     finalMappings,
                     _selectedDuplicates.value,
+                    totalRows = _preview.value?.totalRows ?: 0,
                     onProgress = { progress -> _importProgress.value = progress }
                 )
                 if (result.isSuccess) {
                     _result.value = result.getOrNull()
+                    _resultTimestamp.value = System.currentTimeMillis()
                 } else {
                     _error.value = result.exceptionOrNull()?.message ?: "Import failed"
                 }
@@ -221,6 +267,25 @@ class CsvImportViewModel @Inject constructor(
                 _isLoading.value = false
                 _loadingMessage.value = null
                 _importProgress.value = 0f
+            }
+        }
+    }
+
+    /** Reverses the just-completed import, within the client-enforced undo window. */
+    fun undoImport() {
+        val batchId = _result.value?.batchId?.takeIf { it.isNotBlank() } ?: return
+        viewModelScope.launch {
+            _isLoading.value = true
+            _loadingMessage.value = "Undoing import…"
+            try {
+                if (importBatchRepository.undoImport(batchId)) {
+                    _undoCompleted.value = true
+                }
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Undo failed"
+            } finally {
+                _isLoading.value = false
+                _loadingMessage.value = null
             }
         }
     }
@@ -323,6 +388,7 @@ class CsvImportViewModel @Inject constructor(
     val parentGroupMappings = _parentGroupMappings.asStateFlow()
     val selectedDuplicates = _selectedDuplicates.asStateFlow()
     val duplicatePolicy = _duplicatePolicy.asStateFlow()
+    val entitySearchQuery = _entitySearchQuery.asStateFlow()
 }
 
 // Extension to easily expose MutableStateFlow as StateFlow

@@ -112,7 +112,9 @@
       "WebFetch(domain:nameisjayant.medium.com)",
       "Bash(echo \"exit:$?\")",
       "Bash(git diff *)",
-      "Bash(awk 'NR>=1')"
+      "Bash(awk 'NR>=1')",
+      "Skill(artifact-design)",
+      "Artifact"
     ]
   }
 }

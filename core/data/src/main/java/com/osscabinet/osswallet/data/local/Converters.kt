@@ -171,6 +171,26 @@ class Converters {
     }
 
     @TypeConverter
+    fun fromStringList(value: List<String>?): String? {
+        return value?.let { json.encodeToString(it) }
+    }
+
+    @TypeConverter
+    fun toStringList(value: String?): List<String>? {
+        return value?.let { json.decodeFromString(it) }
+    }
+
+    @TypeConverter
+    fun fromLongList(value: List<Long>?): String? {
+        return value?.let { json.encodeToString(it) }
+    }
+
+    @TypeConverter
+    fun toLongList(value: String?): List<Long>? {
+        return value?.let { json.decodeFromString(it) }
+    }
+
+    @TypeConverter
     fun fromCategoryNature(value: CategoryNature?): String? {
         return value?.value
     }

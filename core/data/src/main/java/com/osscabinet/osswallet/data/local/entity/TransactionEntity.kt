@@ -33,7 +33,8 @@ import java.math.BigDecimal
         Index(value = ["status"]),
         Index(value = ["profileId", "timestamp"]),
         Index(value = ["profileId", "accountId"]),
-        Index(value = ["profileId", "lastUpdated"])
+        Index(value = ["profileId", "lastUpdated"]),
+        Index(value = ["importBatchId"])
     ]
 )
 data class TransactionEntity(
@@ -59,5 +60,6 @@ data class TransactionEntity(
     val targetAccountId: String? = null,
     val targetCurrency: String? = null,
     val transferRate: BigDecimal = BigDecimal.ONE,
-    val lastUpdated: Long = System.currentTimeMillis()
+    val lastUpdated: Long = System.currentTimeMillis(),
+    val importBatchId: String? = null
 )

@@ -28,6 +28,12 @@ android {
     }
 }
 
+ksp {
+    // Room schema history, used by androidx.room:room-testing's MigrationTestHelper (consumed from
+    // :app's androidTest via an asset source dir pointing at this folder).
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     // Domain module — 'api' so :app gets domain types transitively via :core:data
     api(project(":core:domain"))

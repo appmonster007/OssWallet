@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.data.repository.CategoryRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.ComputationRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.CurrencyRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.FilterRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.ImportBatchRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.LoanRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.PlannedPaymentRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.ProfileRepositoryImpl
@@ -26,6 +27,7 @@ import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
+import com.osscabinet.ossWallet.domain.repository.ImportBatchRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
@@ -61,6 +63,9 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindTemplateRepository(impl: TemplateRepositoryImpl): TemplateRepository
+    @Binds
+    @Singleton
+    abstract fun bindImportBatchRepository(impl: ImportBatchRepositoryImpl): ImportBatchRepository
     @Binds
     @Singleton
     abstract fun bindBudgetRepository(impl: BudgetRepositoryImpl): BudgetRepository

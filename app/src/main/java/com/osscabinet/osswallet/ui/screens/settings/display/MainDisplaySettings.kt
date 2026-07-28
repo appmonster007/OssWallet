@@ -55,6 +55,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
+import com.osscabinet.ossWallet.domain.model.settings.CardOpenAnimation
 import com.osscabinet.ossWallet.domain.model.settings.UiDensity
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
@@ -82,6 +83,8 @@ fun MainDisplaySettings(
     val theme by viewModel.theme.collectAsStateWithLifecycle()
     val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
     val cardAnimationEnabled by viewModel.cardAnimationEnabled.collectAsStateWithLifecycle()
+    val cardOpenAnimationName by viewModel.cardOpenAnimation.collectAsStateWithLifecycle()
+    val currentCardOpenAnim = CardOpenAnimation.fromName(cardOpenAnimationName)
     val expandableFabEnabled by viewModel.expandableFabEnabled.collectAsStateWithLifecycle()
     val recentActivitiesBreakdown by viewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
@@ -96,6 +99,7 @@ fun MainDisplaySettings(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showFontDialog by remember { mutableStateOf(false) }
     var showDensityDialog by remember { mutableStateOf(false) }
+    var showCardOpenAnimDialog by remember { mutableStateOf(false) }
 
     if (showThemeDialog) {
         val themes = listOf("System", "Light", "Dark", "Amoled")
@@ -272,6 +276,102 @@ fun MainDisplaySettings(
                         TextButton(
                             onClick = { showFontDialog = false }
                         ) {
+                            Text(
+                                "Close",
+                                style = AppTextStyles.listItemTitle.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.primary
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showCardOpenAnimDialog) {
+        Dialog(
+            onDismissRequest = { showCardOpenAnimDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            val configuration = LocalConfiguration.current
+            val screenHeight = configuration.screenHeightDp.dp
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .heightIn(max = screenHeight * 0.85f),
+                shape = RoundedCornerShape(32.dp),
+                color = AppColors.sheetSurface,
+                tonalElevation = 6.dp
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Text(
+                        text = "Card Open Animation",
+                        style = AppTextStyles.heroAmount.copy(
+                            fontWeight = FontWeight.Light,
+                            fontSize = 28.sp,
+                            color = AppColors.contentPrimary.copy(alpha = 0.8f)
+                        ),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text(
+                        text = "How a card reveals its settings when you open it.",
+                        style = AppTextStyles.listItemSubtitle,
+                        color = AppColors.contentSecondary,
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        CardOpenAnimation.entries.forEach { anim ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.setCardOpenAnimation(anim)
+                                        showCardOpenAnimDialog = false
+                                    }
+                                    .padding(AeonTheme.dimensions.cardPadding),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Animation,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
+                                )
+                                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(anim.displayName, style = AppTextStyles.listItemTitle)
+                                    Text(
+                                        text = anim.description,
+                                        style = AppTextStyles.listItemSubtitle,
+                                        color = AppColors.contentSecondary
+                                    )
+                                }
+                                if (anim == currentCardOpenAnim) {
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        tint = AppColors.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        TextButton(onClick = { showCardOpenAnimDialog = false }) {
                             Text(
                                 "Close",
                                 style = AppTextStyles.listItemTitle.copy(
@@ -471,6 +571,17 @@ fun MainDisplaySettings(
                                 checked = cardAnimationEnabled,
                                 onCheckedChange = { viewModel.setCardAnimationEnabled(it) },
                                 isFlush = false
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.5f)
+                            )
+                            AeonSettingsItem(
+                                title = "Open Animation",
+                                subtitle = "${currentCardOpenAnim.displayName} — ${currentCardOpenAnim.description}",
+                                icon = Icons.Rounded.Animation,
+                                onClick = { showCardOpenAnimDialog = true }
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),

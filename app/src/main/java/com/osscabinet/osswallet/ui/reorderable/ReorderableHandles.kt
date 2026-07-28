@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -32,6 +33,12 @@ fun Modifier.longPressDraggableHandle(
     onDragStopped: () -> Unit = {},
 ): Modifier = composed {
     var handleCoords: LayoutCoordinates? by remember { mutableStateOf(null) }
+    // pointerInput's suspend block only restarts when `key`/`enabled` change, so it would
+    // otherwise keep calling whichever onDragStarted/onDragStopped closure was in scope the
+    // moment it last (re)started — stale if the caller's callback closes over other Compose
+    // state (e.g. reading a locally-owned reorder list to persist on drop).
+    val onDragStartedState by rememberUpdatedState(onDragStarted)
+    val onDragStoppedState by rememberUpdatedState(onDragStopped)
 
     this
         .onGloballyPositioned { coords -> handleCoords = coords }
@@ -44,7 +51,7 @@ fun Modifier.longPressDraggableHandle(
                     if (!handle.isAttached || !container.isAttached) return@detectDragGesturesAfterLongPress
                     val pointerInContainer = container.localPositionOf(handle, localOffset)
                     state.onDragStart(key, pointerInContainer)
-                    onDragStarted()
+                    onDragStartedState()
                 },
                 onDrag = { change, dragAmount ->
                     change.consume()
@@ -52,11 +59,11 @@ fun Modifier.longPressDraggableHandle(
                 },
                 onDragEnd = {
                     state.onDragStop()
-                    onDragStopped()
+                    onDragStoppedState()
                 },
                 onDragCancel = {
                     state.onDragStop()
-                    onDragStopped()
+                    onDragStoppedState()
                 },
             )
         }
@@ -74,6 +81,10 @@ fun Modifier.draggableHandle(
     onDragStopped: () -> Unit = {},
 ): Modifier = composed {
     var handleCoords: LayoutCoordinates? by remember { mutableStateOf(null) }
+    // See longPressDraggableHandle: keep the caller's callbacks fresh across recompositions even
+    // though pointerInput itself only restarts when `key`/`enabled` change.
+    val onDragStartedState by rememberUpdatedState(onDragStarted)
+    val onDragStoppedState by rememberUpdatedState(onDragStopped)
 
     this
         .onGloballyPositioned { coords -> handleCoords = coords }
@@ -86,7 +97,7 @@ fun Modifier.draggableHandle(
                     if (!handle.isAttached || !container.isAttached) return@detectDragGestures
                     val pointerInContainer: Offset = container.localPositionOf(handle, localOffset)
                     state.onDragStart(key, pointerInContainer)
-                    onDragStarted()
+                    onDragStartedState()
                 },
                 onDrag = { change, dragAmount ->
                     change.consume()
@@ -94,11 +105,11 @@ fun Modifier.draggableHandle(
                 },
                 onDragEnd = {
                     state.onDragStop()
-                    onDragStopped()
+                    onDragStoppedState()
                 },
                 onDragCancel = {
                     state.onDragStop()
-                    onDragStopped()
+                    onDragStoppedState()
                 },
             )
         }

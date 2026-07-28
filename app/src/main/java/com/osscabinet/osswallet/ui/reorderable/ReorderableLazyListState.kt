@@ -1,5 +1,8 @@
 package com.osscabinet.ossWallet.ui.reorderable
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -13,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -25,8 +29,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import kotlin.math.pow
 
 /**
@@ -102,6 +110,20 @@ class ReorderableLazyListState internal constructor(
     private var lastSwapTimeMs: Long = 0L
     private var autoScrollJob: Job? = null
 
+    // ---- Swap re-entrancy guard ----
+    // Prevents onDrag() and the autoscroll frame loop from both triggering onMove() for the same
+    // stale index before the LazyColumn's layoutInfo (and this state's itemBounds) reflect the
+    // previous swap. Without this, fast drags combined with autoscroll can double-swap or swap
+    // against indices that are already out of date.
+    private var swapInFlight by mutableStateOf(false)
+
+    // ---- Drop-settle animation ----
+    // The key of the item that just finished dragging and is easing back to rest, plus the
+    // translationY it should keep applying while settling. Avoids a hard visual "snap" the
+    // instant a drag ends.
+    private var settlingKey: Any? by mutableStateOf(null)
+    private val settlingOffset = Animatable(0f)
+
     fun isDragging(key: Any): Boolean = draggedKey == key
 
     /**
@@ -115,10 +137,21 @@ class ReorderableLazyListState internal constructor(
      */
     fun draggedItemTranslation(key: Any): Float {
         if (draggedKey != key) return 0f
+        return currentDraggedTranslation()
+    }
+
+    private fun currentDraggedTranslation(): Float {
+        val key = draggedKey ?: return 0f
         val layoutTop = itemBounds[key]?.top ?: return 0f
         val desiredTop = pointerYInContainer - touchOffsetWithinItem
         return desiredTop - layoutTop
     }
+
+    /** Whether [key] is currently easing back to rest after being dropped. */
+    fun isSettling(key: Any): Boolean = settlingKey == key
+
+    /** The translationY to apply while [key] is settling. Returns 0 once settled or if not settling. */
+    fun settlingTranslation(key: Any): Float = if (settlingKey == key) settlingOffset.value else 0f
 
     // ---- Internal API for ReorderableItem ----
 
@@ -142,6 +175,11 @@ class ReorderableLazyListState internal constructor(
      */
     internal fun onDragStart(key: Any, pointerInContainer: Offset) {
         val item = itemBounds[key] ?: return
+        if (settlingKey == key) {
+            // Re-grabbed before its settle animation finished — cancel the settle so the two
+            // translations don't fight each other.
+            settlingKey = null
+        }
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         draggedKey = key
         pointerYInContainer = pointerInContainer.y
@@ -160,10 +198,29 @@ class ReorderableLazyListState internal constructor(
     internal fun onDragStop() {
         autoScrollJob?.cancel()
         autoScrollJob = null
+
+        val key = draggedKey
+        val lastTranslation = currentDraggedTranslation()
+
         draggedKey = null
         pointerYInContainer = 0f
         touchOffsetWithinItem = 0f
         draggedItemHeightSnapshot = 0f
+
+        if (key != null && lastTranslation != 0f) {
+            settlingKey = key
+            scope.launch {
+                settlingOffset.snapTo(lastTranslation)
+                settlingOffset.animateTo(
+                    targetValue = 0f,
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMediumLow,
+                        visibilityThreshold = 0.5f,
+                    ),
+                )
+                if (settlingKey == key) settlingKey = null
+            }
+        }
     }
 
     // ---- Accessibility ----
@@ -220,8 +277,24 @@ class ReorderableLazyListState internal constructor(
 
     // ---- Swap engine ----
 
+    /**
+     * Finds the nearest visible item on either side of the dragged item whose swap threshold has
+     * been crossed, and swaps with it.
+     *
+     * Unlike a strict `currentIndex ± 1` lookup, this scans outward through *all* visible items in
+     * each direction so a neighbor that happens to be scrolled just outside the ±1 slot (e.g. right
+     * at the viewport edge during autoscroll) is still found. Candidates are checked nearest-first
+     * and the scan stops at the first miss in that direction — since farther items require crossing
+     * an even larger threshold, a miss on the nearest candidate guarantees a miss on farther ones.
+     *
+     * The direction-specific threshold check ([Rect.top] for items below, [Rect.bottom] for items
+     * above) is what gives the swap hysteresis: reversing a swap requires crossing back through the
+     * same fraction of the target's bounds, so a jittery finger sitting near the boundary can't
+     * flip-flop the same pair back and forth.
+     */
     private fun attemptSwap() {
         val key = draggedKey ?: return
+        if (swapInFlight) return
         val now = System.currentTimeMillis()
         if (now - lastSwapTimeMs < swapCooldownMs) return
 
@@ -234,35 +307,45 @@ class ReorderableLazyListState internal constructor(
         val draggedBottom = draggedTop + draggedItemHeightSnapshot
         val draggedCenterY = (draggedTop + draggedBottom) / 2f
 
-        // Only consider IMMEDIATELY adjacent items. This cascades cleanly during fast drags
-        // because each layout pass re-runs this check.
-        val nextInfo = visible.firstOrNull { it.index == currentIndex + 1 }
-        val prevInfo = visible.firstOrNull { it.index == currentIndex - 1 }
-
-        if (nextInfo != null) {
-            val nextKey = nextInfo.key
-            val nextBounds = itemBounds[nextKey]
-            if (nextBounds != null &&
-                draggedCenterY > nextBounds.top + nextBounds.height * swapTravelRatio
-            ) {
-                lastSwapTimeMs = now
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onMoveState.value(currentIndex, nextInfo.index)
+        val below = visible.filter { it.index > currentIndex }.sortedBy { it.index }
+        for (candidate in below) {
+            val bounds = itemBounds[candidate.key] ?: continue
+            if (draggedCenterY > bounds.top + bounds.height * swapTravelRatio) {
+                performSwap(currentIndex, candidate.index, now)
                 return
             }
+            break
         }
 
-        if (prevInfo != null) {
-            val prevKey = prevInfo.key
-            val prevBounds = itemBounds[prevKey]
-            if (prevBounds != null &&
-                draggedCenterY < prevBounds.bottom - prevBounds.height * swapTravelRatio
-            ) {
-                lastSwapTimeMs = now
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onMoveState.value(currentIndex, prevInfo.index)
+        val above = visible.filter { it.index < currentIndex }.sortedByDescending { it.index }
+        for (candidate in above) {
+            val bounds = itemBounds[candidate.key] ?: continue
+            if (draggedCenterY < bounds.bottom - bounds.height * swapTravelRatio) {
+                performSwap(currentIndex, candidate.index, now)
                 return
             }
+            break
+        }
+    }
+
+    private fun performSwap(fromIndex: Int, toIndex: Int, now: Long) {
+        lastSwapTimeMs = now
+        swapInFlight = true
+        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        onMoveState.value(fromIndex, toIndex)
+
+        // Hold the gate until the LazyColumn's layoutInfo actually reflects the new order (or a
+        // timeout elapses) so a fast drag/autoscroll can't queue a second swap against indices
+        // that are already stale.
+        scope.launch {
+            try {
+                withTimeout(500L) {
+                    snapshotFlow { lazyListState.layoutInfo }.drop(1).first()
+                }
+            } catch (e: TimeoutCancellationException) {
+                // Unblock anyway — better to risk a rare stale swap than to wedge dragging.
+            }
+            swapInFlight = false
         }
     }
 }

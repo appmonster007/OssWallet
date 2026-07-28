@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import com.osscabinet.ossWallet.domain.formatter.ThemeMode
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.domain.model.settings.CardOpenAnimation
 import com.osscabinet.ossWallet.domain.model.settings.UiIdentity
 
 // --- AMOLED THEME ---
@@ -222,6 +223,11 @@ val LocalThemeMode = staticCompositionLocalOf<ThemeMode> {
 
 val LocalUiIdentity = staticCompositionLocalOf {
     UiIdentity.DEFAULT
+}
+
+/** The user's chosen card-open animation, provided by [OssWalletTheme] from settings. */
+val LocalCardOpenAnimation = staticCompositionLocalOf {
+    CardOpenAnimation.DEFAULT
 }
 
 object AppColors {

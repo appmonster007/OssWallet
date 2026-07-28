@@ -20,6 +20,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val autoSaveExchangeRates: Flow<Boolean> = settingsDataStore.autoSaveExchangeRates
     override val isOnboardingCompleted: Flow<Boolean> = settingsDataStore.isOnboardingCompleted
     override val cardAnimationEnabled: Flow<Boolean> = settingsDataStore.cardAnimationEnabled
+    override val cardOpenAnimation: Flow<String> = settingsDataStore.cardOpenAnimation
     override val expandableFabEnabled: Flow<Boolean> = settingsDataStore.expandableFabEnabled
     override val isDatabaseSeeded: Flow<Boolean> = settingsDataStore.isDatabaseSeeded
     override val use24HourFormat: Flow<Boolean> = settingsDataStore.use24HourFormat
@@ -67,6 +68,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun saveCardAnimationEnabled(enabled: Boolean) =
         settingsDataStore.saveCardAnimationEnabled(enabled)
+
+    override suspend fun saveCardOpenAnimation(name: String) =
+        settingsDataStore.saveCardOpenAnimation(name)
 
     override suspend fun saveExpandableFabEnabled(enabled: Boolean) =
         settingsDataStore.saveExpandableFabEnabled(enabled)

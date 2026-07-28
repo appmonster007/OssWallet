@@ -56,6 +56,7 @@ class FakeSettingsRepository(
     override val autoSaveExchangeRates: Flow<Boolean> = flowOf(false)
     override val isOnboardingCompleted: Flow<Boolean> = flowOf(true)
     override val cardAnimationEnabled: Flow<Boolean> = flowOf(true)
+    override val cardOpenAnimation: Flow<String> = flowOf("FLIP")
     override val expandableFabEnabled: Flow<Boolean> = flowOf(true)
     override val isDatabaseSeeded: Flow<Boolean> = flowOf(false)
     override val use24HourFormat: Flow<Boolean> = flowOf(false)
@@ -87,6 +88,7 @@ class FakeSettingsRepository(
     override suspend fun saveAutoSaveExchangeRates(enabled: Boolean) {}
     override suspend fun saveOnboardingCompleted(completed: Boolean) {}
     override suspend fun saveCardAnimationEnabled(enabled: Boolean) {}
+    override suspend fun saveCardOpenAnimation(name: String) {}
     override suspend fun saveExpandableFabEnabled(enabled: Boolean) {}
     override suspend fun saveDatabaseSeeded(seeded: Boolean) {}
     override suspend fun saveUse24HourFormat(use24Hour: Boolean) {}

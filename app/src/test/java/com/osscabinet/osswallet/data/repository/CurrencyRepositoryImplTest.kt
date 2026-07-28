@@ -139,6 +139,7 @@ private class FakeSettingsRepository(currencyProviderId: String) : SettingsRepos
     override val autoSaveExchangeRates: Flow<Boolean> get() = unused
     override val isOnboardingCompleted: Flow<Boolean> get() = unused
     override val cardAnimationEnabled: Flow<Boolean> get() = unused
+    override val cardOpenAnimation: Flow<String> get() = unused
     override val expandableFabEnabled: Flow<Boolean> get() = unused
     override val isDatabaseSeeded: Flow<Boolean> get() = unused
     override val use24HourFormat: Flow<Boolean> get() = unused
@@ -172,6 +173,7 @@ private class FakeSettingsRepository(currencyProviderId: String) : SettingsRepos
     override suspend fun saveAutoSaveExchangeRates(enabled: Boolean) = unused
     override suspend fun saveOnboardingCompleted(completed: Boolean) = unused
     override suspend fun saveCardAnimationEnabled(enabled: Boolean) = unused
+    override suspend fun saveCardOpenAnimation(name: String) = unused
     override suspend fun saveExpandableFabEnabled(enabled: Boolean) = unused
     override suspend fun saveDatabaseSeeded(seeded: Boolean) = unused
     override suspend fun saveUse24HourFormat(use24Hour: Boolean) = unused

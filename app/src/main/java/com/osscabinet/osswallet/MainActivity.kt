@@ -66,6 +66,10 @@ class MainActivity : FragmentActivity() {
             val glassSettings by settingsRepository.glassSettings.collectAsStateWithLifecycle(initialValue = GlassSettings())
             val uiDensityName by settingsRepository.uiDensity.collectAsStateWithLifecycle(initialValue = com.osscabinet.ossWallet.domain.model.settings.UiDensity.DEFAULT.name)
             val uiDensity = com.osscabinet.ossWallet.domain.model.settings.UiDensity.fromName(uiDensityName)
+            val cardOpenAnimationName by settingsRepository.cardOpenAnimation.collectAsStateWithLifecycle(
+                initialValue = com.osscabinet.ossWallet.domain.model.settings.CardOpenAnimation.DEFAULT.name
+            )
+            val cardOpenAnimation = com.osscabinet.ossWallet.domain.model.settings.CardOpenAnimation.fromName(cardOpenAnimationName)
 
             LaunchedEffect(precision, numberingSystem) {
                 // ARC-05: atomic paired update — readers can never observe a half-applied
@@ -87,7 +91,8 @@ class MainActivity : FragmentActivity() {
                 identity = uiIdentity,
                 dynamicAccent = dynamicAccent,
                 glassSettings = glassSettings,
-                uiDensity = uiDensity
+                uiDensity = uiDensity,
+                cardOpenAnimation = cardOpenAnimation
             ) {
                 CompositionLocalProvider(
                     LocalGlassmorphismEnabled provides glassmorphismEnabled,

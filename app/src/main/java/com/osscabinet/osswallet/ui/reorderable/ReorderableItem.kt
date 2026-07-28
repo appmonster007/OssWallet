@@ -44,6 +44,7 @@ fun LazyItemScope.ReorderableItem(
     val isDragging = state.isDragging(key)
     val isAnyItemDragging = state.draggedKey != null
     val isOtherItemDragging = isAnyItemDragging && !isDragging
+    val isSettling = state.isSettling(key)
 
     DisposableEffect(key) {
         onDispose { state.unregisterItem(key) }
@@ -76,8 +77,9 @@ fun LazyItemScope.ReorderableItem(
         modifier = modifier
             // animateItem handles smooth slide transitions for non-dragged items when the data
             // re-orders. We skip it for the dragged item — graphicsLayer.translationY handles its
-            // pinning, and animateItem would fight that.
-            .then(if (!isDragging && enabled) Modifier.animateItem() else Modifier)
+            // pinning, and animateItem would fight that. Also skipped while settling: the drop
+            // spring already animates translationY back to zero, so animateItem would fight that too.
+            .then(if (!isDragging && !isSettling && enabled) Modifier.animateItem() else Modifier)
             .onGloballyPositioned { coords ->
                 if (enabled) state.registerItem(key, coords)
             }
@@ -97,12 +99,17 @@ fun LazyItemScope.ReorderableItem(
             }
         }
 
-        // 4. Floating Item: The actual card being moved, elevated and scaled.
+        // 4. Floating Item: The actual card being moved, elevated and scaled. Stays elevated
+        // briefly after drop while it eases back to rest (see ReorderableLazyListState.onDragStop).
         Box(
             modifier = Modifier
-                .zIndex(if (isDragging) 10f else 0f) // High Z-index to float above all
+                .zIndex(if (isDragging || isSettling) 10f else 0f) // High Z-index to float above all
                 .graphicsLayer {
-                    translationY = if (isDragging) state.draggedItemTranslation(key) else 0f
+                    translationY = when {
+                        isDragging -> state.draggedItemTranslation(key)
+                        isSettling -> state.settlingTranslation(key)
+                        else -> 0f
+                    }
                     scaleX = scale
                     scaleY = scale
                     shadowElevation = elevationPx

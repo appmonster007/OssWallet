@@ -27,10 +27,13 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -81,8 +84,25 @@ fun AeonCardList(
     highlightedId: String? = null,
     onScrollComplete: () -> Unit = {},
 ) {
-    val sortedCards = remember(cards) { cards.sortedBy { it.order } }
-    val sortedCardsRef by rememberUpdatedState(sortedCards)
+    // Locally-owned visual order, decoupled from `cards`. A swap during drag must reorder this
+    // list synchronously so the LazyColumn re-lays-out in the same frame the finger crosses a
+    // threshold — waiting on `onReorder` to round-trip through the repository/Room and back into
+    // `cards` is an I/O-bound async hop per swap, which is what made items appear not to move.
+    // Mirrors the `editList` pattern already used in AccountListScreen/TemplateListScreen.
+    var editList by remember { mutableStateOf(emptyList<CardConfig>()) }
+
+    LaunchedEffect(cards) {
+        val sorted = cards.sortedBy { it.order }
+        val sameIds = editList.map { it.cardId }.toSet() == sorted.map { it.cardId }.toSet()
+        editList = if (editList.isEmpty() || !sameIds) {
+            sorted
+        } else {
+            // Preserve the in-progress/just-dropped visual order; only field values changed upstream.
+            val orderMap = editList.withIndex().associate { it.value.cardId to it.index }
+            sorted.sortedBy { orderMap[it.cardId] ?: Int.MAX_VALUE }
+        }
+    }
+
     val onReorderRef by rememberUpdatedState(onReorder)
     val cardDataMapState = rememberUpdatedState(cardDataMap)
     val headerOffset = if (header != null) 1 else 0
@@ -93,10 +113,8 @@ fun AeonCardList(
     ) { fromLazy, toLazy ->
         val from = fromLazy - headerOffset
         val to = toLazy - headerOffset
-        val current = sortedCardsRef
-        if ((from in current.indices) && (to in current.indices)) {
-            val newList = current.toMutableList().apply { add(to, removeAt(from)) }
-            onReorderRef(newList)
+        if ((from in editList.indices) && (to in editList.indices)) {
+            editList = editList.toMutableList().apply { add(to, removeAt(from)) }
         }
     }
 
@@ -115,7 +133,7 @@ fun AeonCardList(
                 item(key = "__aeon_card_list_header") { header() }
             }
 
-            items(sortedCards, key = { it.cardId }, contentType = { it.cardType }) { cardConfig ->
+            items(editList, key = { it.cardId }, contentType = { it.cardType }) { cardConfig ->
                 val draggingActive = reorderState.draggedKey != null
                 val isDragging = reorderState.isDragging(cardConfig.cardId)
                 val alpha by animateFloatAsState(
@@ -133,6 +151,10 @@ fun AeonCardList(
                     val dragHandleModifier = Modifier.draggableHandle(
                         state = reorderState,
                         key = cardConfig.cardId,
+                        // Persist once, when the gesture ends — not on every swap. `editList` is a
+                        // Compose State read at call time via rememberUpdatedState inside
+                        // draggableHandle, so this always sees the final order.
+                        onDragStopped = { onReorderRef(editList) },
                     )
                     val cardState by remember(cardConfig.cardId) {
                         derivedStateOf { cardDataMapState.value[cardConfig.cardId] }

@@ -60,12 +60,14 @@ fun rememberReorderableLazyListState(
     maxScrollSpeedPxPerFrame: Float = 24f,
     swapCooldownMs: Long = 50L,
     swapTravelRatio: Float = 0.5f,
+    onAccessibilityMove: () -> Unit = {},
     onMove: (fromIndex: Int, toIndex: Int) -> Unit,
 ): ReorderableLazyListState {
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val onMoveState = rememberUpdatedState(onMove)
+    val onAccessibilityMoveState = rememberUpdatedState(onAccessibilityMove)
     val scrollThresholdPx = with(density) { scrollThreshold.toPx() }
 
     return remember(lazyListState) {
@@ -74,6 +76,7 @@ fun rememberReorderableLazyListState(
             haptic = haptic,
             scope = scope,
             onMoveState = onMoveState,
+            onAccessibilityMoveState = onAccessibilityMoveState,
             scrollThresholdPx = scrollThresholdPx,
             maxScrollSpeedPx = maxScrollSpeedPxPerFrame,
             swapCooldownMs = swapCooldownMs,
@@ -87,6 +90,7 @@ class ReorderableLazyListState internal constructor(
     private val haptic: HapticFeedback,
     private val scope: CoroutineScope,
     private val onMoveState: State<(Int, Int) -> Unit>,
+    private val onAccessibilityMoveState: State<() -> Unit>,
     private val scrollThresholdPx: Float,
     private val maxScrollSpeedPx: Float,
     private val swapCooldownMs: Long,
@@ -228,6 +232,11 @@ class ReorderableLazyListState internal constructor(
     /**
      * Move the item identified by [key] by [delta] positions in the underlying data list.
      * Returns true if the move was accepted (bounds-checked against the LazyColumn's total item count).
+     *
+     * Unlike a drag gesture (which buffers swaps and persists once on drop), a11y moves have no
+     * "gesture end" signal to hang persistence off of — each invocation is treated as a complete,
+     * standalone edit and [onAccessibilityMoveState] is invoked immediately after so the caller can
+     * write it straight through to storage.
      */
     fun moveByAccessibility(key: Any, delta: Int): Boolean {
         val info = lazyListState.layoutInfo
@@ -235,6 +244,7 @@ class ReorderableLazyListState internal constructor(
         val targetIndex = currentIndex + delta
         if (targetIndex !in 0 until info.totalItemsCount) return false
         onMoveState.value(currentIndex, targetIndex)
+        onAccessibilityMoveState.value()
         return true
     }
 

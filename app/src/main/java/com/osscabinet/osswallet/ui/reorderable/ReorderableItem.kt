@@ -32,6 +32,10 @@ fun Modifier.reorderable(state: ReorderableLazyListState): Modifier =
  *
  * The content slot receives `isDragging` so callers can drive their own visual treatments
  * (scale, elevation, dim non-dragged peers, etc.).
+ *
+ * [placeholder] renders what's left behind in the vacated slot while dragging. Defaults to a
+ * dimmed copy of the row's own `content` (the original ghost behavior); pass a lighter drop-target
+ * indicator instead when re-rendering the full content there is wasteful or visually noisy.
  */
 @Composable
 fun LazyItemScope.ReorderableItem(
@@ -39,6 +43,7 @@ fun LazyItemScope.ReorderableItem(
     key: Any,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    placeholder: (@Composable BoxScope.() -> Unit)? = null,
     content: @Composable BoxScope.(isDragging: Boolean) -> Unit,
 ) {
     val isDragging = state.isDragging(key)
@@ -88,14 +93,16 @@ fun LazyItemScope.ReorderableItem(
             },
     ) {
         if (isDragging) {
-            // 3. Ghost Placeholder: Stays in the list at the original layout position while the
-            // "real" card floats, providing a reference for the drop point.
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .graphicsLayer { alpha = 0.2f }
-            ) {
-                content(false)
+            // 3. Placeholder: Stays in the list at the original layout position while the "real"
+            // row floats, providing a reference for the drop point.
+            Box(modifier = Modifier.matchParentSize()) {
+                if (placeholder != null) {
+                    placeholder()
+                } else {
+                    Box(modifier = Modifier.graphicsLayer { alpha = 0.2f }) {
+                        content(false)
+                    }
+                }
             }
         }
 

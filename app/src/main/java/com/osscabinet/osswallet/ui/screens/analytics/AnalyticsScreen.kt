@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
@@ -66,10 +67,12 @@ import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterPillController
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.LoanActions
+import com.osscabinet.ossWallet.ui.components.cards.LocalCardReorderState
 import com.osscabinet.ossWallet.ui.components.cards.LocalEditingCardId
 import com.osscabinet.ossWallet.ui.components.cards.LocalFilterPillController
 import com.osscabinet.ossWallet.ui.components.cards.LocalOnEditCard
 import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
+import com.osscabinet.ossWallet.ui.components.cards.rememberAeonCardReorderState
 import com.osscabinet.ossWallet.ui.components.cards.TagActions
 import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
@@ -139,6 +142,7 @@ fun AnalyticsScreen(
 
     var showSettingsDialog by remember { mutableStateOf(value = false) }
     var editingCardId by remember { mutableStateOf<String?>(null) }
+    val cardReorderState = rememberAeonCardReorderState()
 
     val tabs = remember { AtelierTab.entries.map { it.displayName } }
     val pagerState = rememberPagerState { tabs.size }
@@ -157,7 +161,8 @@ fun AnalyticsScreen(
         CompositionLocalProvider(
             LocalFilterPillController provides filterPillController,
             LocalEditingCardId provides editingCardId,
-            LocalOnEditCard provides { editingCardId = it }
+            LocalOnEditCard provides { editingCardId = it },
+            LocalCardReorderState provides cardReorderState
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // 1. Content Layer (Layer 1)
@@ -330,6 +335,12 @@ fun AnalyticsScreen(
                     right = AeonTopBarSection(
                         content = {
                             AeonTopBarActionPill {
+                                if (cardReorderState.isReordering) {
+                                    AppBarIconButton(
+                                        icon = Icons.Default.Check,
+                                        onClick = { cardReorderState.confirm() }
+                                    )
+                                }
                                 AppBarIconButton(
                                     icon = Icons.Default.Settings,
                                     onClick = { showSettingsDialog = true }

@@ -29,6 +29,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
@@ -97,6 +98,8 @@ import com.osscabinet.ossWallet.ui.components.cards.AccountActions
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardAtelier
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.LocalCardReorderState
+import com.osscabinet.ossWallet.ui.components.cards.rememberAeonCardReorderState
 import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterPillController
@@ -394,6 +397,7 @@ fun DashboardScreenLayout(
     var isFabExpanded by remember { mutableStateOf(false) }
     var showQuickAddSheet by remember { mutableStateOf(false) }
     var editingCardId by remember { mutableStateOf<String?>(null) }
+    val cardReorderState = rememberAeonCardReorderState()
 
     BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
     BackHandler(enabled = isFabExpanded) { isFabExpanded = false }
@@ -471,7 +475,8 @@ fun DashboardScreenLayout(
         CompositionLocalProvider(
             LocalFilterPillController provides filterPillController,
             LocalEditingCardId provides editingCardId,
-            LocalOnEditCard provides { editingCardId = it }
+            LocalOnEditCard provides { editingCardId = it },
+            LocalCardReorderState provides cardReorderState
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // 1. Content Layer (Layer 1)
@@ -636,10 +641,18 @@ fun DashboardScreenLayout(
                         content = {
                             AeonTopBarActionPill {
                                 when (pagerState.currentPage) {
-                                    0 -> AppBarIconButton(
-                                        icon = Icons.Default.Add,
-                                        onClick = { showAddCardDialog = true }
-                                    )
+                                    0 -> {
+                                        if (cardReorderState.isReordering) {
+                                            AppBarIconButton(
+                                                icon = Icons.Default.Check,
+                                                onClick = { cardReorderState.confirm() }
+                                            )
+                                        }
+                                        AppBarIconButton(
+                                            icon = Icons.Default.Add,
+                                            onClick = { showAddCardDialog = true }
+                                        )
+                                    }
 
                                     1 -> AppBarIconButton(
                                         icon = Icons.Rounded.History,

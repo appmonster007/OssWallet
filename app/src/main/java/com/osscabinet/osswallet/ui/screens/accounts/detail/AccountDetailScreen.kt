@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.History
@@ -90,9 +91,11 @@ import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterPillController
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.LoanActions
+import com.osscabinet.ossWallet.ui.components.cards.LocalCardReorderState
 import com.osscabinet.ossWallet.ui.components.cards.LocalEditingCardId
 import com.osscabinet.ossWallet.ui.components.cards.LocalFilterPillController
 import com.osscabinet.ossWallet.ui.components.cards.LocalOnEditCard
+import com.osscabinet.ossWallet.ui.components.cards.rememberAeonCardReorderState
 import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
 import com.osscabinet.ossWallet.ui.components.cards.TagActions
 import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
@@ -231,6 +234,7 @@ fun AccountDetailScreen(
     var showAddCardDialog by rememberSaveable { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
     var editingCardId by remember { mutableStateOf<String?>(null) }
+    val cardReorderState = rememberAeonCardReorderState()
 
     val filterPillController = remember { FilterPillController() }
 
@@ -318,7 +322,8 @@ fun AccountDetailScreen(
         CompositionLocalProvider(
             LocalFilterPillController provides filterPillController,
             LocalEditingCardId provides editingCardId,
-            LocalOnEditCard provides { editingCardId = it }
+            LocalOnEditCard provides { editingCardId = it },
+            LocalCardReorderState provides cardReorderState
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // 1. Content Layer (Layer 1)
@@ -581,6 +586,11 @@ fun AccountDetailScreen(
                                         AppBarIconButton(
                                             icon = Icons.Rounded.Settings,
                                             onClick = { showSettingsDialog = true })
+                                        if (cardReorderState.isReordering) {
+                                            AppBarIconButton(
+                                                icon = Icons.Rounded.Check,
+                                                onClick = { cardReorderState.confirm() })
+                                        }
                                         AppBarIconButton(
                                             icon = Icons.Rounded.Add,
                                             onClick = { showAddCardDialog = true })

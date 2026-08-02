@@ -67,24 +67,20 @@ import my.nanihadesuka.compose.LazyColumnScrollbar
 import my.nanihadesuka.compose.ScrollbarSettings
 
 /**
- * Hoisted so a screen's top app bar can show a confirm ("tick") action while cards are being
- * reordered, and trigger the actual write-through when the user taps it — [AeonCardList] never
- * persists a reorder on its own drag-stop; only [confirm] does. Create with
- * [rememberAeonCardReorderState] and pass the same instance to both the screen's top bar and its
- * [AeonCardList] call.
+ * Hoisted so a screen's top app bar can show a "tick" action while cards are being reordered.
+ * Each drop already persists on its own (see [AeonCardList]'s drag handle) — this only tracks
+ * whether a reorder is in progress so the tick can appear, and [confirm] just dismisses that
+ * indicator. Create with [rememberAeonCardReorderState] and pass the same instance to both the
+ * screen's top bar and its [AeonCardList] call.
  */
 @Stable
 class AeonCardReorderState {
     var isReordering: Boolean by mutableStateOf(false)
         internal set
 
-    // Re-assigned by AeonCardList on every recomposition so it always closes over the latest
-    // buffered order and onReorder callback.
-    internal var onConfirm: (() -> Unit)? = null
-
-    /** Persist the buffered order and exit reorder mode. No-op if nothing is being reordered. */
+    /** Dismiss the "reordering" indicator. Does not persist anything — each drop already did. */
     fun confirm() {
-        onConfirm?.invoke()
+        isReordering = false
     }
 }
 
@@ -149,20 +145,11 @@ fun AeonCardList(
     val cardDataMapState = rememberUpdatedState(cardDataMap)
     val headerOffset = if (header != null) 1 else 0
 
-    // Re-assigned every recomposition so it always closes over the latest editList/onReorderRef —
-    // this is the ONLY place a reorder gets written through; drag-stop no longer persists on its
-    // own, the screen's top-bar tick button calls this via `reorderState.confirm()`.
-    reorderState.onConfirm = {
-        onReorderRef(editList)
-        reorderState.isReordering = false
-    }
-
     val dragListState = rememberReorderableLazyListState(
         lazyListState = state,
         swapTravelRatio = 0.4f,
         // TalkBack "Move up"/"Move down" has no drag-stop-equivalent event to hang persistence off
-        // of — each invocation is a complete edit on its own, so it writes through immediately,
-        // bypassing the tick-to-confirm flow entirely.
+        // of — each invocation is a complete edit on its own, so it writes through immediately.
         onAccessibilityMove = { onReorderRef(editList) },
     ) { fromLazy, toLazy ->
         val from = fromLazy - headerOffset
@@ -195,22 +182,16 @@ fun AeonCardList(
                     label = "card_drag_alpha"
                 )
 
-                // Drag starts on press-hold-then-move — no separate "enter reorder mode" step.
-                // longPressDraggableHandle (a drag-family gesture) is used rather than a plain
-                // long-press tap detector because it tolerates a descendant already claiming the
-                // touch (e.g. the card icon's own onClick) — a tap-only detector's "unconsumed down"
-                // requirement was the earlier bug that made reordering silently never trigger.
-                // Applied to two independent spots below (the card's leading icon, and a dedicated
-                // trailing drag-handle glyph) so either can grab and drag the same card.
-                //
-                // Persistence is NOT wired to onDragStopped anymore — only reorderState.confirm()
-                // (the screen's top-bar tick button) writes the buffered order through; dropping a
-                // card just leaves it buffered in `editList` and flips on reorder mode so the tick
-                // button appears.
+                // Drag starts on press-hold-then-move on the dedicated trailing drag-handle glyph
+                // (below) — the only grab point for a card, so it never competes with the icon's
+                // own onClick or the header's long-press-to-flip-to-settings gesture. Persists
+                // immediately on drop, same as AccountListScreen/TemplateListScreen; the top-bar
+                // tick button only dismisses the "reordering" indicator, it doesn't gate the save.
                 val dragHandleModifier = Modifier.longPressDraggableHandle(
                     state = dragListState,
                     key = cardConfig.cardId,
                     onDragStarted = { reorderState.isReordering = true },
+                    onDragStopped = { onReorderRef(editList) },
                 )
 
                 ReorderableItem(
@@ -227,7 +208,7 @@ fun AeonCardList(
 
                     Box(modifier = Modifier.fillMaxWidth()) {
                         CardItem(
-                            modifier = dragHandleModifier,
+                            modifier = Modifier,
                             cardConfig = cardConfig,
                             cardState = cardState,
                             cardInput = cardInput,
@@ -245,9 +226,8 @@ fun AeonCardList(
                             onScrollComplete = onScrollComplete,
                         )
 
-                        // Second, dedicated grab affordance — same handle, independent touch target,
-                        // so cards whose icon already has a busy tap/long-press action (open, flip to
-                        // settings) still have an unambiguous place to grab for reordering.
+                        // The only grab point for this card — deliberately separate from the icon,
+                        // which already has its own tap/long-press behavior (open, flip to settings).
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
@@ -259,7 +239,7 @@ fun AeonCardList(
                             Icon(
                                 imageVector = Icons.Rounded.DragHandle,
                                 contentDescription = "Drag to reorder",
-                                tint = AppColors.contentSecondary.copy(alpha = 0.5f),
+                                tint = AppColors.contentSecondary,
                                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                             )
                         }

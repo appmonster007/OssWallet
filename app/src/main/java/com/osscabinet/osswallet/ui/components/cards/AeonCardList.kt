@@ -2,14 +2,12 @@ package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -54,10 +52,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.ui.components.rememberShimmerBrush
 import com.osscabinet.ossWallet.ui.reorderable.ReorderableItem
-import com.osscabinet.ossWallet.ui.reorderable.longPressDraggableHandle
 import com.osscabinet.ossWallet.ui.reorderable.longPressToTrigger
 import com.osscabinet.ossWallet.ui.reorderable.rememberReorderableLazyListState
-import com.osscabinet.ossWallet.ui.reorderable.reorderable
 import com.osscabinet.ossWallet.ui.reorderable.reorderableSemantics
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -151,16 +147,11 @@ fun AeonCardList(
     val headerOffset = if (header != null) 1 else 0
     val haptic = LocalHapticFeedback.current
 
-    val dragListState = rememberReorderableLazyListState(
-        lazyListState = state,
-        swapTravelRatio = 0.4f,
-        // TalkBack "Move up"/"Move down" has no drag-stop-equivalent event to hang persistence off
-        // of — each invocation is a complete edit on its own, so it writes through immediately.
-        onAccessibilityMove = { onReorderRef(editList) },
-    ) { fromLazy, toLazy ->
+    val dragListState = rememberReorderableLazyListState(lazyListState = state) { fromLazy, toLazy ->
         val from = fromLazy - headerOffset
         val to = toLazy - headerOffset
         if ((from in editList.indices) && (to in editList.indices)) {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             editList = editList.toMutableList().apply { add(to, removeAt(from)) }
         }
     }
@@ -169,10 +160,8 @@ fun AeonCardList(
         val trackPad = maxHeight * 0.10f
 
         LazyColumn(
-            state = dragListState.lazyListState,
-            modifier = Modifier
-                .fillMaxSize()
-                .reorderable(dragListState),
+            state = state,
+            modifier = Modifier.fillMaxSize(),
             contentPadding = contentPadding,
             verticalArrangement = verticalArrangement,
         ) {
@@ -181,29 +170,41 @@ fun AeonCardList(
             }
 
             items(editList, key = { it.cardId }, contentType = { it.cardType }) { cardConfig ->
-                // Real drag only exists while reordering — persists immediately on drop, same as
-                // AccountListScreen/TemplateListScreen. The top-bar tick button only dismisses the
-                // "reordering" indicator afterwards; it doesn't gate the save.
-                val dragHandleModifier = Modifier.longPressDraggableHandle(
-                    state = dragListState,
-                    key = cardConfig.cardId,
-                    onDragStopped = { onReorderRef(editList) },
-                )
-
                 ReorderableItem(
                     state = dragListState,
                     key = cardConfig.cardId,
-                    modifier = Modifier.reorderableSemantics(state = dragListState, key = cardConfig.cardId),
-                    placeholder = { DragPlaceholder() },
+                    modifier = Modifier.reorderableSemantics(
+                        lazyListState = state,
+                        key = cardConfig.cardId,
+                        // TalkBack "Move up"/"Move down" has no drag-stop-equivalent event to hang
+                        // persistence off of — each invocation is a complete edit on its own, so it
+                        // writes through immediately.
+                        onMove = { fromLazy, toLazy ->
+                            val from = fromLazy - headerOffset
+                            val to = toLazy - headerOffset
+                            if ((from in editList.indices) && (to in editList.indices)) {
+                                editList = editList.toMutableList().apply { add(to, removeAt(from)) }
+                                onReorderRef(editList)
+                            }
+                        },
+                    ),
                 ) { _ ->
                     val cardState by remember(cardConfig.cardId) {
                         derivedStateOf { cardDataMapState.value[cardConfig.cardId] }
                     }
 
-                    // No animateContentSize() here: it clips content to the animated bounds, which
-                    // cut off every card's own elevation shadow at a hard rectangular edge (the
-                    // shadow's soft blur bleeds a few dp past the card's own bounds by design).
-                    // Collapse/expand is instant instead of animated.
+                    // Real drag only exists while reordering — persists immediately on drop, same
+                    // as AccountListScreen/TemplateListScreen. The top-bar tick button only
+                    // dismisses the "reordering" indicator afterwards; it doesn't gate the save.
+                    val dragHandleModifier = Modifier.longPressDraggableHandle(
+                        onDragStarted = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
+                        onDragStopped = { onReorderRef(editList) },
+                    )
+
+                    // Collapse/expand is instant, not animated: animateContentSize() clips content
+                    // to the animated bounds, which cut off every card's own elevation shadow at a
+                    // hard rectangular edge (the shadow's soft blur bleeds a few dp past the card's
+                    // own bounds by design).
                     Box(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -244,7 +245,7 @@ fun AeonCardList(
         }
 
         LazyColumnScrollbar(
-            state = dragListState.lazyListState,
+            state = state,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(vertical = trackPad),
@@ -372,29 +373,6 @@ private fun CollapsedCardRow(cardConfig: CardConfig, dragHandleModifier: Modifie
             }
         }
     }
-}
-
-/**
- * Drop-target indicator left behind in the dragged card's vacated slot — a plain outlined shape
- * sized to match, not a dimmed copy of the card's own content. Keeps the "where will this land"
- * cue lightweight instead of re-rendering (and re-computing layout for) the full card a second time.
- */
-@Composable
-private fun DragPlaceholder() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .border(
-                width = 1.5.dp,
-                color = AppColors.primary.copy(alpha = 0.4f),
-                shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-            )
-            .background(
-                color = AppColors.primary.copy(alpha = 0.06f),
-                shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-            )
-    )
 }
 
 @Composable

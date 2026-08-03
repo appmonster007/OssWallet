@@ -118,6 +118,7 @@ dependencies {
     implementation(libs.qrcode.kotlin.android)
     implementation(libs.haze)
     implementation(libs.lazycolumnscrollbar)
+    implementation(libs.reorderable)
 
     // WorkManager (PlannedPaymentWorker, WidgetRefreshWorker in :app)
     implementation(libs.androidx.work.runtime.ktx)

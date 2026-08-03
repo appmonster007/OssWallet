@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -79,9 +80,7 @@ import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.management.AeonListItem
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.reorderable.ReorderableItem
-import com.osscabinet.ossWallet.ui.reorderable.longPressDraggableHandle
 import com.osscabinet.ossWallet.ui.reorderable.rememberReorderableLazyListState
-import com.osscabinet.ossWallet.ui.reorderable.reorderable
 import com.osscabinet.ossWallet.ui.reorderable.reorderableSemantics
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
@@ -187,18 +186,19 @@ fun TemplateListScreenContent(
                         .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                 ) {
                     if (isReorderMode) {
+                        val listState = rememberLazyListState()
                         val reorderState = rememberReorderableLazyListState(
+                            lazyListState = listState,
                             onMove = { from, to ->
                                 editList =
                                     editList.toMutableList().apply { add(to, removeAt(from)) }
                             }
                         )
                         LazyColumn(
-                            state = reorderState.lazyListState,
+                            state = listState,
                             modifier = Modifier
                                 .fillMaxSize()
-                                .statusBarsPadding()
-                                .reorderable(reorderState),
+                                .statusBarsPadding(),
                             contentPadding = PaddingValues(
                                 start = AeonTheme.dimensions.screenPadding,
                                 end = AeonTheme.dimensions.screenPadding,
@@ -211,21 +211,25 @@ fun TemplateListScreenContent(
                                 ReorderableItem(
                                     state = reorderState,
                                     key = template.id,
-                                    modifier = Modifier
-                                        .longPressDraggableHandle(
-                                            state = reorderState,
-                                            key = template.id,
+                                    modifier = Modifier.reorderableSemantics(
+                                        lazyListState = listState,
+                                        key = template.id,
+                                        onMove = { from, to ->
+                                            editList = editList.toMutableList().apply { add(to, removeAt(from)) }
+                                            onUpdateOrder(editList)
+                                        },
+                                    ),
+                                ) { isDragging ->
+                                    Box(
+                                        modifier = Modifier.longPressDraggableHandle(
                                             onDragStopped = { onUpdateOrder(editList) },
                                         )
-                                        .reorderableSemantics(
-                                            state = reorderState,
-                                            key = template.id
-                                        ),
-                                ) { isDragging ->
-                                    ReorderTemplateItem(
-                                        template = template,
-                                        isDragging = isDragging
-                                    )
+                                    ) {
+                                        ReorderTemplateItem(
+                                            template = template,
+                                            isDragging = isDragging
+                                        )
+                                    }
                                 }
                             }
                         }

@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -51,10 +50,6 @@ fun LazyItemScope.ReorderableItem(
     val isOtherItemDragging = isAnyItemDragging && !isDragging
     val isSettling = state.isSettling(key)
 
-    DisposableEffect(key) {
-        onDispose { state.unregisterItem(key) }
-    }
-
     // 1. Visual Feedback: Scale and Elevation (Lifting)
     // Scale up slightly when dragged to give "lift" and tactile separation.
     val scale by animateFloatAsState(
@@ -85,9 +80,6 @@ fun LazyItemScope.ReorderableItem(
             // pinning, and animateItem would fight that. Also skipped while settling: the drop
             // spring already animates translationY back to zero, so animateItem would fight that too.
             .then(if (!isDragging && !isSettling && enabled) Modifier.animateItem() else Modifier)
-            .onGloballyPositioned { coords ->
-                if (enabled) state.registerItem(key, coords)
-            }
             .graphicsLayer {
                 alpha = dimAlpha
             },

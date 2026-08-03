@@ -1,6 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +42,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardComputeState
@@ -54,6 +55,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.ui.components.rememberShimmerBrush
 import com.osscabinet.ossWallet.ui.reorderable.ReorderableItem
 import com.osscabinet.ossWallet.ui.reorderable.longPressDraggableHandle
+import com.osscabinet.ossWallet.ui.reorderable.longPressToTrigger
 import com.osscabinet.ossWallet.ui.reorderable.rememberReorderableLazyListState
 import com.osscabinet.ossWallet.ui.reorderable.reorderable
 import com.osscabinet.ossWallet.ui.reorderable.reorderableSemantics
@@ -130,7 +132,10 @@ fun AeonCardList(
     var editList by remember { mutableStateOf(emptyList<CardConfig>()) }
 
     LaunchedEffect(cards) {
-        val sorted = cards.sortedBy { it.order }
+        // alwaysPresent cards (e.g. ACCOUNT_HERO) are fixed-position by contract (CardType.kt) and
+        // must never enter a user-managed reorder list — filtered here, once, so all three screens
+        // get this guarantee regardless of whether their own `cards` list already excludes it.
+        val sorted = cards.filterNot { it.cardType.alwaysPresent }.sortedBy { it.order }
         val sameIds = editList.map { it.cardId }.toSet() == sorted.map { it.cardId }.toSet()
         editList = if (editList.isEmpty() || !sameIds) {
             sorted
@@ -144,6 +149,7 @@ fun AeonCardList(
     val onReorderRef by rememberUpdatedState(onReorder)
     val cardDataMapState = rememberUpdatedState(cardDataMap)
     val headerOffset = if (header != null) 1 else 0
+    val haptic = LocalHapticFeedback.current
 
     val dragListState = rememberReorderableLazyListState(
         lazyListState = state,
@@ -175,72 +181,61 @@ fun AeonCardList(
             }
 
             items(editList, key = { it.cardId }, contentType = { it.cardType }) { cardConfig ->
-                val draggingActive = dragListState.draggedKey != null
-                val isDragging = dragListState.isDragging(cardConfig.cardId)
-                val alpha by animateFloatAsState(
-                    targetValue = if (draggingActive && !isDragging) 0.75f else 1.0f,
-                    label = "card_drag_alpha"
-                )
-
-                // Drag starts on press-hold-then-move on the dedicated trailing drag-handle glyph
-                // (below) — the only grab point for a card, so it never competes with the icon's
-                // own onClick or the header's long-press-to-flip-to-settings gesture. Persists
-                // immediately on drop, same as AccountListScreen/TemplateListScreen; the top-bar
-                // tick button only dismisses the "reordering" indicator, it doesn't gate the save.
+                // Real drag only exists while reordering — persists immediately on drop, same as
+                // AccountListScreen/TemplateListScreen. The top-bar tick button only dismisses the
+                // "reordering" indicator afterwards; it doesn't gate the save.
                 val dragHandleModifier = Modifier.longPressDraggableHandle(
                     state = dragListState,
                     key = cardConfig.cardId,
-                    onDragStarted = { reorderState.isReordering = true },
                     onDragStopped = { onReorderRef(editList) },
                 )
 
                 ReorderableItem(
                     state = dragListState,
                     key = cardConfig.cardId,
-                    modifier = Modifier
-                        .reorderableSemantics(state = dragListState, key = cardConfig.cardId)
-                        .graphicsLayer { this.alpha = alpha },
+                    modifier = Modifier.reorderableSemantics(state = dragListState, key = cardConfig.cardId),
                     placeholder = { DragPlaceholder() },
                 ) { _ ->
                     val cardState by remember(cardConfig.cardId) {
                         derivedStateOf { cardDataMapState.value[cardConfig.cardId] }
                     }
 
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        CardItem(
-                            modifier = Modifier,
-                            cardConfig = cardConfig,
-                            cardState = cardState,
-                            cardInput = cardInput,
-                            cardUpdateHandler = cardUpdateHandler,
-                            onDelete = onDelete,
-                            onRecordsClick = onRecordsClick,
-                            callbacks = callbacks,
-                            baseFilter = baseFilter,
-                            screenRules = screenRules,
-                            filterContext = filterContext,
-                            disableFilterSheet = disableFilterSheet,
-                            animateCards = animateCards,
-                            scrollToId = scrollToId,
-                            highlightedId = highlightedId,
-                            onScrollComplete = onScrollComplete,
-                        )
-
-                        // The only grab point for this card — deliberately separate from the icon,
-                        // which already has its own tap/long-press behavior (open, flip to settings).
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(AeonTheme.dimensions.cardPadding)
-                                .size(AeonTheme.dimensions.iconSizeLg)
-                                .then(dragHandleModifier),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.DragHandle,
-                                contentDescription = "Drag to reorder",
-                                tint = AppColors.contentSecondary,
-                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                    // No animateContentSize() here: it clips content to the animated bounds, which
+                    // cut off every card's own elevation shadow at a hard rectangular edge (the
+                    // shadow's soft blur bleeds a few dp past the card's own bounds by design).
+                    // Collapse/expand is instant instead of animated.
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        if (reorderState.isReordering) {
+                            CollapsedCardRow(cardConfig = cardConfig, dragHandleModifier = dragHandleModifier)
+                        } else {
+                            // Long-pressing the icon is the only way to enter reorder mode — scoped
+                            // to the icon specifically (via headerModifier) so it never competes with
+                            // the header's own long-press-to-flip-to-settings gesture, which was
+                            // re-scoped off the icon onto just the title/subtitle area for exactly
+                            // this reason (see AeonCardHeader in AeonExpressiveCard.kt).
+                            val entryModifier = Modifier.longPressToTrigger(key = cardConfig.cardId) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                reorderState.isReordering = true
+                            }
+                            CardItem(
+                                modifier = entryModifier,
+                                cardConfig = cardConfig,
+                                cardState = cardState,
+                                cardInput = cardInput,
+                                cardUpdateHandler = cardUpdateHandler,
+                                onDelete = onDelete,
+                                onRecordsClick = onRecordsClick,
+                                callbacks = callbacks,
+                                baseFilter = baseFilter,
+                                screenRules = screenRules,
+                                filterContext = filterContext,
+                                disableFilterSheet = disableFilterSheet,
+                                animateCards = animateCards,
+                                scrollToId = scrollToId,
+                                highlightedId = highlightedId,
+                                onScrollComplete = onScrollComplete,
                             )
                         }
                     }
@@ -321,6 +316,63 @@ private fun CardItem(
     )
 }
 
+
+/**
+ * Compact header-only row shown for every card while the list `isReordering` — icon, title, and a
+ * trailing drag-handle glyph, no card-type-specific preview content. The glyph is the real (and
+ * only) drag target here, matching the full card's own single-handle design.
+ */
+@Composable
+private fun CollapsedCardRow(cardConfig: CardConfig, dragHandleModifier: Modifier) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
+        color = AppColors.cardSurface,
+        border = BorderStroke(0.5.dp, AppColors.contentPrimary.copy(alpha = 0.08f)),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(AeonTheme.dimensions.cardPadding),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
+        ) {
+            Surface(
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg),
+                shape = CircleShape,
+                color = AppColors.contentPrimary.copy(alpha = 0.15f),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = cardConfig.cardType.toIcon(),
+                        contentDescription = null,
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                        tint = AppColors.contentPrimary,
+                    )
+                }
+            }
+            Text(
+                text = cardConfig.title.ifBlank { cardConfig.cardType.displayName },
+                style = AppTextStyles.cardSectionTitle,
+                color = AppColors.contentPrimary,
+                modifier = Modifier.weight(1f),
+            )
+            Box(
+                modifier = Modifier
+                    .size(AeonTheme.dimensions.iconSizeLg)
+                    .then(dragHandleModifier),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.DragHandle,
+                    contentDescription = "Drag to reorder",
+                    tint = AppColors.contentSecondary,
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                )
+            }
+        }
+    }
+}
 
 /**
  * Drop-target indicator left behind in the dragged card's vacated slot — a plain outlined shape

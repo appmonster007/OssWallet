@@ -162,13 +162,7 @@ internal fun AeonCardHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (icon == null) modifier else Modifier)
-            .combinedClickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = { onHeaderClick?.invoke() },
-                onLongClick = onLongClick
-            ),
+            .then(if (icon == null) modifier else Modifier),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
     ) {
@@ -199,7 +193,19 @@ internal fun AeonCardHeader(
             }
         }
 
-        Column(modifier = Modifier.weight(1f)) {
+        // Tap/long-press live here rather than on the whole Row so the icon's touch region stays
+        // free for its own independent gesture (e.g. a reorder-mode entry long-press) — this
+        // Column already spans the entire non-icon width via weight(1f), so no coverage is lost.
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .combinedClickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = { onHeaderClick?.invoke() },
+                    onLongClick = onLongClick
+                ),
+        ) {
             Text(
                 text = title,
                 style = AppTextStyles.cardSectionTitle,

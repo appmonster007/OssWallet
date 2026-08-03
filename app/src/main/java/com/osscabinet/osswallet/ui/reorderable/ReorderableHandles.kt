@@ -116,6 +116,34 @@ fun Modifier.draggableHandle(
 }
 
 /**
+ * Fire [onLongPress] when this composable is long-pressed — a pure "trigger" gesture with no
+ * associated drag and no [ReorderableLazyListState] involvement. Built on the same
+ * [detectDragGesturesAfterLongPress] primitive as [longPressDraggableHandle] specifically because
+ * it tolerates a descendant already claiming the touch (e.g. an icon's own `clickable`) — a plain
+ * tap detector's `awaitFirstDown(requireUnconsumed = true)` never sees an unconsumed down once
+ * that happens, which silently breaks a naively-built long-press detector nested inside a
+ * clickable. Drag deltas after the long-press fires are just consumed (not acted on) so the
+ * gesture doesn't leak into a scroll/pan once recognized.
+ */
+fun Modifier.longPressToTrigger(
+    key: Any,
+    enabled: Boolean = true,
+    onLongPress: () -> Unit,
+): Modifier = composed {
+    val onLongPressState by rememberUpdatedState(onLongPress)
+
+    this.pointerInput(key, enabled) {
+        if (!enabled) return@pointerInput
+        detectDragGesturesAfterLongPress(
+            onDragStart = { onLongPressState() },
+            onDrag = { change, _ -> change.consume() },
+            onDragEnd = {},
+            onDragCancel = {},
+        )
+    }
+}
+
+/**
  * Add TalkBack-accessible "Move up" / "Move down" custom actions for screen reader users.
  * Apply to the row (or any focusable child) so the actions are exposed at that semantics node.
  */

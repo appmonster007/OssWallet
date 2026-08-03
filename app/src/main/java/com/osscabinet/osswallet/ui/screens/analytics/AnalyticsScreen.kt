@@ -199,10 +199,13 @@ fun AnalyticsScreen(
                         }
 
                         is AnalyticsUiState.Success -> {
+                            // Default beyondViewportPageCount (0) deliberately — each tab renders
+                            // its own AeonCardList sharing the same LocalCardReorderState, so
+                            // pre-composing adjacent tabs would let entering reorder mode on the
+                            // visible tab silently collapse an off-screen tab's cards too.
                             HorizontalPager(
                                 state = pagerState,
                                 modifier = Modifier.weight(1f),
-                                beyondViewportPageCount = 1,
                                 verticalAlignment = Alignment.Top
                             ) { page ->
                                     val currentTab = tabs[page]

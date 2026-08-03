@@ -4,13 +4,13 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -19,7 +19,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -40,14 +39,23 @@ import kotlin.math.pow
 /**
  * Drop-in drag-to-reorder primitive for [androidx.compose.foundation.lazy.LazyColumn].
  *
- * Built around [LayoutCoordinates] — every hit-test compares finger position and item bounds in
- * the SAME container coordinate space (captured via [LayoutCoordinates.localBoundingBoxOf]).
- * No pixel math, no reasoning about `contentPadding` or `viewportStartOffset`.
+ * Item positions are read directly from [LazyListState.layoutInfo] on every check — no separate
+ * `onGloballyPositioned`-tracked bounds map. That matches how `sh.calvin.reorderable` (the
+ * reference this module was modeled on) does it, and for good reason: a hand-tracked map is
+ * populated by a side-effect callback that only fires once an item has actually been composed and
+ * laid out, which lags by at least a frame for anything that just scrolled into view during
+ * autoscroll — exactly the case that produced visible ghost/ translation glitches when dragging
+ * toward an off-screen target. Reading `layoutInfo.visibleItemsInfo` fresh avoids that side-channel
+ * entirely; the one remaining gap (`visibleItemsInfo` doesn't reflect a just-performed swap until
+ * the next frame either) is bridged with [predictedTopPx], the same technique
+ * `sh.calvin.reorderable` uses (see its `predictedDraggingItemOffset`).
  *
  * Use the entry points:
  *  - [rememberReorderableLazyListState] — create state + autoscroll loop tied to a [LazyListState].
- *  - [androidx.compose.foundation.lazy.LazyItemScope] `ReorderableItem` — wraps your row, registers bounds, animates.
- *  - [Modifier.reorderable] — apply to the LazyColumn's parent to register the container coords.
+ *  - [androidx.compose.foundation.lazy.LazyItemScope] `ReorderableItem` — wraps your row, animates.
+ *  - [Modifier.reorderable] — apply to the LazyColumn itself so the state holder can convert a
+ *    handle's local touch position into the list's own coordinate space (still needed regardless
+ *    of how item positions are read — this is about the pointer, not item bounds).
  *  - [Modifier.longPressDraggableHandle] / [Modifier.draggableHandle] — start a drag from anywhere on a row.
  *  - [Modifier.reorderableSemantics] — TalkBack "Move up"/"Move down" custom actions.
  *
@@ -97,12 +105,10 @@ class ReorderableLazyListState internal constructor(
     private val swapTravelRatio: Float,
 ) {
     // ---- Container ----
+    // Still needed even though item bounds now come from layoutInfo: this is what lets a drag
+    // handle convert its own local touch offset into the list's coordinate space (onDragStart),
+    // which is a pointer-position concern, not an item-bounds one.
     internal var containerCoords: LayoutCoordinates? = null
-
-    // ---- Per-item bounds in container space ----
-    // mutableStateMap writes from onGloballyPositioned cause targeted invalidations only on
-    // readers of changed keys — touched per-frame during drag, idle otherwise.
-    internal val itemBounds = mutableStateMapOf<Any, Rect>()
 
     // ---- Drag state ----
     var draggedKey: Any? by mutableStateOf(null)
@@ -116,10 +122,18 @@ class ReorderableLazyListState internal constructor(
 
     // ---- Swap re-entrancy guard ----
     // Prevents onDrag() and the autoscroll frame loop from both triggering onMove() for the same
-    // stale index before the LazyColumn's layoutInfo (and this state's itemBounds) reflect the
-    // previous swap. Without this, fast drags combined with autoscroll can double-swap or swap
-    // against indices that are already out of date.
+    // stale index before the LazyColumn's layoutInfo reflects the previous swap. Without this,
+    // fast drags combined with autoscroll can double-swap or swap against indices that are already
+    // out of date.
     private var swapInFlight by mutableStateOf(false)
+
+    // ---- Predicted position ----
+    // layoutInfo.visibleItemsInfo doesn't reflect a just-performed onMove() swap until the next
+    // frame (or two), so reading it immediately after performSwap() would give the dragged item's
+    // OLD position for a moment — a visible stutter, worst during autoscroll where swaps happen
+    // back-to-back. This holds the predicted new top until real layout catches up (matching
+    // sh.calvin.reorderable's predictedDraggingItemOffset).
+    private var predictedTopPx: Float? = null
 
     // ---- Drop-settle animation ----
     // The key of the item that just finished dragging and is easing back to rest, plus the
@@ -130,14 +144,12 @@ class ReorderableLazyListState internal constructor(
 
     fun isDragging(key: Any): Boolean = draggedKey == key
 
+    private fun currentItemInfo(key: Any): LazyListItemInfo? =
+        lazyListState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == key }
+
     /**
-     * The translationY (in the LazyColumn's local layout space) that the dragged item must apply
+     * The translationY (in the LazyColumn's own layout space) that the dragged item must apply
      * to remain pinned under the finger. Returns 0 for non-dragged items.
-     *
-     * Works correctly across mid-drag swaps: when [onMove] re-orders the list, the LazyColumn
-     * places the dragged item at a new layout position, [itemBounds] updates via
-     * [LayoutCoordinates.localBoundingBoxOf], and the returned translation adjusts so the item
-     * stays under the finger.
      */
     fun draggedItemTranslation(key: Any): Float {
         if (draggedKey != key) return 0f
@@ -146,7 +158,7 @@ class ReorderableLazyListState internal constructor(
 
     private fun currentDraggedTranslation(): Float {
         val key = draggedKey ?: return 0f
-        val layoutTop = itemBounds[key]?.top ?: return 0f
+        val layoutTop = predictedTopPx ?: currentItemInfo(key)?.offset?.toFloat() ?: return 0f
         val desiredTop = pointerYInContainer - touchOffsetWithinItem
         return desiredTop - layoutTop
     }
@@ -157,28 +169,13 @@ class ReorderableLazyListState internal constructor(
     /** The translationY to apply while [key] is settling. Returns 0 once settled or if not settling. */
     fun settlingTranslation(key: Any): Float = if (settlingKey == key) settlingOffset.value else 0f
 
-    // ---- Internal API for ReorderableItem ----
-
-    internal fun registerItem(key: Any, coords: LayoutCoordinates) {
-        if (!coords.isAttached) return
-        val container = containerCoords ?: return
-        if (!container.isAttached) return
-        itemBounds[key] = container.localBoundingBoxOf(coords)
-    }
-
-    internal fun unregisterItem(key: Any) {
-        itemBounds.remove(key)
-    }
-
-    internal fun itemTopInContainer(key: Any): Float? = itemBounds[key]?.top
-
     // ---- Internal API for drag-handle modifiers ----
 
     /**
      * Begin a drag of [key]. [pointerInContainer] is the finger position in container coordinates.
      */
     internal fun onDragStart(key: Any, pointerInContainer: Offset) {
-        val item = itemBounds[key] ?: return
+        val item = currentItemInfo(key) ?: return
         if (settlingKey == key) {
             // Re-grabbed before its settle animation finished — cancel the settle so the two
             // translations don't fight each other.
@@ -187,8 +184,8 @@ class ReorderableLazyListState internal constructor(
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         draggedKey = key
         pointerYInContainer = pointerInContainer.y
-        touchOffsetWithinItem = pointerInContainer.y - item.top
-        draggedItemHeightSnapshot = item.height
+        touchOffsetWithinItem = pointerInContainer.y - item.offset
+        draggedItemHeightSnapshot = item.size.toFloat()
         lastSwapTimeMs = System.currentTimeMillis()
         startAutoScrollLoop()
     }
@@ -210,6 +207,7 @@ class ReorderableLazyListState internal constructor(
         pointerYInContainer = 0f
         touchOffsetWithinItem = 0f
         draggedItemHeightSnapshot = 0f
+        predictedTopPx = null
 
         if (key != null && lastTranslation != 0f) {
             settlingKey = key
@@ -297,10 +295,10 @@ class ReorderableLazyListState internal constructor(
      * and the scan stops at the first miss in that direction — since farther items require crossing
      * an even larger threshold, a miss on the nearest candidate guarantees a miss on farther ones.
      *
-     * The direction-specific threshold check ([Rect.top] for items below, [Rect.bottom] for items
-     * above) is what gives the swap hysteresis: reversing a swap requires crossing back through the
-     * same fraction of the target's bounds, so a jittery finger sitting near the boundary can't
-     * flip-flop the same pair back and forth.
+     * The direction-specific threshold check ([LazyListItemInfo.offset] for items below, top+size
+     * for items above) is what gives the swap hysteresis: reversing a swap requires crossing back
+     * through the same fraction of the target's bounds, so a jittery finger sitting near the
+     * boundary can't flip-flop the same pair back and forth.
      */
     private fun attemptSwap() {
         val key = draggedKey ?: return
@@ -309,8 +307,7 @@ class ReorderableLazyListState internal constructor(
         if (now - lastSwapTimeMs < swapCooldownMs) return
 
         val visible = lazyListState.layoutInfo.visibleItemsInfo
-        val currentInfo = visible.firstOrNull { it.key == key } ?: return
-        val currentIndex = currentInfo.index
+        val currentIndex = visible.firstOrNull { it.key == key }?.index ?: return
 
         // Visual position of the dragged item: pinned under the finger.
         val draggedTop = pointerYInContainer - touchOffsetWithinItem
@@ -319,9 +316,8 @@ class ReorderableLazyListState internal constructor(
 
         val below = visible.filter { it.index > currentIndex }.sortedBy { it.index }
         for (candidate in below) {
-            val bounds = itemBounds[candidate.key] ?: continue
-            if (draggedCenterY > bounds.top + bounds.height * swapTravelRatio) {
-                performSwap(currentIndex, candidate.index, now)
+            if (draggedCenterY > candidate.offset + candidate.size * swapTravelRatio) {
+                performSwap(currentIndex, candidate, now)
                 return
             }
             break
@@ -329,20 +325,28 @@ class ReorderableLazyListState internal constructor(
 
         val above = visible.filter { it.index < currentIndex }.sortedByDescending { it.index }
         for (candidate in above) {
-            val bounds = itemBounds[candidate.key] ?: continue
-            if (draggedCenterY < bounds.bottom - bounds.height * swapTravelRatio) {
-                performSwap(currentIndex, candidate.index, now)
+            if (draggedCenterY < candidate.offset + candidate.size * (1f - swapTravelRatio)) {
+                performSwap(currentIndex, candidate, now)
                 return
             }
             break
         }
     }
 
-    private fun performSwap(fromIndex: Int, toIndex: Int, now: Long) {
+    private fun performSwap(fromIndex: Int, target: LazyListItemInfo, now: Long) {
         lastSwapTimeMs = now
         swapInFlight = true
         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        onMoveState.value(fromIndex, toIndex)
+
+        // Predict the dragged item's new top now, before layoutInfo has a chance to catch up —
+        // see the predictedTopPx doc above.
+        predictedTopPx = if (target.index > fromIndex) {
+            (target.offset + target.size - draggedItemHeightSnapshot)
+        } else {
+            target.offset.toFloat()
+        }
+
+        onMoveState.value(fromIndex, target.index)
 
         // Hold the gate until the LazyColumn's layoutInfo actually reflects the new order (or a
         // timeout elapses) so a fast drag/autoscroll can't queue a second swap against indices
@@ -355,6 +359,7 @@ class ReorderableLazyListState internal constructor(
             } catch (e: TimeoutCancellationException) {
                 // Unblock anyway — better to risk a rare stale swap than to wedge dragging.
             }
+            predictedTopPx = null
             swapInFlight = false
         }
     }

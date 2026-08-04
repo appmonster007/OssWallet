@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -39,6 +41,14 @@ fun rememberReorderableLazyListState(
  * previous hand-rolled engine had one, but it's an intentional simplification to drop it as part of
  * switching to the maintained library rather than reintroducing custom position tracking just to
  * keep it.
+ *
+ * @param shape The shape of the content being wrapped (e.g. a card's rounded corners, or a pill-
+ * shaped list row). `shadowElevation` casts its shadow using the graphicsLayer's `shape` — left at
+ * the default `RectangleShape`, the lift shadow renders as a hard rectangular box around content
+ * that isn't actually rectangular. Pass the content's real shape so the shadow's outline matches
+ * what's visually inside it. `clip` stays `false` regardless (the content already clips itself to
+ * this same shape via its own Surface/Card/GlassSurface) so the shadow's soft bleed past the edge
+ * isn't cut off — only the shadow's own outline needs `shape` to match, not the content clip.
  */
 @Composable
 fun LazyItemScope.ReorderableItem(
@@ -46,6 +56,7 @@ fun LazyItemScope.ReorderableItem(
     key: Any,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    shape: Shape = RectangleShape,
     content: @Composable ReorderableCollectionItemScope.(isDragging: Boolean) -> Unit,
 ) {
     CalvinReorderableItem(
@@ -81,6 +92,7 @@ fun LazyItemScope.ReorderableItem(
                 scaleX = scale
                 scaleY = scale
                 shadowElevation = elevationPx
+                this.shape = shape
                 // Content (e.g. AeonExpressiveCard) handles its own clipping to rounded corners;
                 // we don't clip here so the lift shadow isn't cut off.
                 clip = false

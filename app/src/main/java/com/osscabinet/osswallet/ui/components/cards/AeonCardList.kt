@@ -173,6 +173,9 @@ fun AeonCardList(
                 ReorderableItem(
                     state = dragListState,
                     key = cardConfig.cardId,
+                    // Matches both CardItem's and CollapsedCardRow's own shape — without this the
+                    // lift shadow casts as a hard rectangle regardless of the card's rounded corners.
+                    shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
                     modifier = Modifier.reorderableSemantics(
                         lazyListState = state,
                         key = cardConfig.cardId,

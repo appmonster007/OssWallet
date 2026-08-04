@@ -211,6 +211,10 @@ fun TemplateListScreenContent(
                                 ReorderableItem(
                                     state = reorderState,
                                     key = template.id,
+                                    // Matches AeonListItem's own shape — without this the lift
+                                    // shadow casts as a hard rectangle regardless of the row's
+                                    // rounded corners.
+                                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                                     modifier = Modifier.reorderableSemantics(
                                         lazyListState = listState,
                                         key = template.id,

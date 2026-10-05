@@ -293,7 +293,7 @@ fun AeonShimmer(
         ),
         userScrollEnabled = false
     ) {
-        if (cards != null) {
+        if (cards != null && cards.isNotEmpty()) {
             items(cards) { type ->
                 ShimmerByType(type, brush)
             }

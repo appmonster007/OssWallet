@@ -4,25 +4,34 @@ import kotlinx.serialization.Serializable
 
 // ── Primary tabs ──────────────────────────────────────────────────────────────
 
+/**
+ * Marks a route as a drawer-reachable sibling tab switch (Dashboard/Records/Analytics/Exchange
+ * Rates) rather than a hierarchical drill-down. Single source of truth for route category —
+ * [AppNavigator] derives its default [androidx.navigation.NavOptions] from this, and the nav
+ * graph files derive their transition-spec choice (fade vs slide) from it too, replacing what
+ * used to be three independently hand-maintained lists that had to be kept in sync by convention.
+ */
+interface TopLevelRoute
+
 /** Start destination. viewContextJson = URL-encoded JSON of DashboardViewContext (nullable). */
 @Serializable
 data class DashboardRoute(
     val viewContextJson: String? = null,
     val topLevel: Boolean = true
-)
+) : TopLevelRoute
 
 /** filterJson = URL-encoded JSON of TransactionFilter (empty string = no filter). */
 @Serializable
 data class TransactionListRoute(
     val filterJson: String = "",
     val topLevel: Boolean = true
-)
+) : TopLevelRoute
 
 @Serializable
-data object AnalyticsRoute
+data object AnalyticsRoute : TopLevelRoute
 
 @Serializable
-data object ExchangeRatesRoute
+data object ExchangeRatesRoute : TopLevelRoute
 
 // ── Transactions ──────────────────────────────────────────────────────────────
 

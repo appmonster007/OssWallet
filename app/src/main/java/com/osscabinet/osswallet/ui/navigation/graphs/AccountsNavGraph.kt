@@ -5,6 +5,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.osscabinet.ossWallet.ui.navigation.ACCOUNT_ENTRY_RESULT_KEY
 import com.osscabinet.ossWallet.ui.navigation.AccountDetailRoute
 import com.osscabinet.ossWallet.ui.navigation.AccountEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.AccountListRoute
@@ -28,6 +29,7 @@ import com.osscabinet.ossWallet.ui.screens.accounts.detail.AccountDetailScreen
 import com.osscabinet.ossWallet.ui.screens.accounts.detail.AccountDetailViewModel
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryActions
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryConfig
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryResult
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryScreen
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryViewModel
 import com.osscabinet.ossWallet.ui.screens.accounts.list.AccountListActions
@@ -135,10 +137,24 @@ fun NavGraphBuilder.accountsGraph(
         val route = backStackEntry.toRoute<AccountEntryRoute>()
         val entryViewModel: AccountEntryViewModel = hiltViewModel()
         AccountEntryScreen(
-            config = AccountEntryConfig(accountId = route.accountId),
+            config = AccountEntryConfig(
+                accountId = route.accountId,
+                prefillName = route.prefillName,
+                prefillCurrency = route.prefillCurrency,
+                isDraftMode = route.isDraftMode
+            ),
             actions = AccountEntryActions(
                 onBackClick = { navController.popBackStack() },
-                onDone = { navController.popBackStack() }
+                onDone = { result ->
+                    // Only relay a result when this screen was reached from a caller expecting
+                    // one (draft mode) — avoids writing unread state onto the plain Account
+                    // List / Detail back-stack entries.
+                    if (result is AccountEntryResult.Draft) {
+                        navController.previousBackStackEntry?.savedStateHandle
+                            ?.set(ACCOUNT_ENTRY_RESULT_KEY, Json.encodeToString(result.draft))
+                    }
+                    navController.popBackStack()
+                }
             ),
             viewModel = entryViewModel
         )

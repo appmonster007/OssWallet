@@ -20,8 +20,14 @@ import androidx.compose.animation.slideOutHorizontally
  * - Slide offsets: Full width enter, partial width for depth on exit
  */
 
-// Material 3 Expressive duration
+// Material 3 Expressive duration — used for hierarchical drill-down transitions (slide).
 private const val EXPRESSIVE_DURATION = 350
+
+// Sibling tab switches (Dashboard/Records/Analytics/Exchange Rates, see TopLevelRoute) don't
+// need the same "expressive" weight as a drill-down — they're a lateral switch, not entering a
+// deeper screen. A shorter fade keeps the motion readable while shrinking the real-world window
+// during which Navigation Compose's RESUMED-gate can make a rapid second tap wait.
+private const val SIBLING_SWITCH_DURATION = 150
 
 // Material 3 Expressive easing curves (no bounce)
 // Standard emphasized decelerate: cubic-bezier(0.2, 0.0, 0, 1.0) - smooth slow down
@@ -117,18 +123,19 @@ val PopExitTransitionSpec: ExitTransition =
     )
 
 /**
- * Fade-only transition for start destination (Dashboard)
+ * Fade-only transition for [TopLevelRoute] sibling tab switches (Dashboard/Records/Analytics/
+ * Exchange Rates).
  */
 val FadeEnterTransitionSpec: EnterTransition = fadeIn(
     animationSpec = tween(
-        durationMillis = EXPRESSIVE_DURATION,
+        durationMillis = SIBLING_SWITCH_DURATION,
         easing = emphasizedDecelerate
     )
 )
 
 val FadeExitTransitionSpec: ExitTransition = fadeOut(
     animationSpec = tween(
-        durationMillis = EXPRESSIVE_DURATION,
+        durationMillis = SIBLING_SWITCH_DURATION,
         easing = emphasizedAccelerate
     )
 )

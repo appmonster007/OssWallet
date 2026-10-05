@@ -26,5 +26,6 @@ data class CsvImportSession(
     val previewRows: List<List<String>>,
     val mapping: Map<OssWalletField, Int?>,
     val sourceApp: ImportSourceApp?,
-    val delimiter: Char = ','
+    val delimiter: Char = ',',
+    val encoding: String = "UTF-8"
 )

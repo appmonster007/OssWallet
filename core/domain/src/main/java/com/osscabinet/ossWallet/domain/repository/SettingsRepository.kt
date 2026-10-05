@@ -12,6 +12,7 @@ interface SettingsRepository {
     val autoSaveExchangeRates: Flow<Boolean>
     val isOnboardingCompleted: Flow<Boolean>
     val cardAnimationEnabled: Flow<Boolean>
+    val cardOpenAnimation: Flow<String>
     val expandableFabEnabled: Flow<Boolean>
     val isDatabaseSeeded: Flow<Boolean>
     val use24HourFormat: Flow<Boolean>
@@ -46,6 +47,7 @@ interface SettingsRepository {
     suspend fun saveAutoSaveExchangeRates(enabled: Boolean)
     suspend fun saveOnboardingCompleted(completed: Boolean)
     suspend fun saveCardAnimationEnabled(enabled: Boolean)
+    suspend fun saveCardOpenAnimation(name: String)
     suspend fun saveExpandableFabEnabled(enabled: Boolean)
     suspend fun saveDatabaseSeeded(seeded: Boolean)
     suspend fun saveUse24HourFormat(use24Hour: Boolean)

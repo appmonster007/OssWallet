@@ -31,6 +31,7 @@ class SettingsDataStore(private val context: Context) {
         val AUTO_SAVE_EXCHANGE_RATES_KEY = booleanPreferencesKey("auto_save_exchange_rates")
         val IS_ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("is_onboarding_completed")
         val CARD_ANIMATION_ENABLED_KEY = booleanPreferencesKey("card_animation_enabled")
+        val CARD_OPEN_ANIMATION_KEY = stringPreferencesKey("card_open_animation")
         val EXPANDABLE_FAB_ENABLED_KEY = booleanPreferencesKey("expandable_fab_enabled")
         val IS_DATABASE_SEEDED_KEY = booleanPreferencesKey("is_database_seeded")
         val USE_24_HOUR_FORMAT_KEY = booleanPreferencesKey("use_24_hour_format")
@@ -426,6 +427,15 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun saveUiDensity(name: String) {
         context.dataStore.edit { it[UI_DENSITY_KEY] = name }
+    }
+
+    val cardOpenAnimation: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[CARD_OPEN_ANIMATION_KEY]
+            ?: com.osscabinet.ossWallet.domain.model.settings.CardOpenAnimation.DEFAULT.name
+    }
+
+    suspend fun saveCardOpenAnimation(name: String) {
+        context.dataStore.edit { it[CARD_OPEN_ANIMATION_KEY] = name }
     }
 
     suspend fun clearAll() {

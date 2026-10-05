@@ -47,13 +47,14 @@ import com.osscabinet.ossWallet.ui.screens.sharedwallet.SharedWalletViewModel
 import com.osscabinet.ossWallet.ui.screens.tags.TagViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import kotlinx.coroutines.launch
 
 @Composable
 fun OssWalletNavGraph(
     navController: NavHostController,
     onSplashConditionChanged: (Boolean) -> Unit = {},
+    pendingWidgetRoute: String? = null,
+    onWidgetRouteHandled: () -> Unit = {},
 ) {
     val vms = SharedNavViewModels(
         settingsViewModel = hiltViewModel(),
@@ -94,7 +95,39 @@ fun OssWalletNavGraph(
     val drawerHazeState = remember { HazeState() }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    var isDrawerNavigating by remember { mutableStateOf(false) }
+    // Funnels navigation through one place so NavOptions follow from the route's category —
+    // see AppNavigator.
+    val appNavigator = remember(navController) { AppNavigator(navController) }
+
+    // Drawer-close runs independently of the navigation itself (not awaited/sequenced with it)
+    // so the two animations overlap instead of stacking.
+    fun navigateFromDrawer(route: Any, extraOptions: (androidx.navigation.NavOptionsBuilder.() -> Unit)? = null) {
+        appNavigator.navigateTo(route, extraOptions)
+        scope.launch { drawerState.close() }
+    }
+
+    // Widget taps land here too, now via AppNavigator — same RESUMED-wait/coalescing safety as
+    // the drawer. NavOptions are fully explicit (not AppNavigator's TopLevelRoute default) to
+    // preserve this path's existing saveState=false/no-restoreState behavior exactly; that
+    // divergence from the drawer's save/restore semantics may be intentional (a widget tap
+    // landing on a fresh, un-restored screen rather than resuming prior scroll/filter state)
+    // and isn't this change's call to silently alter.
+    LaunchedEffect(pendingWidgetRoute) {
+        pendingWidgetRoute?.let { route ->
+            val widgetNavOptions: androidx.navigation.NavOptionsBuilder.() -> Unit = {
+                popUpTo<DashboardRoute> { inclusive = false; saveState = false }
+                launchSingleTop = true
+                restoreState = false
+            }
+            when (route) {
+                "dashboard"      -> appNavigator.navigateTo(DashboardRoute(), widgetNavOptions)
+                "records"        -> appNavigator.navigateTo(TransactionListRoute(), widgetNavOptions)
+                "analytics"      -> appNavigator.navigateTo(AnalyticsRoute, widgetNavOptions)
+                "exchange_rates" -> appNavigator.navigateTo(ExchangeRatesRoute, widgetNavOptions)
+            }
+            onWidgetRouteHandled()
+        }
+    }
 
     val currentProfile by vms.mainViewModel.currentProfile.collectAsStateWithLifecycle()
     val nonArchivedAccounts by vms.mainViewModel.nonArchivedAccounts.collectAsStateWithLifecycle()
@@ -136,16 +169,24 @@ fun OssWalletNavGraph(
         else -> false
     }
     BackHandler(enabled = isOnNonDashboardTopLevel && !drawerState.isOpen) {
-        navController.navigate(DashboardRoute()) {
-            popUpTo<DashboardRoute> { saveState = true }
-            launchSingleTop = true
-            restoreState = true
-        }
+        // Routes through AppNavigator too — a back-press landing mid-transition is the same
+        // RESUMED-gate hazard as a rapid drawer tap, not just a UI-trigger-specific quirk.
+        appNavigator.navigateTo(DashboardRoute())
     }
 
     ModalNavigationDrawer(
             drawerState = drawerState,
-            gesturesEnabled = isTopLevelDestination,
+            // `&& !isAnimationRunning` is what makes the first tap after opening the drawer
+            // actually register. ModalNavigationDrawer puts an `anchoredDraggable` on its whole
+            // container (NavigationDrawer.kt), and `anchoredDraggable` defaults
+            // `startDragImmediately = state.isAnimationRunning` (AnchoredDraggable.kt) — meaning
+            // that while the open animation is still settling, the drag claims the pointer on the
+            // DOWN event without waiting for touch slop, so it can "catch" the moving drawer. That
+            // consumes the tap before the NavigationDrawerItem's clickable ever completes one,
+            // which is why the first tap did nothing until the user tapped again or waited for the
+            // animation to finish. Disabling gestures only while animating gives the tap back; the
+            // only thing lost is the ability to re-grab the drawer mid-animation.
+            gesturesEnabled = isTopLevelDestination && !drawerState.isAnimationRunning,
             drawerContent = {
                 AppDrawerContent(
                     drawerHazeState = drawerHazeState,
@@ -153,52 +194,18 @@ fun OssWalletNavGraph(
                     nonArchivedAccounts = nonArchivedAccounts,
                     starredTemplates = starredTemplates,
                     selectedDestination = selectedRoute,
-                    onDashboardClick = {
-                        navController.navigateToDashboard(topLevel = true) {
-                            popUpTo<DashboardRoute> { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onRecordsClick = {
-                        navController.navigateToRecords(filter = TransactionFilter(), topLevel = true) {
-                            popUpTo<DashboardRoute> { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onAnalyticsClick = {
-                        navController.navigate(AnalyticsRoute) {
-                            popUpTo<DashboardRoute> { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onExchangeRatesClick = {
-                        navController.navigate(ExchangeRatesRoute) {
-                            popUpTo<DashboardRoute> { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onSettingsClick = { navController.navigate(SettingsRoute) },
-                    onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },
+                    onDashboardClick = { navigateFromDrawer(DashboardRoute(topLevel = true)) },
+                    onRecordsClick = { navigateFromDrawer(TransactionListRoute(topLevel = true)) },
+                    onAnalyticsClick = { navigateFromDrawer(AnalyticsRoute) },
+                    onExchangeRatesClick = { navigateFromDrawer(ExchangeRatesRoute) },
+                    onSettingsClick = { navigateFromDrawer(SettingsRoute) },
+                    onAccountClick = { id -> navigateFromDrawer(AccountDetailRoute(accountId = id)) },
                     onTemplateClick = { template ->
-                        navController.navigate(TransactionEntryRoute(templateId = template.id))
+                        navigateFromDrawer(TransactionEntryRoute(templateId = template.id))
                     },
-                    onPlannedPaymentsClick = { navController.navigate(PlannedPaymentListRoute) },
-                    onBudgetsClick = { navController.navigate(BudgetListRoute) },
-                    onLoansClick = { navController.navigate(LoanListRoute) },
-                    onNavigate = { action ->
-                        if (!isDrawerNavigating) {
-                            isDrawerNavigating = true
-                            scope.launch {
-                                drawerState.close()
-                                action()
-                                isDrawerNavigating = false
-                            }
-                        }
-                    }
+                    onPlannedPaymentsClick = { navigateFromDrawer(PlannedPaymentListRoute) },
+                    onBudgetsClick = { navigateFromDrawer(BudgetListRoute) },
+                    onLoansClick = { navigateFromDrawer(LoanListRoute) },
                 )
             }
         ) {

@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Profile
+import com.osscabinet.ossWallet.domain.model.settings.CardOpenAnimation
 import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
@@ -72,6 +73,13 @@ class SettingsViewModel @Inject constructor(
 
     val cardAnimationEnabled: StateFlow<Boolean> = settingsRepository.cardAnimationEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val cardOpenAnimation: StateFlow<String> = settingsRepository.cardOpenAnimation
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            CardOpenAnimation.DEFAULT.name
+        )
 
     val expandableFabEnabled: StateFlow<Boolean> = settingsRepository.expandableFabEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -272,6 +280,12 @@ class SettingsViewModel @Inject constructor(
     fun setCardAnimationEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.saveCardAnimationEnabled(enabled)
+        }
+    }
+
+    fun setCardOpenAnimation(animation: CardOpenAnimation) {
+        viewModelScope.launch {
+            settingsRepository.saveCardOpenAnimation(animation.name)
         }
     }
 

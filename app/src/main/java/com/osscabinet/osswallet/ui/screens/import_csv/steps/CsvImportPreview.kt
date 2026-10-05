@@ -37,8 +37,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
 import com.osscabinet.ossWallet.domain.model.import_csv.DuplicatePolicy
 import com.osscabinet.ossWallet.domain.model.import_csv.ImportPreview
+import com.osscabinet.ossWallet.domain.model.import_csv.PreviewTransactionRow
+import com.osscabinet.ossWallet.domain.model.import_csv.mapPreviewTransactionRows
 import com.osscabinet.ossWallet.ui.components.AeonDashedButton
 import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -51,6 +54,7 @@ import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 @Composable
 fun PreviewStep(
     preview: ImportPreview?,
+    session: CsvImportSession?,
     duplicatePolicy: DuplicatePolicy,
     selectedDuplicates: Set<Int>,
     onSetDuplicatePolicy: (DuplicatePolicy) -> Unit,
@@ -76,6 +80,14 @@ fun PreviewStep(
     ) {
         ImportSummaryCard(preview, effectiveCount)
 
+        if (preview.totalDuplicateCount > preview.duplicates.size) {
+            Text(
+                "Showing first ${preview.duplicates.size} of ${preview.totalDuplicateCount} duplicates found",
+                style = AppTextStyles.caption,
+                color = AppColors.error
+            )
+        }
+
         if (preview.unpairedTransferRows > 0) {
             UnpairedTransferWarning(preview.unpairedTransferRows)
         }
@@ -100,7 +112,9 @@ fun PreviewStep(
             )
         }
 
-        SampleTransactionsSection(preview)
+        if (session != null) {
+            SampleTransactionsSection(session)
+        }
 
         Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
         AeonDashedButton(
@@ -247,7 +261,7 @@ private fun DuplicatePolicySection(
     }
 
     AnimatedVisibility(visible = showDetail) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
             preview.duplicates.forEachIndexed { idx, dup ->
                 DuplicateRowItem(
                     idx = idx,
@@ -338,7 +352,10 @@ private fun DuplicateRowItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = AeonTheme.dimensions.cardPadding, vertical = 8.dp),
+                .padding(
+                    horizontal = AeonTheme.dimensions.cardPadding,
+                    vertical = AeonTheme.dimensions.spacingSm
+                ),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
@@ -382,7 +399,7 @@ private fun ParseErrorsSection(
         )
     }
     AnimatedVisibility(visible = showDetail) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
             errors.forEach { err ->
                 Text(
                     "Row ${err.rowIndex}: ${err.reason}",
@@ -395,47 +412,31 @@ private fun ParseErrorsSection(
 }
 
 @Composable
-private fun SampleTransactionsSection(preview: ImportPreview) {
+private fun SampleTransactionsSection(session: CsvImportSession) {
+    val rows = remember(session) { mapPreviewTransactionRows(session, limit = 5) }
+    if (rows.isEmpty()) return
+
     HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
     AeonSectionHeader(title = "SAMPLE RESULT")
     Text(
-        "Here is how some transactions will look in the app after import.",
+        "Here is how the first few mapped rows will look in the app after import.",
         style = AppTextStyles.caption,
         color = AppColors.contentSecondary
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
-        preview.duplicates.take(2).forEach { dup ->
-            SampleTransactionItem(
-                title = dup.existingNote.ifBlank { "Transaction" },
-                category = "Matched Category",
-                amount = dup.incomingValues.find { it.contains(".") || it.toIntOrNull() != null }
-                    ?: "0.00",
-                date = "Oct 24, 2023",
-                isDuplicate = true
-            )
-        }
-        // If not enough duplicates, show some generic ones
-        if (preview.duplicates.size < 3) {
-            SampleTransactionItem(
-                title = "Grocery Shopping",
-                category = "Food & Drinks",
-                amount = "-45.00",
-                date = "Oct 25, 2023",
-                isDuplicate = false
-            )
+        rows.forEach { row ->
+            SampleTransactionItem(row)
         }
     }
 }
 
 @Composable
-private fun SampleTransactionItem(
-    title: String,
-    category: String,
-    amount: String,
-    date: String,
-    isDuplicate: Boolean
-) {
+private fun SampleTransactionItem(row: PreviewTransactionRow) {
+    val title = row.noteText.ifBlank { row.categoryText.ifBlank { "Transaction" } }
+    val category = row.categoryText.ifBlank { "Uncategorized" }
+    val amount = row.amountText.ifBlank { "0.00" }
+    val date = row.dateText.ifBlank { "—" }
     Surface(
         color = AppColors.cardSurface,
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
@@ -482,27 +483,11 @@ private fun SampleTransactionItem(
                     style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
                     color = if (amount.startsWith("-")) AppColors.error else AppColors.primary
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (isDuplicate) {
-                        Surface(
-                            color = AppColors.accentContainer,
-                            shape = RoundedCornerShape(4.dp),
-                            modifier = Modifier.padding(end = 4.dp)
-                        ) {
-                            Text(
-                                "Duplicate",
-                                modifier = Modifier.padding(horizontal = 4.dp),
-                                style = AppTextStyles.overlineLabel,
-                                color = AppColors.onAccentContainer
-                            )
-                        }
-                    }
-                    Text(
-                        date,
-                        style = AppTextStyles.caption,
-                        color = AppColors.contentSecondary
-                    )
-                }
+                Text(
+                    date,
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary
+                )
             }
         }
     }
@@ -540,6 +525,21 @@ private fun PreviewStepPreview() {
                         )
                     ),
                     unpairedTransferRows = 1
+                ),
+                session = CsvImportSession(
+                    headers = listOf("date", "account", "category", "amount", "note"),
+                    previewRows = listOf(
+                        listOf("2023-10-25", "HDFC", "Food & Drinks", "-45.00", "Grocery Shopping"),
+                        listOf("2023-10-24", "Cash", "Transport", "-20.00", "Metro Card")
+                    ),
+                    mapping = mapOf(
+                        com.osscabinet.ossWallet.domain.model.import_csv.OssWalletField.DATE to 0,
+                        com.osscabinet.ossWallet.domain.model.import_csv.OssWalletField.ACCOUNT to 1,
+                        com.osscabinet.ossWallet.domain.model.import_csv.OssWalletField.CATEGORY to 2,
+                        com.osscabinet.ossWallet.domain.model.import_csv.OssWalletField.AMOUNT to 3,
+                        com.osscabinet.ossWallet.domain.model.import_csv.OssWalletField.NOTE to 4
+                    ),
+                    sourceApp = com.osscabinet.ossWallet.domain.model.import_csv.ImportSourceApp.GENERIC
                 ),
                 duplicatePolicy = DuplicatePolicy.SKIP,
                 selectedDuplicates = emptySet(),

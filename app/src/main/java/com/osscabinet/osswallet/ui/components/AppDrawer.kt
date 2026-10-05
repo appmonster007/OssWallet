@@ -77,9 +77,6 @@ fun AppDrawerContent(
     onPlannedPaymentsClick: () -> Unit = {},
     onBudgetsClick: () -> Unit = {},
     onLoansClick: () -> Unit = {},
-    // Caller closes the drawer first, then invokes the action — eliminates the
-    // navigate-while-animating race that caused inconsistent tap behaviour.
-    onNavigate: (() -> Unit) -> Unit
 ) {
     val uiScale = AeonTheme.uiScale
     val drawerShape = RoundedCornerShape(
@@ -122,7 +119,7 @@ fun AppDrawerContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onNavigate { onSettingsClick() } }
+                        .clickable { onSettingsClick() }
                         .padding(
                             horizontal = AeonTheme.dimensions.listPadding,
                             vertical = AeonTheme.dimensions.screenPadding
@@ -173,13 +170,11 @@ fun AppDrawerContent(
                         label = { Text(label, style = AppTextStyles.listSectionHeader) },
                         selected = selectedDestination == route,
                         onClick = {
-                            onNavigate {
-                                when (route) {
-                                    "dashboard" -> onDashboardClick()
-                                    "transaction_list" -> onRecordsClick()
-                                    "analytics" -> onAnalyticsClick()
-                                    "exchange_rates" -> onExchangeRatesClick()
-                                }
+                            when (route) {
+                                "dashboard" -> onDashboardClick()
+                                "transaction_list" -> onRecordsClick()
+                                "analytics" -> onAnalyticsClick()
+                                "exchange_rates" -> onExchangeRatesClick()
                             }
                         },
                         icon = {
@@ -210,12 +205,10 @@ fun AppDrawerContent(
                         label = { Text(label, style = AppTextStyles.listSectionHeader) },
                         selected = selectedDestination == route,
                         onClick = {
-                            onNavigate {
-                                when (route) {
-                                    "planned_payment_list" -> onPlannedPaymentsClick()
-                                    "budget_list" -> onBudgetsClick()
-                                    "loan_list" -> onLoansClick()
-                                }
+                            when (route) {
+                                "planned_payment_list" -> onPlannedPaymentsClick()
+                                "budget_list" -> onBudgetsClick()
+                                "loan_list" -> onLoansClick()
                             }
                         },
                         icon = {
@@ -248,7 +241,7 @@ fun AppDrawerContent(
                                 )
                             },
                             selected = false,
-                            onClick = { onNavigate { onTemplateClick(template) } },
+                            onClick = { onTemplateClick(template) },
                             icon = {
                                 Icon(
                                     when (template.entryMode) {
@@ -296,7 +289,7 @@ fun AppDrawerContent(
                             }
                         },
                         selected = false,
-                        onClick = { onNavigate { onAccountClick(account.id) } },
+                        onClick = { onAccountClick(account.id) },
                         icon = {
                             val accountColor = try {
                                 Color(AndroidColor.parseColor(account.colorHex))
@@ -325,7 +318,7 @@ fun AppDrawerContent(
                 NavigationDrawerItem(
                     label = { Text("SETTINGS", style = AppTextStyles.listSectionHeader) },
                     selected = selectedDestination == "settings",
-                    onClick = { onNavigate { onSettingsClick() } },
+                    onClick = { onSettingsClick() },
                     icon = {
                         Icon(
                             Icons.Default.Settings,
@@ -420,7 +413,6 @@ fun AppDrawerContentPreview() {
             onExchangeRatesClick = {},
             onAccountClick = {},
             onTemplateClick = {},
-            onNavigate = { it() }
         )
     }
 }

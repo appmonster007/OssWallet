@@ -1,9 +1,19 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -29,6 +39,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -75,6 +87,8 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.domain.model.settings.CardOpenAnimation
+import com.osscabinet.ossWallet.ui.theme.LocalCardOpenAnimation
 import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.LocalParentGlassHaze
@@ -148,13 +162,7 @@ internal fun AeonCardHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (icon == null) modifier else Modifier)
-            .combinedClickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = { onHeaderClick?.invoke() },
-                onLongClick = onLongClick
-            ),
+            .then(if (icon == null) modifier else Modifier),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
     ) {
@@ -185,7 +193,19 @@ internal fun AeonCardHeader(
             }
         }
 
-        Column(modifier = Modifier.weight(1f)) {
+        // Tap/long-press live here rather than on the whole Row so the icon's touch region stays
+        // free for its own independent gesture (e.g. a reorder-mode entry long-press) — this
+        // Column already spans the entire non-icon width via weight(1f), so no coverage is lost.
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .combinedClickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = { onHeaderClick?.invoke() },
+                    onLongClick = onLongClick
+                ),
+        ) {
             Text(
                 text = title,
                 style = AppTextStyles.cardSectionTitle,
@@ -330,17 +350,20 @@ fun AeonExpressiveCard(
     val scale by animateFloatAsState(if (isPressed) 0.98f else 1f, label = "cardScale")
     val cardShape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
 
-    // Flip Animation Logic
+    val openAnim = LocalCardOpenAnimation.current
+    val isFlip = openAnim == CardOpenAnimation.FLIP
+
+    // Flip Animation Logic — only the FLIP style rotates the card; the others swap content in place.
     val rotation by animateFloatAsState(
-        targetValue = if (state.isFlipped) 180f else 0f,
+        targetValue = if (state.isFlipped && isFlip) 180f else 0f,
         animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
         label = "cardFlip"
     )
     val isFrontVisible by remember { derivedStateOf { rotation <= 90f } }
 
-    // Discoverability & Intent Feedback
+    // Discoverability & Intent Feedback (only meaningful while the card is mid-rotation)
     LaunchedEffect(isFrontVisible) {
-        if (rotation > 0f && rotation < 180f) {
+        if (isFlip && rotation > 0f && rotation < 180f) {
             haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
     }
@@ -351,16 +374,93 @@ fun AeonExpressiveCard(
         else -> Modifier.aeonHairlineBorder(cardShape)
     }
 
+    // The reading (front) and settings (back) bodies — shared by every open style.
+    val frontBody: @Composable BoxScope.() -> Unit = {
+        backgroundIcon?.let {
+            Icon(
+                imageVector = it,
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .offset(x = 24.dp, y = 24.dp)
+                    .size(180.dp)
+                    .graphicsLayer { alpha = 0.08f },
+                tint = contentColor,
+            )
+        }
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            val effectiveSubtitle =
+                remember(subtitle, filter?.timelineRange, timelineMode) {
+                    subtitle
+                        ?: if (!timelineMode) filter?.timelineRange?.let { timelineLabel(it) } else null
+                }
+
+            AeonCardHeader(
+                title = title,
+                titleColor = contentColor,
+                subtitle = effectiveSubtitle,
+                subtitleColor = subtitleColor,
+                icon = icon,
+                iconColor = contentColor,
+                subtitleClickable = filterEnabled && (filter != null) && (onFilterChange != null),
+                onSubtitleClick = { state.showFilter(true) },
+                onHeaderClick = onClick,
+                onLongClick = {
+                    if (settingsContent != null || displaySettings != null) {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        state.flip(true)
+                    }
+                },
+                showFilterIndicator = filter != null && filter != baseFilter,
+                accentColor = accentColor ?: AppColors.primary,
+                modifier = headerModifier
+            )
+
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+
+            if (timelineMode && filter != null && onFilterChange != null) {
+                AeonTimelinePeriodSelector(
+                    currentRange = filter.timelineRange,
+                    onRangeSelected = { onFilterChange(filter.copy(timelineRange = it)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    isFlush = true
+                )
+                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+            }
+
+            content()
+        }
+    }
+
+    val backBody: @Composable BoxScope.() -> Unit = {
+        val onDismissBack = {
+            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            state.flip(false)
+        }
+        if (settingsContent != null) {
+            AeonCardSettingsScaffold(
+                title = title,
+                onDismiss = onDismissBack,
+                onDelete = onDelete,
+            ) {
+                settingsContent()
+            }
+        } else {
+            displaySettings?.invoke { onDismissBack() }
+        }
+    }
+
     Box(
         modifier = modifier
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-                rotationY = rotation
+                rotationY = if (isFlip) rotation else 0f
                 cameraDistance = 20f * density
 
-                // Dynamic visual weight during rotation
-                if (rotation > 0.5f && rotation < 179.5f) {
+                // Dynamic visual weight during rotation (FLIP only)
+                if (isFlip && rotation > 0.5f && rotation < 179.5f) {
                     val p = if (rotation <= 90f) rotation / 90f else (180f - rotation) / 90f
                     shadowElevation = (2.dp + (6.dp * p)).toPx()
                     alpha = 1f - (p * 0.15f)
@@ -372,7 +472,11 @@ fun AeonExpressiveCard(
                 shape = cardShape
             }
             .then(borderModifier)
-            .animateContentSize(tween(400, easing = FastOutSlowInEasing))
+            .then(
+                // FLIP resizes the whole card; the others resize via AnimatedContent's SizeTransform.
+                if (isFlip) Modifier.animateContentSize(tween(400, easing = FastOutSlowInEasing))
+                else Modifier
+            )
             .then(
                 if ((onClick != null) && !state.isFlipped) Modifier.clickable(
                     interactionSource = interactionSource
@@ -382,85 +486,111 @@ fun AeonExpressiveCard(
                 ) else Modifier
             ),
     ) {
-        if (isFrontVisible) {
+        if (isFlip) {
+            if (isFrontVisible) {
+                AeonCardSideShell(containerColor = containerColor) { frontBody() }
+            } else {
+                // BACK SIDE: Identity transform restoration via 180 counter-rotation
+                AeonCardSideShell(
+                    containerColor = containerColor,
+                    modifier = Modifier.graphicsLayer { rotationY = 180f }
+                ) { backBody() }
+            }
+        } else if (settingsContent != null) {
+            // Persistent-header model — the header stays fixed as a masthead; only the body swaps
+            // (reading <-> settings) with the chosen motion, and the card resizes to fit.
             AeonCardSideShell(containerColor = containerColor) {
-                backgroundIcon?.let {
-                    Icon(
-                        imageVector = it,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .offset(x = 24.dp, y = 24.dp)
-                            .size(180.dp)
-                            .graphicsLayer { alpha = 0.08f },
-                        tint = contentColor,
-                    )
+                if (!state.isFlipped) {
+                    backgroundIcon?.let {
+                        Icon(
+                            imageVector = it,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .offset(x = 24.dp, y = 24.dp)
+                                .size(180.dp)
+                                .graphicsLayer { alpha = 0.08f },
+                            tint = contentColor,
+                        )
+                    }
                 }
-
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    val effectiveSubtitle =
-                        remember(subtitle, filter?.timelineRange, timelineMode) {
-                            subtitle
-                                ?: if (!timelineMode) filter?.timelineRange?.let { timelineLabel(it) } else null
-                        }
-
-                    AeonCardHeader(
-                        title = title,
-                        titleColor = contentColor,
-                        subtitle = effectiveSubtitle,
-                        subtitleColor = subtitleColor,
-                        icon = icon,
-                        iconColor = contentColor,
-                        subtitleClickable = filterEnabled && (filter != null) && (onFilterChange != null),
-                        onSubtitleClick = { state.showFilter(true) },
-                        onHeaderClick = onClick,
-                        onLongClick = {
-                            if (settingsContent != null || displaySettings != null) {
+                    val onDismissBack = {
+                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        state.flip(false)
+                    }
+                    // Persistent header: reading affordances vs configuration affordances (title stays).
+                    if (!state.isFlipped) {
+                        val effectiveSubtitle =
+                            remember(subtitle, filter?.timelineRange, timelineMode) {
+                                subtitle
+                                    ?: if (!timelineMode) filter?.timelineRange?.let { timelineLabel(it) } else null
+                            }
+                        AeonCardHeader(
+                            title = title,
+                            titleColor = contentColor,
+                            subtitle = effectiveSubtitle,
+                            subtitleColor = subtitleColor,
+                            icon = icon,
+                            iconColor = contentColor,
+                            subtitleClickable = filterEnabled && (filter != null) && (onFilterChange != null),
+                            onSubtitleClick = { state.showFilter(true) },
+                            onHeaderClick = onClick,
+                            onLongClick = {
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                 state.flip(true)
-                            }
-                        },
-                        showFilterIndicator = filter != null && filter != baseFilter,
-                        accentColor = accentColor ?: AppColors.primary,
-                        modifier = headerModifier
-                    )
+                            },
+                            showFilterIndicator = filter != null && filter != baseFilter,
+                            accentColor = accentColor ?: AppColors.primary,
+                            modifier = headerModifier
+                        )
+                    } else {
+                        AeonCardHeader(
+                            title = title,
+                            subtitle = "CONFIGURATION",
+                            icon = Icons.Default.ChevronLeft,
+                            onIconClick = onDismissBack,
+                            trailingIcon = if (onDelete != null) Icons.Default.Delete else null,
+                            onTrailingIconClick = onDelete,
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
 
-                    if (timelineMode && filter != null && onFilterChange != null) {
-                        AeonTimelinePeriodSelector(
-                            currentRange = filter.timelineRange,
-                            onRangeSelected = { onFilterChange(filter.copy(timelineRange = it)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            isFlush = true
-                        )
-                        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+                    AnimatedContent(
+                        targetState = state.isFlipped,
+                        transitionSpec = { cardOpenTransitionSpec(openAnim) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = "cardBody"
+                    ) { flipped ->
+                        if (!flipped) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                if (timelineMode && filter != null && onFilterChange != null) {
+                                    AeonTimelinePeriodSelector(
+                                        currentRange = filter.timelineRange,
+                                        onRangeSelected = { onFilterChange(filter.copy(timelineRange = it)) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        isFlush = true
+                                    )
+                                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+                                }
+                                content()
+                            }
+                        } else {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+                            ) {
+                                settingsContent()
+                            }
+                        }
                     }
-
-                    content()
                 }
             }
         } else {
-            // BACK SIDE: Identity transform restoration via 180 counter-rotation
-            AeonCardSideShell(
-                containerColor = containerColor,
-                modifier = Modifier.graphicsLayer { rotationY = 180f }) {
-                val onDismissBack = {
-                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    state.flip(false)
-                }
-
-                if (settingsContent != null) {
-                    AeonCardSettingsScaffold(
-                        title = title,
-                        onDismiss = onDismissBack,
-                        onDelete = onDelete,
-                    ) {
-                        settingsContent()
-                    }
-                } else {
-                    displaySettings?.invoke { onDismissBack() }
-                }
+            // Custom displaySettings back (rare) — swap the whole side without a shared header.
+            AeonCardSideShell(containerColor = containerColor) {
+                if (!state.isFlipped) frontBody() else backBody()
             }
         }
     }
@@ -475,6 +605,38 @@ fun AeonExpressiveCard(
         baseFilter = baseFilter,
         onSaveFilterClick = onSaveFilterClick
     )
+}
+
+/**
+ * Enter/exit transition for a non-flip card open, keyed off the chosen [CardOpenAnimation].
+ * FLIP never reaches here (it uses the 3D rotation path); the others swap the reading and settings
+ * bodies with a matching motion while [AnimatedContent]'s default [SizeTransform] resizes the card.
+ */
+private fun AnimatedContentTransitionScope<Boolean>.cardOpenTransitionSpec(
+    anim: CardOpenAnimation
+): ContentTransform {
+    val dur = 420
+    // Each branch's ContentTransform carries a default SizeTransform, so the card also
+    // resizes between the reading and settings body sizes as the bodies swap.
+    return when (anim) {
+        // Body slides out to the side and the new body slides in from the other side.
+        CardOpenAnimation.PAGE ->
+            (slideInHorizontally(tween(dur)) { it } + fadeIn(tween(dur))) togetherWith
+                (slideOutHorizontally(tween(dur)) { -it } + fadeOut(tween(dur / 2)))
+
+        // Body clip-reveals downward from under the header (roll down); the outgoing body rolls up.
+        CardOpenAnimation.ROLL ->
+            (expandVertically(tween(dur), expandFrom = Alignment.Top) + fadeIn(tween(dur))) togetherWith
+                (shrinkVertically(tween(dur), shrinkTowards = Alignment.Top) + fadeOut(tween(dur / 2)))
+
+        // A curtain clip-reveals down over the outgoing body as the card expands.
+        CardOpenAnimation.DROP ->
+            (expandVertically(tween(dur), expandFrom = Alignment.Top) + fadeIn(tween(dur, delayMillis = dur / 4))) togetherWith
+                fadeOut(tween(dur / 2))
+
+        else -> // DISSOLVE: fade the body out, resize while empty, then fade the new body in.
+            fadeIn(tween(dur / 2, delayMillis = dur / 2)) togetherWith fadeOut(tween(dur / 3))
+    }
 }
 
 /**

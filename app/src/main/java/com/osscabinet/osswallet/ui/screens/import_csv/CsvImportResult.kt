@@ -40,9 +40,9 @@ fun ImportResultScreen(
     result: ImportSummary,
     onViewTransactions: () -> Unit,
     onReviewMappings: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
-    val isFullSuccess = result.imported > 0 && result.errors.isEmpty()
+    val isFullSuccess = (result.imported > 0) && result.errors.isEmpty()
     val isPartial = result.imported > 0 && result.errors.isNotEmpty()
     val isZero = result.imported == 0
 
@@ -138,7 +138,7 @@ fun ImportResultScreen(
 
 @Composable
 private fun ErrorDetails(errors: List<com.osscabinet.ossWallet.domain.model.import_csv.ParseError>) {
-    var showErrors by remember { mutableStateOf(false) }
+    var showErrors by remember { mutableStateOf(value = false) }
     TextButton(onClick = { showErrors = !showErrors }) {
         Text(
             if (showErrors) "Hide errors" else "Show ${errors.size} errors",

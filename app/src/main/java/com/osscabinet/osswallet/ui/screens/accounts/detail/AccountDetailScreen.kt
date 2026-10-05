@@ -28,10 +28,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Receipt
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -74,6 +76,7 @@ import com.osscabinet.ossWallet.domain.model.merge
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
@@ -90,9 +93,11 @@ import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterPillController
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.LoanActions
+import com.osscabinet.ossWallet.ui.components.cards.LocalCardReorderState
 import com.osscabinet.ossWallet.ui.components.cards.LocalEditingCardId
 import com.osscabinet.ossWallet.ui.components.cards.LocalFilterPillController
 import com.osscabinet.ossWallet.ui.components.cards.LocalOnEditCard
+import com.osscabinet.ossWallet.ui.components.cards.rememberAeonCardReorderState
 import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
 import com.osscabinet.ossWallet.ui.components.cards.TagActions
 import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
@@ -228,9 +233,11 @@ fun AccountDetailScreen(
     )
 
     var showSettingsDialog by rememberSaveable { mutableStateOf(false) }
+    var showResetConfirmDialog by rememberSaveable { mutableStateOf(false) }
     var showAddCardDialog by rememberSaveable { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
     var editingCardId by remember { mutableStateOf<String?>(null) }
+    val cardReorderState = rememberAeonCardReorderState()
 
     val filterPillController = remember { FilterPillController() }
 
@@ -292,6 +299,28 @@ fun AccountDetailScreen(
                             onCheckedChange = { accountDetailViewModel.updateUseNoteAsHeader(it) },
                             isFlush = true
                         )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    showSettingsDialog = false
+                                    showResetConfirmDialog = true
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Restore,
+                                contentDescription = null,
+                                tint = AppColors.error
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = stringResource(R.string.action_reset_to_default),
+                                style = AppTextStyles.transactionTitle,
+                                color = AppColors.error
+                            )
+                        }
                     }
                     Box(
                         modifier = Modifier
@@ -314,11 +343,24 @@ fun AccountDetailScreen(
         }
     }
 
+    AeonConfirmDeleteDialog(
+        show = showResetConfirmDialog,
+        title = stringResource(R.string.reset_to_default_title),
+        message = stringResource(R.string.reset_to_default_message),
+        onConfirm = {
+            showResetConfirmDialog = false
+            accountDetailViewModel.resetCardsToDefault()
+        },
+        onDismiss = { showResetConfirmDialog = false },
+        confirmButtonText = stringResource(R.string.action_reset)
+    )
+
     AeonHazeProvider { hazeLayers ->
         CompositionLocalProvider(
             LocalFilterPillController provides filterPillController,
             LocalEditingCardId provides editingCardId,
-            LocalOnEditCard provides { editingCardId = it }
+            LocalOnEditCard provides { editingCardId = it },
+            LocalCardReorderState provides cardReorderState
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // 1. Content Layer (Layer 1)
@@ -581,6 +623,11 @@ fun AccountDetailScreen(
                                         AppBarIconButton(
                                             icon = Icons.Rounded.Settings,
                                             onClick = { showSettingsDialog = true })
+                                        if (cardReorderState.isReordering) {
+                                            AppBarIconButton(
+                                                icon = Icons.Rounded.Check,
+                                                onClick = { cardReorderState.confirm() })
+                                        }
                                         AppBarIconButton(
                                             icon = Icons.Rounded.Add,
                                             onClick = { showAddCardDialog = true })

@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.osscabinet.ossWallet.domain.formatter.ThemeHelper
 import com.osscabinet.ossWallet.domain.formatter.ThemeMode
+import com.osscabinet.ossWallet.domain.model.settings.CardOpenAnimation
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.UiDensity
 import com.osscabinet.ossWallet.domain.model.settings.UiIdentity
@@ -221,6 +222,7 @@ fun OssWalletTheme(
     dynamicAccent: Boolean = false,
     glassSettings: GlassSettings = GlassSettings(),
     uiDensity: UiDensity = UiDensity.DEFAULT,
+    cardOpenAnimation: CardOpenAnimation = CardOpenAnimation.DEFAULT,
     setWindowBackground: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -290,7 +292,8 @@ fun OssWalletTheme(
         LocalThemeMode provides themeMode,
         LocalUiIdentity provides uiIdentity,
         LocalAppFont provides AppFont.fromName(fontName),
-        LocalGlassSettings provides glassSettings
+        LocalGlassSettings provides glassSettings,
+        LocalCardOpenAnimation provides cardOpenAnimation
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

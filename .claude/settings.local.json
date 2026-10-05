@@ -114,7 +114,8 @@
       "Bash(git diff *)",
       "Bash(awk 'NR>=1')",
       "Skill(artifact-design)",
-      "Artifact"
+      "Artifact",
+      "Bash(awk -F: '$1>=100 && $1<=1100')"
     ]
   }
 }

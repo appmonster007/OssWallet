@@ -12,11 +12,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.rememberNavController
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
-import com.osscabinet.ossWallet.ui.navigation.AnalyticsRoute
-import com.osscabinet.ossWallet.ui.navigation.DashboardRoute
-import com.osscabinet.ossWallet.ui.navigation.ExchangeRatesRoute
 import com.osscabinet.ossWallet.ui.navigation.OssWalletNavGraph
-import com.osscabinet.ossWallet.ui.navigation.TransactionListRoute
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -105,26 +101,12 @@ class MainActivity : FragmentActivity() {
                     color = AppColors.screenBackground
                 ) {
                     val navController = rememberNavController()
-                    
-                    LaunchedEffect(pendingWidgetRoute) {
-                        pendingWidgetRoute?.let { route ->
-                            val navOptions: androidx.navigation.NavOptionsBuilder.() -> Unit = {
-                                popUpTo<DashboardRoute> { inclusive = false; saveState = false }
-                                launchSingleTop = true
-                            }
-                            when (route) {
-                                "dashboard"      -> navController.navigate(DashboardRoute(), navOptions)
-                                "records"        -> navController.navigate(TransactionListRoute(), navOptions)
-                                "analytics"      -> navController.navigate(AnalyticsRoute, navOptions)
-                                "exchange_rates" -> navController.navigate(ExchangeRatesRoute, navOptions)
-                            }
-                            pendingWidgetRoute = null
-                        }
-                    }
 
                     OssWalletNavGraph(
                         navController = navController,
-                        onSplashConditionChanged = { keepSplashOnScreen = it }
+                        onSplashConditionChanged = { keepSplashOnScreen = it },
+                        pendingWidgetRoute = pendingWidgetRoute,
+                        onWidgetRouteHandled = { pendingWidgetRoute = null }
                     )
                 }
                 } // CompositionLocalProvider

@@ -81,7 +81,11 @@ All ViewModels extend `BaseViewModel`. State is `StateFlow<UiState>` collected w
 
 ### Navigation
 
-Single-activity (`MainActivity`). All routes are in `ui/navigation/OssWalletNavGraph.kt`. Routes are sealed objects in `ui/navigation/Screen.kt`. Pass navigation as lambdas into screens — never use `NavController` directly inside a `@Composable`.
+Single-activity (`MainActivity`). All routes are in `ui/navigation/OssWalletNavGraph.kt`. Routes are `@Serializable` classes/objects in `ui/navigation/NavigationRoutes.kt`. Pass navigation as lambdas into screens — never use `NavController` directly inside a `@Composable`.
+
+**`AppNavigator`** (`ui/navigation/AppNavigator.kt`) is the single place navigation intents should flow through for drawer taps, back-press, and widget deep links, so `NavOptions` follow from the route's category rather than being chosen per call site. Routes implementing `TopLevelRoute` (Dashboard/Records/Analytics/ExchangeRates) are sibling tab switches: they save/restore back stack state and use the shorter `SIBLING_SWITCH_DURATION` fade (`NavigationTransitions.kt`); everything else is a hierarchical push using the expressive slide. Both are single-top.
+
+**Known scope gap, not yet addressed:** the ~80 `navController.navigate(...)` calls inside `ui/navigation/graphs/*.kt` (account detail, transaction entry, budget/loan/planned-payment flows, settings sub-screens) do **not** go through `AppNavigator` — they're push-style detail navigations, not rapid sibling-switch taps, so they don't exhibit the bug class `AppNavigator` was built to fix, and migrating ~80 call sites in one pass was judged too large a regression surface to bundle in alongside that fix. If a similar "tap didn't register" / back-stack-duplication report ever surfaces on a *detail* screen (not the drawer), migrating its call site to `AppNavigator.navigateTo(...)` is the fix — don't re-invent a local patch for it.
 
 ---
 

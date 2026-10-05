@@ -179,6 +179,16 @@ class CardRepositoryImpl @Inject constructor(
         saveConfig(context, updated)
     }
 
+    override suspend fun resetToDefault(context: ScreenContext) {
+        val default = when (context) {
+            ScreenContext.DASHBOARD -> defaultDashboardConfig()
+            ScreenContext.ACCOUNT_DETAIL -> defaultAccountDetailConfig()
+            ScreenContext.ACCOUNTS_VIEW -> DashboardCardsConfig()
+            ScreenContext.ANALYTICS -> defaultAnalyticsConfig()
+        }
+        saveConfig(context, default)
+    }
+
     private suspend fun saveConfig(context: ScreenContext, config: DashboardCardsConfig) {
         val configToSave = config
         val encoded = json.encodeToString(configToSave)

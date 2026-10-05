@@ -28,12 +28,31 @@ data class CategoryHierarchyCache(
     companion object {
         val Empty = CategoryHierarchyCache(emptyMap())
 
+        // Single-slot memo: `build` is called fresh inside DashboardViewModel's (and
+        // AnalyticsViewModel's) combine() mapper every time that flow restarts — e.g. every
+        // WhileSubscribed(5000) resubscription when a user navigates back to a screen after
+        // a 5s+ gap — even though the category list is usually unchanged since last time.
+        // Memoizing the last (input -> result) pair turns that repeat case into an equals()
+        // check instead of a full BFS rebuild. Benign under concurrent access from multiple
+        // screens' flows: worst case on a race is a wasted recompute, never a wrong result,
+        // since this is a pure function of `categories`.
+        @Volatile
+        private var lastCategories: List<Category>? = null
+
+        @Volatile
+        private var lastResult: CategoryHierarchyCache? = null
+
         /**
          * Builds the cache from a flat category list using iterative BFS per root.
-         * Runs once per category update — O(N²) worst case but N is small (<500 categories).
+         * O(N²) worst case but N is small (<500 categories); memoized against the
+         * previous call so an unchanged category list is just an equals() check.
          */
         fun build(categories: List<Category>): CategoryHierarchyCache {
             if (categories.isEmpty()) return Empty
+
+            lastResult?.let { cached ->
+                if (categories == lastCategories) return cached
+            }
 
             // Index children by parentId for fast lookup
             val childrenByParent = categories.groupBy { it.parentId }
@@ -52,7 +71,10 @@ data class CategoryHierarchyCache(
             }
 
             val map = categories.associate { cat -> cat.id to collectDescendants(cat.id) }
-            return CategoryHierarchyCache(map)
+            val result = CategoryHierarchyCache(map)
+            lastCategories = categories
+            lastResult = result
+            return result
         }
     }
 }

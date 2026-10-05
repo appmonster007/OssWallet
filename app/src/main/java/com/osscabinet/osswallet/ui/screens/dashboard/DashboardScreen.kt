@@ -2,6 +2,8 @@ package com.osscabinet.ossWallet.ui.screens.dashboard
 
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -495,8 +497,29 @@ fun DashboardScreenLayout(
                         )
                     }
 
-                    when (val state = uiState) {
-                        is DashboardUiState.Loading -> {
+                    // Crossfade keyed on the STATE'S TYPE only (not the state object itself) —
+                    // DashboardUiState.Success is a large data class that gets a new instance on
+                    // every minor update (scroll, snackbar, filter, highlight), so keying on the
+                    // object directly made Crossfade re-trigger its fade transition on nearly
+                    // every recomposition, briefly running two DashboardContent subtrees (two
+                    // HorizontalPagers/LazyListStates/nav-triggering LaunchedEffects) at once —
+                    // that's what broke navigation/scroll. Keying on just the phase means the
+                    // fade only plays on an actual Loading→Success→Error transition; the content
+                    // inside each branch still reads the live `uiState` so in-place updates are
+                    // ordinary recomposition, not a new crossfade.
+                    val uiPhase = when (uiState) {
+                        is DashboardUiState.Loading -> 0
+                        is DashboardUiState.Success -> 1
+                        is DashboardUiState.Error -> 2
+                    }
+                    Crossfade(
+                        targetState = uiPhase,
+                        modifier = Modifier.weight(1f),
+                        animationSpec = tween(durationMillis = 220),
+                        label = "dashboard_ui_state"
+                    ) { phase ->
+                    when (phase) {
+                        0 -> {
                             AeonShimmer(
                                 innerPadding = PaddingValues(
                                     top = AeonSize.D64.value + AeonTheme.dimensions.spacingMd,
@@ -506,9 +529,10 @@ fun DashboardScreenLayout(
                             )
                         }
 
-                        is DashboardUiState.Success -> {
+                        1 -> {
+                            val state = uiState as DashboardUiState.Success
                             DashboardContent(
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier,
                                 innerPadding = PaddingValues(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
                                 pagerState = pagerState,
                                 state = state,
@@ -594,7 +618,8 @@ fun DashboardScreenLayout(
                             )
                         }
 
-                        is DashboardUiState.Error -> {
+                        else -> {
+                            val state = uiState as DashboardUiState.Error
                             Box(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
@@ -603,6 +628,7 @@ fun DashboardScreenLayout(
                             }
                         }
                     }
+                    } // Crossfade
                 }
 
                 // 2. Top Bar Layer (Layer 3 - Floating Pills)

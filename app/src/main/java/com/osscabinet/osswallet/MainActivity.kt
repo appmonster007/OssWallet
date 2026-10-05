@@ -12,11 +12,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.rememberNavController
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
-import com.osscabinet.ossWallet.ui.navigation.AnalyticsRoute
-import com.osscabinet.ossWallet.ui.navigation.DashboardRoute
-import com.osscabinet.ossWallet.ui.navigation.ExchangeRatesRoute
 import com.osscabinet.ossWallet.ui.navigation.OssWalletNavGraph
-import com.osscabinet.ossWallet.ui.navigation.TransactionListRoute
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -66,6 +62,10 @@ class MainActivity : FragmentActivity() {
             val glassSettings by settingsRepository.glassSettings.collectAsStateWithLifecycle(initialValue = GlassSettings())
             val uiDensityName by settingsRepository.uiDensity.collectAsStateWithLifecycle(initialValue = com.osscabinet.ossWallet.domain.model.settings.UiDensity.DEFAULT.name)
             val uiDensity = com.osscabinet.ossWallet.domain.model.settings.UiDensity.fromName(uiDensityName)
+            val cardOpenAnimationName by settingsRepository.cardOpenAnimation.collectAsStateWithLifecycle(
+                initialValue = com.osscabinet.ossWallet.domain.model.settings.CardOpenAnimation.DEFAULT.name
+            )
+            val cardOpenAnimation = com.osscabinet.ossWallet.domain.model.settings.CardOpenAnimation.fromName(cardOpenAnimationName)
 
             LaunchedEffect(precision, numberingSystem) {
                 // ARC-05: atomic paired update — readers can never observe a half-applied
@@ -87,7 +87,8 @@ class MainActivity : FragmentActivity() {
                 identity = uiIdentity,
                 dynamicAccent = dynamicAccent,
                 glassSettings = glassSettings,
-                uiDensity = uiDensity
+                uiDensity = uiDensity,
+                cardOpenAnimation = cardOpenAnimation
             ) {
                 CompositionLocalProvider(
                     LocalGlassmorphismEnabled provides glassmorphismEnabled,
@@ -100,26 +101,12 @@ class MainActivity : FragmentActivity() {
                     color = AppColors.screenBackground
                 ) {
                     val navController = rememberNavController()
-                    
-                    LaunchedEffect(pendingWidgetRoute) {
-                        pendingWidgetRoute?.let { route ->
-                            val navOptions: androidx.navigation.NavOptionsBuilder.() -> Unit = {
-                                popUpTo<DashboardRoute> { inclusive = false; saveState = false }
-                                launchSingleTop = true
-                            }
-                            when (route) {
-                                "dashboard"      -> navController.navigate(DashboardRoute(), navOptions)
-                                "records"        -> navController.navigate(TransactionListRoute(), navOptions)
-                                "analytics"      -> navController.navigate(AnalyticsRoute, navOptions)
-                                "exchange_rates" -> navController.navigate(ExchangeRatesRoute, navOptions)
-                            }
-                            pendingWidgetRoute = null
-                        }
-                    }
 
                     OssWalletNavGraph(
                         navController = navController,
-                        onSplashConditionChanged = { keepSplashOnScreen = it }
+                        onSplashConditionChanged = { keepSplashOnScreen = it },
+                        pendingWidgetRoute = pendingWidgetRoute,
+                        onWidgetRouteHandled = { pendingWidgetRoute = null }
                     )
                 }
                 } // CompositionLocalProvider

@@ -17,6 +17,7 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.CsvImportService
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryDraft
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,6 +74,7 @@ class CsvImportViewModel @Inject constructor(
     private val _parentGroupMappings = MutableStateFlow<Map<String, String?>>(emptyMap())
     private val _selectedDuplicates = MutableStateFlow<Set<Int>>(emptySet())
     private val _duplicatePolicy = MutableStateFlow(DuplicatePolicy.SKIP)
+    private val _entitySearchQuery = MutableStateFlow("")
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val accounts: StateFlow<List<Account>> = settingsRepository.currentProfileId
@@ -90,6 +92,37 @@ class CsvImportViewModel @Inject constructor(
 
     private var pendingUri: String? = null
 
+    // Name of the CSV account currently being configured via the real AccountEntryScreen,
+    // awaiting a result on `onAccountDraftReceived`. The screen runs in draft mode for this
+    // flow, so nothing is written to the database until the final "Import" step — there is no
+    // orphan-account case to guard against.
+    private var pendingAccountCreationName: String? = null
+
+    /** Call before navigating to the real AccountEntryScreen to configure a new account for [csvName]. */
+    fun beginAccountCreation(csvName: String) {
+        pendingAccountCreationName = csvName
+    }
+
+    /** Call when the real AccountEntryScreen returns a configured (not yet persisted) [draft]. */
+    fun onAccountDraftReceived(draft: AccountEntryDraft) {
+        val csvName = pendingAccountCreationName ?: return
+        pendingAccountCreationName = null
+        val existing = _accountMappings.value[csvName]
+            ?: EntityMapping(csvName, null, EntityMapping.EntityType.ACCOUNT)
+        updateAccountMapping(
+            csvName,
+            existing.copy(
+                existingId = null,
+                currencyCode = draft.primaryCurrency,
+                allowedCurrencies = draft.allowedCurrencies,
+                openingBalances = draft.initialBalances,
+                structureType = draft.structureType,
+                iconName = draft.iconName,
+                colorHex = draft.colorHex
+            )
+        )
+    }
+
     fun loadFile(uriString: String, context: Context) {
         pendingUri = uriString
         viewModelScope.launch {
@@ -102,6 +135,25 @@ class CsvImportViewModel @Inject constructor(
                 _step.value = Step.SourceSelection
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to load file"
+            } finally {
+                _isLoading.value = false
+                _loadingMessage.value = null
+            }
+        }
+    }
+
+    /** Re-parses the already-loaded file with an explicit delimiter/encoding override. */
+    fun applyDelimiterAndEncoding(context: Context, delimiter: Char, encoding: String) {
+        val uri = pendingUri ?: return
+        viewModelScope.launch {
+            _isLoading.value = true
+            _loadingMessage.value = "Re-reading file…"
+            _error.value = null
+            try {
+                val stream = context.contentResolver.openInputStream(uri.toUri())!!
+                _session.value = csvImportService.parseHeaders(stream, delimiter, encoding)
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Failed to re-read file"
             } finally {
                 _isLoading.value = false
                 _loadingMessage.value = null
@@ -176,6 +228,22 @@ class CsvImportViewModel @Inject constructor(
         _parentGroupMappings.update { it + (parentName to existingId) }
     }
 
+    fun updateEntitySearchQuery(query: String) {
+        _entitySearchQuery.value = query
+    }
+
+    /** Forces every CSV account to "create new", discarding any suggested existing matches. */
+    fun selectAllNewAccounts() {
+        val preview = _preview.value ?: return
+        _accountMappings.update { current ->
+            preview.allCsvAccounts.associate { acc ->
+                val existing = current[acc.name]
+                acc.name to (existing?.copy(existingId = null)
+                    ?: EntityMapping(acc.name, null, EntityMapping.EntityType.ACCOUNT))
+            }
+        }
+    }
+
     fun proceedFromEntityMapping() {
         _step.value = Step.Preview
     }
@@ -208,6 +276,7 @@ class CsvImportViewModel @Inject constructor(
                     _duplicatePolicy.value,
                     finalMappings,
                     _selectedDuplicates.value,
+                    totalRows = _preview.value?.totalRows ?: 0,
                     onProgress = { progress -> _importProgress.value = progress }
                 )
                 if (result.isSuccess) {
@@ -323,6 +392,7 @@ class CsvImportViewModel @Inject constructor(
     val parentGroupMappings = _parentGroupMappings.asStateFlow()
     val selectedDuplicates = _selectedDuplicates.asStateFlow()
     val duplicatePolicy = _duplicatePolicy.asStateFlow()
+    val entitySearchQuery = _entitySearchQuery.asStateFlow()
 }
 
 // Extension to easily expose MutableStateFlow as StateFlow

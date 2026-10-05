@@ -73,7 +73,6 @@ fun ColumnMappingStep(
     ) {
         SourceAppDropdown(session.sourceApp, onApplyPreset)
 
-        AeonSectionHeader(title = "Preview \u2014 first ${session.previewRows.size} rows")
         CsvPreviewTable(session)
 
         HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
@@ -117,7 +116,10 @@ private fun SourceAppDropdown(
                 border = BorderStroke(1.dp, AppColors.outlineVariant)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(
+                        horizontal = AeonTheme.dimensions.spacingMd,
+                        vertical = AeonTheme.dimensions.spacingSm
+                    ),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
@@ -156,6 +158,25 @@ private fun SourceAppDropdown(
 
 @Composable
 private fun CsvPreviewTable(session: CsvImportSession) {
+    var showAll by remember { mutableStateOf(false) }
+    val defaultCount = 5
+    val rowsToShow = if (showAll) session.previewRows else session.previewRows.take(defaultCount)
+
+    AeonSectionHeader(
+        title = "Preview — showing ${rowsToShow.size} of ${session.previewRows.size} rows",
+        trailing = if (session.previewRows.size > defaultCount) {
+            {
+                TextButton(onClick = { showAll = !showAll }) {
+                    Text(
+                        if (showAll) "Show less" else "Show all",
+                        style = AppTextStyles.buttonLabel,
+                        color = AppColors.primary
+                    )
+                }
+            }
+        } else null
+    )
+
     Surface(
         color = AppColors.cardSurface,
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
@@ -213,7 +234,7 @@ private fun CsvPreviewTable(session: CsvImportSession) {
                     }
                 }
                 // Data rows
-                session.previewRows.take(3).forEachIndexed { rowIdx, row ->
+                rowsToShow.forEachIndexed { rowIdx, row ->
                     val rowBg =
                         if (rowIdx % 2 == 0) AppColors.cardSurface else AppColors.cardSurfaceRaised
                     Row(modifier = Modifier.background(rowBg)) {
@@ -255,7 +276,7 @@ private fun ReadOnlyMappings(session: CsvImportSession, onCustomise: () -> Unit)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = AeonTheme.dimensions.spacingXs),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -305,7 +326,7 @@ private fun FieldMappingItem(
                 style = AppTextStyles.listItemTitle,
                 color = AppColors.contentPrimary
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(AeonTheme.dimensions.spacingSm))
             Box(modifier = Modifier.weight(1.5f)) {
                 Surface(
                     onClick = { expanded = true },
@@ -315,7 +336,10 @@ private fun FieldMappingItem(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(
+                            horizontal = AeonTheme.dimensions.spacingMd,
+                            vertical = AeonTheme.dimensions.spacingSm
+                        ),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -370,6 +394,20 @@ private fun FieldMappingItem(
                 modifier = Modifier.padding(start = 2.dp, top = 2.dp)
             )
         }
+
+        if (field == OssWalletField.AMOUNT && currentColIndex != null) {
+            val samples = session.previewRows.mapNotNull { it.getOrNull(currentColIndex) }
+                .filter { it.isNotBlank() }
+            val nonNumericCount = samples.count { it.any { c -> c.isLetter() } }
+            if (samples.isNotEmpty() && nonNumericCount > 0) {
+                Text(
+                    "$nonNumericCount of ${samples.size} sample values in this column don't look numeric — they may land in Parse Errors.",
+                    style = AppTextStyles.caption,
+                    color = AppColors.error,
+                    modifier = Modifier.padding(start = 2.dp, top = 2.dp)
+                )
+            }
+        }
     }
 }
 
@@ -383,6 +421,36 @@ private fun ColumnMappingStepPreview() {
                     headers = listOf("date", "account", "category", "amount", "note"),
                     previewRows = listOf(
                         listOf("2023-10-01", "HDFC", "Food", "500", "Dinner"),
+                        listOf("2023-10-02", "Cash", "Travel", "100", "Bus")
+                    ),
+                    mapping = mapOf(
+                        OssWalletField.DATE to 0,
+                        OssWalletField.ACCOUNT to 1,
+                        OssWalletField.CATEGORY to 2,
+                        OssWalletField.AMOUNT to 3,
+                        OssWalletField.NOTE to 4
+                    ),
+                    sourceApp = ImportSourceApp.GENERIC
+                ),
+                onUpdateMapping = { _, _ -> },
+                onApplyPreset = {},
+                onNext = {},
+                isLoading = false
+            )
+        }
+    }
+}
+
+@ThemePreviews
+@Composable
+private fun ColumnMappingStepNonNumericAmountPreview() {
+    OssWalletTheme {
+        Surface(color = AppColors.screenBackground) {
+            ColumnMappingStep(
+                session = CsvImportSession(
+                    headers = listOf("date", "account", "category", "amount", "note"),
+                    previewRows = listOf(
+                        listOf("2023-10-01", "HDFC", "Food", "N/A", "Dinner"),
                         listOf("2023-10-02", "Cash", "Travel", "100", "Bus")
                     ),
                     mapping = mapOf(

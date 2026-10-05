@@ -13,13 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -31,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonInfoDialog
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
@@ -45,13 +44,16 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CsvImportScreen(
     viewModel: CsvImportViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToDashboard: () -> Unit
+    onNavigateToDashboard: () -> Unit,
+    onCreateNewAccount: (csvName: String, currency: String?) -> Unit
 ) {
     val context = LocalContext.current
     val step by viewModel.step.collectAsStateWithLifecycle()
@@ -72,6 +74,7 @@ fun CsvImportScreen(
     val parentGroupMappings by viewModel.parentGroupMappings.collectAsStateWithLifecycle()
     val selectedDuplicates by viewModel.selectedDuplicates.collectAsStateWithLifecycle()
     val duplicatePolicy by viewModel.duplicatePolicy.collectAsStateWithLifecycle()
+    val entitySearchQuery by viewModel.entitySearchQuery.collectAsStateWithLifecycle()
 
     val fileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -126,9 +129,11 @@ fun CsvImportScreen(
                                 parentGroupMappings = parentGroupMappings,
                                 selectedDuplicates = selectedDuplicates,
                                 duplicatePolicy = duplicatePolicy,
+                                entitySearchQuery = entitySearchQuery,
                                 viewModel = viewModel,
                                 fileLauncher = fileLauncher,
-                                context = context
+                                context = context,
+                                onCreateNewAccount = onCreateNewAccount
                             )
 
                             if (isLoading) {
@@ -168,9 +173,11 @@ private fun StepContent(
     parentGroupMappings: Map<String, String?>,
     selectedDuplicates: Set<Int>,
     duplicatePolicy: com.osscabinet.ossWallet.domain.model.import_csv.DuplicatePolicy,
+    entitySearchQuery: String,
     viewModel: CsvImportViewModel,
     fileLauncher: androidx.activity.result.ActivityResultLauncher<String>,
-    context: android.content.Context
+    context: android.content.Context,
+    onCreateNewAccount: (csvName: String, currency: String?) -> Unit
 ) {
     if (isLoading && session == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -183,7 +190,10 @@ private fun StepContent(
                     session = session,
                     onLoadFile = { fileLauncher.launch("*/*") },
                     onConfirm = { app -> viewModel.confirmSourceApp(app) },
-                    fileLoadError = if (session == null) errorMessage else null
+                    fileLoadError = if (session == null) errorMessage else null,
+                    onApplyDelimiterAndEncoding = { delimiter, encoding ->
+                        viewModel.applyDelimiterAndEncoding(context, delimiter, encoding)
+                    }
                 )
 
                 is CsvImportViewModel.Step.ColumnMapping -> ColumnMappingStep(
@@ -201,10 +211,14 @@ private fun StepContent(
                     rootCategories = categories
                         .filter { it.parentId == null && !Category.isSystemCategory(it.id) }
                         .map { it.id.toString() to it.name },
+                    fullCategories = categories,
                     shortlistedCurrencies = shortlistedCurrencies,
                     accountMappings = accountMappings,
                     categoryMappings = categoryMappings,
                     parentGroupMappings = parentGroupMappings,
+                    searchQuery = entitySearchQuery,
+                    onSearchQueryChange = { viewModel.updateEntitySearchQuery(it) },
+                    onSelectAllNewAccounts = { viewModel.selectAllNewAccounts() },
                     onUpdateAccountMapping = { name, mapping ->
                         viewModel.updateAccountMapping(
                             name,
@@ -223,11 +237,16 @@ private fun StepContent(
                             id
                         )
                     },
+                    onCreateNewAccount = { acc ->
+                        viewModel.beginAccountCreation(acc.name)
+                        onCreateNewAccount(acc.name, accountMappings[acc.name]?.currencyCode)
+                    },
                     onConfirmMappings = { viewModel.proceedFromEntityMapping() }
                 )
 
                 is CsvImportViewModel.Step.Preview -> PreviewStep(
                     preview = preview,
+                    session = session,
                     duplicatePolicy = duplicatePolicy,
                     selectedDuplicates = selectedDuplicates,
                     onSetDuplicatePolicy = { viewModel.setDuplicatePolicy(it) },
@@ -284,16 +303,47 @@ private fun LoadingBanner(message: String?, progress: Float) {
 
 @Composable
 private fun ImportErrorDialog(error: String, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Something went wrong") },
-        text = { Text(error) },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("OK", style = AppTextStyles.buttonLabel, color = AppColors.primary)
+    AeonInfoDialog(
+        show = true,
+        title = "Something went wrong",
+        message = error,
+        onDismiss = onDismiss
+    )
+}
+
+@ThemePreviews
+@Composable
+private fun LoadingBannerPreview() {
+    OssWalletTheme {
+        Surface(color = AppColors.screenBackground) {
+            Box(modifier = Modifier.padding(16.dp)) {
+                LoadingBanner(message = "Importing 1,240 transactions…", progress = 0.65f)
             }
         }
-    )
+    }
+}
+
+@ThemePreviews
+@Composable
+private fun LoadingBannerIndeterminatePreview() {
+    OssWalletTheme {
+        Surface(color = AppColors.screenBackground) {
+            Box(modifier = Modifier.padding(16.dp)) {
+                LoadingBanner(message = "Reading file…", progress = 0f)
+            }
+        }
+    }
+}
+
+@ThemePreviews
+@Composable
+private fun ImportErrorDialogPreview() {
+    OssWalletTheme {
+        ImportErrorDialog(
+            error = "Couldn't parse this file — check that it's a valid CSV export.",
+            onDismiss = {}
+        )
+    }
 }
 
 private fun getStepIndex(step: CsvImportViewModel.Step): Int = when (step) {

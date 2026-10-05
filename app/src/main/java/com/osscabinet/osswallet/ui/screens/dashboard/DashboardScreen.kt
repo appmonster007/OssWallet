@@ -2,33 +2,45 @@ package com.osscabinet.ossWallet.ui.screens.dashboard
 
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
@@ -37,11 +49,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
+import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonSnackbarHost
 import com.osscabinet.ossWallet.ui.components.AeonSnackbarType
 import com.osscabinet.ossWallet.ui.components.showAeonSnackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -97,6 +114,8 @@ import com.osscabinet.ossWallet.ui.components.cards.AccountActions
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardAtelier
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.LocalCardReorderState
+import com.osscabinet.ossWallet.ui.components.cards.rememberAeonCardReorderState
 import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterPillController
@@ -391,11 +410,15 @@ fun DashboardScreenLayout(
     }
 
     var showAddCardDialog by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
+    var showResetConfirmDialog by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
     var showQuickAddSheet by remember { mutableStateOf(false) }
     var editingCardId by remember { mutableStateOf<String?>(null) }
+    val cardReorderState = rememberAeonCardReorderState()
 
     BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
+    BackHandler(enabled = showSettingsDialog) { showSettingsDialog = false }
     BackHandler(enabled = isFabExpanded) { isFabExpanded = false }
 
     val pageCount = 2
@@ -446,13 +469,7 @@ fun DashboardScreenLayout(
         }
     }
 
-    // Robust scroll reset: triggers when the Glance tab is selected or the screen is resumed.
-    LaunchedEffect(pagerState.currentPage) {
-        if (pagerState.currentPage == 0) {
-            glanceListState.scrollToItem(0)
-        }
-    }
-
+    // Scroll reset: only when the screen/app is resumed while the Glance tab is active.
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
         if (pagerState.currentPage == 0) {
             scope.launch { glanceListState.scrollToItem(0) }
@@ -467,11 +484,99 @@ fun DashboardScreenLayout(
 
     val filterPillController = remember { FilterPillController() }
 
+    if (showSettingsDialog) {
+        Dialog(
+            onDismissRequest = { showSettingsDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            val configuration = LocalConfiguration.current
+            val screenHeight = configuration.screenHeightDp.dp
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .heightIn(max = screenHeight * 0.85f),
+                shape = RoundedCornerShape(AeonSize.D32.value),
+                color = AppColors.sheetSurface,
+                tonalElevation = AeonSize.D6.value
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Text(
+                        text = "Dashboard Settings",
+                        style = AppTextStyles.heroAmount.copy(
+                            fontWeight = FontWeight.Light,
+                            fontSize = 28.sp,
+                            color = AppColors.contentPrimary.copy(alpha = 0.8f)
+                        ),
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    showSettingsDialog = false
+                                    showResetConfirmDialog = true
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Restore,
+                                contentDescription = null,
+                                tint = AppColors.error
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Reset to Default",
+                                style = AppTextStyles.transactionTitle,
+                                color = AppColors.error
+                            )
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        TextButton(onClick = { showSettingsDialog = false }) {
+                            Text(
+                                "Close",
+                                style = AppTextStyles.listItemTitle.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.primary
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    AeonConfirmDeleteDialog(
+        show = showResetConfirmDialog,
+        title = "Reset to Default?",
+        message = "This restores the default card layout for this screen. Your customizations here will be lost.",
+        onConfirm = {
+            showResetConfirmDialog = false
+            cardUpdateHandler.resetCardsToDefault()
+        },
+        onDismiss = { showResetConfirmDialog = false },
+        confirmButtonText = "Reset"
+    )
+
     AeonHazeProvider { hazeLayers ->
         CompositionLocalProvider(
             LocalFilterPillController provides filterPillController,
             LocalEditingCardId provides editingCardId,
-            LocalOnEditCard provides { editingCardId = it }
+            LocalOnEditCard provides { editingCardId = it },
+            LocalCardReorderState provides cardReorderState
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // 1. Content Layer (Layer 1)
@@ -490,8 +595,29 @@ fun DashboardScreenLayout(
                         )
                     }
 
-                    when (val state = uiState) {
-                        is DashboardUiState.Loading -> {
+                    // Crossfade keyed on the STATE'S TYPE only (not the state object itself) —
+                    // DashboardUiState.Success is a large data class that gets a new instance on
+                    // every minor update (scroll, snackbar, filter, highlight), so keying on the
+                    // object directly made Crossfade re-trigger its fade transition on nearly
+                    // every recomposition, briefly running two DashboardContent subtrees (two
+                    // HorizontalPagers/LazyListStates/nav-triggering LaunchedEffects) at once —
+                    // that's what broke navigation/scroll. Keying on just the phase means the
+                    // fade only plays on an actual Loading→Success→Error transition; the content
+                    // inside each branch still reads the live `uiState` so in-place updates are
+                    // ordinary recomposition, not a new crossfade.
+                    val uiPhase = when (uiState) {
+                        is DashboardUiState.Loading -> 0
+                        is DashboardUiState.Success -> 1
+                        is DashboardUiState.Error -> 2
+                    }
+                    Crossfade(
+                        targetState = uiPhase,
+                        modifier = Modifier.weight(1f),
+                        animationSpec = tween(durationMillis = 220),
+                        label = "dashboard_ui_state"
+                    ) { phase ->
+                    when (phase) {
+                        0 -> {
                             AeonShimmer(
                                 innerPadding = PaddingValues(
                                     top = AeonSize.D64.value + AeonTheme.dimensions.spacingMd,
@@ -501,9 +627,10 @@ fun DashboardScreenLayout(
                             )
                         }
 
-                        is DashboardUiState.Success -> {
+                        1 -> {
+                            val state = uiState as DashboardUiState.Success
                             DashboardContent(
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier,
                                 innerPadding = PaddingValues(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
                                 pagerState = pagerState,
                                 state = state,
@@ -589,7 +716,8 @@ fun DashboardScreenLayout(
                             )
                         }
 
-                        is DashboardUiState.Error -> {
+                        else -> {
+                            val state = uiState as DashboardUiState.Error
                             Box(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
@@ -598,6 +726,7 @@ fun DashboardScreenLayout(
                             }
                         }
                     }
+                    } // Crossfade
                 }
 
                 // 2. Top Bar Layer (Layer 3 - Floating Pills)
@@ -636,10 +765,22 @@ fun DashboardScreenLayout(
                         content = {
                             AeonTopBarActionPill {
                                 when (pagerState.currentPage) {
-                                    0 -> AppBarIconButton(
-                                        icon = Icons.Default.Add,
-                                        onClick = { showAddCardDialog = true }
-                                    )
+                                    0 -> {
+                                        if (cardReorderState.isReordering) {
+                                            AppBarIconButton(
+                                                icon = Icons.Default.Check,
+                                                onClick = { cardReorderState.confirm() }
+                                            )
+                                        }
+                                        AppBarIconButton(
+                                            icon = Icons.Default.Settings,
+                                            onClick = { showSettingsDialog = true }
+                                        )
+                                        AppBarIconButton(
+                                            icon = Icons.Default.Add,
+                                            onClick = { showAddCardDialog = true }
+                                        )
+                                    }
 
                                     1 -> AppBarIconButton(
                                         icon = Icons.Rounded.History,

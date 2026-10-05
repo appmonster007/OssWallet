@@ -1,121 +1,77 @@
 package com.osscabinet.ossWallet.ui.reorderable
 
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 
 /**
- * Long-press anywhere within this composable to begin a drag of the item identified by [key].
- * Apply to the entire row when the whole row is the drag affordance (Accounts, Templates).
- *
- * The pointer offset is converted from this composable's local space into the container's
- * coordinate space via [LayoutCoordinates.localPositionOf], so the handle can be any descendant
- * of the [ReorderableItem] — not just the row root.
+ * Fire [onLongPress] when this composable is long-pressed — a pure "trigger" gesture with no
+ * associated drag. Built on the same [detectDragGesturesAfterLongPress] primitive
+ * `sh.calvin.reorderable`'s own drag handles use, specifically because it tolerates a descendant
+ * already claiming the touch (e.g. an icon's own `clickable`) — a plain tap detector's
+ * `awaitFirstDown(requireUnconsumed = true)` never sees an unconsumed down once that happens, which
+ * silently breaks a naively-built long-press detector nested inside a clickable. Drag deltas after
+ * the long-press fires are just consumed (not acted on) so the gesture doesn't leak into a
+ * scroll/pan once recognized.
  */
-fun Modifier.longPressDraggableHandle(
-    state: ReorderableLazyListState,
+fun Modifier.longPressToTrigger(
     key: Any,
     enabled: Boolean = true,
-    onDragStarted: () -> Unit = {},
-    onDragStopped: () -> Unit = {},
+    onLongPress: () -> Unit,
 ): Modifier = composed {
-    var handleCoords: LayoutCoordinates? by remember { mutableStateOf(null) }
+    val onLongPressState by rememberUpdatedState(onLongPress)
 
-    this
-        .onGloballyPositioned { coords -> handleCoords = coords }
-        .pointerInput(key, enabled) {
-            if (!enabled) return@pointerInput
-            detectDragGesturesAfterLongPress(
-                onDragStart = { localOffset ->
-                    val handle = handleCoords ?: return@detectDragGesturesAfterLongPress
-                    val container = state.containerCoords ?: return@detectDragGesturesAfterLongPress
-                    if (!handle.isAttached || !container.isAttached) return@detectDragGesturesAfterLongPress
-                    val pointerInContainer = container.localPositionOf(handle, localOffset)
-                    state.onDragStart(key, pointerInContainer)
-                    onDragStarted()
-                },
-                onDrag = { change, dragAmount ->
-                    change.consume()
-                    state.onDrag(dragAmount.y)
-                },
-                onDragEnd = {
-                    state.onDragStop()
-                    onDragStopped()
-                },
-                onDragCancel = {
-                    state.onDragStop()
-                    onDragStopped()
-                },
-            )
-        }
-}
-
-/**
- * Press-and-drag (no long-press) variant for explicit drag handles. Use on a child of the item
- * when only a specific UI element (e.g. a grip icon or the card header) should initiate drag.
- */
-fun Modifier.draggableHandle(
-    state: ReorderableLazyListState,
-    key: Any,
-    enabled: Boolean = true,
-    onDragStarted: () -> Unit = {},
-    onDragStopped: () -> Unit = {},
-): Modifier = composed {
-    var handleCoords: LayoutCoordinates? by remember { mutableStateOf(null) }
-
-    this
-        .onGloballyPositioned { coords -> handleCoords = coords }
-        .pointerInput(key, enabled) {
-            if (!enabled) return@pointerInput
-            detectDragGestures(
-                onDragStart = { localOffset ->
-                    val handle = handleCoords ?: return@detectDragGestures
-                    val container = state.containerCoords ?: return@detectDragGestures
-                    if (!handle.isAttached || !container.isAttached) return@detectDragGestures
-                    val pointerInContainer: Offset = container.localPositionOf(handle, localOffset)
-                    state.onDragStart(key, pointerInContainer)
-                    onDragStarted()
-                },
-                onDrag = { change, dragAmount ->
-                    change.consume()
-                    state.onDrag(dragAmount.y)
-                },
-                onDragEnd = {
-                    state.onDragStop()
-                    onDragStopped()
-                },
-                onDragCancel = {
-                    state.onDragStop()
-                    onDragStopped()
-                },
-            )
-        }
+    this.pointerInput(key, enabled) {
+        if (!enabled) return@pointerInput
+        detectDragGesturesAfterLongPress(
+            onDragStart = { onLongPressState() },
+            onDrag = { change, _ -> change.consume() },
+            onDragEnd = {},
+            onDragCancel = {},
+        )
+    }
 }
 
 /**
  * Add TalkBack-accessible "Move up" / "Move down" custom actions for screen reader users.
- * Apply to the row (or any focusable child) so the actions are exposed at that semantics node.
+ *
+ * Operates directly on [lazyListState]'s layout info and calls [onMove] — entirely independent of
+ * `sh.calvin.reorderable`'s internal drag state, which has no accessibility support of its own.
+ * Unlike a drag gesture (which the caller may buffer and persist once on drop), each invocation
+ * here is a complete, standalone edit with no natural "gesture end" to hang persistence off of, so
+ * [onMove] is expected to persist immediately if that's what the caller wants — pass a lambda that
+ * both reorders and writes through, e.g. `{ from, to -> editList = ...; onReorder(editList) }`.
  */
 fun Modifier.reorderableSemantics(
-    state: ReorderableLazyListState,
+    lazyListState: LazyListState,
     key: Any,
+    onMove: (fromIndex: Int, toIndex: Int) -> Unit,
     moveUpLabel: String = "Move up",
     moveDownLabel: String = "Move down",
 ): Modifier = this.semantics(mergeDescendants = true) {
     customActions = listOf(
-        CustomAccessibilityAction(moveUpLabel) { state.moveByAccessibility(key, -1) },
-        CustomAccessibilityAction(moveDownLabel) { state.moveByAccessibility(key, +1) },
+        CustomAccessibilityAction(moveUpLabel) { moveByAccessibility(lazyListState, key, -1, onMove) },
+        CustomAccessibilityAction(moveDownLabel) { moveByAccessibility(lazyListState, key, +1, onMove) },
     )
+}
+
+private fun moveByAccessibility(
+    lazyListState: LazyListState,
+    key: Any,
+    delta: Int,
+    onMove: (fromIndex: Int, toIndex: Int) -> Unit,
+): Boolean {
+    val info = lazyListState.layoutInfo
+    val currentIndex = info.visibleItemsInfo.firstOrNull { it.key == key }?.index ?: return false
+    val targetIndex = currentIndex + delta
+    if (targetIndex !in 0 until info.totalItemsCount) return false
+    onMove(currentIndex, targetIndex)
+    return true
 }

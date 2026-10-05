@@ -17,9 +17,11 @@ import com.osscabinet.ossWallet.data.local.entity.TagEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.util.joinByComma
 import com.osscabinet.ossWallet.domain.model.import_csv.AccountToMap
 import com.osscabinet.ossWallet.domain.model.import_csv.CategoryToMap
 import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
@@ -135,11 +137,12 @@ class CsvImportServiceImpl @Inject constructor(
     private suspend fun <T> parseRows(
         inputStream: InputStream,
         delimiter: Char? = null,
+        encoding: String = "UTF-8",
         block: suspend (List<String>, Sequence<Map<String, String>>) -> T
     ): T = withContext(dispatcherProvider.io) {
         val parser = createParser(delimiter)
         val headers = mutableListOf<String>()
-        val recordsIterator = parser.iterateRecords(inputStream).iterator()
+        val recordsIterator = parser.iterateRecords(inputStream, encoding).iterator()
 
         val rowsSequence = sequence {
             if (recordsIterator.hasNext()) {
@@ -250,32 +253,153 @@ class CsvImportServiceImpl @Inject constructor(
         row["envelope_id"]?.toIntOrNull()?.let { assetLoader.envelopeMap[it]?.parentName }
 
     // ──────────────────────────────────────────────────────────────────────────
+    // Shared entity resolution (accounts + categories), used by all execute*Import paths
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private data class ResolvedEntities(
+        val accountMap: MutableMap<String, String>,
+        val categoryMap: MutableMap<String, Long>,
+        val accountCurrencyMap: MutableMap<String, String>
+    )
+
+    private suspend fun resolveAndCreateEntities(
+        entityMappings: List<EntityMapping>,
+        existingAccounts: Map<String, AccountEntity>,
+        existingCats: List<CategoryEntity>,
+        profileId: Int,
+        profileBaseCurrency: String
+    ): ResolvedEntities {
+        val accountMap = existingAccounts.mapValues { it.value.id }.toMutableMap()
+        val accountCurrencyMap = existingAccounts.mapValues { it.value.currencyCode }.toMutableMap()
+        val categoryMap = existingCats.associateBy({ it.name.lowercase() }, { it.id }).toMutableMap()
+        val newCategoryColorMap = mutableMapOf<Long, Int>()
+
+        entityMappings
+            .sortedBy { if (it.entityType == EntityMapping.EntityType.ACCOUNT) -1 else 0 }
+            .forEach { em ->
+                when (em.entityType) {
+                    EntityMapping.EntityType.ACCOUNT -> {
+                        if (em.isExcluded) return@forEach
+                        val id = em.existingId ?: UUID.randomUUID().toString()
+                        if (em.existingId == null) {
+                            val finalName =
+                                if (existingAccounts.containsKey(em.unknownName.lowercase()))
+                                    "${em.unknownName}-${randomSuffix()}" else em.unknownName
+                            val primaryCurrency = em.currencyCode ?: profileBaseCurrency
+                            val allowed = em.allowedCurrencies.ifEmpty { listOf(primaryCurrency) }
+                            accountDao.upsertAccount(
+                                AccountEntity(
+                                    id = id,
+                                    name = finalName,
+                                    currencyCode = primaryCurrency,
+                                    structureType = em.structureType ?: "regular",
+                                    colorHex = em.colorHex ?: BRAND_COLORS.random(),
+                                    icon = em.iconName ?: "wallet",
+                                    allowedCurrencies = allowed.joinByComma(),
+                                    profileId = profileId,
+                                    isArchived = false,
+                                    displayOrder = 999
+                                )
+                            )
+                            em.openingBalances.forEach { (currency, amountStr) ->
+                                val amount = amountStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                                if (amount.signum() != 0) {
+                                    transactionDao.insertTransaction(
+                                        TransactionEntity(
+                                            name = "Initial Balance",
+                                            amount = amount,
+                                            timestamp = System.currentTimeMillis(),
+                                            currency = currency,
+                                            transactionType = if (amount.signum() >= 0) TransactionType.INCOME else TransactionType.EXPENSE,
+                                            accountId = id,
+                                            categoryId = Category.SYSTEM_INITIAL_BALANCE,
+                                            tags = emptySet(),
+                                            paymentMethod = PaymentMethod.CASH,
+                                            payee = "",
+                                            note = "Opening balance before import",
+                                            profileId = profileId,
+                                            status = TransactionStatus.CLEARED
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                        accountMap[em.unknownName.lowercase()] = id
+                        em.currencyCode?.let { accountCurrencyMap[em.unknownName.lowercase()] = it }
+                    }
+
+                    EntityMapping.EntityType.CATEGORY -> {
+                        val existingId = em.existingId
+                        if (existingId != null) {
+                            categoryMap[em.unknownName.lowercase()] =
+                                existingId.toLongOrNull() ?: Category.SYSTEM_OTHERS
+                        } else {
+                            val parentId = em.parentCategoryId
+                                ?: em.parentCategoryName?.let { categoryMap[it.lowercase()] }
+                            val color = em.colorHex?.let { runCatching { it.toColorInt() }.getOrNull() }
+                                ?: parentId?.let { pid ->
+                                    newCategoryColorMap[pid]
+                                        ?: existingCats.find { c -> c.id == pid }?.colorHex
+                                } ?: BRAND_COLORS.random().toColorInt()
+                            val nature = em.nature
+                                ?.let { runCatching { CategoryNature.valueOf(it) }.getOrNull() }
+                                ?: CategoryNature.WANT
+
+                            categoryDao.insertCategory(
+                                CategoryEntity(
+                                    id = 0,
+                                    name = em.unknownName,
+                                    iconName = em.iconName ?: "Category",
+                                    colorHex = color,
+                                    isDefault = false,
+                                    parentId = parentId,
+                                    nature = nature,
+                                    profileId = profileId
+                                )
+                            )
+                            val insertedId = categoryDao.getCategoryByName(em.unknownName)?.id
+                                ?: Category.SYSTEM_OTHERS
+                            categoryMap[em.unknownName.lowercase()] = insertedId
+                            if (parentId == null) newCategoryColorMap[insertedId] = color
+                        }
+                    }
+                }
+            }
+        return ResolvedEntities(accountMap, categoryMap, accountCurrencyMap)
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     // Service API
     // ──────────────────────────────────────────────────────────────────────────
 
-    override suspend fun parseHeaders(inputStream: InputStream): CsvImportSession =
+    override suspend fun parseHeaders(
+        inputStream: InputStream,
+        delimiter: Char?,
+        encoding: String
+    ): CsvImportSession =
         withContext(dispatcherProvider.io) {
-            val parser = createParser()
-            val records = inputStream.use { parser.parseAllRecords(it) }
+            val parser = createParser(delimiter)
+            val records = inputStream.use { parser.parseAllRecords(it, encoding) }
             val headers =
                 parser.getContext().headers()?.map { it.trim().lowercase() } ?: emptyList()
-            val delimiter = parser.getDetectedFormat()?.getDelimiter() ?: ','
+            val resolvedDelimiter = delimiter ?: parser.getDetectedFormat()?.getDelimiter() ?: ','
 
             if (headers.isEmpty()) return@withContext CsvImportSession(
                 emptyList(),
                 emptyList(),
                 emptyMap(),
                 null,
-                delimiter
+                resolvedDelimiter,
+                encoding
             )
 
-            val previewRows = records.take(5).map { it.values.toList() }
+            val previewRows = records.take(25).map { it.values.toList() }
             val detectedApp = if (headers.toSet()
                     .containsAll(budgetBakersHeaders)
             ) ImportSourceApp.BUDGET_BAKERS else null
             val mapping = buildInitialMapping(headers, detectedApp ?: ImportSourceApp.GENERIC)
 
-            CsvImportSession(headers, previewRows, mapping, detectedApp, delimiter)
+            CsvImportSession(headers, previewRows, mapping, detectedApp, resolvedDelimiter, encoding)
         }
 
     private fun buildInitialMapping(
@@ -342,7 +466,7 @@ class CsvImportServiceImpl @Inject constructor(
         session: CsvImportSession,
         inputStream: InputStream
     ): ImportPreview =
-        parseRows(inputStream, session.delimiter) { _, rows ->
+        parseRows(inputStream, session.delimiter, session.encoding) { _, rows ->
             val profileId = settingsDataStore.currentProfileId.first()
             val existingTxs = transactionDao.getAllTransactionsSync(profileId)
             val existingAccounts =
@@ -360,6 +484,7 @@ class CsvImportServiceImpl @Inject constructor(
             val duplicates = mutableListOf<DuplicateGroup>()
             val parseErrors = mutableListOf<ParseError>()
             var validRows = 0
+            var totalDuplicateCount = 0
             var totalRows = 0
             val transferGroups = mutableMapOf<String, MutableList<Int>>()
 
@@ -397,6 +522,7 @@ class CsvImportServiceImpl @Inject constructor(
 
                     val dupKey = "${timestamp / 60000}|${amount.abs().toPlainString()}|$note"
                     if (dupKey in existingKeys) {
+                        totalDuplicateCount++
                         if (duplicates.size < 500) duplicates.add(
                             DuplicateGroup(
                                 dupKey,
@@ -415,6 +541,7 @@ class CsvImportServiceImpl @Inject constructor(
                 totalRows = totalRows,
                 validRows = validRows,
                 duplicates = duplicates,
+                totalDuplicateCount = totalDuplicateCount,
                 allCsvAccounts = accountRowCounts.map { (name, count) ->
                     val match = existingAccounts[name.lowercase()]
                     AccountToMap(
@@ -435,7 +562,7 @@ class CsvImportServiceImpl @Inject constructor(
         session: CsvImportSession,
         inputStream: InputStream
     ): ImportPreview =
-        parseRows(inputStream, session.delimiter) { headers, rows ->
+        parseRows(inputStream, session.delimiter, session.encoding) { headers, rows ->
             val profileId = settingsDataStore.currentProfileId.first()
             val existingTxs = transactionDao.getAllTransactionsSync(profileId)
             val existingAccounts =
@@ -453,6 +580,7 @@ class CsvImportServiceImpl @Inject constructor(
             val duplicates = mutableListOf<DuplicateGroup>()
             val parseErrors = mutableListOf<ParseError>()
             var validRows = 0
+            var totalDuplicateCount = 0
             var totalCount = 0
 
             rows.forEachIndexed { idx, row ->
@@ -484,6 +612,7 @@ class CsvImportServiceImpl @Inject constructor(
                     val timestamp = parseDate(dateStr)
                     val dupKey = "${timestamp / 60000}|${amount.abs().toPlainString()}|$note"
                     if (dupKey in existingKeys) {
+                        totalDuplicateCount++
                         if (duplicates.size < 500) duplicates.add(
                             DuplicateGroup(
                                 dupKey,
@@ -499,13 +628,14 @@ class CsvImportServiceImpl @Inject constructor(
             }
 
             ImportPreview(
-                totalCount,
-                validRows,
-                duplicates,
-                newAccounts.map { AccountToMap(it, null, null) },
-                newCategories.map { CategoryToMap(it) },
-                parseErrors,
-                0
+                totalRows = totalCount,
+                validRows = validRows,
+                duplicates = duplicates,
+                totalDuplicateCount = totalDuplicateCount,
+                allCsvAccounts = newAccounts.map { AccountToMap(it, null, null) },
+                newCategories = newCategories.map { CategoryToMap(it) },
+                parseErrors = parseErrors,
+                unpairedTransferRows = 0
             )
         }
 
@@ -513,7 +643,7 @@ class CsvImportServiceImpl @Inject constructor(
         session: CsvImportSession,
         inputStream: InputStream
     ): ImportPreview =
-        parseRows(inputStream, session.delimiter) { _, rows ->
+        parseRows(inputStream, session.delimiter, session.encoding) { _, rows ->
             val profileId = settingsDataStore.currentProfileId.first()
             val existingTxs = transactionDao.getAllTransactionsSync(profileId)
             val existingAccounts =
@@ -530,6 +660,7 @@ class CsvImportServiceImpl @Inject constructor(
             val duplicates = mutableListOf<DuplicateGroup>()
             val parseErrors = mutableListOf<ParseError>()
             var validRows = 0
+            var totalDuplicateCount = 0
             var totalRows = 0
             val transferGroups = mutableMapOf<String, MutableList<Int>>()
 
@@ -568,6 +699,7 @@ class CsvImportServiceImpl @Inject constructor(
 
                     val dupKey = "${timestamp / 60000}|${amount.abs().toPlainString()}|$note"
                     if (dupKey in existingKeys) {
+                        totalDuplicateCount++
                         if (duplicates.size < 500) duplicates.add(
                             DuplicateGroup(
                                 dupKey,
@@ -583,16 +715,17 @@ class CsvImportServiceImpl @Inject constructor(
             }
 
             ImportPreview(
-                totalRows,
-                validRows,
-                duplicates,
-                accountRowCounts.map { (name, count) ->
+                totalRows = totalRows,
+                validRows = validRows,
+                duplicates = duplicates,
+                totalDuplicateCount = totalDuplicateCount,
+                allCsvAccounts = accountRowCounts.map { (name, count) ->
                     val match = existingAccounts[name.lowercase()]
                     AccountToMap(name, match?.id, match?.name, count)
                 },
-                newCategoryMap.values.toList(),
-                parseErrors,
-                transferGroups.values.count { it.size == 1 })
+                newCategories = newCategoryMap.values.toList(),
+                parseErrors = parseErrors,
+                unpairedTransferRows = transferGroups.values.count { it.size == 1 })
         }
 
     override suspend fun executeImport(
@@ -601,6 +734,7 @@ class CsvImportServiceImpl @Inject constructor(
         duplicatePolicy: DuplicatePolicy,
         entityMappings: List<EntityMapping>,
         selectedDuplicateRowIndices: Set<Int>,
+        totalRows: Int,
         onProgress: (Float) -> Unit
     ): Result<ImportSummary> = try {
         when (session.sourceApp) {
@@ -610,6 +744,7 @@ class CsvImportServiceImpl @Inject constructor(
                 duplicatePolicy,
                 entityMappings,
                 selectedDuplicateRowIndices,
+                totalRows,
                 onProgress
             )
 
@@ -619,6 +754,7 @@ class CsvImportServiceImpl @Inject constructor(
                 duplicatePolicy,
                 entityMappings,
                 selectedDuplicateRowIndices,
+                totalRows,
                 onProgress
             )
 
@@ -628,6 +764,7 @@ class CsvImportServiceImpl @Inject constructor(
                 duplicatePolicy,
                 entityMappings,
                 selectedDuplicateRowIndices,
+                totalRows,
                 onProgress
             )
         }
@@ -635,25 +772,21 @@ class CsvImportServiceImpl @Inject constructor(
         Result.failure(e)
     }
 
+    private fun rowProgress(rowIndex: Int, totalRows: Int): Float =
+        if (totalRows <= 0) 0f else (((rowIndex + 1).toFloat() / totalRows).coerceAtMost(0.99f))
+
     private suspend fun executeBudgetBakersImport(
         session: CsvImportSession,
         inputStream: InputStream,
         duplicatePolicy: DuplicatePolicy,
         entityMappings: List<EntityMapping>,
         selectedDuplicateRowIndices: Set<Int>,
+        totalRows: Int,
         onProgress: (Float) -> Unit
     ): Result<ImportSummary> = withContext(dispatcherProvider.io) {
         val profileId = settingsDataStore.currentProfileId.first()
         val profile = profileDao.getProfileById(profileId)
         val profileBaseCurrency = profile?.baseCurrency ?: "INR"
-
-        val totalBytes = inputStream.available().coerceAtLeast(1).toLong()
-        var bytesRead = 0L
-        val progressStream = object : java.io.FilterInputStream(inputStream) {
-            override fun read(): Int = super.read().also { if (it != -1) bytesRead++ }
-            override fun read(b: ByteArray, off: Int, len: Int): Int =
-                super.read(b, off, len).also { if (it != -1) bytesRead += it.toLong() }
-        }
 
         database.withTransaction {
             val existingAccounts =
@@ -664,70 +797,15 @@ class CsvImportServiceImpl @Inject constructor(
                 existingTxs.map { getDuplicateKey(it.timestamp, it.amount, it.note) }.toMutableSet()
             val existingTags = tagDao.getAllTagsSync().toMutableList()
 
-            val accountMap = existingAccounts.mapValues { it.value.id }.toMutableMap()
-            val categoryMap =
-                existingCats.associateBy({ it.name.lowercase() }, { it.id }).toMutableMap()
-            val newCategoryColorMap = mutableMapOf<Long, Int>()
-
-            entityMappings.sortedBy { if (it.entityType == EntityMapping.EntityType.ACCOUNT) -1 else 0 }
-                .forEach { em ->
-                    when (em.entityType) {
-                        EntityMapping.EntityType.ACCOUNT -> {
-                            if (em.isExcluded) return@forEach
-                            val id = em.existingId ?: UUID.randomUUID().toString()
-                            if (em.existingId == null) {
-                                val finalName =
-                                    if (existingAccounts.containsKey(em.unknownName.lowercase()))
-                                        "${em.unknownName}-${randomSuffix()}" else em.unknownName
-                                accountDao.upsertAccount(
-                                    AccountEntity(
-                                        id,
-                                        finalName,
-                                        em.currencyCode ?: profileBaseCurrency,
-                                        "regular",
-                                        BRAND_COLORS.random(),
-                                        "wallet",
-                                        em.currencyCode ?: profileBaseCurrency,
-                                        profileId,
-                                        false,
-                                        999
-                                    )
-                                )
-                            }
-                            accountMap[em.unknownName.lowercase()] = id
-                        }
-
-                        EntityMapping.EntityType.CATEGORY -> {
-                            val existingId = em.existingId
-                            if (existingId != null) {
-                                categoryMap[em.unknownName.lowercase()] =
-                                    existingId.toLongOrNull() ?: Category.SYSTEM_OTHERS
-                            } else {
-                                val parentId = em.parentCategoryId
-                                    ?: em.parentCategoryName?.let { categoryMap[it.lowercase()] }
-                                val color = parentId?.let { pid ->
-                                    newCategoryColorMap[pid]
-                                        ?: existingCats.find { c -> c.id == pid }?.colorHex
-                                } ?: BRAND_COLORS.random().toColorInt()
-
-                                categoryDao.insertCategory(
-                                    CategoryEntity(
-                                        0,
-                                        em.unknownName,
-                                        "Category",
-                                        color,
-                                        false,
-                                        parentId
-                                    )
-                                )
-                                val insertedId = categoryDao.getCategoryByName(em.unknownName)?.id
-                                    ?: Category.SYSTEM_OTHERS
-                                categoryMap[em.unknownName.lowercase()] = insertedId
-                                if (parentId == null) newCategoryColorMap[insertedId] = color
-                            }
-                        }
-                    }
-                }
+            val resolved = resolveAndCreateEntities(
+                entityMappings,
+                existingAccounts,
+                existingCats,
+                profileId,
+                profileBaseCurrency
+            )
+            val accountMap = resolved.accountMap
+            val categoryMap = resolved.categoryMap
 
             var imported = 0
             var skipped = 0
@@ -739,7 +817,7 @@ class CsvImportServiceImpl @Inject constructor(
 
             val pendingTransfers = mutableMapOf<String, BudgetTransfer>()
 
-            parseRows(progressStream, session.delimiter) { _, rowsSequence ->
+            parseRows(inputStream, session.delimiter, session.encoding) { _, rowsSequence ->
                 rowsSequence.forEachIndexed { idx, row ->
                     try {
                         if (isTransferRow(row)) {
@@ -878,7 +956,7 @@ class CsvImportServiceImpl @Inject constructor(
                     } catch (e: Exception) {
                         errors.add(ParseError(idx, e.message ?: "Row error"))
                     }
-                    onProgress((bytesRead.toFloat() / totalBytes).coerceAtMost(0.99f))
+                    onProgress(rowProgress(idx, totalRows))
                 }
             }
 
@@ -914,18 +992,11 @@ class CsvImportServiceImpl @Inject constructor(
         duplicatePolicy: DuplicatePolicy,
         entityMappings: List<EntityMapping>,
         selectedDuplicateRowIndices: Set<Int>,
+        totalRows: Int,
         onProgress: (Float) -> Unit
     ): Result<ImportSummary> = withContext(dispatcherProvider.io) {
         val profileId = settingsDataStore.currentProfileId.first()
         val profileBaseCurrency = profileDao.getProfileById(profileId)?.baseCurrency ?: "INR"
-
-        val totalBytes = inputStream.available().coerceAtLeast(1).toLong()
-        var bytesRead = 0L
-        val progressStream = object : java.io.FilterInputStream(inputStream) {
-            override fun read(): Int = super.read().also { if (it != -1) bytesRead++ }
-            override fun read(b: ByteArray, off: Int, len: Int): Int =
-                super.read(b, off, len).also { if (it != -1) bytesRead += it.toLong() }
-        }
 
         database.withTransaction {
             val existingAccounts =
@@ -936,57 +1007,16 @@ class CsvImportServiceImpl @Inject constructor(
                 existingTxs.map { getDuplicateKey(it.timestamp, it.amount, it.note) }.toMutableSet()
             val existingTags = tagDao.getAllTagsSync().toMutableList()
 
-            val accountMap = existingAccounts.mapValues { it.value.id }.toMutableMap()
-            val categoryMap =
-                existingCats.associateBy({ it.name.lowercase() }, { it.id }).toMutableMap()
-            val accountCurrencyMap =
-                existingAccounts.mapValues { it.value.currencyCode }.toMutableMap()
-
-            entityMappings.filter { it.entityType == EntityMapping.EntityType.ACCOUNT }
-                .forEach { em ->
-                    if (!em.isExcluded) {
-                        val id = em.existingId ?: UUID.randomUUID().toString()
-                        if (em.existingId == null) accountDao.upsertAccount(
-                            AccountEntity(
-                                id,
-                                em.unknownName,
-                                em.currencyCode ?: profileBaseCurrency,
-                                "regular",
-                                BRAND_COLORS.random(),
-                                "wallet",
-                                em.currencyCode ?: profileBaseCurrency,
-                                profileId,
-                                false,
-                                999
-                            )
-                        )
-                        accountMap[em.unknownName.lowercase()] = id
-                        em.currencyCode?.let { accountCurrencyMap[em.unknownName.lowercase()] = it }
-                    }
-                }
-            entityMappings.filter { it.entityType == EntityMapping.EntityType.CATEGORY }
-                .forEach { em ->
-                    val existingId = em.existingId
-                    if (existingId != null) categoryMap[em.unknownName.lowercase()] =
-                        existingId.toLongOrNull() ?: Category.SYSTEM_OTHERS
-                    else {
-                        val parentId = em.parentCategoryId
-                            ?: em.parentCategoryName?.let { categoryMap[it.lowercase()] }
-                        categoryDao.insertCategory(
-                            CategoryEntity(
-                                0,
-                                em.unknownName,
-                                "Category",
-                                BRAND_COLORS.random().toColorInt(),
-                                false,
-                                parentId
-                            )
-                        )
-                        categoryMap[em.unknownName.lowercase()] =
-                            categoryDao.getCategoryByName(em.unknownName)?.id
-                                ?: Category.SYSTEM_OTHERS
-                    }
-                }
+            val resolved = resolveAndCreateEntities(
+                entityMappings,
+                existingAccounts,
+                existingCats,
+                profileId,
+                profileBaseCurrency
+            )
+            val accountMap = resolved.accountMap
+            val categoryMap = resolved.categoryMap
+            val accountCurrencyMap = resolved.accountCurrencyMap
 
             var imported = 0
             var skipped = 0
@@ -998,7 +1028,7 @@ class CsvImportServiceImpl @Inject constructor(
 
             val pendingTransfers = mutableMapOf<String, BudgetTransfer>()
 
-            parseRows(progressStream, session.delimiter) { _, rowsSequence ->
+            parseRows(inputStream, session.delimiter, session.encoding) { _, rowsSequence ->
                 rowsSequence.forEachIndexed { idx, row ->
                     try {
                         val acc = row["account"] ?: ""
@@ -1162,7 +1192,7 @@ class CsvImportServiceImpl @Inject constructor(
                     } catch (e: Exception) {
                         errors.add(ParseError(idx, e.message ?: "Row error"))
                     }
-                    onProgress((bytesRead.toFloat() / totalBytes).coerceAtMost(0.99f))
+                    onProgress(rowProgress(idx, totalRows))
                 }
             }
 
@@ -1198,86 +1228,37 @@ class CsvImportServiceImpl @Inject constructor(
         duplicatePolicy: DuplicatePolicy,
         entityMappings: List<EntityMapping>,
         selectedDuplicateRowIndices: Set<Int>,
+        totalRows: Int,
         onProgress: (Float) -> Unit
     ): Result<ImportSummary> = withContext(dispatcherProvider.io) {
         val profileId = settingsDataStore.currentProfileId.first()
         val profileBaseCurrency = profileDao.getProfileById(profileId)?.baseCurrency ?: "INR"
 
-        val totalBytes = inputStream.available().coerceAtLeast(1).toLong()
-        var bytesRead = 0L
-        val progressStream = object : java.io.FilterInputStream(inputStream) {
-            override fun read(): Int = super.read().also { if (it != -1) bytesRead++ }
-            override fun read(b: ByteArray, off: Int, len: Int): Int =
-                super.read(b, off, len).also { if (it != -1) bytesRead += it.toLong() }
-        }
-
         database.withTransaction {
             val existingAccounts =
                 accountDao.getAllAccountsSync(profileId).associateBy { it.name.lowercase() }
-            val existingCats =
-                categoryDao.getAllCategoriesSync().associateBy { it.name.lowercase() }
+            val existingCats = categoryDao.getAllCategoriesSync()
             val existingTxs = transactionDao.getAllTransactionsSync(profileId)
             val existingKeys =
                 existingTxs.map { getDuplicateKey(it.timestamp, it.amount, it.note) }.toMutableSet()
             val existingTags = tagDao.getAllTagsSync().toMutableList()
 
-            val accountMap = existingAccounts.mapValues { it.value.id }.toMutableMap()
-            val categoryMap = existingCats.mapValues { it.value.id }.toMutableMap()
-            val accountCurrencyMap =
-                existingAccounts.mapValues { it.value.currencyCode }.toMutableMap()
-
-            entityMappings.forEach { em ->
-                when (em.entityType) {
-                    EntityMapping.EntityType.ACCOUNT -> {
-                        val id = em.existingId ?: UUID.randomUUID().toString()
-                        if (em.existingId == null) accountDao.upsertAccount(
-                            AccountEntity(
-                                id,
-                                em.unknownName,
-                                em.currencyCode ?: profileBaseCurrency,
-                                "regular",
-                                BRAND_COLORS.random(),
-                                "wallet",
-                                em.currencyCode ?: profileBaseCurrency,
-                                profileId,
-                                false,
-                                999
-                            )
-                        )
-                        accountMap[em.unknownName.lowercase()] = id
-                        em.currencyCode?.let { accountCurrencyMap[em.unknownName.lowercase()] = it }
-                    }
-
-                    EntityMapping.EntityType.CATEGORY -> {
-                        val existingId = em.existingId
-                        if (existingId != null) categoryMap[em.unknownName.lowercase()] =
-                            existingId.toLongOrNull() ?: Category.SYSTEM_OTHERS
-                        else {
-                            val parentId = em.parentCategoryId
-                                ?: em.parentCategoryName?.let { categoryMap[it.lowercase()] }
-                            categoryDao.insertCategory(
-                                CategoryEntity(
-                                    0,
-                                    em.unknownName,
-                                    "Category",
-                                    BRAND_COLORS.random().toColorInt(),
-                                    false,
-                                    parentId
-                                )
-                            )
-                            categoryMap[em.unknownName.lowercase()] =
-                                categoryDao.getCategoryByName(em.unknownName)?.id
-                                    ?: Category.SYSTEM_OTHERS
-                        }
-                    }
-                }
-            }
+            val resolved = resolveAndCreateEntities(
+                entityMappings,
+                existingAccounts,
+                existingCats,
+                profileId,
+                profileBaseCurrency
+            )
+            val accountMap = resolved.accountMap
+            val categoryMap = resolved.categoryMap
+            val accountCurrencyMap = resolved.accountCurrencyMap
 
             var imported = 0
             var skipped = 0
             val errors = mutableListOf<ParseError>()
 
-            parseRows(progressStream, session.delimiter) { headers, rowsSequence ->
+            parseRows(inputStream, session.delimiter, session.encoding) { headers, rowsSequence ->
                 rowsSequence.forEachIndexed { idx, row ->
                     try {
                         val acc =
@@ -1361,9 +1342,10 @@ class CsvImportServiceImpl @Inject constructor(
                     } catch (e: Exception) {
                         errors.add(ParseError(idx, e.message ?: "Row error"))
                     }
-                    onProgress(bytesRead.toFloat() / totalBytes)
+                    onProgress(rowProgress(idx, totalRows))
                 }
             }
+            onProgress(1.0f)
             Result.success(ImportSummary(imported, skipped, errors))
         }
     }
@@ -1480,27 +1462,27 @@ class CsvImportServiceImpl @Inject constructor(
         rate: BigDecimal = BigDecimal.ONE
     ) =
         TransactionEntity(
-            0,
-            t.note.ifBlank { "Transfer" }.take(50),
-            amount,
-            t.timestamp,
-            t.currency,
-            type,
-            aid,
-            Category.SYSTEM_TRANSFER,
-            resolveTagIds(t.tags, existingTags),
-            t.method,
-            t.row["payee"] ?: "",
-            t.note,
-            null,
-            profileId,
-            buildGps(t.row),
-            t.row["payee"]?.takeIf { it.isNotBlank() },
-            t.warranty,
-            TransactionStatus.CLEARED,
-            targetAid,
-            targetCurrency,
-            rate
+            id = 0,
+            name = t.note.ifBlank { "Transfer" }.take(50),
+            amount = amount,
+            timestamp = t.timestamp,
+            currency = t.currency,
+            transactionType = type,
+            accountId = aid,
+            categoryId = Category.SYSTEM_TRANSFER,
+            tags = resolveTagIds(t.tags, existingTags),
+            paymentMethod = t.method,
+            payee = t.row["payee"] ?: "",
+            note = t.note,
+            sourcePlannedPaymentId = null,
+            profileId = profileId,
+            gpsLocation = buildGps(t.row),
+            location = t.row["payee"]?.takeIf { it.isNotBlank() },
+            warrantyExpiration = t.warranty,
+            status = TransactionStatus.CLEARED,
+            targetAccountId = targetAid,
+            targetCurrency = targetCurrency,
+            transferRate = rate
         )
 
     private fun handleDup(

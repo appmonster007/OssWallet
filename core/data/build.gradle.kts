@@ -28,6 +28,12 @@ android {
     }
 }
 
+ksp {
+    // Exports Room schema history on every build — useful groundwork if a real migration (and a
+    // MigrationTestHelper test) is ever needed again.
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     // Domain module — 'api' so :app gets domain types transitively via :core:data
     api(project(":core:domain"))

@@ -22,11 +22,19 @@ import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
+import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
+import com.osscabinet.ossWallet.domain.model.import_csv.DuplicatePolicy
+import com.osscabinet.ossWallet.domain.model.import_csv.EntityMapping
+import com.osscabinet.ossWallet.domain.model.import_csv.ImportPreview
+import com.osscabinet.ossWallet.domain.model.import_csv.ImportSourceApp
+import com.osscabinet.ossWallet.domain.model.import_csv.ImportSummary
+import com.osscabinet.ossWallet.domain.service.CsvImportService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import java.io.InputStream
 import java.math.BigDecimal
 
 // ── FakeSettingsRepository ──────────────────────────────────────────────────
@@ -48,6 +56,7 @@ class FakeSettingsRepository(
     override val autoSaveExchangeRates: Flow<Boolean> = flowOf(false)
     override val isOnboardingCompleted: Flow<Boolean> = flowOf(true)
     override val cardAnimationEnabled: Flow<Boolean> = flowOf(true)
+    override val cardOpenAnimation: Flow<String> = flowOf("FLIP")
     override val expandableFabEnabled: Flow<Boolean> = flowOf(true)
     override val isDatabaseSeeded: Flow<Boolean> = flowOf(false)
     override val use24HourFormat: Flow<Boolean> = flowOf(false)
@@ -79,6 +88,7 @@ class FakeSettingsRepository(
     override suspend fun saveAutoSaveExchangeRates(enabled: Boolean) {}
     override suspend fun saveOnboardingCompleted(completed: Boolean) {}
     override suspend fun saveCardAnimationEnabled(enabled: Boolean) {}
+    override suspend fun saveCardOpenAnimation(name: String) {}
     override suspend fun saveExpandableFabEnabled(enabled: Boolean) {}
     override suspend fun saveDatabaseSeeded(seeded: Boolean) {}
     override suspend fun saveUse24HourFormat(use24Hour: Boolean) {}
@@ -242,6 +252,47 @@ class FakeTagRepository : TagRepository {
     override suspend fun deleteTagAndRemoveFromTransactions(tag: Tag) {}
     override suspend fun getTransactionCountForTag(tagName: String, profileId: Int): Int = 0
     override suspend fun updateTag(oldName: String, newTag: Tag) {}
+}
+
+// ── FakeCsvImportService ─────────────────────────────────────────────────────
+
+class FakeCsvImportService(
+    var sessionToReturn: CsvImportSession = CsvImportSession(
+        headers = listOf("date", "account", "amount"),
+        previewRows = emptyList(),
+        mapping = emptyMap(),
+        sourceApp = ImportSourceApp.GENERIC
+    ),
+    var previewToReturn: ImportPreview = ImportPreview(
+        totalRows = 0,
+        validRows = 0,
+        duplicates = emptyList(),
+        allCsvAccounts = emptyList(),
+        newCategories = emptyList(),
+        parseErrors = emptyList()
+    ),
+    var executeImportResult: Result<ImportSummary> = Result.success(ImportSummary(0, 0, emptyList()))
+) : CsvImportService {
+    override suspend fun parseHeaders(
+        inputStream: InputStream,
+        delimiter: Char?,
+        encoding: String
+    ): CsvImportSession = sessionToReturn
+
+    override suspend fun generatePreview(
+        session: CsvImportSession,
+        inputStream: InputStream
+    ): ImportPreview = previewToReturn
+
+    override suspend fun executeImport(
+        session: CsvImportSession,
+        inputStream: InputStream,
+        duplicatePolicy: DuplicatePolicy,
+        entityMappings: List<EntityMapping>,
+        selectedDuplicateRowIndices: Set<Int>,
+        totalRows: Int,
+        onProgress: (Float) -> Unit
+    ): Result<ImportSummary> = executeImportResult
 }
 
 // ── FakeSharedWalletRepository ──────────────────────────────────────────────

@@ -53,6 +53,7 @@ ktor = "3.5.1"
 qrcode-kotlin = "4.5.0"
 haze = "1.7.2"
 lazycolumnscrollbar = "2.2.0"
+reorderable = "3.1.0"
 univocity-parsers = "2.9.1"
 hilt-work = "1.4.0"
 kotlinxCollectionsImmutable = "0.5.1"
@@ -137,6 +138,7 @@ ktor-server-default-headers = { group = "io.ktor", name = "ktor-server-default-h
 qrcode-kotlin-android = { group = "io.github.g0dkar", name = "qrcode-kotlin-android", version.ref = "qrcode-kotlin" }
 haze = { group = "dev.chrisbanes.haze", name = "haze", version.ref = "haze" }
 lazycolumnscrollbar = { group = "com.github.nanihadesuka", name = "LazyColumnScrollbar", version.ref = "lazycolumnscrollbar" }
+reorderable = { group = "sh.calvin.reorderable", name = "reorderable", version.ref = "reorderable" }
 kotlinx-collections-immutable = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref = "kotlinxCollectionsImmutable" }
 univocity-parsers = { group = "com.univocity", name = "univocity-parsers", version.ref = "univocity-parsers" }
 oss-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hilt-work" }

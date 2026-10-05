@@ -15,13 +15,17 @@ import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.components.AccountFormBody
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
 /**
  * A Value Object representing a valid configuration for the Account Entry screen.
  */
 data class AccountEntryConfig(
-    val accountId: String? = null
+    val accountId: String? = null,
+    val prefillName: String? = null,
+    val prefillCurrency: String? = null,
+    val isDraftMode: Boolean = false
 )
 
 /**
@@ -29,7 +33,29 @@ data class AccountEntryConfig(
  */
 data class AccountEntryActions(
     val onBackClick: () -> Unit,
-    val onDone: () -> Unit
+    val onDone: (result: AccountEntryResult) -> Unit
+)
+
+/** The outcome of tapping Save on the Account Entry screen. */
+sealed class AccountEntryResult {
+    /** The account was written to the database; [accountId] is its id. */
+    data class Persisted(val accountId: String) : AccountEntryResult()
+
+    /** Draft mode suppressed the write — nothing was persisted, the caller owns when
+     *  (and whether) [draft] is actually created. */
+    data class Draft(val draft: AccountEntryDraft) : AccountEntryResult()
+}
+
+/** A fully-configured, not-yet-persisted account, as captured from the entry form. */
+@Serializable
+data class AccountEntryDraft(
+    val name: String,
+    val structureType: String, // AccountStructureType.name
+    val primaryCurrency: String,
+    val allowedCurrencies: List<String>,
+    val initialBalances: Map<String, String>,
+    val iconName: String,
+    val colorHex: String
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,7 +66,12 @@ fun AccountEntryScreen(
     viewModel: AccountEntryViewModel
 ) {
     LaunchedEffect(config.accountId) {
-        viewModel.initialize(config.accountId)
+        viewModel.initialize(
+            config.accountId,
+            config.prefillName,
+            config.prefillCurrency,
+            config.isDraftMode
+        )
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -55,7 +86,7 @@ fun AccountEntryScreen(
 
     LaunchedEffect(state.navTriggered) {
         if (state.navTriggered) {
-            actions.onDone()
+            state.pendingResult?.let { actions.onDone(it) }
         }
     }
 
@@ -64,8 +95,8 @@ fun AccountEntryScreen(
         onEvent = viewModel::onEvent,
         onBackClick = actions.onBackClick,
         onSaveClick = {
-            viewModel.saveAccount {
-                viewModel.onEvent(AccountEntryEvent.TriggerNavigation)
+            viewModel.saveAccount { result ->
+                viewModel.onEvent(AccountEntryEvent.TriggerNavigation(result))
             }
         },
         onDeleteClick = if (state.isEditMode) {
@@ -112,7 +143,18 @@ private fun AccountEntryScreenPreview() {
                 accountName = "Savings Account",
                 structureType = AccountStructureType.SAVINGS,
                 allowedCurrencies = setOf("USD", "EUR", "GBP", "JPY"),
-                shortlistedCurrencies = listOf("USD", "EUR", "GBP", "INR", "JPY", "AUD", "CAD", "CHF", "CNY", "BRL"),
+                shortlistedCurrencies = listOf(
+                    "USD",
+                    "EUR",
+                    "GBP",
+                    "INR",
+                    "JPY",
+                    "AUD",
+                    "CAD",
+                    "CHF",
+                    "CNY",
+                    "BRL"
+                ),
                 systemClosingBalances = mapOf(
                     "USD" to BigDecimal("1500.0498769876987698769876"),
                     "EUR" to BigDecimal("450.00"),

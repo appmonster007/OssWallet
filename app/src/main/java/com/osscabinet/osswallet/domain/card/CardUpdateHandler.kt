@@ -398,6 +398,12 @@ interface CardUpdateHandler {
             cardRepository.reorderCards(cardScreenContext, newOrder)
         }
     }
+
+    fun resetCardsToDefault() {
+        cardUpdateScope.launch {
+            cardRepository.resetToDefault(cardScreenContext)
+        }
+    }
 }
 
 /**

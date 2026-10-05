@@ -4,34 +4,51 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
+import sh.calvin.reorderable.ReorderableCollectionItemScope
+import sh.calvin.reorderable.ReorderableLazyListState
+import sh.calvin.reorderable.ReorderableItem as CalvinReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState as rememberCalvinReorderableLazyListState
 
 /**
- * Mark a composable as the reorderable container. Apply to the LazyColumn (or its parent Box)
- * so the state holder can capture container coordinates for hit testing.
+ * Thin convenience wrapper matching this app's old `(fromIndex, toIndex) -> Unit` callback shape,
+ * so existing call sites don't need to adapt to Calvin's `LazyListItemInfo`-based `onMove`.
  */
-fun Modifier.reorderable(state: ReorderableLazyListState): Modifier =
-    this.onGloballyPositioned { coords -> state.containerCoords = coords }
+@Composable
+fun rememberReorderableLazyListState(
+    lazyListState: LazyListState = rememberLazyListState(),
+    onMove: (fromIndex: Int, toIndex: Int) -> Unit,
+): ReorderableLazyListState =
+    rememberCalvinReorderableLazyListState(lazyListState) { from, to -> onMove(from.index, to.index) }
 
 /**
- * Wrap each LazyColumn row that should be reorderable. The wrapper:
- *  - registers/unregisters the item's bounds (in container coords) in [state],
- *  - applies `Modifier.animateItem()` to non-dragged items for smooth swap transitions,
- *  - applies a `graphicsLayer { translationY = ... }` to the dragged item so it stays pinned
- *    under the finger across mid-drag swaps,
- *  - elevates the dragged item via `zIndex` so it floats above siblings.
+ * Thin wrapper around `sh.calvin.reorderable`'s `ReorderableItem` that adds the lift/scale/shadow
+ * treatment and cross-item dim-alpha this app wants on top.
  *
- * The content slot receives `isDragging` so callers can drive their own visual treatments
- * (scale, elevation, dim non-dragged peers, etc.).
+ * `sh.calvin.reorderable` renders each item exactly once — a dragged item visually offsets in
+ * place via `graphicsLayer.translationY`, and its old slot just closes up through the sibling's own
+ * `animateItem()). There is no separate ghost/placeholder concept to preserve here; this app's
+ * previous hand-rolled engine had one, but it's an intentional simplification to drop it as part of
+ * switching to the maintained library rather than reintroducing custom position tracking just to
+ * keep it.
+ *
+ * @param shape The shape of the content being wrapped (e.g. a card's rounded corners, or a pill-
+ * shaped list row). `shadowElevation` casts its shadow using the graphicsLayer's `shape` — left at
+ * the default `RectangleShape`, the lift shadow renders as a hard rectangular box around content
+ * that isn't actually rectangular. Pass the content's real shape so the shadow's outline matches
+ * what's visually inside it. `clip` stays `false` regardless (the content already clips itself to
+ * this same shape via its own Surface/Card/GlassSurface) so the shadow's soft bleed past the edge
+ * isn't cut off — only the shadow's own outline needs `shape` to match, not the content clip.
  */
 @Composable
 fun LazyItemScope.ReorderableItem(
@@ -39,79 +56,49 @@ fun LazyItemScope.ReorderableItem(
     key: Any,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    content: @Composable BoxScope.(isDragging: Boolean) -> Unit,
+    shape: Shape = RectangleShape,
+    content: @Composable ReorderableCollectionItemScope.(isDragging: Boolean) -> Unit,
 ) {
-    val isDragging = state.isDragging(key)
-    val isAnyItemDragging = state.draggedKey != null
-    val isOtherItemDragging = isAnyItemDragging && !isDragging
+    CalvinReorderableItem(
+        state = state,
+        key = key,
+        modifier = modifier,
+        enabled = enabled,
+    ) { isDragging ->
+        val scope = this
+        val isOtherItemDragging = state.isAnyItemDragging && !isDragging
 
-    DisposableEffect(key) {
-        onDispose { state.unregisterItem(key) }
-    }
+        // Lift effect: scale + elevate while dragging, for tactile separation.
+        val scale by animateFloatAsState(
+            targetValue = if (isDragging) 1.05f else 1.0f,
+            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+            label = "reorder_item_scale",
+        )
+        val elevationPx by animateFloatAsState(
+            targetValue = if (isDragging) with(LocalDensity.current) { 12.dp.toPx() } else 0f,
+            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+            label = "reorder_item_elevation",
+        )
+        // Dim non-dragged peers to focus the interaction.
+        val dimAlpha by animateFloatAsState(
+            targetValue = if (isOtherItemDragging) 0.6f else 1f,
+            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+            label = "reorder_dim_alpha",
+        )
 
-    // 1. Visual Feedback: Scale and Elevation (Lifting)
-    // Scale up slightly when dragged to give "lift" and tactile separation.
-    val scale by animateFloatAsState(
-        targetValue = if (isDragging) 1.05f else 1.0f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "reorder_item_scale",
-    )
-
-    // Lift effect: increase elevation when dragging for a prominent shadow.
-    // We convert Dp to Px inline to keep the Composable body lean.
-    val elevationPx by animateFloatAsState(
-        targetValue = if (isDragging) with(androidx.compose.ui.platform.LocalDensity.current) { 12.dp.toPx() } else 0f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "reorder_item_elevation",
-    )
-
-    // 2. Focus: Dim non-dragged peers to focus the interaction
-    val dimAlpha by animateFloatAsState(
-        targetValue = if (isOtherItemDragging) 0.6f else 1f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "reorder_dim_alpha",
-    )
-
-    Box(
-        modifier = modifier
-            // animateItem handles smooth slide transitions for non-dragged items when the data
-            // re-orders. We skip it for the dragged item — graphicsLayer.translationY handles its
-            // pinning, and animateItem would fight that.
-            .then(if (!isDragging && enabled) Modifier.animateItem() else Modifier)
-            .onGloballyPositioned { coords ->
-                if (enabled) state.registerItem(key, coords)
-            }
-            .graphicsLayer {
-                alpha = dimAlpha
-            },
-    ) {
-        if (isDragging) {
-            // 3. Ghost Placeholder: Stays in the list at the original layout position while the
-            // "real" card floats, providing a reference for the drop point.
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .graphicsLayer { alpha = 0.2f }
-            ) {
-                content(false)
-            }
-        }
-
-        // 4. Floating Item: The actual card being moved, elevated and scaled.
         Box(
-            modifier = Modifier
-                .zIndex(if (isDragging) 10f else 0f) // High Z-index to float above all
-                .graphicsLayer {
-                    translationY = if (isDragging) state.draggedItemTranslation(key) else 0f
-                    scaleX = scale
-                    scaleY = scale
-                    shadowElevation = elevationPx
-                    // We don't clip here so the shadow isn't cut off. The content (e.g. AeonListItem)
-                    // usually handles its own clipping to rounded corners.
-                    clip = false
-                }
+            modifier = Modifier.graphicsLayer {
+                alpha = dimAlpha
+                scaleX = scale
+                scaleY = scale
+                shadowElevation = elevationPx
+                this.shape = shape
+                // Content (e.g. AeonExpressiveCard) handles its own clipping to rounded corners;
+                // we don't clip here so the lift shadow isn't cut off.
+                clip = false
+            }
         ) {
-            content(isDragging)
+            with(scope) { content(isDragging) }
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.navigation.graphs
 
 import androidx.compose.material3.DrawerState
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -44,6 +45,15 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+
+/**
+ * True when this entry is the Records *tab* (reached from the drawer) rather than a Records
+ * screen pushed from a card or filter — the two want different transitions. Defensive against
+ * entries that aren't TransactionListRoute at all, since transition lambdas also see the other
+ * side of the animation.
+ */
+private fun NavBackStackEntry.isTopLevelRecords(): Boolean =
+    runCatching { toRoute<TransactionListRoute>().topLevel }.getOrDefault(false)
 
 fun NavGraphBuilder.primaryTabsGraph(
     navController: NavHostController,
@@ -114,11 +124,24 @@ fun NavGraphBuilder.primaryTabsGraph(
         )
     }
 
+    // TransactionListRoute is dual-purpose: a drawer sibling tab when topLevel, and a pushed
+    // detail screen when opened from a card/filter. As a sibling tab it gets the same short fade
+    // as Dashboard/Analytics/ExchangeRates — a 350ms slide there was both the wrong motion
+    // (lateral switch, not a drill-down) and the longest window during which Navigation Compose's
+    // RESUMED-gate makes a rapid switch-back wait. Pushed, it keeps the expressive slide.
     composable<TransactionListRoute>(
-        enterTransition = { EnterTransitionSpec },
-        exitTransition = { ExitTransitionSpec },
-        popEnterTransition = { PopEnterTransitionSpec },
-        popExitTransition = { PopExitTransitionSpec }
+        enterTransition = {
+            if (targetState.isTopLevelRecords()) FadeEnterTransitionSpec else EnterTransitionSpec
+        },
+        exitTransition = {
+            if (initialState.isTopLevelRecords()) FadeExitTransitionSpec else ExitTransitionSpec
+        },
+        popEnterTransition = {
+            if (targetState.isTopLevelRecords()) FadeEnterTransitionSpec else PopEnterTransitionSpec
+        },
+        popExitTransition = {
+            if (initialState.isTopLevelRecords()) FadeExitTransitionSpec else PopExitTransitionSpec
+        }
     ) { backStackEntry ->
         val route = backStackEntry.toRoute<TransactionListRoute>()
         TransactionListScreen(

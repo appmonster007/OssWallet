@@ -128,10 +128,7 @@ fun AeonCardList(
     var editList by remember { mutableStateOf(emptyList<CardConfig>()) }
 
     LaunchedEffect(cards) {
-        // alwaysPresent cards (e.g. ACCOUNT_HERO) are fixed-position by contract (CardType.kt) and
-        // must never enter a user-managed reorder list — filtered here, once, so all three screens
-        // get this guarantee regardless of whether their own `cards` list already excludes it.
-        val sorted = cards.filterNot { it.cardType.alwaysPresent }.sortedBy { it.order }
+        val sorted = cards.sortedBy { it.order }
         val sameIds = editList.map { it.cardId }.toSet() == sorted.map { it.cardId }.toSet()
         editList = if (editList.isEmpty() || !sameIds) {
             sorted

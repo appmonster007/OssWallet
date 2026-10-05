@@ -33,6 +33,7 @@ import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Receipt
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -75,6 +76,7 @@ import com.osscabinet.ossWallet.domain.model.merge
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
@@ -231,6 +233,7 @@ fun AccountDetailScreen(
     )
 
     var showSettingsDialog by rememberSaveable { mutableStateOf(false) }
+    var showResetConfirmDialog by rememberSaveable { mutableStateOf(false) }
     var showAddCardDialog by rememberSaveable { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
     var editingCardId by remember { mutableStateOf<String?>(null) }
@@ -296,6 +299,28 @@ fun AccountDetailScreen(
                             onCheckedChange = { accountDetailViewModel.updateUseNoteAsHeader(it) },
                             isFlush = true
                         )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    showSettingsDialog = false
+                                    showResetConfirmDialog = true
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Restore,
+                                contentDescription = null,
+                                tint = AppColors.error
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = stringResource(R.string.action_reset_to_default),
+                                style = AppTextStyles.transactionTitle,
+                                color = AppColors.error
+                            )
+                        }
                     }
                     Box(
                         modifier = Modifier
@@ -317,6 +342,18 @@ fun AccountDetailScreen(
             }
         }
     }
+
+    AeonConfirmDeleteDialog(
+        show = showResetConfirmDialog,
+        title = stringResource(R.string.reset_to_default_title),
+        message = stringResource(R.string.reset_to_default_message),
+        onConfirm = {
+            showResetConfirmDialog = false
+            accountDetailViewModel.resetCardsToDefault()
+        },
+        onDismiss = { showResetConfirmDialog = false },
+        confirmButtonText = stringResource(R.string.action_reset)
+    )
 
     AeonHazeProvider { hazeLayers ->
         CompositionLocalProvider(

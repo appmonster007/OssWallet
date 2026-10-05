@@ -24,6 +24,7 @@ interface CardRepository {
     suspend fun removeCard(context: ScreenContext, cardId: String)
     suspend fun reorderCards(context: ScreenContext, cards: List<CardConfig>)
     suspend fun resetAllCardFilters(context: ScreenContext)
+    suspend fun resetToDefault(context: ScreenContext)
 
     // Legacy update methods
     suspend fun updateDashboardCard(cardId: String, update: (CardConfig) -> CardConfig)

@@ -1,11 +1,13 @@
 package com.osscabinet.ossWallet.ui.screens.analytics
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -21,8 +24,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -52,6 +57,7 @@ import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.getAtelierTab
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
@@ -141,6 +147,7 @@ fun AnalyticsScreen(
     )
 
     var showSettingsDialog by remember { mutableStateOf(value = false) }
+    var showResetConfirmDialog by remember { mutableStateOf(value = false) }
     var editingCardId by remember { mutableStateOf<String?>(null) }
     val cardReorderState = rememberAeonCardReorderState()
 
@@ -445,6 +452,28 @@ fun AnalyticsScreen(
                                         checked = commonFilterEnabled,
                                         onCheckedChange = { viewModel.toggleCommonFilter(it) },
                                     )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                showSettingsDialog = false
+                                                showResetConfirmDialog = true
+                                            }
+                                            .padding(vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Restore,
+                                            contentDescription = null,
+                                            tint = AppColors.error
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Text(
+                                            text = "Reset to Default",
+                                            style = AppTextStyles.transactionTitle,
+                                            color = AppColors.error
+                                        )
+                                    }
                                 }
 
                                 Box(
@@ -469,6 +498,18 @@ fun AnalyticsScreen(
                         }
                     }
                 }
+
+                AeonConfirmDeleteDialog(
+                    show = showResetConfirmDialog,
+                    title = "Reset to Default?",
+                    message = "This restores the default card layout for this screen. Your customizations here will be lost.",
+                    onConfirm = {
+                        showResetConfirmDialog = false
+                        viewModel.resetCardsToDefault()
+                    },
+                    onDismiss = { showResetConfirmDialog = false },
+                    confirmButtonText = "Reset"
+                )
             }
         }
     }

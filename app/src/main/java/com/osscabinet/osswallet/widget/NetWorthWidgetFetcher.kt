@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.MutablePreferences
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.widget.WidgetDataLoader.CommonData
 import java.math.BigDecimal
@@ -16,9 +17,7 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
         common: CommonData,
         prefs: MutablePreferences
     ) {
-        val config = runCatching {
-            NetWorthWidgetPrefsStore(context).load(widgetId)
-        }.getOrElse { NetWorthWidgetConfig() }
+        val config = NetWorthWidgetPrefsStore(context).loadSafe(widgetId)
 
         val renderData = runCatching {
             CardAggregationService.computeNetWorthCard(
@@ -27,7 +26,7 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
                 input = CardInput(
                     profileId = common.profileId,
                     targetCurrency = common.baseCurrency,
-                    exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+                    exchangeRates = ExchangeRateSnapshot(
                         anchor = common.baseCurrency,
                         rates = common.exchangeRates
                     ),

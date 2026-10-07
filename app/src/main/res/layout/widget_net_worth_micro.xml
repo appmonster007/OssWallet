@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shortest NetWorth widget layout (minHeight < 80dp — true minimum is 50dp), pushed via
+     RemoteViews from NetWorthRemoteViewsRenderer. Just the amount: at this height there's
+     no room for a label or trend line without clipping. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/widget_surface"
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:gravity="center_vertical">
+
+    <TextView
+            android:id="@+id/tv_nw_micro_net_worth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/widget_on_surface"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            tools:text="12,340.55 $" />
+
+</LinearLayout>

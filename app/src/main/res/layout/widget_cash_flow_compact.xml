@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Compact Cash Flow widget layout (short heights), pushed via RemoteViews
+     from CashFlowRemoteViewsRenderer. Mirrors the old Glance CompactTotalsRow,
+     minus the transfer figure (CashFlowWidgetFetcher never populates it). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/widget_surface"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="IN"
+            android:textColor="@color/widget_income_color"
+            android:textSize="7sp"
+            android:textStyle="bold" />
+
+    <FrameLayout
+            android:layout_width="4dp"
+            android:layout_height="1dp" />
+
+    <TextView
+            android:id="@+id/tv_cf_compact_income"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/widget_income_color"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            tools:text="5,000.00 $" />
+
+    <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="OUT"
+            android:textColor="@color/widget_expense_color"
+            android:textSize="7sp"
+            android:textStyle="bold" />
+
+    <FrameLayout
+            android:layout_width="4dp"
+            android:layout_height="1dp" />
+
+    <TextView
+            android:id="@+id/tv_cf_compact_expense"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/widget_expense_color"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            tools:text="3,500.00 $" />
+
+</LinearLayout>

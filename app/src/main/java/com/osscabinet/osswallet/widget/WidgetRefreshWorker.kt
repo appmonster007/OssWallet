@@ -1,12 +1,10 @@
 package com.osscabinet.ossWallet.widget
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.util.Log
-import androidx.glance.appwidget.GlanceAppWidget
-import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.state.updateAppWidgetState
-import androidx.glance.appwidget.updateAll
-import androidx.glance.state.PreferencesGlanceStateDefinition
+import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -18,8 +16,10 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
 /**
- * Generic background worker that refreshes all registered widgets.
- * Uses WidgetRegistry to find fetchers for each widget type.
+ * Background worker that refreshes all three homescreen widgets. All of them are raw
+ * RemoteViews (not Glance): for each, this fetches fresh data into an in-memory Preferences
+ * instance via that widget's [WidgetDataFetcher], then hands it to that widget's RemoteViews
+ * renderer to build and push the update.
  */
 class WidgetRefreshWorker(
     appContext: Context,
@@ -30,46 +30,54 @@ class WidgetRefreshWorker(
         return try {
             withContext(NonCancellable) {
                 val context = applicationContext
-                val widgetManager = GlanceAppWidgetManager(context)
+                val appWidgetManager = AppWidgetManager.getInstance(context)
                 val common = withContext(Dispatchers.IO) {
                     WidgetDataLoader.loadCommon(context)
                 }
 
-                for (widgetClass in WidgetRegistry.getAllRegisteredWidgets()) {
-                    val fetcher = WidgetRegistry.getFetcher(widgetClass) ?: continue
-
-                    @Suppress("UNCHECKED_CAST")
-                    val glanceIds =
-                        widgetManager.getGlanceIds(widgetClass as Class<out GlanceAppWidget>)
-
-                    if (glanceIds.isEmpty()) continue
-
-                    withContext(Dispatchers.IO) {
-                        for (glanceId in glanceIds) {
-                            val widgetId = runCatching {
-                                widgetManager.getAppWidgetId(glanceId)
-                            }.getOrNull() ?: continue
-
-                            updateAppWidgetState(
-                                context,
-                                PreferencesGlanceStateDefinition,
-                                glanceId
-                            ) { currentPrefs ->
-                                val mutablePrefs = currentPrefs.toMutablePreferences()
-                                fetcher.updateState(context, widgetId, common, mutablePrefs)
-                                mutablePrefs
-                            }
-                        }
+                withContext(Dispatchers.IO) {
+                    refreshWidget(
+                        context, appWidgetManager, common,
+                        NetWorthWidgetProvider::class.java, NetWorthWidgetFetcher()
+                    ) { ctx, prefs, widgetId, mgr ->
+                        NetWorthRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
                     }
-                    // Trigger recomposition
-                    (widgetClass.getDeclaredConstructor()
-                        .newInstance() as GlanceAppWidget).updateAll(context)
+
+                    refreshWidget(
+                        context, appWidgetManager, common,
+                        CashFlowWidgetProvider::class.java, CashFlowWidgetFetcher()
+                    ) { ctx, prefs, widgetId, mgr ->
+                        CashFlowRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+                    }
+
+                    refreshWidget(
+                        context, appWidgetManager, common,
+                        RecentTransactionsWidgetProvider::class.java, RecentTransactionsWidgetFetcher()
+                    ) { ctx, prefs, widgetId, mgr ->
+                        RecentTransactionsRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+                    }
                 }
             }
             Result.success()
         } catch (t: Throwable) {
             Log.e(TAG, "Widget refresh failed", t)
             Result.retry()
+        }
+    }
+
+    private suspend fun refreshWidget(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        common: WidgetDataLoader.CommonData,
+        providerClass: Class<out android.appwidget.AppWidgetProvider>,
+        fetcher: WidgetDataFetcher,
+        render: (Context, androidx.datastore.preferences.core.Preferences, Int, AppWidgetManager) -> Unit
+    ) {
+        val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, providerClass))
+        for (widgetId in widgetIds) {
+            val prefs = mutablePreferencesOf()
+            fetcher.updateState(context, widgetId, common, prefs)
+            render(context, prefs, widgetId, appWidgetManager)
         }
     }
 

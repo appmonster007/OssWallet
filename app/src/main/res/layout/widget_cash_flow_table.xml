@@ -1,0 +1,515 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Default (non-compact) Cash Flow widget layout, pushed via RemoteViews from
+     CashFlowRemoteViewsRenderer. Up to 3 currency rows; unused rows are set
+     to GONE. Simplification vs the old Glance version: fixed 3-row cap
+     (no 5-row tall variant), no width-based INCOME/INC label switch, and no
+     transfer column (CashFlowWidgetFetcher doesn't populate transfer data). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/widget_surface"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp">
+
+    <!-- Header: single line, no icon (Ledger style never shows one). Hidden below
+         ~150dp tall (see CashFlowRemoteViewsRenderer.HEADER_HEIGHT_DP) — at the
+         widget's true 110dp minimum this line alone was eating enough space that
+         a 2nd currency row didn't actually fit despite the code claiming it did. -->
+    <LinearLayout
+            android:id="@+id/ll_cf_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CASH FLOW&#160;&#183;&#160;"
+                android:textColor="@color/widget_subtle"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+        <TextView
+                android:id="@+id/tv_cf_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_subtle"
+                android:textSize="10sp"
+                tools:text="This Month" />
+
+    </LinearLayout>
+
+    <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="6dp" />
+
+    <!-- Column headers — mirrors CashFlowCard's CCY / INCOME / EXPENSE HeaderCell row. -->
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+        <TextView
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:text="CCY"
+                android:textColor="@color/widget_subtle"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+
+        <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:paddingEnd="10dp"
+                android:text="INCOME"
+                android:textColor="@color/widget_income_label"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+
+        <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:text="EXPENSE"
+                android:textColor="@color/widget_expense_label"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="4dp" />
+
+    <!-- Σ totals row — mirrors CashFlowCard's highlighted totals row (tinted, rounded,
+         sits above the per-currency breakdown rather than a separate divider line). -->
+    <LinearLayout
+            android:id="@+id/ll_cf_totals"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@drawable/widget_ledger_totals_bg"
+            android:paddingVertical="6dp"
+            android:gravity="center_vertical">
+
+        <TextView
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:paddingStart="8dp"
+                android:text="&#931;"
+                android:textColor="@color/widget_subtle"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+        <TextView
+                android:id="@+id/tv_cf_income_total"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:paddingEnd="10dp"
+                android:textColor="@color/widget_income_color"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="6,720.00 $" />
+
+        <TextView
+                android:id="@+id/tv_cf_expense_total"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:paddingEnd="8dp"
+                android:textColor="@color/widget_expense_color"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="4,628.00 $" />
+
+    </LinearLayout>
+
+    <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="6dp" />
+
+    <!-- Row 1 -->
+    <LinearLayout
+            android:id="@+id/ll_cf_row1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+        <TextView
+                android:id="@+id/tv_cf_row1_code"
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                tools:text="USD" />
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end">
+
+            <TextView
+                    android:id="@+id/tv_cf_row1_income"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_income_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="5,000.00 $" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row1_income_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_income_comparison"
+                    android:textSize="8sp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end">
+
+            <TextView
+                    android:id="@+id/tv_cf_row1_expense"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_expense_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="3,500.00 $" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row1_expense_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_expense_comparison"
+                    android:textSize="8sp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="3dp" />
+
+    <!-- Row 2 -->
+    <LinearLayout
+            android:id="@+id/ll_cf_row2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+        <TextView
+                android:id="@+id/tv_cf_row2_code"
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                tools:text="EUR" />
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end">
+
+            <TextView
+                    android:id="@+id/tv_cf_row2_income"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_income_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="1,000.00 €" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row2_income_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_income_comparison"
+                    android:textSize="8sp"
+                    tools:text="≈ 1,100.00 $" />
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end">
+
+            <TextView
+                    android:id="@+id/tv_cf_row2_expense"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_expense_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="800.00 €" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row2_expense_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_expense_comparison"
+                    android:textSize="8sp"
+                    tools:text="≈ 880.00 $" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="3dp" />
+
+    <!-- Row 3 -->
+    <LinearLayout
+            android:id="@+id/ll_cf_row3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+        <TextView
+                android:id="@+id/tv_cf_row3_code"
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                tools:text="GBP" />
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end">
+
+            <TextView
+                    android:id="@+id/tv_cf_row3_income"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_income_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="500.00 £" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row3_income_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_income_comparison"
+                    android:textSize="8sp"
+                    tools:text="≈ 620.00 $" />
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end">
+
+            <TextView
+                    android:id="@+id/tv_cf_row3_expense"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_expense_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="200.00 £" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row3_expense_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_expense_comparison"
+                    android:textSize="8sp"
+                    tools:text="≈ 248.00 $" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="3dp" />
+
+    <!-- Row 4 — only shown at height >= 200dp (CashFlowRemoteViewsRenderer's maxRows tier). -->
+    <LinearLayout
+            android:id="@+id/ll_cf_row4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+        <TextView
+                android:id="@+id/tv_cf_row4_code"
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                tools:text="JPY" />
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end">
+
+            <TextView
+                    android:id="@+id/tv_cf_row4_income"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_income_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="50,000 ¥" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row4_income_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_income_comparison"
+                    android:textSize="8sp"
+                    tools:text="≈ 330.00 $" />
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end">
+
+            <TextView
+                    android:id="@+id/tv_cf_row4_expense"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_expense_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="12,000 ¥" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row4_expense_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_expense_comparison"
+                    android:textSize="8sp"
+                    tools:text="≈ 79.20 $" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="3dp" />
+
+    <!-- Row 5 — only shown at height >= 200dp. -->
+    <LinearLayout
+            android:id="@+id/ll_cf_row5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+        <TextView
+                android:id="@+id/tv_cf_row5_code"
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                tools:text="AUD" />
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end">
+
+            <TextView
+                    android:id="@+id/tv_cf_row5_income"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_income_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="150.00 $" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row5_income_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_income_comparison"
+                    android:textSize="8sp"
+                    tools:text="≈ 97.50 $" />
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end">
+
+            <TextView
+                    android:id="@+id/tv_cf_row5_expense"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_expense_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="60.00 $" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row5_expense_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_expense_comparison"
+                    android:textSize="8sp"
+                    tools:text="≈ 39.00 $" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -50,16 +50,16 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
         val prev     = renderData?.previousPeriodMetrics
 
         val formatter = CurrencyReprUi.CurrencyNumberFormatter()
-        prefs[NetWorthGlanceWidget.Keys.IS_LOADED]            = "true"
-        prefs[NetWorthGlanceWidget.Keys.NET_WORTH]            =
+        prefs[NetWorthWidgetKeys.IS_LOADED]            = "true"
+        prefs[NetWorthWidgetKeys.NET_WORTH]            =
             formatter.format(netWorth, common.baseCurrency)
-        prefs[NetWorthGlanceWidget.Keys.INC]                  =
+        prefs[NetWorthWidgetKeys.INC]                  =
             formatter.format(cashFlow?.metricsInBase?.income ?: BigDecimal.ZERO, common.baseCurrency)
-        prefs[NetWorthGlanceWidget.Keys.EXP]                  =
+        prefs[NetWorthWidgetKeys.EXP]                  =
             formatter.format((cashFlow?.metricsInBase?.expense ?: BigDecimal.ZERO).abs(), common.baseCurrency)
-        prefs[NetWorthGlanceWidget.Keys.NET_WORTH_COMPARISON] =
+        prefs[NetWorthWidgetKeys.NET_WORTH_COMPARISON] =
             buildComparisonText(netWorth, prev?.netWorth, config.showComparison) ?: ""
-        prefs[NetWorthGlanceWidget.Keys.PERIOD_LABEL]         = config.timelineLabel
-        prefs[NetWorthGlanceWidget.Keys.FONT_SIZE]            = config.fontSize
+        prefs[NetWorthWidgetKeys.PERIOD_LABEL]         = config.timelineLabel
+        prefs[NetWorthWidgetKeys.FONT_SIZE]            = config.fontSize
     }
 }

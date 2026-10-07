@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.widget.WidgetDataLoader.CommonData
@@ -20,9 +21,7 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
         common: CommonData,
         prefs: MutablePreferences
     ) {
-        val config = runCatching {
-            CashFlowWidgetPrefsStore(context).load(widgetId)
-        }.getOrElse { CashFlowWidgetConfig() }
+        val config = CashFlowWidgetPrefsStore(context).loadSafe(widgetId)
 
         val renderData = runCatching {
             CardAggregationService.computeCashFlowCard(
@@ -31,7 +30,7 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
                 input = CardInput(
                     profileId = common.profileId,
                     targetCurrency = common.baseCurrency,
-                    exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+                    exchangeRates = ExchangeRateSnapshot(
                         anchor = common.baseCurrency,
                         rates = common.exchangeRates
                     ),
@@ -75,7 +74,7 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
                         input = CardInput(
                             profileId = common.profileId,
                             targetCurrency = common.baseCurrency,
-                            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+                            exchangeRates = ExchangeRateSnapshot(
                                 anchor = common.baseCurrency,
                                 rates = common.exchangeRates
                             ),

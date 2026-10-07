@@ -2,9 +2,11 @@ package com.osscabinet.ossWallet.widget
 
 import android.content.Context
 import androidx.datastore.preferences.core.MutablePreferences
+import com.osscabinet.ossWallet.di.WidgetDataLoaderEntryPoint
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.widget.WidgetDataLoader.CommonData
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -34,9 +36,7 @@ class RecentTransactionsWidgetFetcher : WidgetDataFetcher {
         common: CommonData,
         prefs: MutablePreferences
     ) {
-        val config = runCatching {
-            RecentTransactionsWidgetPrefsStore(context).load(widgetId)
-        }.getOrElse { RecentTransactionsWidgetConfig() }
+        val config = RecentTransactionsWidgetPrefsStore(context).loadSafe(widgetId)
 
         val filter = config.filter.copy(
             timelineRange = config.filter.timelineRange.withExcludeFuture(true)
@@ -59,9 +59,9 @@ class RecentTransactionsWidgetFetcher : WidgetDataFetcher {
         val categoryMap = common.categoryRepository.getAllCategories(common.profileId).first().associateBy { it.id }
         
         // Load accounts to map account names
-        val ep = dagger.hilt.android.EntryPointAccessors.fromApplication(
+        val ep = EntryPointAccessors.fromApplication(
             context.applicationContext,
-            com.osscabinet.ossWallet.di.WidgetDataLoaderEntryPoint::class.java
+            WidgetDataLoaderEntryPoint::class.java
         )
         val accountsMap = ep.accountRepository().getAllAccounts(common.profileId).first().associateBy { it.id }
 

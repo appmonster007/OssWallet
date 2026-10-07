@@ -1,10 +1,5 @@
 package com.osscabinet.ossWallet.widget
 
-import android.appwidget.AppWidgetManager
-import android.content.Intent
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,68 +7,25 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
-class RecentTransactionsWidgetConfigActivity : ComponentActivity() {
+class RecentTransactionsWidgetConfigActivity : BaseWidgetConfigActivity<RecentTransactionsWidgetConfig>() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override val prefsStore by lazy { RecentTransactionsWidgetPrefsStore(applicationContext) }
+    override val defaultConfig = RecentTransactionsWidgetConfig()
 
-        val widgetId = intent.extras
-            ?.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
-            ?: AppWidgetManager.INVALID_APPWIDGET_ID
-
-        if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
-            finish()
-            return
-        }
-
-        setResult(RESULT_CANCELED)
-
-        val prefsStore = RecentTransactionsWidgetPrefsStore(applicationContext)
-
-        setContent {
-            OssWalletTheme {
-                var config by remember { mutableStateOf(RecentTransactionsWidgetConfig()) }
-                val scope = rememberCoroutineScope()
-
-                LaunchedEffect(widgetId) {
-                    config = prefsStore.load(widgetId)
-                }
-
-                RecentTransactionsWidgetConfigScreen(
-                    config = config,
-                    onConfigChange = { config = it },
-                    onSave = {
-                        scope.launch {
-                            prefsStore.save(widgetId, config)
-                            // Raw RemoteViews widget: no Glance update/updateAll call needed,
-                            // the worker computes fresh data and pushes RemoteViews directly.
-                            WidgetRefreshWorker.enqueueNow(applicationContext)
-
-                            val resultValue = Intent().putExtra(
-                                AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId
-                            )
-                            setResult(RESULT_OK, resultValue)
-                            finish()
-                        }
-                    },
-                    onBack = { finish() }
-                )
-            }
-        }
+    @Composable
+    override fun Content(
+        config: RecentTransactionsWidgetConfig,
+        onConfigChange: (RecentTransactionsWidgetConfig) -> Unit,
+        onSave: () -> Unit,
+        onBack: () -> Unit
+    ) {
+        RecentTransactionsWidgetConfigScreen(config, onConfigChange, onSave, onBack)
     }
 }
 

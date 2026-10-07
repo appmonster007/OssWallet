@@ -107,15 +107,14 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
             }
         }.toString()
 
-        prefs[CashFlowGlanceWidget.Keys.IS_LOADED] = "true"
-        prefs[CashFlowGlanceWidget.Keys.INCOME_TOTAL] = incomeFormatted
-        prefs[CashFlowGlanceWidget.Keys.EXPENSE_TOTAL] = expenseFormatted
-//        prefs[CashFlowGlanceWidget.Keys.TRANSFER_TOTAL] = transferFormatted
-        prefs[CashFlowGlanceWidget.Keys.PERIOD_LABEL] = config.timelineLabel
-        prefs[CashFlowGlanceWidget.Keys.BASE_CURRENCY] = common.baseCurrency
-        prefs[CashFlowGlanceWidget.Keys.SHOW_BASE_CONVERSION] = if (config.showBaseConversion) "true" else "false"
-        prefs[CashFlowGlanceWidget.Keys.SHOW_TOTALS] = if (config.showTotals) "true" else "false"
-        prefs[CashFlowGlanceWidget.Keys.CURRENCY_LIST] = currencyJson
-        prefs[CashFlowGlanceWidget.Keys.COMPARISON] = comparisonText
+        prefs[CashFlowWidgetKeys.IS_LOADED] = "true"
+        prefs[CashFlowWidgetKeys.INCOME_TOTAL] = incomeFormatted
+        prefs[CashFlowWidgetKeys.EXPENSE_TOTAL] = expenseFormatted
+        prefs[CashFlowWidgetKeys.PERIOD_LABEL] = config.timelineLabel
+        prefs[CashFlowWidgetKeys.BASE_CURRENCY] = common.baseCurrency
+        prefs[CashFlowWidgetKeys.SHOW_BASE_CONVERSION] = if (config.showBaseConversion) "true" else "false"
+        prefs[CashFlowWidgetKeys.SHOW_TOTALS] = if (config.showTotals) "true" else "false"
+        prefs[CashFlowWidgetKeys.CURRENCY_LIST] = currencyJson
+        prefs[CashFlowWidgetKeys.COMPARISON] = comparisonText
     }
 }

@@ -89,10 +89,10 @@ class RecentTransactionsWidgetFetcher : WidgetDataFetcher {
             )
         }
 
-        prefs[RecentTransactionsGlanceWidget.Keys.IS_LOADED] = "true"
-        prefs[RecentTransactionsGlanceWidget.Keys.PERIOD_LABEL] = config.timelineLabel
-        prefs[RecentTransactionsGlanceWidget.Keys.TRANSACTIONS_JSON] = Json.encodeToString(widgetTransactions)
-        prefs[RecentTransactionsGlanceWidget.Keys.PRIMARY_DISPLAY] = config.primaryDisplay.name
+        prefs[RecentTransactionsWidgetKeys.IS_LOADED] = "true"
+        prefs[RecentTransactionsWidgetKeys.PERIOD_LABEL] = config.timelineLabel
+        prefs[RecentTransactionsWidgetKeys.TRANSACTIONS_JSON] = Json.encodeToString(widgetTransactions)
+        prefs[RecentTransactionsWidgetKeys.PRIMARY_DISPLAY] = config.primaryDisplay.name
     }
 
     private fun isSameDay(t1: Long, t2: Long): Boolean {

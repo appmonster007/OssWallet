@@ -38,18 +38,3 @@ fun buildComparisonText(
     val sign = if (change.signum() > 0) "+" else "-"
     return "$sign${pct.abs()}%"
 }
-
-/**
- * Registry mapping widget classes to their respective data fetchers.
- */
-object WidgetRegistry {
-    private val fetchers = mapOf<Class<*>, WidgetDataFetcher>(
-        NetWorthGlanceWidget::class.java to NetWorthWidgetFetcher(),
-        CashFlowGlanceWidget::class.java to CashFlowWidgetFetcher(),
-        RecentTransactionsGlanceWidget::class.java to RecentTransactionsWidgetFetcher()
-    )
-
-    fun getFetcher(widgetClass: Class<*>): WidgetDataFetcher? = fetchers[widgetClass]
-    
-    fun getAllRegisteredWidgets(): Set<Class<*>> = fetchers.keys
-}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Highlighted "totals" row background for the Ledger-style widgets — mirrors
+     CashFlowCard's TotalsCell row background (AppColors.cardSurfaceProminent at ~8% alpha). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+        android:shape="rectangle">
+    <solid android:color="#148A6F3C" />
+    <corners android:radius="8dp" />
+</shape>

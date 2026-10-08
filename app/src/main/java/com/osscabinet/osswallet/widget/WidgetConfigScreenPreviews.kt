@@ -25,30 +25,5 @@ private fun NetWorthWidgetConfigScreenPreview() {
     }
 }
 
-@Composable
-@Preview(name = "Cash Flow config", showBackground = true)
-private fun CashFlowWidgetConfigScreenPreview() {
-    OssWalletTheme {
-        var config by remember { mutableStateOf(CashFlowWidgetConfig()) }
-        CashFlowWidgetConfigScreen(
-            config = config,
-            onConfigChange = { config = it },
-            onSave = {},
-            onBack = {}
-        )
-    }
-}
-
-@Composable
-@Preview(name = "Recent Transactions config", showBackground = true)
-private fun RecentTransactionsWidgetConfigScreenPreview() {
-    OssWalletTheme {
-        var config by remember { mutableStateOf(RecentTransactionsWidgetConfig()) }
-        RecentTransactionsWidgetConfigScreen(
-            config = config,
-            onConfigChange = { config = it },
-            onSave = {},
-            onBack = {}
-        )
-    }
-}
+// Cash Flow / Recent Transactions / Phase 2-3 widget previews were removed when those widgets
+// were shelved (see shelved-widgets/ at the repo root) — only Net Worth remains wired.

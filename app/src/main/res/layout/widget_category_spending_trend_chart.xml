@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Category Spending Trend widget — 4x3 tier. Stacked bar bitmap (WidgetStackedBarChartRenderer)
+     + a 2-column legend grid (color swatch + name + MUST/NEED/WANT tag), up to 8 rows. Tap-inert. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/widget_inner_surface"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <TextView android:id="@+id/tv_cst_header" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:textColor="@color/widget_text_primary" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+        <TextView android:id="@+id/tv_cst_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/widget_text_muted" android:textSize="9sp" />
+    </LinearLayout>
+
+    <ImageView android:id="@+id/iv_cst_chart" android:layout_width="match_parent" android:layout_height="90dp" android:layout_marginTop="4dp" android:scaleType="fitXY" />
+
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="6dp" android:background="@color/widget_divider_soft" />
+
+    <GridLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:columnCount="2" android:rowCount="4">
+
+        <LinearLayout android:id="@+id/ll_cst_legend1" android:layout_width="0dp" android:layout_columnWeight="1" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="3dp" android:layout_marginEnd="4dp">
+            <ImageView android:id="@+id/v_cst_legend1_dot" android:layout_width="7dp" android:layout_height="7dp" android:src="@drawable/widget_circle_badge" />
+            <TextView android:id="@+id/tv_cst_legend1_name" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginStart="5dp" android:textColor="@color/widget_text_primary" android:textSize="9.5sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_cst_legend1_tag" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:textColor="@color/widget_text_muted" android:textSize="7.5sp" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/ll_cst_legend2" android:layout_width="0dp" android:layout_columnWeight="1" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="3dp">
+            <ImageView android:id="@+id/v_cst_legend2_dot" android:layout_width="7dp" android:layout_height="7dp" android:src="@drawable/widget_circle_badge" />
+            <TextView android:id="@+id/tv_cst_legend2_name" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginStart="5dp" android:textColor="@color/widget_text_primary" android:textSize="9.5sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_cst_legend2_tag" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:textColor="@color/widget_text_muted" android:textSize="7.5sp" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/ll_cst_legend3" android:layout_width="0dp" android:layout_columnWeight="1" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="3dp" android:layout_marginEnd="4dp">
+            <ImageView android:id="@+id/v_cst_legend3_dot" android:layout_width="7dp" android:layout_height="7dp" android:src="@drawable/widget_circle_badge" />
+            <TextView android:id="@+id/tv_cst_legend3_name" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginStart="5dp" android:textColor="@color/widget_text_primary" android:textSize="9.5sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_cst_legend3_tag" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:textColor="@color/widget_text_muted" android:textSize="7.5sp" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/ll_cst_legend4" android:layout_width="0dp" android:layout_columnWeight="1" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="3dp">
+            <ImageView android:id="@+id/v_cst_legend4_dot" android:layout_width="7dp" android:layout_height="7dp" android:src="@drawable/widget_circle_badge" />
+            <TextView android:id="@+id/tv_cst_legend4_name" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginStart="5dp" android:textColor="@color/widget_text_primary" android:textSize="9.5sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_cst_legend4_tag" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:textColor="@color/widget_text_muted" android:textSize="7.5sp" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/ll_cst_legend5" android:layout_width="0dp" android:layout_columnWeight="1" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="3dp" android:layout_marginEnd="4dp">
+            <ImageView android:id="@+id/v_cst_legend5_dot" android:layout_width="7dp" android:layout_height="7dp" android:src="@drawable/widget_circle_badge" />
+            <TextView android:id="@+id/tv_cst_legend5_name" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginStart="5dp" android:textColor="@color/widget_text_primary" android:textSize="9.5sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_cst_legend5_tag" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:textColor="@color/widget_text_muted" android:textSize="7.5sp" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/ll_cst_legend6" android:layout_width="0dp" android:layout_columnWeight="1" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="3dp">
+            <ImageView android:id="@+id/v_cst_legend6_dot" android:layout_width="7dp" android:layout_height="7dp" android:src="@drawable/widget_circle_badge" />
+            <TextView android:id="@+id/tv_cst_legend6_name" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginStart="5dp" android:textColor="@color/widget_text_primary" android:textSize="9.5sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_cst_legend6_tag" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:textColor="@color/widget_text_muted" android:textSize="7.5sp" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/ll_cst_legend7" android:layout_width="0dp" android:layout_columnWeight="1" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginEnd="4dp">
+            <ImageView android:id="@+id/v_cst_legend7_dot" android:layout_width="7dp" android:layout_height="7dp" android:src="@drawable/widget_circle_badge" />
+            <TextView android:id="@+id/tv_cst_legend7_name" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginStart="5dp" android:textColor="@color/widget_text_primary" android:textSize="9.5sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_cst_legend7_tag" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:textColor="@color/widget_text_muted" android:textSize="7.5sp" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/ll_cst_legend8" android:layout_width="0dp" android:layout_columnWeight="1" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <ImageView android:id="@+id/v_cst_legend8_dot" android:layout_width="7dp" android:layout_height="7dp" android:src="@drawable/widget_circle_badge" />
+            <TextView android:id="@+id/tv_cst_legend8_name" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginStart="5dp" android:textColor="@color/widget_text_primary" android:textSize="9.5sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_cst_legend8_tag" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:textColor="@color/widget_text_muted" android:textSize="7.5sp" />
+        </LinearLayout>
+
+    </GridLayout>
+</LinearLayout>

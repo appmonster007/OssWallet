@@ -55,6 +55,16 @@ internal fun CashFlowWidgetConfigScreen(
         WidgetConfigDivider()
 
         EntrySwitchRow(
+            label = "Show Net Flow Column",
+            subtitle = "Add a Net column to the per-currency table",
+            checked = config.showNetColumn,
+            onCheckedChange = { onConfigChange(config.copy(showNetColumn = it)) },
+            isFlush = true
+        )
+
+        WidgetConfigDivider()
+
+        EntrySwitchRow(
             label = "Show Comparison",
             subtitle = "Compare net flow with previous period",
             checked = config.showComparison,

@@ -50,13 +50,20 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
         }.getOrNull()
 
         val result = renderData?.result
-        val incomeInBase = result?.metricsInBase?.income ?: BigDecimal.ZERO
-        val expenseInBase = result?.metricsInBase?.expense ?: BigDecimal.ZERO
-        val netInBase = result?.metricsInBase?.netFlow ?: BigDecimal.ZERO
+        val metricsInBase = result?.metricsInBase
+        val incomeInBase = metricsInBase?.income ?: BigDecimal.ZERO
+        val expenseInBase = metricsInBase?.expense ?: BigDecimal.ZERO
+        val netInBase = metricsInBase?.netFlow ?: BigDecimal.ZERO
+        val transferInBase = metricsInBase?.transfer ?: BigDecimal.ZERO
+        val inflowInBase = metricsInBase?.inflow ?: BigDecimal.ZERO
+        val outflowInBase = metricsInBase?.outflow ?: BigDecimal.ZERO
 
         val incomeFormatted = formatCurrency(incomeInBase, common.baseCurrency)
         val expenseFormatted = formatCurrency(expenseInBase, common.baseCurrency)
-//        val transferFormatted = formatCurrency(transferInBase, common.baseCurrency)
+        val netFlowFormatted = formatCurrency(netInBase, common.baseCurrency)
+        val transferFormatted = formatCurrency(transferInBase, common.baseCurrency)
+        val inflowFormatted = formatCurrency(inflowInBase, common.baseCurrency)
+        val outflowFormatted = formatCurrency(outflowInBase, common.baseCurrency)
 
         val prevNetInBase: BigDecimal? = if (config.showComparison) {
             val currentFilter = config.filter.copy(
@@ -101,6 +108,9 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
                         put("incomeBase", formatCurrency(item.metricsInBase.income, common.baseCurrency))
                         put("expense", formatCurrency(item.metrics.expense, item.currency))
                         put("expenseBase", formatCurrency(item.metricsInBase.expense, common.baseCurrency))
+                        put("netFlow", formatCurrency(item.metrics.netFlow, item.currency))
+                        put("netFlowBase", formatCurrency(item.metricsInBase.netFlow, common.baseCurrency))
+                        put("transfer", formatCurrency(item.metrics.transfer, item.currency))
                     }
                 )
             }
@@ -109,10 +119,15 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
         prefs[CashFlowWidgetKeys.IS_LOADED] = "true"
         prefs[CashFlowWidgetKeys.INCOME_TOTAL] = incomeFormatted
         prefs[CashFlowWidgetKeys.EXPENSE_TOTAL] = expenseFormatted
+        prefs[CashFlowWidgetKeys.NET_FLOW_TOTAL] = netFlowFormatted
+        prefs[CashFlowWidgetKeys.TRANSFER_TOTAL] = transferFormatted
+        prefs[CashFlowWidgetKeys.INFLOW_TOTAL] = inflowFormatted
+        prefs[CashFlowWidgetKeys.OUTFLOW_TOTAL] = outflowFormatted
         prefs[CashFlowWidgetKeys.PERIOD_LABEL] = config.timelineLabel
         prefs[CashFlowWidgetKeys.BASE_CURRENCY] = common.baseCurrency
         prefs[CashFlowWidgetKeys.SHOW_BASE_CONVERSION] = if (config.showBaseConversion) "true" else "false"
         prefs[CashFlowWidgetKeys.SHOW_TOTALS] = if (config.showTotals) "true" else "false"
+        prefs[CashFlowWidgetKeys.SHOW_NET_COLUMN] = if (config.showNetColumn) "true" else "false"
         prefs[CashFlowWidgetKeys.CURRENCY_LIST] = currencyJson
         prefs[CashFlowWidgetKeys.COMPARISON] = comparisonText
     }

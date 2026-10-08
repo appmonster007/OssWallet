@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Currency Balances widget — 2x2 grid tier, up to 4 chips. Cell tap is inert. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/widget_inner_surface"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Balances" android:textColor="@color/widget_text_primary" android:textSize="13sp" android:textStyle="bold" />
+        <TextView android:id="@+id/tv_cb_total" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/widget_text_muted" android:textSize="10sp" />
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+        <LinearLayout android:id="@+id/ll_cb_cell1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/widget_metric_tile_bg" android:padding="8dp" android:layout_marginEnd="4dp">
+            <TextView android:id="@+id/tv_cb_cell1_code" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/widget_text_muted" android:textSize="9sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_cb_cell1_amount" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/widget_text_primary" android:textSize="13sp" android:textStyle="bold" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/ll_cb_cell2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/widget_metric_tile_bg" android:padding="8dp" android:layout_marginStart="4dp">
+            <TextView android:id="@+id/tv_cb_cell2_code" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/widget_text_muted" android:textSize="9sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_cb_cell2_amount" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/widget_text_primary" android:textSize="13sp" android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+        <LinearLayout android:id="@+id/ll_cb_cell3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/widget_metric_tile_bg" android:padding="8dp" android:layout_marginEnd="4dp">
+            <TextView android:id="@+id/tv_cb_cell3_code" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/widget_text_muted" android:textSize="9sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_cb_cell3_amount" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/widget_text_primary" android:textSize="13sp" android:textStyle="bold" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/ll_cb_cell4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:background="@drawable/widget_metric_tile_bg" android:padding="8dp" android:layout_marginStart="4dp">
+            <TextView android:id="@+id/tv_cb_cell4_code" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/widget_text_muted" android:textSize="9sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_cb_cell4_amount" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/widget_text_primary" android:textSize="13sp" android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

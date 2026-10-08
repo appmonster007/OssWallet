@@ -24,6 +24,15 @@ object CashFlowWidgetKeys {
     val SHOW_BASE_CONVERSION = stringPreferencesKey("cf_show_base_conversion")
     val SHOW_TOTALS = stringPreferencesKey("cf_show_totals")
     val CURRENCY_LIST = stringPreferencesKey("cf_currency_list")
+
+    // Target-model additions (CASH_FLOW section, docs/card-data-summary.md): full
+    // FinancialSummary (net flow / transfer / inflow / outflow), not just income/expense,
+    // plus the showNetColumn toggle for the table tier's 4th column.
+    val NET_FLOW_TOTAL = stringPreferencesKey("cf_net_flow_total")
+    val TRANSFER_TOTAL = stringPreferencesKey("cf_transfer_total")
+    val INFLOW_TOTAL = stringPreferencesKey("cf_inflow_total")
+    val OUTFLOW_TOTAL = stringPreferencesKey("cf_outflow_total")
+    val SHOW_NET_COLUMN = stringPreferencesKey("cf_show_net_column")
 }
 
 private data class CashFlowRowViewIds(
@@ -32,7 +41,9 @@ private data class CashFlowRowViewIds(
     val income: Int,
     val incomeBase: Int,
     val expense: Int,
-    val expenseBase: Int
+    val expenseBase: Int,
+    val net: Int,
+    val netBase: Int
 )
 
 internal data class CashFlowCurrencyRow(
@@ -40,7 +51,10 @@ internal data class CashFlowCurrencyRow(
     val income: String,
     val incomeBase: String,
     val expense: String,
-    val expenseBase: String
+    val expenseBase: String,
+    val netFlow: String,
+    val netFlowBase: String,
+    val transfer: String
 )
 
 internal fun parseCashFlowCurrencyList(json: String?): List<CashFlowCurrencyRow> {
@@ -56,7 +70,10 @@ internal fun parseCashFlowCurrencyList(json: String?): List<CashFlowCurrencyRow>
                 income = obj.optString("income", ""),
                 incomeBase = obj.optString("incomeBase", ""),
                 expense = obj.optString("expense", ""),
-                expenseBase = obj.optString("expenseBase", "")
+                expenseBase = obj.optString("expenseBase", ""),
+                netFlow = obj.optString("netFlow", ""),
+                netFlowBase = obj.optString("netFlowBase", ""),
+                transfer = obj.optString("transfer", "")
             )
         }
     } catch (_: JSONException) {
@@ -102,27 +119,67 @@ object CashFlowRemoteViewsRenderer {
         val options = appWidgetManager.getAppWidgetOptions(widgetId)
         val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
         val isCompact = minHeight in 1 until COMPACT_HEIGHT_DP
+        val rows = parseCashFlowCurrencyList(prefs[CashFlowWidgetKeys.CURRENCY_LIST])
 
-        val views = if (isCompact) {
-            renderCompact(context, prefs)
-        } else {
-            val maxRows = if (minHeight >= TALL_HEIGHT_DP) 5 else 3
-            val showHeader = minHeight >= HEADER_HEIGHT_DP
-            renderTable(context, prefs, maxRows, showHeader)
+        val views = when {
+            rows.isEmpty() && !isCompact -> renderEmpty(context, prefs)
+            isCompact -> renderCompact(context, prefs)
+            else -> {
+                val maxRows = if (minHeight >= TALL_HEIGHT_DP) 5 else 3
+                val showHeader = minHeight >= HEADER_HEIGHT_DP
+                renderTable(context, prefs, rows, maxRows, showHeader)
+            }
         }
         appWidgetManager.updateAppWidget(widgetId, views)
     }
 
+    /**
+     * Compact tier (design's "compact"): period label, net% trend chip, 3-col grid
+     * (Income/Expenses/Net flow), a summary chip row (In/Out/Transfers), and a caption.
+     */
     private fun renderCompact(context: Context, prefs: Preferences): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_cash_flow_compact)
+
+        val periodLabel = prefs[CashFlowWidgetKeys.PERIOD_LABEL] ?: ""
+        views.setTextViewText(R.id.tv_cf_compact_period, periodLabel)
+
+        val comparison = prefs[CashFlowWidgetKeys.COMPARISON]?.takeIf { it.isNotEmpty() }
+        views.setViewVisibility(R.id.tv_cf_compact_trend, if (comparison != null) View.VISIBLE else View.GONE)
+        if (comparison != null) {
+            val isUp = comparison.startsWith("+")
+            val arrow = if (isUp) "▲" else "▼"
+            views.setTextViewText(R.id.tv_cf_compact_trend, "$arrow $comparison")
+        }
+
         views.setTextViewText(R.id.tv_cf_compact_income, prefs[CashFlowWidgetKeys.INCOME_TOTAL] ?: "")
         views.setTextViewText(R.id.tv_cf_compact_expense, prefs[CashFlowWidgetKeys.EXPENSE_TOTAL] ?: "")
+        views.setTextViewText(R.id.tv_cf_compact_netflow, prefs[CashFlowWidgetKeys.NET_FLOW_TOTAL] ?: "")
+
+        views.setTextViewText(R.id.tv_cf_compact_chip_in, prefs[CashFlowWidgetKeys.INFLOW_TOTAL] ?: "")
+        views.setTextViewText(R.id.tv_cf_compact_chip_out, prefs[CashFlowWidgetKeys.OUTFLOW_TOTAL] ?: "")
+        views.setTextViewText(R.id.tv_cf_compact_chip_transfers, prefs[CashFlowWidgetKeys.TRANSFER_TOTAL] ?: "")
+
+        val baseCurrency = prefs[CashFlowWidgetKeys.BASE_CURRENCY] ?: ""
+        views.setTextViewText(R.id.tv_cf_compact_caption, "Amounts in $baseCurrency")
+
+        return views
+    }
+
+    /** Empty state (new tier): shown when [CashFlowWidgetKeys.CURRENCY_LIST] has no rows. */
+    private fun renderEmpty(context: Context, prefs: Preferences): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.widget_cash_flow_empty)
+        val periodLabel = prefs[CashFlowWidgetKeys.PERIOD_LABEL] ?: ""
+        views.setTextViewText(
+            R.id.tv_cf_empty_subtitle,
+            "$periodLabel income and expenses show up here."
+        )
         return views
     }
 
     private fun renderTable(
         context: Context,
         prefs: Preferences,
+        rows: List<CashFlowCurrencyRow>,
         maxRows: Int,
         showHeader: Boolean
     ): RemoteViews {
@@ -133,40 +190,49 @@ object CashFlowRemoteViewsRenderer {
         val comparison = prefs[CashFlowWidgetKeys.COMPARISON]?.takeIf { it.isNotEmpty() }
         views.setTextViewText(R.id.tv_cf_subtitle, comparison ?: periodLabel)
 
+        val showNetColumn = prefs[CashFlowWidgetKeys.SHOW_NET_COLUMN] != "false"
+        views.setViewVisibility(R.id.tv_cf_header_net, if (showNetColumn) View.VISIBLE else View.GONE)
+
         val showTotals = prefs[CashFlowWidgetKeys.SHOW_TOTALS] != "false"
         views.setViewVisibility(R.id.ll_cf_totals, if (showTotals) View.VISIBLE else View.GONE)
         views.setTextViewText(R.id.tv_cf_income_total, prefs[CashFlowWidgetKeys.INCOME_TOTAL] ?: "")
         views.setTextViewText(R.id.tv_cf_expense_total, prefs[CashFlowWidgetKeys.EXPENSE_TOTAL] ?: "")
+        views.setViewVisibility(R.id.tv_cf_net_total, if (showNetColumn) View.VISIBLE else View.GONE)
+        views.setTextViewText(R.id.tv_cf_net_total, prefs[CashFlowWidgetKeys.NET_FLOW_TOTAL] ?: "")
 
         val baseCurrency = prefs[CashFlowWidgetKeys.BASE_CURRENCY] ?: ""
         val showBaseConversion = prefs[CashFlowWidgetKeys.SHOW_BASE_CONVERSION] != "false"
-        val rows = parseCashFlowCurrencyList(prefs[CashFlowWidgetKeys.CURRENCY_LIST])
 
         val rowViewIds = listOf(
             CashFlowRowViewIds(
                 container = R.id.ll_cf_row1, code = R.id.tv_cf_row1_code,
                 income = R.id.tv_cf_row1_income, incomeBase = R.id.tv_cf_row1_income_base,
-                expense = R.id.tv_cf_row1_expense, expenseBase = R.id.tv_cf_row1_expense_base
+                expense = R.id.tv_cf_row1_expense, expenseBase = R.id.tv_cf_row1_expense_base,
+                net = R.id.tv_cf_row1_net, netBase = R.id.tv_cf_row1_net_base
             ),
             CashFlowRowViewIds(
                 container = R.id.ll_cf_row2, code = R.id.tv_cf_row2_code,
                 income = R.id.tv_cf_row2_income, incomeBase = R.id.tv_cf_row2_income_base,
-                expense = R.id.tv_cf_row2_expense, expenseBase = R.id.tv_cf_row2_expense_base
+                expense = R.id.tv_cf_row2_expense, expenseBase = R.id.tv_cf_row2_expense_base,
+                net = R.id.tv_cf_row2_net, netBase = R.id.tv_cf_row2_net_base
             ),
             CashFlowRowViewIds(
                 container = R.id.ll_cf_row3, code = R.id.tv_cf_row3_code,
                 income = R.id.tv_cf_row3_income, incomeBase = R.id.tv_cf_row3_income_base,
-                expense = R.id.tv_cf_row3_expense, expenseBase = R.id.tv_cf_row3_expense_base
+                expense = R.id.tv_cf_row3_expense, expenseBase = R.id.tv_cf_row3_expense_base,
+                net = R.id.tv_cf_row3_net, netBase = R.id.tv_cf_row3_net_base
             ),
             CashFlowRowViewIds(
                 container = R.id.ll_cf_row4, code = R.id.tv_cf_row4_code,
                 income = R.id.tv_cf_row4_income, incomeBase = R.id.tv_cf_row4_income_base,
-                expense = R.id.tv_cf_row4_expense, expenseBase = R.id.tv_cf_row4_expense_base
+                expense = R.id.tv_cf_row4_expense, expenseBase = R.id.tv_cf_row4_expense_base,
+                net = R.id.tv_cf_row4_net, netBase = R.id.tv_cf_row4_net_base
             ),
             CashFlowRowViewIds(
                 container = R.id.ll_cf_row5, code = R.id.tv_cf_row5_code,
                 income = R.id.tv_cf_row5_income, incomeBase = R.id.tv_cf_row5_income_base,
-                expense = R.id.tv_cf_row5_expense, expenseBase = R.id.tv_cf_row5_expense_base
+                expense = R.id.tv_cf_row5_expense, expenseBase = R.id.tv_cf_row5_expense_base,
+                net = R.id.tv_cf_row5_net, netBase = R.id.tv_cf_row5_net_base
             )
         )
 
@@ -181,6 +247,12 @@ object CashFlowRemoteViewsRenderer {
             views.setTextViewText(ids.income, row.income)
             views.setTextViewText(ids.expense, row.expense)
 
+            views.setViewVisibility(ids.net, if (showNetColumn) View.VISIBLE else View.GONE)
+            views.setViewVisibility(ids.netBase, if (showNetColumn) View.VISIBLE else View.GONE)
+            if (showNetColumn) {
+                views.setTextViewText(ids.net, row.netFlow)
+            }
+
             val showConversion = showBaseConversion && row.code != baseCurrency
             val conversionVisibility = if (showConversion) View.VISIBLE else View.GONE
             views.setViewVisibility(ids.incomeBase, conversionVisibility)
@@ -188,6 +260,12 @@ object CashFlowRemoteViewsRenderer {
             if (showConversion) {
                 views.setTextViewText(ids.incomeBase, "≈ ${row.incomeBase}")
                 views.setTextViewText(ids.expenseBase, "≈ ${row.expenseBase}")
+            }
+            if (showNetColumn) {
+                views.setViewVisibility(ids.netBase, if (showConversion) View.VISIBLE else View.GONE)
+                if (showConversion) {
+                    views.setTextViewText(ids.netBase, "≈ ${row.netFlowBase}")
+                }
             }
         }
 

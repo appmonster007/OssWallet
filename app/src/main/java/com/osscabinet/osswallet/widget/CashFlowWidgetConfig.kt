@@ -12,7 +12,8 @@ data class CashFlowWidgetConfig(
     ),
     val showComparison: Boolean = false,
     val showBaseConversion: Boolean = true,
-    val showTotals: Boolean = true
+    val showTotals: Boolean = true,
+    val showNetColumn: Boolean = true
 ) {
     val timelineRange: TimelineRange get() = filter.timelineRange
 

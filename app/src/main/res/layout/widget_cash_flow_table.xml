@@ -83,6 +83,18 @@
                 android:textSize="9sp"
                 android:textStyle="bold" />
 
+        <TextView
+                android:id="@+id/tv_cf_header_net"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:paddingStart="6dp"
+                android:text="NET"
+                android:textColor="@color/widget_accent_teal"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+
     </LinearLayout>
 
     <FrameLayout
@@ -133,6 +145,18 @@
                 android:textStyle="bold"
                 tools:text="4,628.00 $" />
 
+        <TextView
+                android:id="@+id/tv_cf_net_total"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:paddingEnd="8dp"
+                android:textColor="@color/widget_accent_teal"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="2,092.00 $" />
+
     </LinearLayout>
 
     <FrameLayout
@@ -170,7 +194,9 @@
                     android:textColor="@color/widget_income_color"
                     android:textSize="10sp"
                     android:textStyle="bold"
-                    tools:text="5,000.00 $" />
+                    tools:text="5,000.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
             <TextView
                     android:id="@+id/tv_cf_row1_income_base"
@@ -179,7 +205,9 @@
                     android:textColor="@color/widget_income_comparison"
                     android:textSize="8sp"
                     android:visibility="gone"
-                    tools:visibility="visible" />
+                    tools:visibility="visible"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
         </LinearLayout>
 
@@ -197,7 +225,9 @@
                     android:textColor="@color/widget_expense_color"
                     android:textSize="10sp"
                     android:textStyle="bold"
-                    tools:text="3,500.00 $" />
+                    tools:text="3,500.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
             <TextView
                     android:id="@+id/tv_cf_row1_expense_base"
@@ -206,7 +236,41 @@
                     android:textColor="@color/widget_expense_comparison"
                     android:textSize="8sp"
                     android:visibility="gone"
-                    tools:visibility="visible" />
+                    tools:visibility="visible"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end"
+                android:paddingStart="6dp">
+
+            <TextView
+                    android:id="@+id/tv_cf_row1_net"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_accent_teal"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="1,500.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row1_net_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_text_muted"
+                    android:textSize="8sp"
+                    android:visibility="gone"
+                    tools:visibility="visible"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
         </LinearLayout>
 
@@ -247,7 +311,9 @@
                     android:textColor="@color/widget_income_color"
                     android:textSize="10sp"
                     android:textStyle="bold"
-                    tools:text="1,000.00 €" />
+                    tools:text="1,000.00 €"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
             <TextView
                     android:id="@+id/tv_cf_row2_income_base"
@@ -255,7 +321,9 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/widget_income_comparison"
                     android:textSize="8sp"
-                    tools:text="≈ 1,100.00 $" />
+                    tools:text="≈ 1,100.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
         </LinearLayout>
 
@@ -273,7 +341,9 @@
                     android:textColor="@color/widget_expense_color"
                     android:textSize="10sp"
                     android:textStyle="bold"
-                    tools:text="800.00 €" />
+                    tools:text="800.00 €"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
             <TextView
                     android:id="@+id/tv_cf_row2_expense_base"
@@ -281,7 +351,40 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/widget_expense_comparison"
                     android:textSize="8sp"
-                    tools:text="≈ 880.00 $" />
+                    tools:text="≈ 880.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end"
+                android:paddingStart="6dp">
+
+            <TextView
+                    android:id="@+id/tv_cf_row2_net"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_accent_teal"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="200.00 €"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row2_net_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_text_muted"
+                    android:textSize="8sp"
+                    tools:text="≈ 220.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
         </LinearLayout>
 
@@ -322,7 +425,9 @@
                     android:textColor="@color/widget_income_color"
                     android:textSize="10sp"
                     android:textStyle="bold"
-                    tools:text="500.00 £" />
+                    tools:text="500.00 £"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
             <TextView
                     android:id="@+id/tv_cf_row3_income_base"
@@ -330,7 +435,9 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/widget_income_comparison"
                     android:textSize="8sp"
-                    tools:text="≈ 620.00 $" />
+                    tools:text="≈ 620.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
         </LinearLayout>
 
@@ -348,7 +455,9 @@
                     android:textColor="@color/widget_expense_color"
                     android:textSize="10sp"
                     android:textStyle="bold"
-                    tools:text="200.00 £" />
+                    tools:text="200.00 £"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
             <TextView
                     android:id="@+id/tv_cf_row3_expense_base"
@@ -356,7 +465,40 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/widget_expense_comparison"
                     android:textSize="8sp"
-                    tools:text="≈ 248.00 $" />
+                    tools:text="≈ 248.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end"
+                android:paddingStart="6dp">
+
+            <TextView
+                    android:id="@+id/tv_cf_row3_net"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_accent_teal"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="300.00 £"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row3_net_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_text_muted"
+                    android:textSize="8sp"
+                    tools:text="≈ 372.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
         </LinearLayout>
 
@@ -397,7 +539,9 @@
                     android:textColor="@color/widget_income_color"
                     android:textSize="10sp"
                     android:textStyle="bold"
-                    tools:text="50,000 ¥" />
+                    tools:text="50,000 ¥"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
             <TextView
                     android:id="@+id/tv_cf_row4_income_base"
@@ -405,7 +549,9 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/widget_income_comparison"
                     android:textSize="8sp"
-                    tools:text="≈ 330.00 $" />
+                    tools:text="≈ 330.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
         </LinearLayout>
 
@@ -423,7 +569,9 @@
                     android:textColor="@color/widget_expense_color"
                     android:textSize="10sp"
                     android:textStyle="bold"
-                    tools:text="12,000 ¥" />
+                    tools:text="12,000 ¥"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
             <TextView
                     android:id="@+id/tv_cf_row4_expense_base"
@@ -431,7 +579,40 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/widget_expense_comparison"
                     android:textSize="8sp"
-                    tools:text="≈ 79.20 $" />
+                    tools:text="≈ 79.20 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end"
+                android:paddingStart="6dp">
+
+            <TextView
+                    android:id="@+id/tv_cf_row4_net"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_accent_teal"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="38,000 ¥"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row4_net_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_text_muted"
+                    android:textSize="8sp"
+                    tools:text="≈ 250.80 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
         </LinearLayout>
 
@@ -472,7 +653,9 @@
                     android:textColor="@color/widget_income_color"
                     android:textSize="10sp"
                     android:textStyle="bold"
-                    tools:text="150.00 $" />
+                    tools:text="150.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
             <TextView
                     android:id="@+id/tv_cf_row5_income_base"
@@ -480,7 +663,9 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/widget_income_comparison"
                     android:textSize="8sp"
-                    tools:text="≈ 97.50 $" />
+                    tools:text="≈ 97.50 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
         </LinearLayout>
 
@@ -498,7 +683,9 @@
                     android:textColor="@color/widget_expense_color"
                     android:textSize="10sp"
                     android:textStyle="bold"
-                    tools:text="60.00 $" />
+                    tools:text="60.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
             <TextView
                     android:id="@+id/tv_cf_row5_expense_base"
@@ -506,7 +693,40 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/widget_expense_comparison"
                     android:textSize="8sp"
-                    tools:text="≈ 39.00 $" />
+                    tools:text="≈ 39.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end"
+                android:paddingStart="6dp">
+
+            <TextView
+                    android:id="@+id/tv_cf_row5_net"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_accent_teal"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:text="90.00 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+            <TextView
+                    android:id="@+id/tv_cf_row5_net_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_text_muted"
+                    android:textSize="8sp"
+                    tools:text="≈ 58.50 $"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
         </LinearLayout>
 

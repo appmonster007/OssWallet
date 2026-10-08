@@ -89,6 +89,162 @@
                 android:resource="@xml/recent_transactions_widget_info" />
         </receiver>
 
+        <!-- Phase 2 widget rebuild: Budgets / Planned Payments / Currency Balances / Loans /
+             Accounts homescreen widgets, same receiver shape as the three above. -->
+        <receiver
+            android:name=".widget.BudgetsWidgetProvider"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/budgets_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.PlannedPaymentsWidgetProvider"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/planned_payments_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.CurrencyBalancesWidgetProvider"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/currency_balances_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.LoansWidgetProvider"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/loans_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.AccountsWidgetProvider"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/accounts_widget_info" />
+        </receiver>
+
+        <!-- Phase 3 widget rebuild (final phase): Account Hero / Income vs Expenses / Category
+             Pie Chart / Category Treemap / Cash Flow Comparison / Category Spending Trend /
+             Tag UpSet Plot homescreen widgets, same receiver shape as the eight above. -->
+        <receiver
+            android:name=".widget.AccountHeroWidgetProvider"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/account_hero_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.IncomeExpenseBarWidgetProvider"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/income_expense_bar_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.CategoryPieChartWidgetProvider"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/category_pie_chart_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.CategoryTreemapWidgetProvider"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/category_treemap_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.CashFlowComparisonWidgetProvider"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/cashflow_comparison_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.CategorySpendingTrendWidgetProvider"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/category_spending_trend_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.TagUpSetPlotWidgetProvider"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/tag_upset_plot_widget_info" />
+        </receiver>
+
+        <!-- Not an AppWidgetProvider — a plain exported=false action receiver that Confirm/Skip
+             PendingIntents on the Planned Payments widget target directly (see
+             PlannedPaymentsWidgetActionReceiver / PlannedPaymentsRemoteViewsRenderer). -->
+        <receiver
+            android:name=".widget.PlannedPaymentsWidgetActionReceiver"
+            android:exported="false" />
+
         <activity
             android:name=".widget.NetWorthWidgetConfigActivity"
             android:exported="true"
@@ -109,6 +265,114 @@
 
         <activity
             android:name=".widget.RecentTransactionsWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.BudgetsWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.PlannedPaymentsWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.CurrencyBalancesWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.LoansWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.AccountsWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.AccountHeroWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.IncomeExpenseBarWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.CategoryPieChartWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.CategoryTreemapWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.CashFlowComparisonWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.CategorySpendingTrendWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.TagUpSetPlotWidgetConfigActivity"
             android:exported="true"
             android:theme="@style/Theme.OssWallet">
             <intent-filter>

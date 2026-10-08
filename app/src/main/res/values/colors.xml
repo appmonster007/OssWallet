@@ -43,4 +43,32 @@
     <color name="widget_badge_transfer_bg">@color/widget_transfer_container</color>
     <color name="widget_transfer_fill">@color/widget_transfer_container</color>
     <color name="widget_transfer_stroke">@color/widget_transfer</color>
+
+    <!-- Phase 1 widget rebuild — new mockup-specific chrome tokens (net worth / cash flow /
+         recent activities richer tiers). These sit alongside the existing Aeon H-theme
+         widget_* tokens above rather than replacing them: widget_positive/widget_negative
+         keep doing income/expense tinting everywhere they already do, these are additive. -->
+    <color name="widget_wall">#22403E</color>
+    <color name="widget_inner_surface">#F5F8F7</color>
+    <color name="widget_accent_teal">#1F6F66</color>
+    <color name="widget_text_primary">#14201E</color>
+    <color name="widget_text_muted">#4C5C59</color>
+    <color name="widget_text_muted_alt">#3F4B49</color>
+    <color name="widget_row_chip_bg">#E6EEEC</color>
+    <color name="widget_netflow_chip_bg">#DCEDE8</color>
+    <color name="widget_divider_soft">#D7E0DD</color>
+    <color name="widget_overdue_text">#A12A20</color>
+    <color name="widget_overdue_pill_bg">#F6DEDA</color>
+    <color name="widget_warning_text">#8A5A0B</color>
+    <color name="widget_pending_outline">#B7791F</color>
+    <color name="widget_tag_chip_bg">#E3ECEA</color>
+
+    <!-- Phase 3 widget rebuild — fixed qualitative series/legend palette fallback. Only used
+         when a CategoryChartData/CategorySummary/TagUpSetSet entry carries no own colorHex. -->
+    <color name="widget_series_blue">#1F5C8A</color>
+    <color name="widget_series_green">#2E6B45</color>
+    <color name="widget_series_brown">#8A4B12</color>
+    <color name="widget_series_purple">#6B3F86</color>
+    <color name="widget_series_gray">#9AA8A5</color>
+    <color name="widget_series_amber">#D49A55</color>
 </resources>

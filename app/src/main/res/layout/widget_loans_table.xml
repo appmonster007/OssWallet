@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Loans widget — 4x3 tier. ACTIVE loans first (up to 2, with progress bars), then a single
+     compact SETTLED summary row if space allows. Row tap is inert. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/widget_inner_surface"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+    <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Loans"
+            android:textColor="@color/widget_text_primary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+    <!-- Active loan row 1 -->
+    <LinearLayout android:id="@+id/ll_loan_row1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="8dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:id="@+id/tv_loan_row1_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_loan_row1_type" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="6dp" android:background="@drawable/widget_metric_tile_bg" android:paddingStart="6dp" android:paddingEnd="6dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:textColor="@color/widget_text_muted" android:textSize="8sp" />
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+            <TextView android:id="@+id/tv_loan_row1_remaining" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+        </LinearLayout>
+        <FrameLayout android:layout_width="match_parent" android:layout_height="6dp" android:layout_marginTop="4dp">
+            <View android:id="@+id/v_loan_row1_track" android:layout_width="match_parent" android:layout_height="6dp" android:background="@color/widget_row_chip_bg" />
+            <View android:id="@+id/v_loan_row1_fill" android:layout_width="match_parent" android:layout_height="6dp" android:layout_gravity="start" android:background="@color/widget_accent_teal" />
+        </FrameLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="2dp">
+            <TextView android:id="@+id/tv_loan_row1_caption" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/widget_text_muted" android:textSize="9sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_loan_row1_interest" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/widget_text_muted" android:textSize="9sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="8dp" android:background="@color/widget_divider_soft" />
+
+    <!-- Active loan row 2 -->
+    <LinearLayout android:id="@+id/ll_loan_row2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="8dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:id="@+id/tv_loan_row2_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_loan_row2_type" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="6dp" android:background="@drawable/widget_metric_tile_bg" android:paddingStart="6dp" android:paddingEnd="6dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:textColor="@color/widget_text_muted" android:textSize="8sp" />
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+            <TextView android:id="@+id/tv_loan_row2_remaining" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+        </LinearLayout>
+        <FrameLayout android:layout_width="match_parent" android:layout_height="6dp" android:layout_marginTop="4dp">
+            <View android:id="@+id/v_loan_row2_track" android:layout_width="match_parent" android:layout_height="6dp" android:background="@color/widget_row_chip_bg" />
+            <View android:id="@+id/v_loan_row2_fill" android:layout_width="match_parent" android:layout_height="6dp" android:layout_gravity="start" android:background="@color/widget_accent_teal" />
+        </FrameLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="2dp">
+            <TextView android:id="@+id/tv_loan_row2_caption" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/widget_text_muted" android:textSize="9sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_loan_row2_interest" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/widget_text_muted" android:textSize="9sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Settled summary row -->
+    <LinearLayout android:id="@+id/ll_loan_settled" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="8dp">
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/widget_divider_soft" android:layout_marginBottom="8dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="✓" android:textColor="@color/widget_text_muted" android:textSize="11sp" />
+            <TextView android:id="@+id/tv_loan_settled_name" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:textColor="@color/widget_text_muted" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Settled" android:textColor="@color/widget_text_muted" android:textSize="9sp" android:textStyle="italic" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,1222 @@
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index d9f5c75d..ab14072d 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -63,187 +63,9 @@
+                 android:resource="@xml/net_worth_widget_info" />
+         </receiver>
+ 
+-        <!-- Cash Flow homescreen widget -->
+-        <receiver
+-            android:name=".widget.CashFlowWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/cash_flow_widget_info" />
+-        </receiver>
+-
+-        <!-- Recent Transactions homescreen widget -->
+-        <receiver
+-            android:name=".widget.RecentTransactionsWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/recent_transactions_widget_info" />
+-        </receiver>
+-
+-        <!-- Phase 2 widget rebuild: Budgets / Planned Payments / Currency Balances / Loans /
+-             Accounts homescreen widgets, same receiver shape as the three above. -->
+-        <receiver
+-            android:name=".widget.BudgetsWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/budgets_widget_info" />
+-        </receiver>
+-
+-        <receiver
+-            android:name=".widget.PlannedPaymentsWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/planned_payments_widget_info" />
+-        </receiver>
+-
+-        <receiver
+-            android:name=".widget.CurrencyBalancesWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/currency_balances_widget_info" />
+-        </receiver>
+-
+-        <receiver
+-            android:name=".widget.LoansWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/loans_widget_info" />
+-        </receiver>
+-
+-        <receiver
+-            android:name=".widget.AccountsWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/accounts_widget_info" />
+-        </receiver>
+-
+-        <!-- Phase 3 widget rebuild (final phase): Account Hero / Income vs Expenses / Category
+-             Pie Chart / Category Treemap / Cash Flow Comparison / Category Spending Trend /
+-             Tag UpSet Plot homescreen widgets, same receiver shape as the eight above. -->
+-        <receiver
+-            android:name=".widget.AccountHeroWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/account_hero_widget_info" />
+-        </receiver>
+-
+-        <receiver
+-            android:name=".widget.IncomeExpenseBarWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/income_expense_bar_widget_info" />
+-        </receiver>
+-
+-        <receiver
+-            android:name=".widget.CategoryPieChartWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/category_pie_chart_widget_info" />
+-        </receiver>
+-
+-        <receiver
+-            android:name=".widget.CategoryTreemapWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/category_treemap_widget_info" />
+-        </receiver>
+-
+-        <receiver
+-            android:name=".widget.CashFlowComparisonWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/cashflow_comparison_widget_info" />
+-        </receiver>
+-
+-        <receiver
+-            android:name=".widget.CategorySpendingTrendWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/category_spending_trend_widget_info" />
+-        </receiver>
+-
+-        <receiver
+-            android:name=".widget.TagUpSetPlotWidgetProvider"
+-            android:exported="true"
+-            android:permission="android.permission.BIND_APPWIDGET">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.appwidget.provider"
+-                android:resource="@xml/tag_upset_plot_widget_info" />
+-        </receiver>
+-
+-        <!-- Not an AppWidgetProvider — a plain exported=false action receiver that Confirm/Skip
+-             PendingIntents on the Planned Payments widget target directly (see
+-             PlannedPaymentsWidgetActionReceiver / PlannedPaymentsRemoteViewsRenderer). -->
+-        <receiver
+-            android:name=".widget.PlannedPaymentsWidgetActionReceiver"
+-            android:exported="false" />
++        <!-- Cash Flow, Recent Transactions, and every Phase 2/3 widget's <receiver>/<activity>
++             entries were removed here when those widgets were shelved (2026-10-08) — see
++             shelved-widgets/README.md and shelved-widgets/restore.patch at the repo root. -->
+ 
+         <activity
+             android:name=".widget.NetWorthWidgetConfigActivity"
+@@ -254,132 +76,6 @@
+             </intent-filter>
+         </activity>
+ 
+-        <activity
+-            android:name=".widget.CashFlowWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".widget.RecentTransactionsWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".widget.BudgetsWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".widget.PlannedPaymentsWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".widget.CurrencyBalancesWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".widget.LoansWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".widget.AccountsWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".widget.AccountHeroWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".widget.IncomeExpenseBarWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".widget.CategoryPieChartWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".widget.CategoryTreemapWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".widget.CashFlowComparisonWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".widget.CategorySpendingTrendWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".widget.TagUpSetPlotWidgetConfigActivity"
+-            android:exported="true"
+-            android:theme="@style/Theme.OssWallet">
+-            <intent-filter>
+-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+-            </intent-filter>
+-        </activity>
+-
+         <service
+             android:name=".service.WebServerService"
+             android:enabled="true"
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/WidgetConfigScreenPreviews.kt b/app/src/main/java/com/osscabinet/osswallet/widget/WidgetConfigScreenPreviews.kt
+index 0eeb4129..a79b11b3 100644
+--- a/app/src/main/java/com/osscabinet/osswallet/widget/WidgetConfigScreenPreviews.kt
++++ b/app/src/main/java/com/osscabinet/osswallet/widget/WidgetConfigScreenPreviews.kt
+@@ -25,30 +25,5 @@ private fun NetWorthWidgetConfigScreenPreview() {
+     }
+ }
+ 
+-@Composable
+-@Preview(name = "Cash Flow config", showBackground = true)
+-private fun CashFlowWidgetConfigScreenPreview() {
+-    OssWalletTheme {
+-        var config by remember { mutableStateOf(CashFlowWidgetConfig()) }
+-        CashFlowWidgetConfigScreen(
+-            config = config,
+-            onConfigChange = { config = it },
+-            onSave = {},
+-            onBack = {}
+-        )
+-    }
+-}
+-
+-@Composable
+-@Preview(name = "Recent Transactions config", showBackground = true)
+-private fun RecentTransactionsWidgetConfigScreenPreview() {
+-    OssWalletTheme {
+-        var config by remember { mutableStateOf(RecentTransactionsWidgetConfig()) }
+-        RecentTransactionsWidgetConfigScreen(
+-            config = config,
+-            onConfigChange = { config = it },
+-            onSave = {},
+-            onBack = {}
+-        )
+-    }
+-}
++// Cash Flow / Recent Transactions / Phase 2-3 widget previews were removed when those widgets
++// were shelved (see shelved-widgets/ at the repo root) — only Net Worth remains wired.
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/WidgetRefreshWorker.kt b/app/src/main/java/com/osscabinet/osswallet/widget/WidgetRefreshWorker.kt
+index 91248673..9c55140f 100644
+--- a/app/src/main/java/com/osscabinet/osswallet/widget/WidgetRefreshWorker.kt
++++ b/app/src/main/java/com/osscabinet/osswallet/widget/WidgetRefreshWorker.kt
+@@ -16,10 +16,17 @@ import kotlinx.coroutines.NonCancellable
+ import kotlinx.coroutines.withContext
+ 
+ /**
+- * Background worker that refreshes all three homescreen widgets. All of them are raw
+- * RemoteViews (not Glance): for each, this fetches fresh data into an in-memory Preferences
+- * instance via that widget's [WidgetDataFetcher], then hands it to that widget's RemoteViews
+- * renderer to build and push the update.
++ * Background worker that refreshes the homescreen widget(s). Raw RemoteViews (not Glance):
++ * fetches fresh data into an in-memory Preferences instance via that widget's
++ * [WidgetDataFetcher], then hands it to that widget's RemoteViews renderer to build and push
++ * the update.
++ *
++ * SHELVED (2026-10-08): Cash Flow, Recent Transactions, and every Phase 2/3 widget
++ * (Budgets/Planned Payments/Currency Balances/Loans/Accounts/Account Hero/Income-Expense Bar/
++ * Category Pie Chart/Category Treemap/Cash Flow Comparison/Category Spending Trend/Tag UpSet
++ * Plot) were pulled out of the active build and moved to `shelved-widgets/` at the repo root —
++ * see `shelved-widgets/README.md` and `shelved-widgets/restore.patch` to bring them back. Only
++ * Net Worth is wired below.
+  */
+ class WidgetRefreshWorker(
+     appContext: Context,
+@@ -42,109 +49,6 @@ class WidgetRefreshWorker(
+                     ) { ctx, prefs, widgetId, mgr ->
+                         NetWorthRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+                     }
+-
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        CashFlowWidgetProvider::class.java, CashFlowWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        CashFlowRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+-
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        RecentTransactionsWidgetProvider::class.java, RecentTransactionsWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        RecentTransactionsRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+-
+-                    // Phase 2 widget rebuild — Budgets / Planned Payments / Currency Balances /
+-                    // Loans / Accounts, same refreshWidget(...) pattern as the three above.
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        BudgetsWidgetProvider::class.java, BudgetsWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        BudgetsRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+-
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        PlannedPaymentsWidgetProvider::class.java, PlannedPaymentsWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        PlannedPaymentsRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+-
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        CurrencyBalancesWidgetProvider::class.java, CurrencyBalancesWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        CurrencyBalancesRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+-
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        LoansWidgetProvider::class.java, LoansWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        LoansRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+-
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        AccountsWidgetProvider::class.java, AccountsWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        AccountsRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+-
+-                    // Phase 3 widget rebuild (final phase) — Account Hero / Income vs Expenses /
+-                    // Category Pie Chart / Category Treemap / Cash Flow Comparison / Category
+-                    // Spending Trend / Tag UpSet Plot, same refreshWidget(...) pattern as above.
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        AccountHeroWidgetProvider::class.java, AccountHeroWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        AccountHeroRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+-
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        IncomeExpenseBarWidgetProvider::class.java, IncomeExpenseBarWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        IncomeExpenseBarRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+-
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        CategoryPieChartWidgetProvider::class.java, CategoryPieChartWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        CategoryPieChartRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+-
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        CategoryTreemapWidgetProvider::class.java, CategoryTreemapWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        CategoryTreemapRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+-
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        CashFlowComparisonWidgetProvider::class.java, CashFlowComparisonWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        CashFlowComparisonRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+-
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        CategorySpendingTrendWidgetProvider::class.java, CategorySpendingTrendWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        CategorySpendingTrendRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+-
+-                    refreshWidget(
+-                        context, appWidgetManager, common,
+-                        TagUpSetPlotWidgetProvider::class.java, TagUpSetPlotWidgetFetcher()
+-                    ) { ctx, prefs, widgetId, mgr ->
+-                        TagUpSetPlotRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+-                    }
+                 }
+             }
+             Result.success()
+diff --git a/shelved-widgets/README.md b/shelved-widgets/README.md
+new file mode 100644
+index 00000000..478aa448
+--- /dev/null
++++ b/shelved-widgets/README.md
+@@ -0,0 +1,59 @@
++# Shelved widgets
++
++Everything here was pulled out of the active build on 2026-10-08, keeping only the
++**Net Worth** home screen widget wired up. Nothing was deleted — these are the exact files
++that used to live under `app/src/main/`, just moved aside so they don't compile/package.
++
++## What's here
++
++- `java/` — every widget `.kt` file except Net Worth's own triad and the shared infra
++  (`BaseWidgetProvider`, `BaseWidgetConfigActivity`, `WidgetContract`, `WidgetDataLoader`,
++  `WidgetPrefsStore`, `WidgetRefreshWorker`, `WidgetConfigComponents`,
++  `WidgetConfigScreenPreviews`, `WorkManagerWidgetRefreshTrigger`, which all stayed active).
++  Covers: Cash Flow, Recent Transactions, Budgets, Planned Payments (+ its action
++  `BroadcastReceiver`), Currency Balances, Loans, Accounts, Account Hero, Income/Expense Bar,
++  Category Pie Chart, Category Treemap, Cash Flow Comparison, Category Spending Trend, Tag
++  UpSet Plot, and every shared chart-bitmap renderer (`WidgetSparklineRenderer`,
++  `WidgetLineAreaChartRenderer`, `WidgetBarChartRenderer`, `WidgetStackedBarChartRenderer`,
++  `WidgetDonutChartRenderer`, `WidgetTreemapRenderer`, `WidgetUpSetPlotRenderer`,
++  `CategoryChartDataMapper`).
++- `res/layout/` — every `widget_*.xml` layout except the `widget_net_worth*.xml` ones.
++- `res/xml/` — every `*_widget_info.xml` except `net_worth_widget_info.xml`.
++- `res/drawable/` — widget drawables not referenced by the Net Worth layouts (Net Worth keeps
++  `widget_dashed_divider.xml`, `widget_metric_tile_bg.xml`, `widget_netflow_pill_bg.xml` in
++  `app/src/main/res/drawable/`).
++- `restore.patch` — a `git diff` of the shelving commit. Reverse-apply it to bring everything
++  back in one shot.
++
++## What was trimmed in the active code (not moved, edited in place)
++
++- `app/src/main/AndroidManifest.xml` — removed the `<receiver>`/`<activity>` entries for every
++  widget except `NetWorthWidgetProvider`/`NetWorthWidgetConfigActivity` (and removed the
++  `PlannedPaymentsWidgetActionReceiver` entry, since that whole widget is shelved).
++- `app/src/main/java/.../widget/WidgetRefreshWorker.kt` — `doWork()` now only calls
++  `refreshWidget(...)` for Net Worth.
++- `app/src/main/java/.../widget/WidgetConfigScreenPreviews.kt` — removed the Cash Flow /
++  Recent Transactions `@Preview` composables (they referenced shelved `ConfigScreen` functions).
++
++Not touched: `HiltEntryPoints.kt` (the extra repository accessors it gained for the
++shelved widgets — `budgetRepository`, `loanRepository`, `plannedPaymentRepository` — are
++harmless unused members, left in place rather than risk a bad edit), `res/values/colors.xml`
++(the widget color tokens added for the shelved widgets are unused but harmless).
++
++## Restoring
++
++Two ways:
++
++1. **Reverse-apply the patch** (fastest, does everything in one step):
++   ```
++   git apply -R shelved-widgets/restore.patch
++   ```
++   from the repo root, then delete the now-empty `shelved-widgets/` directory.
++
++2. **By hand**: `git mv` each file in `shelved-widgets/java/` back to
++   `app/src/main/java/com/osscabinet/ossWallet/widget/`, same for `res/layout/`, `res/xml/`,
++   `res/drawable/`; re-add the manifest `<receiver>`/`<activity>` entries and
++   `WidgetRefreshWorker`/`WidgetConfigScreenPreviews` wiring (see the git history right before
++   this shelving commit for the exact content, or just use the patch).
++
++Either way, run `./gradlew :app:assembleDebug` afterward to confirm everything still compiles.
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/AccountHeroRemoteViewsRenderer.kt b/shelved-widgets/java/AccountHeroRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/AccountHeroRemoteViewsRenderer.kt
+rename to shelved-widgets/java/AccountHeroRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/AccountHeroWidgetConfig.kt b/shelved-widgets/java/AccountHeroWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/AccountHeroWidgetConfig.kt
+rename to shelved-widgets/java/AccountHeroWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/AccountHeroWidgetConfigActivity.kt b/shelved-widgets/java/AccountHeroWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/AccountHeroWidgetConfigActivity.kt
+rename to shelved-widgets/java/AccountHeroWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/AccountHeroWidgetFetcher.kt b/shelved-widgets/java/AccountHeroWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/AccountHeroWidgetFetcher.kt
+rename to shelved-widgets/java/AccountHeroWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/AccountHeroWidgetPrefsStore.kt b/shelved-widgets/java/AccountHeroWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/AccountHeroWidgetPrefsStore.kt
+rename to shelved-widgets/java/AccountHeroWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/AccountHeroWidgetProvider.kt b/shelved-widgets/java/AccountHeroWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/AccountHeroWidgetProvider.kt
+rename to shelved-widgets/java/AccountHeroWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/AccountsRemoteViewsRenderer.kt b/shelved-widgets/java/AccountsRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/AccountsRemoteViewsRenderer.kt
+rename to shelved-widgets/java/AccountsRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/AccountsWidgetConfig.kt b/shelved-widgets/java/AccountsWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/AccountsWidgetConfig.kt
+rename to shelved-widgets/java/AccountsWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/AccountsWidgetConfigActivity.kt b/shelved-widgets/java/AccountsWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/AccountsWidgetConfigActivity.kt
+rename to shelved-widgets/java/AccountsWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/AccountsWidgetFetcher.kt b/shelved-widgets/java/AccountsWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/AccountsWidgetFetcher.kt
+rename to shelved-widgets/java/AccountsWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/AccountsWidgetPrefsStore.kt b/shelved-widgets/java/AccountsWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/AccountsWidgetPrefsStore.kt
+rename to shelved-widgets/java/AccountsWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/AccountsWidgetProvider.kt b/shelved-widgets/java/AccountsWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/AccountsWidgetProvider.kt
+rename to shelved-widgets/java/AccountsWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/BudgetsRemoteViewsRenderer.kt b/shelved-widgets/java/BudgetsRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/BudgetsRemoteViewsRenderer.kt
+rename to shelved-widgets/java/BudgetsRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/BudgetsWidgetConfig.kt b/shelved-widgets/java/BudgetsWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/BudgetsWidgetConfig.kt
+rename to shelved-widgets/java/BudgetsWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/BudgetsWidgetConfigActivity.kt b/shelved-widgets/java/BudgetsWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/BudgetsWidgetConfigActivity.kt
+rename to shelved-widgets/java/BudgetsWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/BudgetsWidgetFetcher.kt b/shelved-widgets/java/BudgetsWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/BudgetsWidgetFetcher.kt
+rename to shelved-widgets/java/BudgetsWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/BudgetsWidgetPrefsStore.kt b/shelved-widgets/java/BudgetsWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/BudgetsWidgetPrefsStore.kt
+rename to shelved-widgets/java/BudgetsWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/BudgetsWidgetProvider.kt b/shelved-widgets/java/BudgetsWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/BudgetsWidgetProvider.kt
+rename to shelved-widgets/java/BudgetsWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CashFlowComparisonRemoteViewsRenderer.kt b/shelved-widgets/java/CashFlowComparisonRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CashFlowComparisonRemoteViewsRenderer.kt
+rename to shelved-widgets/java/CashFlowComparisonRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CashFlowComparisonWidgetConfig.kt b/shelved-widgets/java/CashFlowComparisonWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CashFlowComparisonWidgetConfig.kt
+rename to shelved-widgets/java/CashFlowComparisonWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CashFlowComparisonWidgetConfigActivity.kt b/shelved-widgets/java/CashFlowComparisonWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CashFlowComparisonWidgetConfigActivity.kt
+rename to shelved-widgets/java/CashFlowComparisonWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CashFlowComparisonWidgetFetcher.kt b/shelved-widgets/java/CashFlowComparisonWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CashFlowComparisonWidgetFetcher.kt
+rename to shelved-widgets/java/CashFlowComparisonWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CashFlowComparisonWidgetPrefsStore.kt b/shelved-widgets/java/CashFlowComparisonWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CashFlowComparisonWidgetPrefsStore.kt
+rename to shelved-widgets/java/CashFlowComparisonWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CashFlowComparisonWidgetProvider.kt b/shelved-widgets/java/CashFlowComparisonWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CashFlowComparisonWidgetProvider.kt
+rename to shelved-widgets/java/CashFlowComparisonWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CashFlowRemoteViewsRenderer.kt b/shelved-widgets/java/CashFlowRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CashFlowRemoteViewsRenderer.kt
+rename to shelved-widgets/java/CashFlowRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CashFlowWidgetConfig.kt b/shelved-widgets/java/CashFlowWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CashFlowWidgetConfig.kt
+rename to shelved-widgets/java/CashFlowWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CashFlowWidgetConfigActivity.kt b/shelved-widgets/java/CashFlowWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CashFlowWidgetConfigActivity.kt
+rename to shelved-widgets/java/CashFlowWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CashFlowWidgetFetcher.kt b/shelved-widgets/java/CashFlowWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CashFlowWidgetFetcher.kt
+rename to shelved-widgets/java/CashFlowWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CashFlowWidgetPrefsStore.kt b/shelved-widgets/java/CashFlowWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CashFlowWidgetPrefsStore.kt
+rename to shelved-widgets/java/CashFlowWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CashFlowWidgetProvider.kt b/shelved-widgets/java/CashFlowWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CashFlowWidgetProvider.kt
+rename to shelved-widgets/java/CashFlowWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategoryChartDataMapper.kt b/shelved-widgets/java/CategoryChartDataMapper.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategoryChartDataMapper.kt
+rename to shelved-widgets/java/CategoryChartDataMapper.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategoryPieChartRemoteViewsRenderer.kt b/shelved-widgets/java/CategoryPieChartRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategoryPieChartRemoteViewsRenderer.kt
+rename to shelved-widgets/java/CategoryPieChartRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategoryPieChartWidgetConfig.kt b/shelved-widgets/java/CategoryPieChartWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategoryPieChartWidgetConfig.kt
+rename to shelved-widgets/java/CategoryPieChartWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategoryPieChartWidgetConfigActivity.kt b/shelved-widgets/java/CategoryPieChartWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategoryPieChartWidgetConfigActivity.kt
+rename to shelved-widgets/java/CategoryPieChartWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategoryPieChartWidgetFetcher.kt b/shelved-widgets/java/CategoryPieChartWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategoryPieChartWidgetFetcher.kt
+rename to shelved-widgets/java/CategoryPieChartWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategoryPieChartWidgetPrefsStore.kt b/shelved-widgets/java/CategoryPieChartWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategoryPieChartWidgetPrefsStore.kt
+rename to shelved-widgets/java/CategoryPieChartWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategoryPieChartWidgetProvider.kt b/shelved-widgets/java/CategoryPieChartWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategoryPieChartWidgetProvider.kt
+rename to shelved-widgets/java/CategoryPieChartWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategorySpendingTrendRemoteViewsRenderer.kt b/shelved-widgets/java/CategorySpendingTrendRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategorySpendingTrendRemoteViewsRenderer.kt
+rename to shelved-widgets/java/CategorySpendingTrendRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategorySpendingTrendWidgetConfig.kt b/shelved-widgets/java/CategorySpendingTrendWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategorySpendingTrendWidgetConfig.kt
+rename to shelved-widgets/java/CategorySpendingTrendWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategorySpendingTrendWidgetConfigActivity.kt b/shelved-widgets/java/CategorySpendingTrendWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategorySpendingTrendWidgetConfigActivity.kt
+rename to shelved-widgets/java/CategorySpendingTrendWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategorySpendingTrendWidgetFetcher.kt b/shelved-widgets/java/CategorySpendingTrendWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategorySpendingTrendWidgetFetcher.kt
+rename to shelved-widgets/java/CategorySpendingTrendWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategorySpendingTrendWidgetPrefsStore.kt b/shelved-widgets/java/CategorySpendingTrendWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategorySpendingTrendWidgetPrefsStore.kt
+rename to shelved-widgets/java/CategorySpendingTrendWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategorySpendingTrendWidgetProvider.kt b/shelved-widgets/java/CategorySpendingTrendWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategorySpendingTrendWidgetProvider.kt
+rename to shelved-widgets/java/CategorySpendingTrendWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategoryTreemapRemoteViewsRenderer.kt b/shelved-widgets/java/CategoryTreemapRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategoryTreemapRemoteViewsRenderer.kt
+rename to shelved-widgets/java/CategoryTreemapRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategoryTreemapWidgetConfig.kt b/shelved-widgets/java/CategoryTreemapWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategoryTreemapWidgetConfig.kt
+rename to shelved-widgets/java/CategoryTreemapWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategoryTreemapWidgetConfigActivity.kt b/shelved-widgets/java/CategoryTreemapWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategoryTreemapWidgetConfigActivity.kt
+rename to shelved-widgets/java/CategoryTreemapWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategoryTreemapWidgetFetcher.kt b/shelved-widgets/java/CategoryTreemapWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategoryTreemapWidgetFetcher.kt
+rename to shelved-widgets/java/CategoryTreemapWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategoryTreemapWidgetPrefsStore.kt b/shelved-widgets/java/CategoryTreemapWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategoryTreemapWidgetPrefsStore.kt
+rename to shelved-widgets/java/CategoryTreemapWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CategoryTreemapWidgetProvider.kt b/shelved-widgets/java/CategoryTreemapWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CategoryTreemapWidgetProvider.kt
+rename to shelved-widgets/java/CategoryTreemapWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CurrencyBalancesRemoteViewsRenderer.kt b/shelved-widgets/java/CurrencyBalancesRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CurrencyBalancesRemoteViewsRenderer.kt
+rename to shelved-widgets/java/CurrencyBalancesRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CurrencyBalancesWidgetConfig.kt b/shelved-widgets/java/CurrencyBalancesWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CurrencyBalancesWidgetConfig.kt
+rename to shelved-widgets/java/CurrencyBalancesWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CurrencyBalancesWidgetConfigActivity.kt b/shelved-widgets/java/CurrencyBalancesWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CurrencyBalancesWidgetConfigActivity.kt
+rename to shelved-widgets/java/CurrencyBalancesWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CurrencyBalancesWidgetFetcher.kt b/shelved-widgets/java/CurrencyBalancesWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CurrencyBalancesWidgetFetcher.kt
+rename to shelved-widgets/java/CurrencyBalancesWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CurrencyBalancesWidgetPrefsStore.kt b/shelved-widgets/java/CurrencyBalancesWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CurrencyBalancesWidgetPrefsStore.kt
+rename to shelved-widgets/java/CurrencyBalancesWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/CurrencyBalancesWidgetProvider.kt b/shelved-widgets/java/CurrencyBalancesWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/CurrencyBalancesWidgetProvider.kt
+rename to shelved-widgets/java/CurrencyBalancesWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/IncomeExpenseBarRemoteViewsRenderer.kt b/shelved-widgets/java/IncomeExpenseBarRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/IncomeExpenseBarRemoteViewsRenderer.kt
+rename to shelved-widgets/java/IncomeExpenseBarRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/IncomeExpenseBarWidgetConfig.kt b/shelved-widgets/java/IncomeExpenseBarWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/IncomeExpenseBarWidgetConfig.kt
+rename to shelved-widgets/java/IncomeExpenseBarWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/IncomeExpenseBarWidgetConfigActivity.kt b/shelved-widgets/java/IncomeExpenseBarWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/IncomeExpenseBarWidgetConfigActivity.kt
+rename to shelved-widgets/java/IncomeExpenseBarWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/IncomeExpenseBarWidgetFetcher.kt b/shelved-widgets/java/IncomeExpenseBarWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/IncomeExpenseBarWidgetFetcher.kt
+rename to shelved-widgets/java/IncomeExpenseBarWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/IncomeExpenseBarWidgetPrefsStore.kt b/shelved-widgets/java/IncomeExpenseBarWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/IncomeExpenseBarWidgetPrefsStore.kt
+rename to shelved-widgets/java/IncomeExpenseBarWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/IncomeExpenseBarWidgetProvider.kt b/shelved-widgets/java/IncomeExpenseBarWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/IncomeExpenseBarWidgetProvider.kt
+rename to shelved-widgets/java/IncomeExpenseBarWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/LoansRemoteViewsRenderer.kt b/shelved-widgets/java/LoansRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/LoansRemoteViewsRenderer.kt
+rename to shelved-widgets/java/LoansRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/LoansWidgetConfig.kt b/shelved-widgets/java/LoansWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/LoansWidgetConfig.kt
+rename to shelved-widgets/java/LoansWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/LoansWidgetConfigActivity.kt b/shelved-widgets/java/LoansWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/LoansWidgetConfigActivity.kt
+rename to shelved-widgets/java/LoansWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/LoansWidgetFetcher.kt b/shelved-widgets/java/LoansWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/LoansWidgetFetcher.kt
+rename to shelved-widgets/java/LoansWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/LoansWidgetPrefsStore.kt b/shelved-widgets/java/LoansWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/LoansWidgetPrefsStore.kt
+rename to shelved-widgets/java/LoansWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/LoansWidgetProvider.kt b/shelved-widgets/java/LoansWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/LoansWidgetProvider.kt
+rename to shelved-widgets/java/LoansWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsRemoteViewsRenderer.kt b/shelved-widgets/java/PlannedPaymentsRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsRemoteViewsRenderer.kt
+rename to shelved-widgets/java/PlannedPaymentsRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsWidgetActionReceiver.kt b/shelved-widgets/java/PlannedPaymentsWidgetActionReceiver.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsWidgetActionReceiver.kt
+rename to shelved-widgets/java/PlannedPaymentsWidgetActionReceiver.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsWidgetConfig.kt b/shelved-widgets/java/PlannedPaymentsWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsWidgetConfig.kt
+rename to shelved-widgets/java/PlannedPaymentsWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsWidgetConfigActivity.kt b/shelved-widgets/java/PlannedPaymentsWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsWidgetConfigActivity.kt
+rename to shelved-widgets/java/PlannedPaymentsWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsWidgetFetcher.kt b/shelved-widgets/java/PlannedPaymentsWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsWidgetFetcher.kt
+rename to shelved-widgets/java/PlannedPaymentsWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsWidgetPrefsStore.kt b/shelved-widgets/java/PlannedPaymentsWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsWidgetPrefsStore.kt
+rename to shelved-widgets/java/PlannedPaymentsWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsWidgetProvider.kt b/shelved-widgets/java/PlannedPaymentsWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/PlannedPaymentsWidgetProvider.kt
+rename to shelved-widgets/java/PlannedPaymentsWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/RecentTransactionsRemoteViewsRenderer.kt b/shelved-widgets/java/RecentTransactionsRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/RecentTransactionsRemoteViewsRenderer.kt
+rename to shelved-widgets/java/RecentTransactionsRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/RecentTransactionsWidgetConfig.kt b/shelved-widgets/java/RecentTransactionsWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/RecentTransactionsWidgetConfig.kt
+rename to shelved-widgets/java/RecentTransactionsWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/RecentTransactionsWidgetConfigActivity.kt b/shelved-widgets/java/RecentTransactionsWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/RecentTransactionsWidgetConfigActivity.kt
+rename to shelved-widgets/java/RecentTransactionsWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/RecentTransactionsWidgetFetcher.kt b/shelved-widgets/java/RecentTransactionsWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/RecentTransactionsWidgetFetcher.kt
+rename to shelved-widgets/java/RecentTransactionsWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/RecentTransactionsWidgetPrefsStore.kt b/shelved-widgets/java/RecentTransactionsWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/RecentTransactionsWidgetPrefsStore.kt
+rename to shelved-widgets/java/RecentTransactionsWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/RecentTransactionsWidgetProvider.kt b/shelved-widgets/java/RecentTransactionsWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/RecentTransactionsWidgetProvider.kt
+rename to shelved-widgets/java/RecentTransactionsWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/TagUpSetPlotRemoteViewsRenderer.kt b/shelved-widgets/java/TagUpSetPlotRemoteViewsRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/TagUpSetPlotRemoteViewsRenderer.kt
+rename to shelved-widgets/java/TagUpSetPlotRemoteViewsRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/TagUpSetPlotWidgetConfig.kt b/shelved-widgets/java/TagUpSetPlotWidgetConfig.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/TagUpSetPlotWidgetConfig.kt
+rename to shelved-widgets/java/TagUpSetPlotWidgetConfig.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/TagUpSetPlotWidgetConfigActivity.kt b/shelved-widgets/java/TagUpSetPlotWidgetConfigActivity.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/TagUpSetPlotWidgetConfigActivity.kt
+rename to shelved-widgets/java/TagUpSetPlotWidgetConfigActivity.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/TagUpSetPlotWidgetFetcher.kt b/shelved-widgets/java/TagUpSetPlotWidgetFetcher.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/TagUpSetPlotWidgetFetcher.kt
+rename to shelved-widgets/java/TagUpSetPlotWidgetFetcher.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/TagUpSetPlotWidgetPrefsStore.kt b/shelved-widgets/java/TagUpSetPlotWidgetPrefsStore.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/TagUpSetPlotWidgetPrefsStore.kt
+rename to shelved-widgets/java/TagUpSetPlotWidgetPrefsStore.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/TagUpSetPlotWidgetProvider.kt b/shelved-widgets/java/TagUpSetPlotWidgetProvider.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/TagUpSetPlotWidgetProvider.kt
+rename to shelved-widgets/java/TagUpSetPlotWidgetProvider.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/WidgetBarChartRenderer.kt b/shelved-widgets/java/WidgetBarChartRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/WidgetBarChartRenderer.kt
+rename to shelved-widgets/java/WidgetBarChartRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/WidgetDonutChartRenderer.kt b/shelved-widgets/java/WidgetDonutChartRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/WidgetDonutChartRenderer.kt
+rename to shelved-widgets/java/WidgetDonutChartRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/WidgetLineAreaChartRenderer.kt b/shelved-widgets/java/WidgetLineAreaChartRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/WidgetLineAreaChartRenderer.kt
+rename to shelved-widgets/java/WidgetLineAreaChartRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/WidgetSparklineRenderer.kt b/shelved-widgets/java/WidgetSparklineRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/WidgetSparklineRenderer.kt
+rename to shelved-widgets/java/WidgetSparklineRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/WidgetStackedBarChartRenderer.kt b/shelved-widgets/java/WidgetStackedBarChartRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/WidgetStackedBarChartRenderer.kt
+rename to shelved-widgets/java/WidgetStackedBarChartRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/WidgetTreemapRenderer.kt b/shelved-widgets/java/WidgetTreemapRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/WidgetTreemapRenderer.kt
+rename to shelved-widgets/java/WidgetTreemapRenderer.kt
+diff --git a/app/src/main/java/com/osscabinet/osswallet/widget/WidgetUpSetPlotRenderer.kt b/shelved-widgets/java/WidgetUpSetPlotRenderer.kt
+similarity index 100%
+rename from app/src/main/java/com/osscabinet/osswallet/widget/WidgetUpSetPlotRenderer.kt
+rename to shelved-widgets/java/WidgetUpSetPlotRenderer.kt
+diff --git a/app/src/main/res/drawable/ic_widget_chevron_left.xml b/shelved-widgets/res/drawable/ic_widget_chevron_left.xml
+similarity index 100%
+rename from app/src/main/res/drawable/ic_widget_chevron_left.xml
+rename to shelved-widgets/res/drawable/ic_widget_chevron_left.xml
+diff --git a/app/src/main/res/drawable/ic_widget_chevron_right.xml b/shelved-widgets/res/drawable/ic_widget_chevron_right.xml
+similarity index 100%
+rename from app/src/main/res/drawable/ic_widget_chevron_right.xml
+rename to shelved-widgets/res/drawable/ic_widget_chevron_right.xml
+diff --git a/app/src/main/res/drawable/widget_accent_pill_bg.xml b/shelved-widgets/res/drawable/widget_accent_pill_bg.xml
+similarity index 100%
+rename from app/src/main/res/drawable/widget_accent_pill_bg.xml
+rename to shelved-widgets/res/drawable/widget_accent_pill_bg.xml
+diff --git a/app/src/main/res/drawable/widget_badge_expense.xml b/shelved-widgets/res/drawable/widget_badge_expense.xml
+similarity index 100%
+rename from app/src/main/res/drawable/widget_badge_expense.xml
+rename to shelved-widgets/res/drawable/widget_badge_expense.xml
+diff --git a/app/src/main/res/drawable/widget_badge_income.xml b/shelved-widgets/res/drawable/widget_badge_income.xml
+similarity index 100%
+rename from app/src/main/res/drawable/widget_badge_income.xml
+rename to shelved-widgets/res/drawable/widget_badge_income.xml
+diff --git a/app/src/main/res/drawable/widget_circle_badge.xml b/shelved-widgets/res/drawable/widget_circle_badge.xml
+similarity index 100%
+rename from app/src/main/res/drawable/widget_circle_badge.xml
+rename to shelved-widgets/res/drawable/widget_circle_badge.xml
+diff --git a/app/src/main/res/drawable/widget_circle_badge_dashed.xml b/shelved-widgets/res/drawable/widget_circle_badge_dashed.xml
+similarity index 100%
+rename from app/src/main/res/drawable/widget_circle_badge_dashed.xml
+rename to shelved-widgets/res/drawable/widget_circle_badge_dashed.xml
+diff --git a/app/src/main/res/drawable/widget_ledger_totals_bg.xml b/shelved-widgets/res/drawable/widget_ledger_totals_bg.xml
+similarity index 100%
+rename from app/src/main/res/drawable/widget_ledger_totals_bg.xml
+rename to shelved-widgets/res/drawable/widget_ledger_totals_bg.xml
+diff --git a/app/src/main/res/drawable/widget_pill_overdue_bg.xml b/shelved-widgets/res/drawable/widget_pill_overdue_bg.xml
+similarity index 100%
+rename from app/src/main/res/drawable/widget_pill_overdue_bg.xml
+rename to shelved-widgets/res/drawable/widget_pill_overdue_bg.xml
+diff --git a/app/src/main/res/drawable/widget_pill_pending_bg.xml b/shelved-widgets/res/drawable/widget_pill_pending_bg.xml
+similarity index 100%
+rename from app/src/main/res/drawable/widget_pill_pending_bg.xml
+rename to shelved-widgets/res/drawable/widget_pill_pending_bg.xml
+diff --git a/app/src/main/res/drawable/widget_pill_tag_bg.xml b/shelved-widgets/res/drawable/widget_pill_tag_bg.xml
+similarity index 100%
+rename from app/src/main/res/drawable/widget_pill_tag_bg.xml
+rename to shelved-widgets/res/drawable/widget_pill_tag_bg.xml
+diff --git a/app/src/main/res/layout/widget_account_hero_chart.xml b/shelved-widgets/res/layout/widget_account_hero_chart.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_account_hero_chart.xml
+rename to shelved-widgets/res/layout/widget_account_hero_chart.xml
+diff --git a/app/src/main/res/layout/widget_account_hero_loading.xml b/shelved-widgets/res/layout/widget_account_hero_loading.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_account_hero_loading.xml
+rename to shelved-widgets/res/layout/widget_account_hero_loading.xml
+diff --git a/app/src/main/res/layout/widget_account_hero_not_found.xml b/shelved-widgets/res/layout/widget_account_hero_not_found.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_account_hero_not_found.xml
+rename to shelved-widgets/res/layout/widget_account_hero_not_found.xml
+diff --git a/app/src/main/res/layout/widget_accounts_empty.xml b/shelved-widgets/res/layout/widget_accounts_empty.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_accounts_empty.xml
+rename to shelved-widgets/res/layout/widget_accounts_empty.xml
+diff --git a/app/src/main/res/layout/widget_accounts_loading.xml b/shelved-widgets/res/layout/widget_accounts_loading.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_accounts_loading.xml
+rename to shelved-widgets/res/layout/widget_accounts_loading.xml
+diff --git a/app/src/main/res/layout/widget_accounts_table.xml b/shelved-widgets/res/layout/widget_accounts_table.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_accounts_table.xml
+rename to shelved-widgets/res/layout/widget_accounts_table.xml
+diff --git a/app/src/main/res/layout/widget_budgets_compact.xml b/shelved-widgets/res/layout/widget_budgets_compact.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_budgets_compact.xml
+rename to shelved-widgets/res/layout/widget_budgets_compact.xml
+diff --git a/app/src/main/res/layout/widget_budgets_empty.xml b/shelved-widgets/res/layout/widget_budgets_empty.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_budgets_empty.xml
+rename to shelved-widgets/res/layout/widget_budgets_empty.xml
+diff --git a/app/src/main/res/layout/widget_budgets_loading.xml b/shelved-widgets/res/layout/widget_budgets_loading.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_budgets_loading.xml
+rename to shelved-widgets/res/layout/widget_budgets_loading.xml
+diff --git a/app/src/main/res/layout/widget_budgets_table.xml b/shelved-widgets/res/layout/widget_budgets_table.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_budgets_table.xml
+rename to shelved-widgets/res/layout/widget_budgets_table.xml
+diff --git a/app/src/main/res/layout/widget_cash_flow.xml b/shelved-widgets/res/layout/widget_cash_flow.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_cash_flow.xml
+rename to shelved-widgets/res/layout/widget_cash_flow.xml
+diff --git a/app/src/main/res/layout/widget_cash_flow_compact.xml b/shelved-widgets/res/layout/widget_cash_flow_compact.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_cash_flow_compact.xml
+rename to shelved-widgets/res/layout/widget_cash_flow_compact.xml
+diff --git a/app/src/main/res/layout/widget_cash_flow_empty.xml b/shelved-widgets/res/layout/widget_cash_flow_empty.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_cash_flow_empty.xml
+rename to shelved-widgets/res/layout/widget_cash_flow_empty.xml
+diff --git a/app/src/main/res/layout/widget_cash_flow_preview.xml b/shelved-widgets/res/layout/widget_cash_flow_preview.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_cash_flow_preview.xml
+rename to shelved-widgets/res/layout/widget_cash_flow_preview.xml
+diff --git a/app/src/main/res/layout/widget_cash_flow_table.xml b/shelved-widgets/res/layout/widget_cash_flow_table.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_cash_flow_table.xml
+rename to shelved-widgets/res/layout/widget_cash_flow_table.xml
+diff --git a/app/src/main/res/layout/widget_cashflow_comparison_chart.xml b/shelved-widgets/res/layout/widget_cashflow_comparison_chart.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_cashflow_comparison_chart.xml
+rename to shelved-widgets/res/layout/widget_cashflow_comparison_chart.xml
+diff --git a/app/src/main/res/layout/widget_cashflow_comparison_empty.xml b/shelved-widgets/res/layout/widget_cashflow_comparison_empty.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_cashflow_comparison_empty.xml
+rename to shelved-widgets/res/layout/widget_cashflow_comparison_empty.xml
+diff --git a/app/src/main/res/layout/widget_cashflow_comparison_loading.xml b/shelved-widgets/res/layout/widget_cashflow_comparison_loading.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_cashflow_comparison_loading.xml
+rename to shelved-widgets/res/layout/widget_cashflow_comparison_loading.xml
+diff --git a/app/src/main/res/layout/widget_category_pie_chart.xml b/shelved-widgets/res/layout/widget_category_pie_chart.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_category_pie_chart.xml
+rename to shelved-widgets/res/layout/widget_category_pie_chart.xml
+diff --git a/app/src/main/res/layout/widget_category_pie_empty.xml b/shelved-widgets/res/layout/widget_category_pie_empty.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_category_pie_empty.xml
+rename to shelved-widgets/res/layout/widget_category_pie_empty.xml
+diff --git a/app/src/main/res/layout/widget_category_pie_loading.xml b/shelved-widgets/res/layout/widget_category_pie_loading.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_category_pie_loading.xml
+rename to shelved-widgets/res/layout/widget_category_pie_loading.xml
+diff --git a/app/src/main/res/layout/widget_category_spending_trend_chart.xml b/shelved-widgets/res/layout/widget_category_spending_trend_chart.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_category_spending_trend_chart.xml
+rename to shelved-widgets/res/layout/widget_category_spending_trend_chart.xml
+diff --git a/app/src/main/res/layout/widget_category_spending_trend_empty.xml b/shelved-widgets/res/layout/widget_category_spending_trend_empty.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_category_spending_trend_empty.xml
+rename to shelved-widgets/res/layout/widget_category_spending_trend_empty.xml
+diff --git a/app/src/main/res/layout/widget_category_spending_trend_loading.xml b/shelved-widgets/res/layout/widget_category_spending_trend_loading.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_category_spending_trend_loading.xml
+rename to shelved-widgets/res/layout/widget_category_spending_trend_loading.xml
+diff --git a/app/src/main/res/layout/widget_category_treemap_chart.xml b/shelved-widgets/res/layout/widget_category_treemap_chart.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_category_treemap_chart.xml
+rename to shelved-widgets/res/layout/widget_category_treemap_chart.xml
+diff --git a/app/src/main/res/layout/widget_category_treemap_empty.xml b/shelved-widgets/res/layout/widget_category_treemap_empty.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_category_treemap_empty.xml
+rename to shelved-widgets/res/layout/widget_category_treemap_empty.xml
+diff --git a/app/src/main/res/layout/widget_category_treemap_loading.xml b/shelved-widgets/res/layout/widget_category_treemap_loading.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_category_treemap_loading.xml
+rename to shelved-widgets/res/layout/widget_category_treemap_loading.xml
+diff --git a/app/src/main/res/layout/widget_currency_balances_empty.xml b/shelved-widgets/res/layout/widget_currency_balances_empty.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_currency_balances_empty.xml
+rename to shelved-widgets/res/layout/widget_currency_balances_empty.xml
+diff --git a/app/src/main/res/layout/widget_currency_balances_grid.xml b/shelved-widgets/res/layout/widget_currency_balances_grid.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_currency_balances_grid.xml
+rename to shelved-widgets/res/layout/widget_currency_balances_grid.xml
+diff --git a/app/src/main/res/layout/widget_currency_balances_loading.xml b/shelved-widgets/res/layout/widget_currency_balances_loading.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_currency_balances_loading.xml
+rename to shelved-widgets/res/layout/widget_currency_balances_loading.xml
+diff --git a/app/src/main/res/layout/widget_income_expense_bar_chart.xml b/shelved-widgets/res/layout/widget_income_expense_bar_chart.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_income_expense_bar_chart.xml
+rename to shelved-widgets/res/layout/widget_income_expense_bar_chart.xml
+diff --git a/app/src/main/res/layout/widget_income_expense_bar_empty.xml b/shelved-widgets/res/layout/widget_income_expense_bar_empty.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_income_expense_bar_empty.xml
+rename to shelved-widgets/res/layout/widget_income_expense_bar_empty.xml
+diff --git a/app/src/main/res/layout/widget_income_expense_bar_loading.xml b/shelved-widgets/res/layout/widget_income_expense_bar_loading.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_income_expense_bar_loading.xml
+rename to shelved-widgets/res/layout/widget_income_expense_bar_loading.xml
+diff --git a/app/src/main/res/layout/widget_loans_empty.xml b/shelved-widgets/res/layout/widget_loans_empty.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_loans_empty.xml
+rename to shelved-widgets/res/layout/widget_loans_empty.xml
+diff --git a/app/src/main/res/layout/widget_loans_loading.xml b/shelved-widgets/res/layout/widget_loans_loading.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_loans_loading.xml
+rename to shelved-widgets/res/layout/widget_loans_loading.xml
+diff --git a/app/src/main/res/layout/widget_loans_table.xml b/shelved-widgets/res/layout/widget_loans_table.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_loans_table.xml
+rename to shelved-widgets/res/layout/widget_loans_table.xml
+diff --git a/app/src/main/res/layout/widget_planned_payments_empty.xml b/shelved-widgets/res/layout/widget_planned_payments_empty.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_planned_payments_empty.xml
+rename to shelved-widgets/res/layout/widget_planned_payments_empty.xml
+diff --git a/app/src/main/res/layout/widget_planned_payments_loading.xml b/shelved-widgets/res/layout/widget_planned_payments_loading.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_planned_payments_loading.xml
+rename to shelved-widgets/res/layout/widget_planned_payments_loading.xml
+diff --git a/app/src/main/res/layout/widget_planned_payments_table.xml b/shelved-widgets/res/layout/widget_planned_payments_table.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_planned_payments_table.xml
+rename to shelved-widgets/res/layout/widget_planned_payments_table.xml
+diff --git a/app/src/main/res/layout/widget_recent_transactions.xml b/shelved-widgets/res/layout/widget_recent_transactions.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_recent_transactions.xml
+rename to shelved-widgets/res/layout/widget_recent_transactions.xml
+diff --git a/app/src/main/res/layout/widget_recent_transactions_compact.xml b/shelved-widgets/res/layout/widget_recent_transactions_compact.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_recent_transactions_compact.xml
+rename to shelved-widgets/res/layout/widget_recent_transactions_compact.xml
+diff --git a/app/src/main/res/layout/widget_recent_transactions_list.xml b/shelved-widgets/res/layout/widget_recent_transactions_list.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_recent_transactions_list.xml
+rename to shelved-widgets/res/layout/widget_recent_transactions_list.xml
+diff --git a/app/src/main/res/layout/widget_recent_transactions_preview.xml b/shelved-widgets/res/layout/widget_recent_transactions_preview.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_recent_transactions_preview.xml
+rename to shelved-widgets/res/layout/widget_recent_transactions_preview.xml
+diff --git a/app/src/main/res/layout/widget_tag_upset_chart.xml b/shelved-widgets/res/layout/widget_tag_upset_chart.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_tag_upset_chart.xml
+rename to shelved-widgets/res/layout/widget_tag_upset_chart.xml
+diff --git a/app/src/main/res/layout/widget_tag_upset_empty.xml b/shelved-widgets/res/layout/widget_tag_upset_empty.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_tag_upset_empty.xml
+rename to shelved-widgets/res/layout/widget_tag_upset_empty.xml
+diff --git a/app/src/main/res/layout/widget_tag_upset_loading.xml b/shelved-widgets/res/layout/widget_tag_upset_loading.xml
+similarity index 100%
+rename from app/src/main/res/layout/widget_tag_upset_loading.xml
+rename to shelved-widgets/res/layout/widget_tag_upset_loading.xml
+diff --git a/app/src/main/res/xml/account_hero_widget_info.xml b/shelved-widgets/res/xml/account_hero_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/account_hero_widget_info.xml
+rename to shelved-widgets/res/xml/account_hero_widget_info.xml
+diff --git a/app/src/main/res/xml/accounts_widget_info.xml b/shelved-widgets/res/xml/accounts_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/accounts_widget_info.xml
+rename to shelved-widgets/res/xml/accounts_widget_info.xml
+diff --git a/app/src/main/res/xml/budgets_widget_info.xml b/shelved-widgets/res/xml/budgets_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/budgets_widget_info.xml
+rename to shelved-widgets/res/xml/budgets_widget_info.xml
+diff --git a/app/src/main/res/xml/cash_flow_widget_info.xml b/shelved-widgets/res/xml/cash_flow_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/cash_flow_widget_info.xml
+rename to shelved-widgets/res/xml/cash_flow_widget_info.xml
+diff --git a/app/src/main/res/xml/cashflow_comparison_widget_info.xml b/shelved-widgets/res/xml/cashflow_comparison_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/cashflow_comparison_widget_info.xml
+rename to shelved-widgets/res/xml/cashflow_comparison_widget_info.xml
+diff --git a/app/src/main/res/xml/category_pie_chart_widget_info.xml b/shelved-widgets/res/xml/category_pie_chart_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/category_pie_chart_widget_info.xml
+rename to shelved-widgets/res/xml/category_pie_chart_widget_info.xml
+diff --git a/app/src/main/res/xml/category_spending_trend_widget_info.xml b/shelved-widgets/res/xml/category_spending_trend_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/category_spending_trend_widget_info.xml
+rename to shelved-widgets/res/xml/category_spending_trend_widget_info.xml
+diff --git a/app/src/main/res/xml/category_treemap_widget_info.xml b/shelved-widgets/res/xml/category_treemap_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/category_treemap_widget_info.xml
+rename to shelved-widgets/res/xml/category_treemap_widget_info.xml
+diff --git a/app/src/main/res/xml/currency_balances_widget_info.xml b/shelved-widgets/res/xml/currency_balances_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/currency_balances_widget_info.xml
+rename to shelved-widgets/res/xml/currency_balances_widget_info.xml
+diff --git a/app/src/main/res/xml/income_expense_bar_widget_info.xml b/shelved-widgets/res/xml/income_expense_bar_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/income_expense_bar_widget_info.xml
+rename to shelved-widgets/res/xml/income_expense_bar_widget_info.xml
+diff --git a/app/src/main/res/xml/loans_widget_info.xml b/shelved-widgets/res/xml/loans_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/loans_widget_info.xml
+rename to shelved-widgets/res/xml/loans_widget_info.xml
+diff --git a/app/src/main/res/xml/planned_payments_widget_info.xml b/shelved-widgets/res/xml/planned_payments_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/planned_payments_widget_info.xml
+rename to shelved-widgets/res/xml/planned_payments_widget_info.xml
+diff --git a/app/src/main/res/xml/recent_transactions_widget_info.xml b/shelved-widgets/res/xml/recent_transactions_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/recent_transactions_widget_info.xml
+rename to shelved-widgets/res/xml/recent_transactions_widget_info.xml
+diff --git a/app/src/main/res/xml/tag_upset_plot_widget_info.xml b/shelved-widgets/res/xml/tag_upset_plot_widget_info.xml
+similarity index 100%
+rename from app/src/main/res/xml/tag_upset_plot_widget_info.xml
+rename to shelved-widgets/res/xml/tag_upset_plot_widget_info.xml

@@ -26,7 +26,10 @@ import kotlinx.coroutines.withContext
  * Category Pie Chart/Category Treemap/Cash Flow Comparison/Category Spending Trend/Tag UpSet
  * Plot) were pulled out of the active build and moved to `shelved-widgets/` at the repo root —
  * see `shelved-widgets/README.md` and `shelved-widgets/restore.patch` to bring them back. Only
- * Net Worth is wired below.
+ * Net Worth is wired below — across all three of its provider registrations
+ * (NetWorthWidgetProvider/Card/Large; see AndroidManifest.xml — no Micro variant, minimum
+ * width is 3 columns everywhere), since each is a distinct AppWidgetProvider component with
+ * its own set of placed widgetIds, even though they all share this one fetcher/renderer.
  */
 class WidgetRefreshWorker(
     appContext: Context,
@@ -43,11 +46,18 @@ class WidgetRefreshWorker(
                 }
 
                 withContext(Dispatchers.IO) {
-                    refreshWidget(
-                        context, appWidgetManager, common,
-                        NetWorthWidgetProvider::class.java, NetWorthWidgetFetcher()
-                    ) { ctx, prefs, widgetId, mgr ->
-                        NetWorthRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+                    val netWorthProviders = listOf(
+                        NetWorthWidgetProvider::class.java,
+                        NetWorthWidgetProviderCard::class.java,
+                        NetWorthWidgetProviderLarge::class.java
+                    )
+                    netWorthProviders.forEach { providerClass ->
+                        refreshWidget(
+                            context, appWidgetManager, common,
+                            providerClass, NetWorthWidgetFetcher()
+                        ) { ctx, prefs, widgetId, mgr ->
+                            NetWorthRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+                        }
                     }
                 }
             }

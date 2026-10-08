@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Accent-filled circular "+" button from the approved mockup's card/large tier header.
+     Purely visual — not wired to a PendingIntent (no deep-link infra exists for widgets yet).
+     Uses the theme-adaptive widget_accent token (not the mockup's fixed widget_accent_teal)
+     so it stays legible in dark/AMOLED themes. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+        android:shape="oval">
+    <solid android:color="@color/widget_accent" />
+</shape>

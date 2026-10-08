@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dev-reference preview only — see widget_net_worth_preview_3x1.xml for the full explanation.
+     3-column x 3-row grid cell (194dp x 194dp via the 70dp*n-16dp approximation). 194dp falls
+     between STRIP_HEIGHT_DP (130dp) and LARGE_HEIGHT_DP (260dp), so this is the CARD tier —
+     change the included layout below to re-check a different row count's tier instead of
+     guessing: MICRO <80dp, STRIP 80-129dp, CARD 130-259dp, LARGE >=260dp. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+    <include
+            layout="@layout/widget_net_worth_card"
+            android:layout_width="194dp"
+            android:layout_height="194dp" />
+
+</FrameLayout>

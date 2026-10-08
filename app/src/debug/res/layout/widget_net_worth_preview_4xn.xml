@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dev-reference preview only — see widget_net_worth_preview_3x1.xml for the full explanation.
+     4-column x 4-row grid cell (264dp x 264dp via the 70dp*n-16dp approximation). 264dp is
+     >= LARGE_HEIGHT_DP (260dp), so this is the LARGE tier (the 6-metric grid). Tier bands:
+     MICRO <80dp, STRIP 80-129dp, CARD 130-259dp, LARGE >=260dp — bump the row count (and the
+     included layout) to land in a different band. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+    <include
+            layout="@layout/widget_net_worth_large"
+            android:layout_width="264dp"
+            android:layout_height="264dp" />
+
+</FrameLayout>

@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,7 +30,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import kotlinx.coroutines.flow.flowOf
 
-// Shared building blocks for the three widget config screens (the
+// Shared building blocks for the widget config screens (the
 // APPWIDGET_CONFIGURE activities shown before a widget is placed).
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,15 +66,12 @@ internal fun WidgetConfigScreen(
             )
         }
     ) { innerPadding ->
-        // Deliberately not verticalScroll()'d: WidgetConfigFiltersSection below
-        // ends in a weight(1f) FilterSheetContent, which scrolls internally.
-        // Scrolling this outer Column too would nest two same-axis scrollables
-        // and crash with "measured with infinity maximum height constraints".
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = AeonTheme.dimensions.screenPadding),
+                .padding(horizontal = AeonTheme.dimensions.screenPadding)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
         ) {
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
@@ -100,15 +99,11 @@ internal fun WidgetConfigDivider() {
  * "Advanced Filters" section, shared by every widget config screen since
  * they all filter on the same [TransactionFilter]. Shown inline rather than
  * behind a button — [FilterSheetContent] already renders its own timeline
- * selector, so a separate timeline picker above this would just duplicate it.
- *
- * Must be the last child in [WidgetConfigScreen]'s content: it takes the
- * remaining space via [ColumnScope.weight] so [FilterSheetContent]'s own
- * internal scroll gets a bounded height to scroll within, instead of an
- * infinite one from an outer scrolling container.
+ * selector. Pass `scrollable = false` so that the outer [WidgetConfigScreen]
+ * manages single unified scrolling for the page.
  */
 @Composable
-internal fun ColumnScope.WidgetConfigFiltersSection(
+internal fun WidgetConfigFiltersSection(
     filter: TransactionFilter,
     onFilterChange: (TransactionFilter) -> Unit,
     onClose: () -> Unit
@@ -128,6 +123,6 @@ internal fun ColumnScope.WidgetConfigFiltersSection(
         },
         onSaveFilterClick = { onFilterChange(it) },
         onClose = onClose,
-        modifier = Modifier.weight(1f)
+        scrollable = false
     )
 }

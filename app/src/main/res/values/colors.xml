@@ -47,13 +47,20 @@
     <!-- Phase 1 widget rebuild — new mockup-specific chrome tokens (net worth / cash flow /
          recent activities richer tiers). These sit alongside the existing Aeon H-theme
          widget_* tokens above rather than replacing them: widget_positive/widget_negative
-         keep doing income/expense tinting everywhere they already do, these are additive. -->
-    <color name="widget_wall">#22403E</color>
+         keep doing income/expense tinting everywhere they already do, these are additive.
+         widget_wall and widget_text_muted_alt were removed 2026-10-08: the Net Worth widget's
+         own "wall" shell and its dark-text-on-light surface were a misreading of the design
+         mockup (the mockup's dark background was the canvas/artboard page color, simulating a
+         wallpaper behind several widget previews, not the widget's own chrome) — Net Worth now
+         uses the already theme-adaptive widget_surface/widget_on_surface/widget_on_surface_variant
+         tokens instead. widget_inner_surface/widget_accent_teal/widget_text_primary/
+         widget_text_muted are still used by the Cash Flow / Recent Activities / Phase 2-3
+         widgets currently shelved in shelved-widgets/ at the repo root — don't remove those
+         without checking there first. -->
     <color name="widget_inner_surface">#F5F8F7</color>
     <color name="widget_accent_teal">#1F6F66</color>
     <color name="widget_text_primary">#14201E</color>
     <color name="widget_text_muted">#4C5C59</color>
-    <color name="widget_text_muted_alt">#3F4B49</color>
     <color name="widget_row_chip_bg">#E6EEEC</color>
     <color name="widget_netflow_chip_bg">#DCEDE8</color>
     <color name="widget_divider_soft">#D7E0DD</color>

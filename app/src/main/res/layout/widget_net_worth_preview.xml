@@ -1,56 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Picker preview (android:previewLayout) — mirrors widget_net_worth_strip.xml, the
-     widget's actual default appearance: net_worth_widget_info.xml sets targetCellHeight="1",
-     so the default placement is short enough to trigger NetWorthRemoteViewsRenderer's strip
-     branch (minHeight < 100dp), not the taller card. See
-     app/src/debug/res/layout/widget_net_worth_preview_card.xml for the card variant shown
-     when the user resizes it taller — that one is a dev reference only, not wired to the OS
-     picker (Android only supports one android:previewLayout per widget). -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Picker preview (android:previewLayout, net_worth_widget_info.xml) — delegates straight to
+     widget_net_worth_strip.xml (the widget's real default appearance: targetCellHeight="1"
+     means the default placement is short enough to land in NetWorthRemoteViewsRenderer's strip
+     branch) instead of a hand-copied mockup, so it can never drift from the real layout again.
+     Android only supports one android:previewLayout per widget, so this always shows the strip
+     tier regardless of what size the user actually places it at. -->
+<include
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        layout="@layout/widget_net_worth_strip"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/widget_surface"
-        android:orientation="vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp">
-
-    <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:baselineAligned="false">
-
-        <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="NET WORTH"
-                android:textColor="@color/widget_on_surface_variant"
-                android:textSize="8sp"
-                android:textStyle="bold" />
-
-        <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
-
-        <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="&#9650; +4.2%"
-                android:textColor="@color/widget_positive"
-                android:textSize="8sp" />
-
-    </LinearLayout>
-
-    <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="12,340.55 $"
-            android:textColor="@color/widget_on_surface"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-</LinearLayout>
+        android:layout_height="match_parent" />

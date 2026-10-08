@@ -50,9 +50,21 @@
             android:exported="true"
             android:theme="@style/Theme.OssWallet" />
 
-        <!-- NetWorth homescreen widget -->
+        <!-- NetWorth homescreen widget — three provider registrations (Strip/Card/Large) so
+             the system widget picker shows each tier's own preview thumbnail as a separate
+             choice, instead of one dummy static preview; Android only supports one
+             android:previewLayout per provider, so this is the only way to show every variant
+             in the picker. All three share the same fetcher/renderer/prefs store/config
+             activity and are each still freely resizable across the full range after
+             placement — only the starting size and picker thumbnail differ. No 2-column
+             "Compact" variant: minimum width is 3 columns everywhere (user requirement) —
+             NetWorthWidgetProviderMicro.kt/net_worth_widget_info_micro.xml/
+             widget_net_worth_picker_micro.xml are unreferenced leftovers on disk, pending
+             deletion (blocked by a transient filesystem lock on this repo when this was
+             written — safe to delete by hand). -->
         <receiver
             android:name=".widget.NetWorthWidgetProvider"
+            android:label="@string/widget_net_worth_strip_label"
             android:exported="true"
             android:permission="android.permission.BIND_APPWIDGET">
             <intent-filter>
@@ -61,6 +73,32 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/net_worth_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.NetWorthWidgetProviderCard"
+            android:label="@string/widget_net_worth_card_label"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/net_worth_widget_info_card" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.NetWorthWidgetProviderLarge"
+            android:label="@string/widget_net_worth_large_label"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/net_worth_widget_info_large" />
         </receiver>
 
         <!-- Cash Flow, Recent Transactions, and every Phase 2/3 widget's <receiver>/<activity>

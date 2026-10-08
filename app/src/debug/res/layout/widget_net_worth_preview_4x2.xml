@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dev-reference preview only — see widget_net_worth_preview_3x1.xml for the full explanation.
+     4-column x 2-row grid cell (264dp x 124dp via the 70dp*n-16dp approximation). Same STRIP
+     tier as the 3x2 preview, just wider. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+    <include
+            layout="@layout/widget_net_worth_strip"
+            android:layout_width="264dp"
+            android:layout_height="124dp" />
+
+</FrameLayout>

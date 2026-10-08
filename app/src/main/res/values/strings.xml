@@ -18,6 +18,22 @@
     <string name="loading">Loading…</string>
     <string name="no_recent_activities">No recent activities</string>
 
+    <!-- Net Worth widget picker entries — four separate AppWidgetProvider registrations (one
+         real class each, see NetWorthWidgetProvider{Micro,Card,Large}.kt) so the home-screen
+         widget picker shows each tier's own preview thumbnail as a distinct choice. Android
+         only supports one android:previewLayout per provider, so "show all variants in the
+         picker" requires one provider registration per variant — there's no single-widget way
+         to do this. Every variant is still freely resizable across the full range afterward;
+         only the starting size + picker thumbnail differ. -->
+    <string name="widget_net_worth_micro_label">Net Worth — Compact</string>
+    <string name="widget_net_worth_micro_description">Just the balance, for the smallest space.</string>
+    <string name="widget_net_worth_strip_label">Net Worth — Trend</string>
+    <string name="widget_net_worth_strip_description">Balance with a comparison trend.</string>
+    <string name="widget_net_worth_card_label">Net Worth — Card</string>
+    <string name="widget_net_worth_card_description">Balance plus income and expenses.</string>
+    <string name="widget_net_worth_large_label">Net Worth — Full</string>
+    <string name="widget_net_worth_large_description">Balance with a full income/expense/transfer breakdown.</string>
+
     <!-- Common Actions -->
     <string name="action_back">Back</string>
     <string name="action_reset">Reset</string>

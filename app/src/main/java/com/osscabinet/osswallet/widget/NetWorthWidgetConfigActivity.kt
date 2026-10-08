@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
@@ -57,6 +58,20 @@ internal fun NetWorthWidgetConfigScreen(
             checked = config.showComparison,
             onCheckedChange = { onConfigChange(config.copy(showComparison = it)) },
             isFlush = true
+        )
+
+        WidgetConfigDivider()
+
+        // Same perspective/exclude-internal-transfers/split-transfers controls as the real
+        // NetWorthCard's settings sheet (CardPerspectiveSettings) — reused directly rather
+        // than re-implemented, so behavior stays identical.
+        CardPerspectiveSettings(
+            perspective = config.perspective,
+            onPerspectiveChange = { onConfigChange(config.copy(perspective = it)) },
+            excludeInternalTransfers = config.excludeInternalTransfers,
+            onExcludeInternalTransfersChange = { onConfigChange(config.copy(excludeInternalTransfers = it)) },
+            splitTransfers = config.splitTransfers,
+            onSplitTransfersChange = { onConfigChange(config.copy(splitTransfers = it)) }
         )
 
         WidgetConfigDivider()

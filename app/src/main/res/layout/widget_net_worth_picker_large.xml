@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Picker preview (android:previewLayout, net_worth_widget_info_large.xml) for
+     NetWorthWidgetProviderLarge — delegates straight to widget_net_worth_large.xml so it can
+     never drift from the real layout, same pattern as widget_net_worth_preview.xml. -->
+<include
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        layout="@layout/widget_net_worth_large"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />

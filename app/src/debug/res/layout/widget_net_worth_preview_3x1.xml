@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dev-reference preview only — open in Android Studio's Layout Editor (Design/Split view)
+     to see this render live as you edit the included layout; not wired into the manifest or
+     any widget_info.xml. Sized to a 3-column x 1-row launcher grid cell using the common
+     approximate formula width/height = 70dp*n - 16dp (actual cell size varies by launcher —
+     this is a stand-in, not a guarantee). At 54dp tall this is below
+     NetWorthRemoteViewsRenderer.MICRO_HEIGHT_DP (80dp), so it includes the MICRO tier, same as
+     the renderer would pick at this size. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+    <include
+            layout="@layout/widget_net_worth_micro"
+            android:layout_width="194dp"
+            android:layout_height="54dp" />
+
+</FrameLayout>

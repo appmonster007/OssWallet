@@ -48,8 +48,7 @@ class WidgetRefreshWorker(
                 withContext(Dispatchers.IO) {
                     val netWorthProviders = listOf(
                         NetWorthWidgetProvider::class.java,
-                        NetWorthWidgetProviderCard::class.java,
-                        NetWorthWidgetProviderLarge::class.java
+                        NetWorthWidgetProviderCard::class.java
                     )
                     netWorthProviders.forEach { providerClass ->
                         refreshWidget(

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shared "row 1" fragment — the exact same header (label + settings button), amount, and
+     comparison line used by EVERY NetWorth widget tier, via <include>. Not a standalone widget
+     layout: root is <merge>, so including it inside a vertical LinearLayout drops these three
+     elements in as direct siblings of whatever else that tier adds below (see
+     widget_net_worth_micro/strip/card.xml). Keeping this in one file is what makes "row 1"
+     actually identical everywhere instead of hand-copied near-matches drifting apart.
+
+     Same 3-part structure as every cell (see widget_net_worth_strip/card.xml): label (top-left,
+     now paired with a settings button at top-right) / amount (vertically centered, right-
+     aligned) / comparison-% (bottom-left) — three children in document order inside a vertical
+     LinearLayout, with only the middle (amount) taking layout_weight="1": label row and
+     comparison size to their own content and stay pinned top/bottom, while amount expands to
+     fill whatever's left between them and centers itself within that span. Since every tier's
+     row1 wrapper is itself weight="1" of that tier's total rows (with gravity="top" so this
+     whole block stays pinned to the top of its slice), this positions everything correctly
+     regardless of which tier includes it.
+
+     tv_nw_row1_settings is bound to a PendingIntent in NetWorthRemoteViewsRenderer.bindRow1 that
+     opens NetWorthWidgetConfigActivity for THIS widget instance — lets the user jump to the
+     widget's own config without going through the launcher's "Edit widget" long-press flow. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false"
+            android:gravity="center_vertical">
+
+        <TextView
+                android:id="@+id/tv_nw_row1_label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/widget_on_surface_variant"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                tools:text="NET WORTH · CASH FLOW" />
+
+        <ImageView
+                android:id="@+id/iv_nw_row1_settings"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_marginStart="6dp"
+                android:src="@drawable/widget_ic_settings"
+                android:contentDescription="@string/widget_net_worth_settings_description" />
+
+    </LinearLayout>
+
+    <TextView
+            android:id="@+id/tv_nw_row1_amount"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical|end"
+            android:textColor="@color/widget_on_surface"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="12,340.55 $" />
+
+    <TextView
+            android:id="@+id/tv_nw_row1_change"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/widget_netflow_pill_bg"
+            android:textColor="@color/widget_accent"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp"
+            android:paddingTop="1dp"
+            android:paddingBottom="1dp"
+            tools:text="▲ +4.2%" />
+
+</merge>

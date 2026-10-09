@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.widget
 import android.content.Context
 import androidx.datastore.preferences.core.MutablePreferences
 import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
@@ -11,7 +12,10 @@ import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationServic
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.widget.WidgetDataLoader.CommonData
+import kotlinx.serialization.json.Json
 import java.math.BigDecimal
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 class NetWorthWidgetFetcher : WidgetDataFetcher {
     override suspend fun updateState(
@@ -85,7 +89,58 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
         prefs[NetWorthWidgetKeys.BASE_CURRENCY] = common.baseCurrency
         prefs[NetWorthWidgetKeys.PERSPECTIVE_LABEL] = if (isCashFlow) "Cash Flow" else "Accounting"
 
-        // Unified 3-cell model, shared by strip (cell1/cell2 only)/card/large:
+        // Tap-to-drill-down filters, mirroring NetWorthCard.kt's click handlers exactly:
+        //  - row1 (the net worth/net flow amount) uses the base filter unfiltered by type, same
+        //    as the card's onClickNet/onClickNetFlow(config.filter).
+        //  - each cell copies config.filter with transactionTypes swapped to that cell's type(s),
+        //    same as the card's onClickIncome/Expense/Transfer/Inflow/Outflow handlers. The real
+        //    screen additionally runs this through resolveEffectiveFilter() to merge an inherited
+        //    screen-level filter with the card's own — the widget has no such inherited filter
+        //    (config.filter is its only filter), so that merge step collapses to a no-op here.
+        prefs[NetWorthWidgetKeys.ROW1_FILTER] = encodeFilter(config.filter)
+        if (isCashFlow) {
+            prefs[NetWorthWidgetKeys.CELL1_FILTER] = encodeFilter(
+                config.filter.copy(
+                    transactionTypes = buildSet {
+                        if (showIncome) add(TransactionType.INCOME)
+                        if (showTransfer) add(TransactionType.TRANSFER_INFLOW)
+                    }
+                )
+            )
+            prefs[NetWorthWidgetKeys.CELL2_FILTER] = encodeFilter(
+                config.filter.copy(
+                    transactionTypes = buildSet {
+                        if (showExpense) add(TransactionType.EXPENSE)
+                        if (showTransfer) add(TransactionType.TRANSFER_OUTFLOW)
+                    }
+                )
+            )
+            prefs[NetWorthWidgetKeys.CELL3_FILTER] = encodeFilter(config.filter)
+            prefs[NetWorthWidgetKeys.CELL4_FILTER] = ""
+        } else {
+            prefs[NetWorthWidgetKeys.CELL1_FILTER] = encodeFilter(
+                config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))
+            )
+            prefs[NetWorthWidgetKeys.CELL2_FILTER] = encodeFilter(
+                config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))
+            )
+            if (config.splitTransfers) {
+                prefs[NetWorthWidgetKeys.CELL3_FILTER] = encodeFilter(
+                    config.filter.copy(transactionTypes = setOf(TransactionType.TRANSFER_INFLOW))
+                )
+                prefs[NetWorthWidgetKeys.CELL4_FILTER] = encodeFilter(
+                    config.filter.copy(transactionTypes = setOf(TransactionType.TRANSFER_OUTFLOW))
+                )
+            } else {
+                prefs[NetWorthWidgetKeys.CELL3_FILTER] = encodeFilter(
+                    config.filter.copy(transactionTypes = TransactionType.TRANSFER_TYPES)
+                )
+                prefs[NetWorthWidgetKeys.CELL4_FILTER] = ""
+            }
+        }
+
+        // Unified 3-cell model, shared by strip (all 3 packed into one row) and card
+        // (cell1/cell2 on one row, cell3 on another):
         //   cell1 = Inflow (CashFlow) or Income (Accounting)
         //   cell2 = Outflow (CashFlow) or Expense (Accounting)
         //   cell3 = Net flow (CashFlow, highlighted) or Transfer (Accounting, plain)
@@ -99,44 +154,61 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
             writeCell(
                 prefs, CellKeys.CELL1, "Inflow", fmt(inflowValue),
                 if (showInflow) buildComparisonText(inflowValue, prevMetrics?.inflow, config.showComparison) else null,
-                fmt(prevMetrics?.inflow?.abs()), visible = true
+                visible = true
             )
             writeCell(
                 prefs, CellKeys.CELL2, "Outflow", fmt(outflowValue),
                 if (showOutflow) buildComparisonText(outflowValue, prevMetrics?.outflow, config.showComparison) else null,
-                fmt(prevMetrics?.outflow?.abs()), visible = true
+                visible = true
             )
             writeCell(
                 prefs, CellKeys.CELL3, "Net flow", fmt(netFlowValue),
                 buildComparisonText(netFlowValue, prevMetrics?.netFlow, config.showComparison),
-                fmt(prevMetrics?.netFlow?.abs()), visible = true
+                visible = true
             )
+            writeCell(prefs, CellKeys.CELL4, "", "", null, visible = false)
             prefs[NetWorthWidgetKeys.CELL3_HIGHLIGHT] = "true"
         } else {
             val incomeValue = metricsInBase?.income ?: BigDecimal.ZERO
             val expenseValueSigned = metricsInBase?.expense ?: BigDecimal.ZERO
-            val transferValue = metricsInBase?.transfer ?: BigDecimal.ZERO
 
             writeCell(
                 prefs, CellKeys.CELL1, "Income", fmt(incomeValue),
                 if (showIncome) buildComparisonText(incomeValue, prevMetrics?.income, config.showComparison) else null,
-                fmt(prevMetrics?.income?.abs()), visible = showIncome
+                visible = showIncome
             )
             writeCell(
                 prefs, CellKeys.CELL2, "Expense", fmt(expenseValueSigned.abs()),
                 if (showExpense) buildComparisonText(expenseValueSigned, prevMetrics?.expense, config.showComparison) else null,
-                fmt(prevMetrics?.expense?.abs()), visible = showExpense
+                visible = showExpense
             )
-            writeCell(
-                prefs, CellKeys.CELL3, "Transfer", fmt(transferValue),
-                if (showTransfer) buildComparisonText(transferValue, prevMetrics?.transfer, config.showComparison) else null,
-                fmt(prevMetrics?.transfer?.abs()), visible = showTransfer
-            )
+            if (config.splitTransfers) {
+                val transferInValue = metricsInBase?.transferIn ?: BigDecimal.ZERO
+                val transferOutValue = metricsInBase?.transferOut ?: BigDecimal.ZERO
+                writeCell(
+                    prefs, CellKeys.CELL3, "Transfer In", fmt(transferInValue),
+                    if (showTransfer) buildComparisonText(transferInValue, prevMetrics?.transferIn, config.showComparison) else null,
+                    visible = showTransfer
+                )
+                writeCell(
+                    prefs, CellKeys.CELL4, "Transfer Out", fmt(transferOutValue),
+                    if (showTransfer) buildComparisonText(transferOutValue, prevMetrics?.transferOut, config.showComparison) else null,
+                    visible = showTransfer
+                )
+            } else {
+                val transferValue = metricsInBase?.transfer ?: BigDecimal.ZERO
+                writeCell(
+                    prefs, CellKeys.CELL3, "Transfer", fmt(transferValue),
+                    if (showTransfer) buildComparisonText(transferValue, prevMetrics?.transfer, config.showComparison) else null,
+                    visible = showTransfer
+                )
+                writeCell(prefs, CellKeys.CELL4, "", "", null, visible = false)
+            }
             prefs[NetWorthWidgetKeys.CELL3_HIGHLIGHT] = "false"
         }
     }
 
-    private enum class CellKeys { CELL1, CELL2, CELL3 }
+    private enum class CellKeys { CELL1, CELL2, CELL3, CELL4 }
 
     private fun writeCell(
         prefs: MutablePreferences,
@@ -144,18 +216,21 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
         label: String,
         value: String,
         comparison: String?,
-        vs: String,
         visible: Boolean
     ) {
-        val (labelKey, valueKey, cmpKey, vsKey, visibleKey) = when (cell) {
-            CellKeys.CELL1 -> NetWorthWidgetKeys.run { listOf(CELL1_LABEL, CELL1_VALUE, CELL1_CMP, CELL1_VS, CELL1_VISIBLE) }
-            CellKeys.CELL2 -> NetWorthWidgetKeys.run { listOf(CELL2_LABEL, CELL2_VALUE, CELL2_CMP, CELL2_VS, CELL2_VISIBLE) }
-            CellKeys.CELL3 -> NetWorthWidgetKeys.run { listOf(CELL3_LABEL, CELL3_VALUE, CELL3_CMP, CELL3_VS, CELL3_VISIBLE) }
+        val (labelKey, valueKey, cmpKey, visibleKey) = when (cell) {
+            CellKeys.CELL1 -> NetWorthWidgetKeys.run { listOf(CELL1_LABEL, CELL1_VALUE, CELL1_CMP, CELL1_VISIBLE) }
+            CellKeys.CELL2 -> NetWorthWidgetKeys.run { listOf(CELL2_LABEL, CELL2_VALUE, CELL2_CMP, CELL2_VISIBLE) }
+            CellKeys.CELL3 -> NetWorthWidgetKeys.run { listOf(CELL3_LABEL, CELL3_VALUE, CELL3_CMP, CELL3_VISIBLE) }
+            CellKeys.CELL4 -> NetWorthWidgetKeys.run { listOf(CELL4_LABEL, CELL4_VALUE, CELL4_CMP, CELL4_VISIBLE) }
         }
         prefs[labelKey] = label
         prefs[valueKey] = value
         prefs[cmpKey] = comparison ?: ""
-        prefs[vsKey] = vs
         prefs[visibleKey] = visible.toString()
     }
 }
+
+/** Same encoding [com.osscabinet.ossWallet.ui.navigation.NavigationExtensions.navigateToRecords] uses for TransactionListRoute.filterJson, so MainActivity can pass it straight through unchanged. */
+private fun encodeFilter(filter: TransactionFilter): String =
+    URLEncoder.encode(Json.encodeToString(filter), StandardCharsets.UTF_8.toString())

@@ -107,8 +107,8 @@ object NetWorthWidgetKeys {
  */
 object NetWorthRemoteViewsRenderer {
 
-    private const val MICRO_HEIGHT_DP = 110
-    private const val STRIP_HEIGHT_DP = 180
+    private const val MICRO_HEIGHT_DP = 140
+    private const val STRIP_HEIGHT_DP = 250
 
     fun render(
         context: Context,

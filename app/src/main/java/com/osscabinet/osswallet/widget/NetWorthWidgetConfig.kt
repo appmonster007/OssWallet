@@ -22,7 +22,8 @@ data class NetWorthWidgetConfig(
     val showComparison: Boolean = false,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
-    val splitTransfers: Boolean = false
+    val splitTransfers: Boolean = false,
+    val theme: WidgetTheme = WidgetTheme.SYSTEM
 ) {
     val timelineRange: TimelineRange get() = filter.timelineRange
 

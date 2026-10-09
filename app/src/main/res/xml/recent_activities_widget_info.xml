@@ -19,4 +19,4 @@
         android:configure="com.osscabinet.ossWallet.widget.RecentActivitiesWidgetConfigActivity"
         android:previewLayout="@layout/widget_recent_activities_preview"
         android:widgetCategory="home_screen"
-        android:widgetFeatures="reconfigurable|configuration_optional" />
+        android:widgetFeatures="reconfigurable" />

@@ -18,5 +18,6 @@ data class RecentActivitiesWidgetConfig(
     ),
     val showAccount: Boolean = true,
     val showCategory: Boolean = true,
-    val showTimestamp: Boolean = true
+    val showTimestamp: Boolean = true,
+    val theme: WidgetTheme = WidgetTheme.SYSTEM
 )

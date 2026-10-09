@@ -38,6 +38,7 @@ private class RecentActivitiesRemoteViewsFactory(
 ) : RemoteViewsService.RemoteViewsFactory {
 
     private var rows: List<RowData> = emptyList()
+    private var palette: WidgetPalette? = null
 
     private data class RowData(
         val transactionId: Long,
@@ -60,12 +61,13 @@ private class RecentActivitiesRemoteViewsFactory(
         rows = runBlocking {
             runCatching {
                 val config = RecentActivitiesWidgetPrefsStore(context).loadSafe(widgetId)
+                palette = WidgetColors.resolve(config.theme)
                 val common = WidgetDataLoader.loadCommon(context)
                 val transactions = common.databaseQueryService.observeFilteredTransactions(
                     profileId = common.profileId,
                     filter = config.filter,
                     limit = 50
-                ).first()
+                ).first().sortedWith(compareByDescending<com.osscabinet.ossWallet.domain.model.Transaction> { it.timestamp }.thenByDescending { it.id })
 
                 val accountsById = common.accountRepository.getAllAccountsSync(common.profileId)
                     .associateBy { it.id }
@@ -122,20 +124,30 @@ private class RecentActivitiesRemoteViewsFactory(
             if (row.timeText.isEmpty()) android.view.View.GONE else android.view.View.VISIBLE
         )
 
-        val color = ContextCompat.getColor(
-            context,
-            if (row.isPositive) R.color.widget_positive else R.color.widget_negative
-        )
+        val palette = this.palette
+        val color = if (palette != null) {
+            if (row.isPositive) palette.positive else palette.negative
+        } else {
+            ContextCompat.getColor(context, if (row.isPositive) R.color.widget_positive else R.color.widget_negative)
+        }
         views.setTextColor(R.id.tv_ra_item_amount, color)
+        if (palette != null) {
+            views.setTextColor(R.id.tv_ra_item_title, palette.onSurface)
+            views.setTextColor(R.id.tv_ra_item_subtitle, palette.onSurfaceVariant)
+            views.setTextColor(R.id.tv_ra_item_time, palette.onSurfaceVariant)
+            views.setInt(R.id.v_ra_item_divider, "setBackgroundColor", palette.outline)
+        }
 
         // TextView has no setColorFilter (ImageView/Drawable only), so swap the pre-tinted
         // drawable by sign instead — same pattern as cell3's highlight toggle in NetWorthRenderer.
         views.setTextViewText(R.id.tv_ra_item_indicator, row.initial)
         views.setTextColor(R.id.tv_ra_item_indicator, color)
-        views.setInt(
-            R.id.tv_ra_item_indicator, "setBackgroundResource",
+        val ovalBg = if (palette != null) {
+            if (row.isPositive) palette.ovalPositiveBg else palette.ovalNegativeBg
+        } else {
             if (row.isPositive) R.drawable.widget_oval_positive_bg else R.drawable.widget_oval_negative_bg
-        )
+        }
+        views.setInt(R.id.tv_ra_item_indicator, "setBackgroundResource", ovalBg)
 
         // Completes the ListView's setPendingIntentTemplate (see
         // RecentActivitiesRemoteViewsRenderer) — tapping this row launches MainActivity with

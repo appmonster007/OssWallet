@@ -88,6 +88,7 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
         prefs[NetWorthWidgetKeys.FONT_SIZE] = config.fontSize
         prefs[NetWorthWidgetKeys.BASE_CURRENCY] = common.baseCurrency
         prefs[NetWorthWidgetKeys.PERSPECTIVE_LABEL] = if (isCashFlow) "Cash Flow" else "Accounting"
+        prefs[NetWorthWidgetKeys.THEME] = config.theme.name
 
         // Tap-to-drill-down filters, mirroring NetWorthCard.kt's click handlers exactly:
         //  - row1 (the net worth/net flow amount) uses the base filter unfiltered by type, same

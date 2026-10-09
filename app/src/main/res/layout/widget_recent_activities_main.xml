@@ -9,6 +9,7 @@
      of it for that to work. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/ll_widget_root"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/widget_surface"
@@ -40,6 +41,7 @@
                 android:padding="16dp">
 
             <ImageView
+                    android:id="@+id/iv_ra_empty_icon"
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:layout_marginBottom="8dp"
@@ -48,6 +50,7 @@
                     android:contentDescription="@null" />
 
             <TextView
+                    android:id="@+id/tv_ra_empty_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/jetbrains_mono"

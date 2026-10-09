@@ -15,4 +15,4 @@
         android:configure="com.osscabinet.ossWallet.widget.NetWorthWidgetConfigActivity"
         android:previewLayout="@layout/widget_net_worth_picker_micro"
         android:widgetCategory="home_screen"
-        android:widgetFeatures="reconfigurable|configuration_optional" />
+        android:widgetFeatures="reconfigurable" />

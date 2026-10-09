@@ -76,6 +76,13 @@ internal fun NetWorthWidgetConfigScreen(
 
         WidgetConfigDivider()
 
+        WidgetThemeOptions(
+            selected = config.theme,
+            onSelect = { onConfigChange(config.copy(theme = it)) }
+        )
+
+        WidgetConfigDivider()
+
         WidgetConfigFiltersSection(
             filter = config.filter,
             onFilterChange = { onConfigChange(config.copy(filter = it)) },

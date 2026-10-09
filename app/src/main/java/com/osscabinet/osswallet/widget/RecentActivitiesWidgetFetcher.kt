@@ -14,6 +14,8 @@ object RecentActivitiesWidgetKeys {
     val TITLE = stringPreferencesKey("ra_title")
     /** URL-encoded JSON TransactionFilter — same "VIEW ALL" target as RecentActivitiesCard's own onSeeAll/onRecordsClick(config.filter). */
     val VIEW_ALL_FILTER = stringPreferencesKey("ra_view_all_filter")
+    /** Name of a [WidgetTheme] constant — see NetWorthWidgetKeys.THEME. */
+    val THEME = stringPreferencesKey("ra_theme")
 }
 
 /**
@@ -32,6 +34,7 @@ class RecentActivitiesWidgetFetcher : WidgetDataFetcher {
         prefs[RecentActivitiesWidgetKeys.IS_LOADED] = "true"
         prefs[RecentActivitiesWidgetKeys.TITLE] = "RECENT ACTIVITIES"
         prefs[RecentActivitiesWidgetKeys.VIEW_ALL_FILTER] = encodeFilter(config.filter)
+        prefs[RecentActivitiesWidgetKeys.THEME] = config.theme.name
     }
 }
 

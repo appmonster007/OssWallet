@@ -1,67 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Shortest NetWorth widget layout (minHeight < 80dp — true minimum is 50dp), pushed via
-     RemoteViews from NetWorthRemoteViewsRenderer. Flat single-surface background (no nested
-     "wall" shell — the OS widget host already clips to a rounded rect). Uses the
-     theme-adaptive widget_surface/widget_on_surface/widget_on_surface_variant/widget_accent
-     tokens so dark/AMOLED themes stay legible. Now gets the same label+comparison-pill header
-     every other tier has (just compact, 8sp) instead of being the one size that skips it —
-     the amount sits on its own line below. -->
+<!-- Shortest NetWorth widget layout (minHeight < 110dp — true content minimum is ~40dp per the
+     70dp*n-30dp cell formula), pushed via RemoteViews from NetWorthRemoteViewsRenderer. Just
+     widget_net_worth_row1.xml (header + amount) — the exact same block every taller tier
+     starts with, not a separately-styled "micro" header.
+
+     Root padding (12dp, all sides) must match strip.xml/card.xml exactly — all three tiers
+     share one frame, not three independently-tuned ones. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/widget_surface"
         android:orientation="vertical"
-        android:gravity="center_vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp">
+        android:gravity="top"
+        android:padding="12dp">
 
-    <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-        <TextView
-                android:id="@+id/tv_nw_micro_label"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textColor="@color/widget_on_surface_variant"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:maxLines="1"
-                android:ellipsize="end"
-                tools:text="NET WORTH · CASH FLOW" />
-
-        <TextView
-                android:id="@+id/tv_nw_micro_change"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/widget_netflow_pill_bg"
-                android:textColor="@color/widget_accent"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:paddingStart="5dp"
-                android:paddingEnd="5dp"
-                android:paddingTop="1dp"
-                android:paddingBottom="1dp"
-                tools:text="▲ +4.2%" />
-
-    </LinearLayout>
-
-    <TextView
-            android:id="@+id/tv_nw_micro_net_worth"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textColor="@color/widget_on_surface"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end"
-            tools:text="12,340.55 $" />
+    <include layout="@layout/widget_net_worth_row1" />
 
 </LinearLayout>

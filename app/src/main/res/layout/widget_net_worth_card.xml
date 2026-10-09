@@ -1,111 +1,146 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- "Card" NetWorth widget tier (130dp <= minHeight < 260dp), pushed via RemoteViews from
-     NetWorthRemoteViewsRenderer.renderCard(). Flat single-surface background using the
-     theme-adaptive widget_surface/widget_on_surface/widget_on_surface_variant/widget_accent
-     tokens. Header label+subtitle with an inert "+" add button, amount with a pill-styled
-     comparison, then the SAME 3-cell row every tier from here up uses (cell1/cell2 side by
-     side + cell3 full width) — see widget_net_worth_strip.xml for the 2-cell version and
-     widget_net_worth_large.xml for the same 3-cell shape with more room. No "vs prior" line
-     here, unlike large — not enough height to spend on a 3rd line per cell.
+<!-- Card tier (minHeight >= 180dp) — the ceiling tier, capped there by maxResizeHeight="180dp"
+     in both widget-info XMLs; there's nothing taller to grow into, so all three rows below stay
+     at exactly their 1/3 share — they're flat equal-weight siblings of the root, not "cells
+     stretch while the header stays pinned small".
+
+     Pushed via RemoteViews from NetWorthRemoteViewsRenderer. "Row 1" (widget_net_worth_row1.xml
+     — header + amount) is the exact same block micro/strip start with too. Below it: cell1+cell2
+     side by side, then cell3 full width — three rows total, ALL with layout_weight="1", so
+     each gets exactly 1/3 of the available height, not "row 1 sized to its content, cells
+     split whatever's left" (that's what produced the dead-space bug in earlier passes).
+
+     Every cell shares the same internal structure: label (top-left) / value (vertically
+     centered, right-aligned) / comparison-% (bottom-left) — three children in document order
+     inside a vertical LinearLayout, with only the middle (value) taking layout_weight="1":
+     label and cmp size to their own content and stay pinned top/bottom, while value expands to
+     fill whatever's left between them and centers itself within that span via its own
+     android:gravity="center_vertical|end".
 
      cell1/cell2 = Inflow/Outflow (CashFlow) or Income/Expenses (Accounting); cell3 = Net flow
-     (CashFlow, highlighted — accent bg/text) or Transfer (Accounting, plain bg, hidden when
-     the active filter excludes transfers). NetWorthWidgetFetcher computes label/value/%/
-     visibility per cell; the renderer also flips cell3's background+text color between the
-     highlighted netflow-chip style and the plain metric-tile style depending on perspective.
-     In Accounting mode cell1/cell2/cell3 each hide entirely when NetWorthCard's own
-     showIncome/showExpense/showTransfer logic would omit that column; in CashFlow mode cell1/
-     cell2 (Inflow/Outflow) never hide — only their value gets zeroed, matching the real card's
-     CashFlow branch, which always renders both columns. Net flow (cell3 in CashFlow mode) has
-     no hide condition either. -->
+     (CashFlow, highlighted), or Transfer (Accounting, plain, hidden when the filter excludes
+     transfers) — or Transfer In when splitTransfers is on, paired with cell4 = Transfer Out
+     (plain, Accounting-only, GONE otherwise — a GONE view doesn't count toward its row's
+     layout_weight sum, so cell3 alone reclaims the full row when cell4 is hidden, same as the
+     non-split "one wide Transfer pill" look this row used to be literally structured as).
+     CashFlow's cell1/cell2 never hide (NetWorthCard's CashFlow branch always renders both
+     columns, zeroing the irrelevant one instead) — see NetWorthWidgetFetcher.
+
+     Root padding (12dp, all sides) must match micro.xml/strip.xml exactly — all three tiers
+     share one frame, not three independently-tuned ones. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/widget_surface"
         android:orientation="vertical"
-        android:paddingStart="14dp"
-        android:paddingEnd="14dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="12dp">
+        android:padding="12dp">
 
     <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-        <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-            <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="NET WORTH"
-                    android:textColor="@color/widget_on_surface_variant"
-                    android:textSize="9sp"
-                    android:textStyle="bold" />
-
-            <TextView
-                    android:id="@+id/tv_nw_card_subtitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/widget_on_surface_variant"
-                    android:textSize="9sp"
-                    android:maxLines="1"
-                    android:ellipsize="end"
-                    tools:text="This month · Cash Flow view" />
-
-        </LinearLayout>
-
-        <!-- Inert "+" add-transaction button from the mockup — no PendingIntent wired
-             (no deep-link infra exists for widgets yet). -->
-        <TextView
-                android:layout_width="26dp"
-                android:layout_height="26dp"
-                android:background="@drawable/widget_add_button_bg"
-                android:text="+"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:gravity="center" />
-
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="top">
+        <include layout="@layout/widget_net_worth_row1" />
     </LinearLayout>
 
     <LinearLayout
-            android:id="@+id/ll_nw_card_trend"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="4dp"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:baselineAligned="false">
 
-        <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/tv_nw_card_net_worth"
-                android:textColor="@color/widget_on_surface"
-                android:textSize="26sp"
-                android:textStyle="bold"
-                tools:text="125,000.50 $" />
+        <LinearLayout
+                android:id="@+id/ll_nw_cell1"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/widget_metric_tile_bg"
+                android:orientation="vertical"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+            <TextView
+                    android:id="@+id/tv_nw_cell1_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_on_surface_variant"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="Inflow" />
+            <TextView
+                    android:id="@+id/tv_nw_cell1_value"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical|end"
+                    android:textColor="@color/widget_on_surface"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="5,000.00 $" />
+            <TextView
+                    android:id="@+id/tv_nw_cell1_cmp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="▲6.0%" />
+        </LinearLayout>
 
-        <TextView
-                android:id="@+id/tv_nw_card_change"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/widget_netflow_pill_bg"
-                android:textColor="@color/widget_accent"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:paddingStart="7dp"
-                android:paddingEnd="7dp"
-                android:paddingTop="3dp"
-                android:paddingBottom="3dp"
-                tools:text="▲ +2.5%" />
+        <LinearLayout
+                android:id="@+id/ll_nw_cell2"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/widget_metric_tile_bg"
+                android:orientation="vertical"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+            <TextView
+                    android:id="@+id/tv_nw_cell2_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_on_surface_variant"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="Outflow" />
+            <TextView
+                    android:id="@+id/tv_nw_cell2_value"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical|end"
+                    android:textColor="@color/widget_on_surface"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="-3,200.00 $" />
+            <TextView
+                    android:id="@+id/tv_nw_cell2_cmp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="▼1.4%" />
+        </LinearLayout>
 
     </LinearLayout>
 
@@ -113,165 +148,98 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="10dp"
-            android:orientation="vertical">
-
-        <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:orientation="horizontal">
-
-            <LinearLayout
-                    android:id="@+id/ll_nw_cell1"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    android:background="@drawable/widget_metric_tile_bg"
-                    android:orientation="vertical"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp">
-
-                <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-                    <TextView
-                            android:id="@+id/tv_nw_cell1_label"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:textColor="@color/widget_on_surface_variant"
-                            android:textSize="10sp"
-                            android:textStyle="bold"
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            tools:text="Inflow" />
-                    <TextView
-                            android:id="@+id/tv_nw_cell1_cmp"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="10sp"
-                            android:textStyle="bold"
-                            tools:text="▲6.0%" />
-                </LinearLayout>
-
-                <TextView
-                        android:id="@+id/tv_nw_cell1_value"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:textColor="@color/widget_on_surface"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        tools:text="5,000.00 $" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                    android:id="@+id/ll_nw_cell2"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/widget_metric_tile_bg"
-                    android:orientation="vertical"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp">
-
-                <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-                    <TextView
-                            android:id="@+id/tv_nw_cell2_label"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:textColor="@color/widget_on_surface_variant"
-                            android:textSize="10sp"
-                            android:textStyle="bold"
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            tools:text="Outflow" />
-                    <TextView
-                            android:id="@+id/tv_nw_cell2_cmp"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="10sp"
-                            android:textStyle="bold"
-                            tools:text="▼1.4%" />
-                </LinearLayout>
-
-                <TextView
-                        android:id="@+id/tv_nw_cell2_value"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:textColor="@color/widget_on_surface"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        tools:text="-3,200.00 $" />
-
-            </LinearLayout>
-
-        </LinearLayout>
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
 
         <LinearLayout
                 android:id="@+id/ll_nw_cell3"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
+                android:layout_marginEnd="8dp"
+                android:orientation="vertical"
                 android:background="@drawable/widget_netflow_pill_bg"
                 android:paddingStart="12dp"
-                android:paddingEnd="12dp">
-
+                android:paddingEnd="12dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
             <TextView
                     android:id="@+id/tv_nw_cell3_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textColor="@color/widget_accent"
                     android:textSize="11sp"
                     android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
                     tools:text="Net flow" />
-
-            <TextView
-                    android:id="@+id/tv_nw_cell3_cmp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:textColor="@color/widget_accent"
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    tools:text="▲12.3%" />
-
-            <FrameLayout
-                    android:layout_width="0dp"
-                    android:layout_height="1dp"
-                    android:layout_weight="1" />
-
             <TextView
                     android:id="@+id/tv_nw_cell3_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical|end"
                     android:textColor="@color/widget_accent"
                     android:textSize="15sp"
                     android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
                     tools:text="6,03,714.00 $" />
+            <TextView
+                    android:id="@+id/tv_nw_cell3_cmp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_accent"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="▲12.3%" />
+        </LinearLayout>
 
+        <LinearLayout
+                android:id="@+id/ll_nw_cell4"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:background="@drawable/widget_metric_tile_bg"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+            <TextView
+                    android:id="@+id/tv_nw_cell4_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_on_surface_variant"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="Transfer Out" />
+            <TextView
+                    android:id="@+id/tv_nw_cell4_value"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical|end"
+                    android:textColor="@color/widget_on_surface"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="-1,100.00 $" />
+            <TextView
+                    android:id="@+id/tv_nw_cell4_cmp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="▼1.4%" />
         </LinearLayout>
 
     </LinearLayout>

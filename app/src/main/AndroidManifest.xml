@@ -50,18 +50,24 @@
             android:exported="true"
             android:theme="@style/Theme.OssWallet" />
 
-        <!-- NetWorth homescreen widget — three provider registrations (Strip/Card/Large) so
+        <!-- NetWorth homescreen widget — three provider registrations (Compact/Trend/Card) so
              the system widget picker shows each tier's own preview thumbnail as a separate
-             choice, instead of one dummy static preview; Android only supports one
-             android:previewLayout per provider, so this is the only way to show every variant
-             in the picker. All three share the same fetcher/renderer/prefs store/config
-             activity and are each still freely resizable across the full range after
-             placement — only the starting size and picker thumbnail differ. No 2-column
-             "Compact" variant: minimum width is 3 columns everywhere (user requirement) —
-             NetWorthWidgetProviderMicro.kt/net_worth_widget_info_micro.xml/
-             widget_net_worth_picker_micro.xml are unreferenced leftovers on disk, pending
-             deletion (blocked by a transient filesystem lock on this repo when this was
-             written — safe to delete by hand). -->
+             choice, instead of one dummy static preview. All three share the same fetcher/
+             renderer/prefs store/config activity and are each freely resizable across the
+             full range after placement — only the starting size and picker thumbnail differ. -->
+        <receiver
+            android:name=".widget.NetWorthWidgetProviderMicro"
+            android:label="@string/widget_net_worth_micro_label"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/net_worth_widget_info_micro" />
+        </receiver>
+
         <receiver
             android:name=".widget.NetWorthWidgetProvider"
             android:label="@string/widget_net_worth_strip_label"
@@ -88,9 +94,22 @@
                 android:resource="@xml/net_worth_widget_info_card" />
         </receiver>
 
-        <!-- Cash Flow, Recent Transactions, and every Phase 2/3 widget's <receiver>/<activity>
-             entries were removed here when those widgets were shelved (2026-10-08) — see
-             shelved-widgets/README.md and shelved-widgets/restore.patch at the repo root. -->
+        <!-- Cash Flow and every Phase 2/3 widget's <receiver>/<activity> entries were removed
+             here when those widgets were shelved (2026-10-08) — see shelved-widgets/README.md
+             and shelved-widgets/restore.patch at the repo root. -->
+
+        <receiver
+            android:name=".widget.RecentActivitiesWidgetProvider"
+            android:label="@string/widget_recent_activities_label"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/recent_activities_widget_info" />
+        </receiver>
 
         <activity
             android:name=".widget.NetWorthWidgetConfigActivity"
@@ -100,6 +119,24 @@
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".widget.RecentActivitiesWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <!-- Backs RecentActivitiesWidgetProvider's ListView — BIND_REMOTEVIEWS is required for
+             any RemoteViewsService a widget's RemoteViews references via setRemoteAdapter, and
+             exported must stay false (the system binds to it on the widget host's behalf; this
+             is never meant to be reachable by other apps). -->
+        <service
+            android:name=".widget.RecentActivitiesRemoteViewsService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
 
         <service
             android:name=".service.WebServerService"

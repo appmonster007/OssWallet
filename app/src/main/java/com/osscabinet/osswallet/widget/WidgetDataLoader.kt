@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.widget
 
 import android.content.Context
 import com.osscabinet.ossWallet.di.WidgetDataLoaderEntryPoint
+import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
@@ -16,7 +17,8 @@ object WidgetDataLoader {
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val databaseQueryService: DatabaseQueryService,
-        val categoryRepository: CategoryRepository
+        val categoryRepository: CategoryRepository,
+        val accountRepository: AccountRepository
     )
 
     suspend fun loadCommon(context: Context): CommonData {
@@ -43,7 +45,8 @@ object WidgetDataLoader {
             baseCurrency = baseCurrency,
             exchangeRates = exchangeRates,
             databaseQueryService = ep.databaseQueryService(),
-            categoryRepository = ep.categoryRepository()
+            categoryRepository = ep.categoryRepository(),
+            accountRepository = ep.accountRepository()
         )
     }
 }

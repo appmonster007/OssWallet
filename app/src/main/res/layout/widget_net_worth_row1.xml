@@ -45,6 +45,7 @@
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end"
+                android:text="NET WORTH · CASH FLOW"
                 tools:text="NET WORTH · CASH FLOW" />
 
         <ImageView
@@ -69,6 +70,7 @@
             android:textStyle="bold"
             android:maxLines="1"
             android:ellipsize="end"
+            android:text="12,340.55 $"
             tools:text="12,340.55 $" />
 
     <TextView
@@ -84,6 +86,7 @@
             android:paddingEnd="5dp"
             android:paddingTop="1dp"
             android:paddingBottom="1dp"
+            android:text="▲ +4.2%"
             tools:text="▲ +4.2%" />
 
 </merge>

@@ -57,7 +57,16 @@ abstract class BaseWidgetProvider(
         newOptions: Bundle
     ) {
         WidgetRefreshWorker.enqueueNow(context)
+        onResized(context, appWidgetManager, appWidgetId)
     }
+
+    /**
+     * Override point for a provider whose content includes a ListView
+     * (RecentActivitiesWidgetProvider) — a resize needs an explicit
+     * notifyAppWidgetViewDataChanged too, not just the header re-render
+     * WidgetRefreshWorker.enqueueNow above already schedules.
+     */
+    protected open fun onResized(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) = Unit
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         val prefsStore = createPrefsStore(context)

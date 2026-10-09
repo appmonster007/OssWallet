@@ -128,10 +128,8 @@ private class RecentActivitiesRemoteViewsFactory(
         )
         views.setTextColor(R.id.tv_ra_item_amount, color)
 
-        // Circle badge: swap between the two pre-tinted oval drawables by sign — TextView has
-        // no setColorFilter (that's ImageView/Drawable only; RemoteViews.setInt would silently
-        // no-op it), so this is the same setBackgroundResource swap NetWorthRemoteViewsRenderer
-        // uses for cell3's highlight toggle.
+        // TextView has no setColorFilter (ImageView/Drawable only), so swap the pre-tinted
+        // drawable by sign instead — same pattern as cell3's highlight toggle in NetWorthRenderer.
         views.setTextViewText(R.id.tv_ra_item_indicator, row.initial)
         views.setTextColor(R.id.tv_ra_item_indicator, color)
         views.setInt(

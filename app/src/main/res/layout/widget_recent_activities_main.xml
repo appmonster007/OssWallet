@@ -1,20 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Recent Activities widget's real content, pushed once data is loaded. Unlike Net Worth,
-     this widget has no fixed set of tiers — it's a true scrolling list (ListView bound to
-     RecentActivitiesRemoteViewsService via RemoteViews.setRemoteAdapter), so it has no upper
-     height bound: taller just shows more rows / more scrollable room, handled entirely by the
-     ListView itself rather than by picking between discrete layouts the way Net Worth does.
+<!-- Recent Activities widget's real content. No fixed tiers like Net Worth — it's a true
+     scrolling ListView (RecentActivitiesRemoteViewsService), so no upper height bound.
 
-     Header matches Net Worth's row1 header line (widget_net_worth_row1.xml): tv_ra_title uses
-     the same small uppercase @font/jetbrains_mono label treatment as tv_nw_row1_label (muted
-     on_surface_variant, 8sp bold) rather than a prominent headline, and iv_ra_settings is the
-     exact same 10dp icon in the exact same top-right slot as iv_nw_row1_settings. VIEW_ALL has
-     no Net Worth equivalent (that widget has no "see more" action), so it's styled like Net
-     Worth's OWN accent pill (tv_nw_row1_change — widget_netflow_pill_bg background, same
-     padding) to stay visually consistent with that pattern rather than introducing a new one.
-     The list takes all remaining space via layout_weight="1" below this fixed-height header.
-     ll_ra_empty is the list's empty view (shown via RemoteViews.setEmptyView when the factory
-     reports zero items) — must be a sibling of the ListView for that to work. -->
+     Header is the shared widget_header_row.xml shell (see that file) — its
+     ll_widget_header_extra slot gets the "VIEW ALL" pill added via RemoteViews.addView() in
+     RecentActivitiesRemoteViewsRenderer, since Net Worth's header has no equivalent action.
+     ll_ra_empty is the ListView's empty view (RemoteViews.setEmptyView) — must stay a sibling
+     of it for that to work. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
@@ -22,59 +14,7 @@
         android:background="@color/widget_surface"
         android:orientation="vertical">
 
-    <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:baselineAligned="false"
-            android:gravity="center_vertical"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingTop="10dp"
-            android:paddingBottom="8dp">
-
-        <TextView
-                android:id="@+id/tv_ra_title"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="@font/jetbrains_mono"
-                android:textColor="@color/widget_on_surface_variant"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:maxLines="1"
-                android:ellipsize="end"
-                tools:text="RECENT ACTIVITIES" />
-
-        <TextView
-                android:id="@+id/tv_ra_view_all"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="6dp"
-                android:background="@drawable/widget_netflow_pill_bg"
-                android:fontFamily="@font/jetbrains_mono"
-                android:textColor="@color/widget_accent"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:paddingStart="5dp"
-                android:paddingEnd="5dp"
-                android:paddingTop="1dp"
-                android:paddingBottom="1dp"
-                android:text="VIEW ALL" />
-
-        <ImageView
-                android:id="@+id/iv_ra_settings"
-                android:layout_width="10dp"
-                android:layout_height="10dp"
-                android:src="@drawable/widget_ic_settings"
-                android:contentDescription="@string/widget_net_worth_settings_description" />
-
-    </LinearLayout>
-
-    <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/widget_outline" />
+    <include layout="@layout/widget_header_row" />
 
     <FrameLayout
             android:layout_width="match_parent"

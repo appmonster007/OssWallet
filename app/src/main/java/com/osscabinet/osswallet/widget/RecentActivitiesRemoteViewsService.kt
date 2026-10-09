@@ -47,7 +47,8 @@ private class RecentActivitiesRemoteViewsFactory(
         val subtitle: String,
         val timeText: String,
         val amountText: String,
-        val isPositive: Boolean
+        val isPositive: Boolean,
+        val categoryColor: Int?
     )
 
     override fun onCreate() = Unit
@@ -94,7 +95,8 @@ private class RecentActivitiesRemoteViewsFactory(
                         subtitle = subtitleParts.joinToString(" · "),
                         timeText = if (config.showTimestamp) TimeUtils.formatRelativeDate(tx.timestamp, now) else "",
                         amountText = formatter.format(tx.amount, tx.currency),
-                        isPositive = isPositive
+                        isPositive = isPositive,
+                        categoryColor = categoriesById[tx.categoryId]?.colorHex
                     )
                 }
             }.getOrDefault(emptyList())
@@ -141,13 +143,21 @@ private class RecentActivitiesRemoteViewsFactory(
         // TextView has no setColorFilter (ImageView/Drawable only), so swap the pre-tinted
         // drawable by sign instead — same pattern as cell3's highlight toggle in NetWorthRenderer.
         views.setTextViewText(R.id.tv_ra_item_indicator, row.initial)
-        views.setTextColor(R.id.tv_ra_item_indicator, color)
-        val ovalBg = if (palette != null) {
-            if (row.isPositive) palette.ovalPositiveBg else palette.ovalNegativeBg
+        val iconColor = row.categoryColor ?: color
+        views.setTextColor(R.id.tv_ra_item_indicator, iconColor)
+        if (row.categoryColor != null) {
+            views.setInt(R.id.iv_ra_item_badge_bg, "setImageResource", R.drawable.widget_oval_bg)
+            val containerColor = (row.categoryColor and 0x00FFFFFF) or 0x28000000
+            views.setInt(R.id.iv_ra_item_badge_bg, "setColorFilter", containerColor)
         } else {
-            if (row.isPositive) R.drawable.widget_oval_positive_bg else R.drawable.widget_oval_negative_bg
+            val ovalBg = if (palette != null) {
+                if (row.isPositive) palette.ovalPositiveBg else palette.ovalNegativeBg
+            } else {
+                if (row.isPositive) R.drawable.widget_oval_positive_bg else R.drawable.widget_oval_negative_bg
+            }
+            views.setInt(R.id.iv_ra_item_badge_bg, "setImageResource", ovalBg)
+            views.setInt(R.id.iv_ra_item_badge_bg, "setColorFilter", 0)
         }
-        views.setInt(R.id.tv_ra_item_indicator, "setBackgroundResource", ovalBg)
 
         // Completes the ListView's setPendingIntentTemplate (see
         // RecentActivitiesRemoteViewsRenderer) — tapping this row launches MainActivity with

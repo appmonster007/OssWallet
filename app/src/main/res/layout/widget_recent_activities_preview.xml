@@ -62,17 +62,23 @@
             android:paddingTop="8dp"
             android:paddingBottom="8dp">
 
-        <TextView
+        <FrameLayout
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:layout_marginEnd="10dp"
-                android:background="@drawable/widget_oval_negative_bg"
-                android:gravity="center"
-                android:fontFamily="@font/jetbrains_mono"
-                android:textColor="@color/widget_negative"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:text="G" />
+                android:background="@drawable/widget_oval_negative_bg">
+
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:textColor="@color/widget_negative"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:text="G" />
+
+        </FrameLayout>
 
         <LinearLayout
                 android:layout_width="0dp"
@@ -146,17 +152,23 @@
             android:paddingTop="8dp"
             android:paddingBottom="8dp">
 
-        <TextView
+        <FrameLayout
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:layout_marginEnd="10dp"
-                android:background="@drawable/widget_oval_positive_bg"
-                android:gravity="center"
-                android:fontFamily="@font/jetbrains_mono"
-                android:textColor="@color/widget_positive"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:text="S" />
+                android:background="@drawable/widget_oval_positive_bg">
+
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:textColor="@color/widget_positive"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:text="S" />
+
+        </FrameLayout>
 
         <LinearLayout
                 android:layout_width="0dp"

@@ -1,24 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Shared "row 1" fragment — the exact same header (label + settings button), amount, and
-     comparison line used by EVERY NetWorth widget tier, via <include>. Not a standalone widget
-     layout: root is <merge>, so including it inside a vertical LinearLayout drops these three
-     elements in as direct siblings of whatever else that tier adds below (see
-     widget_net_worth_micro/strip/card.xml). Keeping this in one file is what makes "row 1"
-     actually identical everywhere instead of hand-copied near-matches drifting apart.
+<!-- Shared "row 1" fragment — the header (via widget_header_row.xml), amount, and comparison
+     line used by EVERY NetWorth widget tier, via <include>. Not a standalone widget layout:
+     root is <merge>, so including it inside a vertical LinearLayout drops these elements in as
+     direct siblings of whatever else that tier adds below (see widget_net_worth_micro/
+     strip/card.xml). Keeping this in one file is what makes "row 1" actually identical
+     everywhere instead of hand-copied near-matches drifting apart.
 
-     Same 3-part structure as every cell (see widget_net_worth_strip/card.xml): label (top-left,
-     now paired with a settings button at top-right) / amount (vertically centered, right-
-     aligned) / comparison-% (bottom-left) — three children in document order inside a vertical
-     LinearLayout, with only the middle (amount) taking layout_weight="1": label row and
-     comparison size to their own content and stay pinned top/bottom, while amount expands to
-     fill whatever's left between them and centers itself within that span. Since every tier's
-     row1 wrapper is itself weight="1" of that tier's total rows (with gravity="top" so this
-     whole block stays pinned to the top of its slice), this positions everything correctly
-     regardless of which tier includes it.
+     The header line itself now lives in widget_header_row.xml, shared with Recent Activities —
+     see that file for why (header height/padding was drifting between widget types). Since that
+     shell supplies its own horizontal padding and the tier roots are now unpadded (see
+     widget_net_worth_micro/strip/card.xml), the amount/comparison content below it needs its
+     OWN 12dp horizontal inset: the amount sits inside a padded wrapper (carrying the
+     layout_weight="1" that used to be on the amount TextView directly), and the comparison pill
+     gets a matching start margin instead of being wrapped, since it's already wrap_content.
 
-     tv_nw_row1_settings is bound to a PendingIntent in NetWorthRemoteViewsRenderer.bindRow1 that
-     opens NetWorthWidgetConfigActivity for THIS widget instance — lets the user jump to the
-     widget's own config without going through the launcher's "Edit widget" long-press flow.
+     Same 3-part structure as every cell (see widget_net_worth_strip/card.xml): header (top,
+     pinned via gravity="top" on every tier's row1 wrapper) / amount (vertically centered,
+     right-aligned) / comparison-% (bottom-left) — with only the amount wrapper taking
+     layout_weight="1", so it fills whatever's left between the fixed-size header and comparison
+     line.
+
+     tv_widget_header_settings (in widget_header_row.xml) is bound to a PendingIntent in
+     NetWorthRemoteViewsRenderer.bindRow1 that opens NetWorthWidgetConfigActivity for THIS
+     widget instance — lets the user jump to the widget's own config without going through the
+     launcher's "Edit widget" long-press flow.
 
      Font families mirror NetWorthCard.kt's own AppTextStyles usage: titles/amounts
      (cardSectionTitle, heroAmountLarge, transactionAmount — all displayFamily) use
@@ -27,56 +32,37 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools">
 
+    <include layout="@layout/widget_header_row" />
+
     <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:baselineAligned="false"
-            android:gravity="center_vertical">
-
-        <TextView
-                android:id="@+id/tv_nw_row1_label"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="@font/manrope"
-                android:textColor="@color/widget_on_surface_variant"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:text="NET WORTH · CASH FLOW"
-                tools:text="NET WORTH · CASH FLOW" />
-
-        <ImageView
-                android:id="@+id/iv_nw_row1_settings"
-                android:layout_width="10dp"
-                android:layout_height="10dp"
-                android:layout_marginStart="6dp"
-                android:src="@drawable/widget_ic_settings"
-                android:contentDescription="@string/widget_net_worth_settings_description" />
-
-    </LinearLayout>
-
-    <TextView
-            android:id="@+id/tv_nw_row1_amount"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:gravity="center_vertical|end"
-            android:fontFamily="@font/manrope"
-            android:textColor="@color/widget_on_surface"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:text="12,340.55 $"
-            tools:text="12,340.55 $" />
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+        <TextView
+                android:id="@+id/tv_nw_row1_amount"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical|end"
+                android:fontFamily="@font/manrope"
+                android:textColor="@color/widget_on_surface"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:text="12,340.55 $"
+                tools:text="12,340.55 $" />
+
+    </LinearLayout>
 
     <TextView
             android:id="@+id/tv_nw_row1_change"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
             android:background="@drawable/widget_netflow_pill_bg"
             android:fontFamily="@font/jetbrains_mono"
             android:textColor="@color/widget_accent"

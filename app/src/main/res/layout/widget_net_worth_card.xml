@@ -28,15 +28,17 @@
      CashFlow's cell1/cell2 never hide (NetWorthCard's CashFlow branch always renders both
      columns, zeroing the irrelevant one instead) — see NetWorthWidgetFetcher.
 
-     Root padding (12dp, all sides) must match micro.xml/strip.xml exactly — all three tiers
-     share one frame, not three independently-tuned ones. -->
+     Root is unpadded except for a bottom inset — horizontal/top padding now live in the shared
+     widget_header_row.xml shell (see widget_net_worth_row1.xml), matching Recent Activities'
+     layout model; both cell rows below add their own horizontal padding to compensate. Must
+     match micro.xml/strip.xml exactly — all three tiers share one frame. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/widget_surface"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:paddingBottom="12dp">
 
     <LinearLayout
             android:layout_width="match_parent"
@@ -53,7 +55,9 @@
             android:layout_weight="1"
             android:layout_marginTop="4dp"
             android:orientation="horizontal"
-            android:baselineAligned="false">
+            android:baselineAligned="false"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
 
         <LinearLayout
                 android:id="@+id/ll_nw_cell1"
@@ -164,7 +168,9 @@
             android:layout_weight="1"
             android:layout_marginTop="4dp"
             android:orientation="horizontal"
-            android:baselineAligned="false">
+            android:baselineAligned="false"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
 
         <LinearLayout
                 android:id="@+id/ll_nw_cell3"

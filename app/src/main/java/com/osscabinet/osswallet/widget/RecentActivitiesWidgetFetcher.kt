@@ -30,9 +30,6 @@ class RecentActivitiesWidgetFetcher : WidgetDataFetcher {
     ) {
         val config = RecentActivitiesWidgetPrefsStore(context).loadSafe(widgetId)
         prefs[RecentActivitiesWidgetKeys.IS_LOADED] = "true"
-        // Uppercase to match Net Worth row1's label treatment (tv_nw_row1_label is built the
-        // same way — "NET WORTH · ${perspectiveLabel.uppercase()}" — rather than relying on
-        // android:textAllCaps).
         prefs[RecentActivitiesWidgetKeys.TITLE] = "RECENT ACTIVITIES"
         prefs[RecentActivitiesWidgetKeys.VIEW_ALL_FILTER] = encodeFilter(config.filter)
     }

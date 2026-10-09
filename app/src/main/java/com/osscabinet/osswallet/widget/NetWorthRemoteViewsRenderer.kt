@@ -214,7 +214,7 @@ object NetWorthRemoteViewsRenderer {
      */
     private fun bindRow1(views: RemoteViews, prefs: Preferences, context: Context, widgetId: Int) {
         val perspectiveLabel = prefs[NetWorthWidgetKeys.PERSPECTIVE_LABEL] ?: "Cash Flow"
-        views.setTextViewText(R.id.tv_nw_row1_label, "NET WORTH · ${perspectiveLabel.uppercase()}")
+        views.setTextViewText(R.id.tv_widget_header_title, "NET WORTH · ${perspectiveLabel.uppercase()}")
 
         // NEW_TASK + MULTIPLE_TASK: launched from the widget host (home screen), not from
         // inside our app, so without an explicit new task this activity can attach itself to
@@ -229,7 +229,7 @@ object NetWorthRemoteViewsRenderer {
             settingsIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        views.setOnClickPendingIntent(R.id.iv_nw_row1_settings, settingsPendingIntent)
+        views.setOnClickPendingIntent(R.id.iv_widget_header_settings, settingsPendingIntent)
 
         // Tapping the amount opens Analytics pre-filtered — same target as NetWorthCard's own
         // onClickNet/onClickNetFlow (an unfiltered-by-type drill into this widget's base filter).

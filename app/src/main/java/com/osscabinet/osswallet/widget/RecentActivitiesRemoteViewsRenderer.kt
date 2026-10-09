@@ -35,13 +35,13 @@ object RecentActivitiesRemoteViewsRenderer {
         }
 
         val views = RemoteViews(context.packageName, R.layout.widget_recent_activities_main)
-        views.setTextViewText(R.id.tv_ra_title, prefs[RecentActivitiesWidgetKeys.TITLE] ?: "Recent Activities")
+        views.setTextViewText(R.id.tv_widget_header_title, prefs[RecentActivitiesWidgetKeys.TITLE] ?: "RECENT ACTIVITIES")
 
         val settingsIntent = Intent(context, RecentActivitiesWidgetConfigActivity::class.java)
             .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
         views.setOnClickPendingIntent(
-            R.id.iv_ra_settings,
+            R.id.iv_widget_header_settings,
             PendingIntent.getActivity(
                 context, widgetId * 10, settingsIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -49,18 +49,24 @@ object RecentActivitiesRemoteViewsRenderer {
         )
 
         // "VIEW ALL" opens Records pre-filtered — same target as RecentActivitiesCard's own
-        // onSeeAll/onRecordsClick(config.filter).
+        // onSeeAll/onRecordsClick(config.filter). Net Worth's header has no equivalent action,
+        // so this pill is added at render time rather than living in widget_header_row.xml
+        // itself (see that file's ll_widget_header_extra slot).
+        val viewAllPill = RemoteViews(context.packageName, R.layout.widget_header_action_pill)
+        viewAllPill.setTextViewText(R.id.tv_header_action_pill, "VIEW ALL")
         val viewAllIntent = Intent(context, MainActivity::class.java)
             .putExtra(MainActivity.EXTRA_WIDGET_NAV, "records")
             .putExtra(MainActivity.EXTRA_WIDGET_FILTER, prefs[RecentActivitiesWidgetKeys.VIEW_ALL_FILTER] ?: "")
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
-        views.setOnClickPendingIntent(
-            R.id.tv_ra_view_all,
+        viewAllPill.setOnClickPendingIntent(
+            R.id.tv_header_action_pill,
             PendingIntent.getActivity(
                 context, widgetId * 10 + 1, viewAllIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         )
+        views.removeAllViews(R.id.ll_widget_header_extra)
+        views.addView(R.id.ll_widget_header_extra, viewAllPill)
 
         // Tapping a row opens that transaction — same target as RecentActivitiesCard's
         // onTransactionClick. The template intent is completed per-row by

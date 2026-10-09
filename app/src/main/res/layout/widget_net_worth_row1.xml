@@ -18,7 +18,12 @@
 
      tv_nw_row1_settings is bound to a PendingIntent in NetWorthRemoteViewsRenderer.bindRow1 that
      opens NetWorthWidgetConfigActivity for THIS widget instance — lets the user jump to the
-     widget's own config without going through the launcher's "Edit widget" long-press flow. -->
+     widget's own config without going through the launcher's "Edit widget" long-press flow.
+
+     Font families mirror NetWorthCard.kt's own AppTextStyles usage: titles/amounts
+     (cardSectionTitle, heroAmountLarge, transactionAmount — all displayFamily) use
+     @font/manrope; overlines/comparison-% (sectionOverline, metaLabel — monoFamily) use
+     @font/jetbrains_mono. Same split applied to every cell in strip/card.xml. -->
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools">
 
@@ -34,6 +39,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:fontFamily="@font/manrope"
                 android:textColor="@color/widget_on_surface_variant"
                 android:textSize="8sp"
                 android:textStyle="bold"
@@ -57,6 +63,7 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:gravity="center_vertical|end"
+            android:fontFamily="@font/manrope"
             android:textColor="@color/widget_on_surface"
             android:textSize="22sp"
             android:textStyle="bold"
@@ -69,6 +76,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/widget_netflow_pill_bg"
+            android:fontFamily="@font/jetbrains_mono"
             android:textColor="@color/widget_accent"
             android:textSize="8sp"
             android:textStyle="bold"

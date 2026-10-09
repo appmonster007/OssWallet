@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Compact" (micro tier) picker entry — targets 1 grid row / 3 grid columns. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+        android:description="@string/widget_net_worth_micro_description"
+        android:initialLayout="@layout/widget_net_worth"
+        android:minWidth="180dp"
+        android:minHeight="40dp"
+        android:minResizeWidth="180dp"
+        android:minResizeHeight="40dp"
+        android:maxResizeHeight="180dp"
+        android:targetCellWidth="3"
+        android:targetCellHeight="1"
+        android:resizeMode="horizontal|vertical"
+        android:updatePeriodMillis="1800000"
+        android:configure="com.osscabinet.ossWallet.widget.NetWorthWidgetConfigActivity"
+        android:previewLayout="@layout/widget_net_worth_picker_micro"
+        android:widgetCategory="home_screen"
+        android:widgetFeatures="reconfigurable|configuration_optional" />

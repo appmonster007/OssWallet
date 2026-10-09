@@ -70,6 +70,7 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
+                    android:text="Inflow"
                     tools:text="Inflow" />
             <TextView
                     android:id="@+id/tv_nw_cell1_value"
@@ -83,6 +84,7 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
+                    android:text="5,000.00 $"
                     tools:text="5,000.00 $" />
             <TextView
                     android:id="@+id/tv_nw_cell1_cmp"
@@ -93,6 +95,7 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
+                    android:text="▲6.0%"
                     tools:text="▲6.0%" />
         </LinearLayout>
 
@@ -118,6 +121,7 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
+                    android:text="Outflow"
                     tools:text="Outflow" />
             <TextView
                     android:id="@+id/tv_nw_cell2_value"
@@ -131,6 +135,7 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
+                    android:text="-3,200.00 $"
                     tools:text="-3,200.00 $" />
             <TextView
                     android:id="@+id/tv_nw_cell2_cmp"
@@ -141,6 +146,7 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
+                    android:text="▼1.4%"
                     tools:text="▼1.4%" />
         </LinearLayout>
 
@@ -149,7 +155,6 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginEnd="5dp"
                 android:background="@drawable/widget_netflow_pill_bg"
                 android:orientation="vertical"
                 android:paddingStart="6dp"
@@ -166,6 +171,7 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
+                    android:text="Net flow"
                     tools:text="Net flow" />
             <TextView
                     android:id="@+id/tv_nw_cell3_value"
@@ -179,7 +185,8 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    tools:text="3,600.00 $" />
+                    android:text="1,800.00 $"
+                    tools:text="1,800.00 $" />
             <TextView
                     android:id="@+id/tv_nw_cell3_cmp"
                     android:layout_width="match_parent"
@@ -190,6 +197,7 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
+                    android:text="▲12.3%"
                     tools:text="▲12.3%" />
         </LinearLayout>
 
@@ -198,6 +206,8 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
+                android:layout_marginStart="5dp"
+                android:visibility="gone"
                 android:background="@drawable/widget_metric_tile_bg"
                 android:orientation="vertical"
                 android:paddingStart="6dp"
@@ -214,6 +224,7 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
+                    android:text="Transfer Out"
                     tools:text="Transfer Out" />
             <TextView
                     android:id="@+id/tv_nw_cell4_value"
@@ -227,6 +238,7 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
+                    android:text="-1,100.00 $"
                     tools:text="-1,100.00 $" />
             <TextView
                     android:id="@+id/tv_nw_cell4_cmp"
@@ -237,6 +249,7 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
+                    android:text="▼1.4%"
                     tools:text="▼1.4%" />
         </LinearLayout>
 

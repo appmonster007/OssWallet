@@ -21,15 +21,14 @@ import kotlinx.coroutines.withContext
  * [WidgetDataFetcher], then hands it to that widget's RemoteViews renderer to build and push
  * the update.
  *
- * SHELVED (2026-10-08): Cash Flow, Recent Transactions, and every Phase 2/3 widget
- * (Budgets/Planned Payments/Currency Balances/Loans/Accounts/Account Hero/Income-Expense Bar/
- * Category Pie Chart/Category Treemap/Cash Flow Comparison/Category Spending Trend/Tag UpSet
- * Plot) were pulled out of the active build and moved to `shelved-widgets/` at the repo root —
- * see `shelved-widgets/README.md` and `shelved-widgets/restore.patch` to bring them back. Only
- * Net Worth is wired below — across all three of its provider registrations
- * (NetWorthWidgetProvider/Card/Large; see AndroidManifest.xml — no Micro variant, minimum
- * width is 3 columns everywhere), since each is a distinct AppWidgetProvider component with
- * its own set of placed widgetIds, even though they all share this one fetcher/renderer.
+ * SHELVED (2026-10-08): Cash Flow, and every Phase 2/3 widget (Budgets/Planned Payments/
+ * Currency Balances/Loans/Accounts/Account Hero/Income-Expense Bar/Category Pie Chart/Category
+ * Treemap/Cash Flow Comparison/Category Spending Trend/Tag UpSet Plot) were pulled out of the
+ * active build and moved to `shelved-widgets/` at the repo root — see
+ * `shelved-widgets/README.md` and `shelved-widgets/restore.patch` to bring them back. Net Worth
+ * (across all three of its provider registrations — see AndroidManifest.xml) and Recent
+ * Activities are wired below, since each is a distinct AppWidgetProvider component with its own
+ * set of placed widgetIds even where a provider shares its fetcher/renderer with siblings.
  */
 class WidgetRefreshWorker(
     appContext: Context,
@@ -47,6 +46,7 @@ class WidgetRefreshWorker(
 
                 withContext(Dispatchers.IO) {
                     val netWorthProviders = listOf(
+                        NetWorthWidgetProviderMicro::class.java,
                         NetWorthWidgetProvider::class.java,
                         NetWorthWidgetProviderCard::class.java
                     )
@@ -57,6 +57,13 @@ class WidgetRefreshWorker(
                         ) { ctx, prefs, widgetId, mgr ->
                             NetWorthRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
                         }
+                    }
+
+                    refreshWidget(
+                        context, appWidgetManager, common,
+                        RecentActivitiesWidgetProvider::class.java, RecentActivitiesWidgetFetcher()
+                    ) { ctx, prefs, widgetId, mgr ->
+                        RecentActivitiesRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
                     }
                 }
             }

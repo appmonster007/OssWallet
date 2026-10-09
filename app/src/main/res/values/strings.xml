@@ -29,9 +29,12 @@
     <string name="widget_net_worth_micro_description">Just the balance, for the smallest space.</string>
     <string name="widget_net_worth_strip_label">Net Worth — Trend</string>
     <string name="widget_net_worth_strip_description">Balance with a comparison trend.</string>
-    <string name="widget_net_worth_card_label">Net Worth — Card</string>
+    <string name="widget_net_worth_card_label">Net Worth — Detailed</string>
     <string name="widget_net_worth_card_description">Balance plus income and expenses.</string>
     <string name="widget_net_worth_settings_description">Widget settings</string>
+
+    <string name="widget_recent_activities_label">Recent Activities</string>
+    <string name="widget_recent_activities_description">A scrolling list of your most recent transactions.</string>
 
     <!-- Common Actions -->
     <string name="action_back">Back</string>

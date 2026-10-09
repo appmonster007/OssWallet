@@ -58,6 +58,7 @@ fun OssWalletNavGraph(
     onSplashConditionChanged: (Boolean) -> Unit = {},
     pendingWidgetRoute: String? = null,
     pendingWidgetFilter: String? = null,
+    pendingWidgetTransactionId: Long? = null,
     onWidgetRouteHandled: () -> Unit = {},
 ) {
     val vms = SharedNavViewModels(
@@ -116,7 +117,7 @@ fun OssWalletNavGraph(
     // divergence from the drawer's save/restore semantics may be intentional (a widget tap
     // landing on a fresh, un-restored screen rather than resuming prior scroll/filter state)
     // and isn't this change's call to silently alter.
-    LaunchedEffect(pendingWidgetRoute, pendingWidgetFilter) {
+    LaunchedEffect(pendingWidgetRoute, pendingWidgetFilter, pendingWidgetTransactionId) {
         pendingWidgetRoute?.let { route ->
             val widgetNavOptions: androidx.navigation.NavOptionsBuilder.() -> Unit = {
                 popUpTo<DashboardRoute> { inclusive = false; saveState = false }
@@ -148,6 +149,13 @@ fun OssWalletNavGraph(
                     appNavigator.navigateTo(AnalyticsRoute, widgetNavOptions)
                 }
                 "exchange_rates" -> appNavigator.navigateTo(ExchangeRatesRoute, widgetNavOptions)
+                // Opens a transaction for editing — the Recent Activities widget's per-row tap
+                // target, same as RecentActivitiesCard's own onTransactionClick. id comes from
+                // the ListView's fill-in Intent (see RecentActivitiesRemoteViewsService), not
+                // this route string itself.
+                "transaction_entry" -> pendingWidgetTransactionId?.let { id ->
+                    appNavigator.navigateTo(TransactionEntryRoute(transactionId = id), widgetNavOptions)
+                }
             }
             onWidgetRouteHandled()
         }

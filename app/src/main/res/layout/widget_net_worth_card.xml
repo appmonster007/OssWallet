@@ -15,7 +15,9 @@
      inside a vertical LinearLayout, with only the middle (value) taking layout_weight="1":
      label and cmp size to their own content and stay pinned top/bottom, while value expands to
      fill whatever's left between them and centers itself within that span via its own
-     android:gravity="center_vertical|end".
+     android:gravity="center_vertical|end". Label and comparison-% use @font/jetbrains_mono
+     (matches NetWorthCard.kt's sectionOverline/metaLabel); value uses @font/manrope (matches
+     its transactionAmount) — same split as row1.xml/strip.xml.
 
      cell1/cell2 = Inflow/Outflow (CashFlow) or Income/Expenses (Accounting); cell3 = Net flow
      (CashFlow, highlighted), or Transfer (Accounting, plain, hidden when the filter excludes
@@ -69,6 +71,7 @@
                     android:id="@+id/tv_nw_cell1_label"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
                     android:textColor="@color/widget_on_surface_variant"
                     android:textSize="10sp"
                     android:textStyle="bold"
@@ -81,6 +84,7 @@
                     android:layout_height="0dp"
                     android:layout_weight="1"
                     android:gravity="center_vertical|end"
+                    android:fontFamily="@font/manrope"
                     android:textColor="@color/widget_on_surface"
                     android:textSize="16sp"
                     android:textStyle="bold"
@@ -91,6 +95,7 @@
                     android:id="@+id/tv_nw_cell1_cmp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
                     android:textSize="10sp"
                     android:textStyle="bold"
                     android:maxLines="1"
@@ -113,6 +118,7 @@
                     android:id="@+id/tv_nw_cell2_label"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
                     android:textColor="@color/widget_on_surface_variant"
                     android:textSize="10sp"
                     android:textStyle="bold"
@@ -125,6 +131,7 @@
                     android:layout_height="0dp"
                     android:layout_weight="1"
                     android:gravity="center_vertical|end"
+                    android:fontFamily="@font/manrope"
                     android:textColor="@color/widget_on_surface"
                     android:textSize="16sp"
                     android:textStyle="bold"
@@ -135,6 +142,7 @@
                     android:id="@+id/tv_nw_cell2_cmp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
                     android:textSize="10sp"
                     android:textStyle="bold"
                     android:maxLines="1"
@@ -168,6 +176,7 @@
                     android:id="@+id/tv_nw_cell3_label"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
                     android:textColor="@color/widget_accent"
                     android:textSize="11sp"
                     android:textStyle="bold"
@@ -180,6 +189,7 @@
                     android:layout_height="0dp"
                     android:layout_weight="1"
                     android:gravity="center_vertical|end"
+                    android:fontFamily="@font/manrope"
                     android:textColor="@color/widget_accent"
                     android:textSize="15sp"
                     android:textStyle="bold"
@@ -190,6 +200,7 @@
                     android:id="@+id/tv_nw_cell3_cmp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
                     android:textColor="@color/widget_accent"
                     android:textSize="10sp"
                     android:textStyle="bold"
@@ -213,6 +224,7 @@
                     android:id="@+id/tv_nw_cell4_label"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
                     android:textColor="@color/widget_on_surface_variant"
                     android:textSize="10sp"
                     android:textStyle="bold"
@@ -225,6 +237,7 @@
                     android:layout_height="0dp"
                     android:layout_weight="1"
                     android:gravity="center_vertical|end"
+                    android:fontFamily="@font/manrope"
                     android:textColor="@color/widget_on_surface"
                     android:textSize="16sp"
                     android:textStyle="bold"
@@ -235,6 +248,7 @@
                     android:id="@+id/tv_nw_cell4_cmp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
                     android:textSize="10sp"
                     android:textStyle="bold"
                     android:maxLines="1"

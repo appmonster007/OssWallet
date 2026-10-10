@@ -204,6 +204,7 @@ class CardAggregationServiceTest {
         val config = NetWorthCardConfig(
             cardId = "t",
             showComparison = false,
+            showTrendLine = false,
             filter = TransactionFilter(timelineRange = TimelineRange.AllTime())
         )
         coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
@@ -345,6 +346,7 @@ class CardAggregationServiceTest {
         val config = NetWorthCardConfig(
             cardId = "t",
             showComparison = true,
+            showTrendLine = false,
             filter = TransactionFilter(timelineRange = TimelineRange.AllTime())
         )
         every { TimelineService.getPreviousRange(any(), any()) } returns Pair(1000L, 2000L)
@@ -355,6 +357,49 @@ class CardAggregationServiceTest {
 
         assertNotNull(result.previousPeriodMetrics)
         assertEquals(0, BigDecimal("5000.00").compareTo(result.previousPeriodMetrics!!.netWorth))
+    }
+
+    @Test
+    fun `computeNetWorthCard builds the trend from opening balance plus daily net flow`() = runBlocking {
+        val zone = TimelineService.systemZoneId
+        val start = java.time.LocalDate.of(2025, 1, 1).atStartOfDay(zone).toInstant().toEpochMilli()
+        val end = java.time.LocalDate.of(2025, 1, 3).atTime(23, 59, 59).atZone(zone).toInstant().toEpochMilli()
+        val config = NetWorthCardConfig(
+            cardId = "t",
+            showComparison = false,
+            showTrendLine = true,
+            filter = TransactionFilter(timelineRange = TimelineRange.CustomRange(start, end))
+        )
+        every { TimelineService.getDateRange(any(), any()) } returns Pair<Long?, Long?>(start, end)
+        // Opening balance (everything before Jan 1) is 5000 and Jan 2 adds 100.
+        coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
+            Result.success(mapOf("USD" to fs(income = "5200.00", expense = "-200.00")))
+        coEvery { TransactionAggregationService.getSummaryByCurrencyByDay(any(), any(), any(), any()) } returns
+            Result.success(mapOf("2025-01-02" to mapOf("USD" to fs(income = "100.00"))))
+
+        val result = CardAggregationService.computeNetWorthCard(queryService, profileId, baseInput(), config)
+
+        assertEquals(
+            listOf("5000.00", "5100.00", "5100.00"),
+            result.trend.map { it.value.setScale(2).toPlainString() }
+        )
+    }
+
+    @Test
+    fun `computeNetWorthCard skips the trend when the setting is off`() = runBlocking {
+        val config = NetWorthCardConfig(
+            cardId = "t",
+            showComparison = false,
+            showTrendLine = false,
+            filter = TransactionFilter(timelineRange = TimelineRange.AllTime())
+        )
+        coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
+            Result.success(mapOf("USD" to fs(income = "5200.00", expense = "-200.00")))
+
+        val result = CardAggregationService.computeNetWorthCard(queryService, profileId, baseInput(), config)
+
+        assertEquals(emptyList<Any>(), result.trend)
+        coVerify(exactly = 0) { TransactionAggregationService.getSummaryByCurrencyByDay(any(), any(), any(), any()) }
     }
 
     @Test

@@ -153,6 +153,14 @@ interface CardUpdateHandler {
         }
     }
 
+    fun updateCardNetWorthShowTrendLine(cardId: String, show: Boolean) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                (config as? NetWorthCardConfig)?.copy(showTrendLine = show) ?: config
+            }
+        }
+    }
+
     fun updateCardShowComparison(cardId: String, show: Boolean) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->

@@ -48,6 +48,15 @@ data class NetWorthMetrics(
     }
 }
 
+/** One point of the Net Worth trend line: the balance at the end of a bucket. */
+@Serializable
+data class NetWorthTrendPoint(
+    val label: String,
+    val epochMillis: Long,
+    @Serializable(with = BigDecimalSerializer::class)
+    val value: BigDecimal
+)
+
 /**
  * Sealed class hierarchy for unified card rendering data.
  * Every card computation returns a subtype of this class.
@@ -61,7 +70,9 @@ sealed class CardRenderData {
         val config: NetWorthCardConfig,
         val currentPeriodMetrics: NetWorthMetrics,
         val currency: String,
-        val previousPeriodMetrics: NetWorthMetrics? = null
+        val previousPeriodMetrics: NetWorthMetrics? = null,
+        // Running balance per bucket across the card's period; empty when the trend line is off.
+        val trend: List<NetWorthTrendPoint> = emptyList()
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.NET_WORTH
     }

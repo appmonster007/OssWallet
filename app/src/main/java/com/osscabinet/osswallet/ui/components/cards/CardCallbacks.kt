@@ -29,6 +29,7 @@ sealed class CardCallbacks {
     data class NetWorth(
         val onFontSizeChange: (String, String) -> Unit = { _, _ -> },
         val onShowComparisonChange: (String, Boolean) -> Unit = { _, _ -> },
+        val onShowTrendLineChange: (String, Boolean) -> Unit = { _, _ -> },
         val onPerspectiveChange: (String, com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective) -> Unit = { _, _ -> },
         val onExcludeInternalTransfersChange: (String, Boolean) -> Unit = { _, _ -> },
         val onSplitTransfersChange: (String, Boolean) -> Unit = { _, _ -> },

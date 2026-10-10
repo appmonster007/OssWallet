@@ -1,5 +1,10 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
+import com.osscabinet.ossWallet.ui.components.visualization.AeonSparkline
+import com.osscabinet.ossWallet.domain.card.NetWorthTrendPoint
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -67,9 +72,6 @@ import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-// TODO(card-upgrade): add a trend sparkline under the figure and a tap-through to a full chart; reuse AccountHeroCard's BalanceSparkline.
-// TODO(card-upgrade): check whether net worth history exists; a new series in the computer may be needed.
-// See docs/guides/card-upgrade-roadmap.md
 @Composable
 fun NetWorthCard(
     currentPeriodMetrics: NetWorthMetrics,
@@ -77,10 +79,15 @@ fun NetWorthCard(
     displayCurrency: String = baseCurrency,
     config: NetWorthCardConfig,
     previousPeriodMetrics: NetWorthMetrics? = null,
+    trend: List<NetWorthTrendPoint> = emptyList(),
     callbacks: CardCallbacks.NetWorth = CardCallbacks.NetWorth(),
     layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
+    // Index of the trend point under the finger while scrubbing; null otherwise.
+    var scrubIndex by remember(trend) { mutableStateOf<Int?>(null) }
+    val scrubbedPoint = scrubIndex?.let { trend.getOrNull(it) }
+    val shownNetWorth = scrubbedPoint?.value ?: currentPeriodMetrics.netWorth
     val currentOnUpdate = rememberUpdatedState(callbacks.onFilterChange)
 
     AeonExpressiveCard(
@@ -123,7 +130,7 @@ fun NetWorthCard(
 
                 Text(
                     text = CurrencyReprUi.formatCurrencyAnnotated(
-                        amount = currentPeriodMetrics.netWorth,
+                        amount = shownNetWorth,
                         currencyCode = displayCurrency,
                         spec = CurrencyDisplaySpec(useSemanticColor = true),
                         partStyles = CurrencyPartStyles(symbol = symbolStyle)
@@ -144,8 +151,14 @@ fun NetWorthCard(
                     }
                 )
 
-                // Mono trend readout — "▲ +8.2%  VS PRIOR PERIOD"
-                if (config.showComparison && (previousPeriodMetrics != null)) {
+                // While scrubbing the trend line, the comparison readout shows the date instead.
+                if (scrubbedPoint != null) {
+                    Text(
+                        text = scrubbedPoint.label.uppercase(),
+                        style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium),
+                        color = AppColors.contentSecondary
+                    )
+                } else if (config.showComparison && (previousPeriodMetrics != null)) {
                     val change =
                         currentPeriodMetrics.netWorth.subtract(previousPeriodMetrics.netWorth)
                     if (change.signum() != 0 && previousPeriodMetrics.netWorth.signum() != 0) {
@@ -167,6 +180,20 @@ fun NetWorthCard(
                         )
                     }
                 }
+            }
+
+            if (config.showTrendLine && trend.size >= 2) {
+                val trendUp = trend.last().value >= trend.first().value
+                AeonSparkline(
+                    points = remember(trend) { trend.map { it.value } },
+                    lineColor = if (trendUp) AppColors.positive else AppColors.negative,
+                    selectedIndex = scrubIndex,
+                    onSelectedIndexChange = { scrubIndex = it },
+                    contentDescription = "Net worth over the period. Drag to read the value on a date.",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                )
             }
 
             // Three-column row or two-column row depending on mode.
@@ -430,6 +457,7 @@ private fun NetWorthSettingsContent(
 ) {
     val currentOnFontSizeChange = rememberUpdatedState(callbacks.onFontSizeChange)
     val currentOnShowComparisonChange = rememberUpdatedState(callbacks.onShowComparisonChange)
+    val currentOnShowTrendLineChange = rememberUpdatedState(callbacks.onShowTrendLineChange)
     val currentOnPerspectiveChange = rememberUpdatedState(callbacks.onPerspectiveChange)
     val currentOnExcludeInternalTransfersChange = rememberUpdatedState(callbacks.onExcludeInternalTransfersChange)
     val currentOnSplitTransfersChange = rememberUpdatedState(callbacks.onSplitTransfersChange)
@@ -465,6 +493,13 @@ private fun NetWorthSettingsContent(
             description = "Show change from previous period",
             checked = config.showComparison,
             onCheckedChange = { currentOnShowComparisonChange.value(config.cardId, it) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Trend Line",
+            description = "Net worth across the period. Past dates use current exchange rates",
+            checked = config.showTrendLine,
+            onCheckedChange = { currentOnShowTrendLineChange.value(config.cardId, it) },
             showBackground = false
         )
     }
@@ -621,6 +656,7 @@ fun mapNetWorth(
     callbacks = CardCallbacks.NetWorth(
         onFontSizeChange = updateHandler::updateCardNetWorthFontSize,
         onShowComparisonChange = updateHandler::updateCardShowComparison,
+        onShowTrendLineChange = updateHandler::updateCardNetWorthShowTrendLine,
         onPerspectiveChange = updateHandler::updateCardPerspective,
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
         onSplitTransfersChange = updateHandler::updateCardSplitTransfers,

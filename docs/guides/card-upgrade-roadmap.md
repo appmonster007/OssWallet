@@ -32,7 +32,7 @@ Settings UI should reuse what the bar chart cards already use in `ui/components/
 | # | Card | Upgrade | Effort |
 |---|------|---------|--------|
 | 1 | Category Pie and Treemap | Configurable grouping, legend rows and sort, per-category change | Medium |
-| 2 | Net Worth | Trend sparkline | Medium |
+| 2 | Net Worth | Trend line (done) | Medium |
 | 3 | Budgets | Pace marker and over-budget styling | Medium |
 | 4 | Planned Payments | Cash needed in the next 7 or 30 days | Small |
 | 5 | Loans | Payoff progress and projected payoff date | Medium |
@@ -78,16 +78,23 @@ Files: `ui/components/cards/types/CategoryPieChartCard.kt`, `CategoryTreemapCard
 
 ---
 
-## 2. Net Worth
+## 2. Net Worth (done)
 
-Files: `ui/components/cards/types/NetWorthCard.kt`, `NetWorthCardConfig`, `mapNetWorth`.
+Files: `NetWorthCard.kt`, `NetWorthCardConfig.showTrendLine`, `domain/card/NetWorthTrend.kt`,
+`CardAggregationService.computeNetWorthTrend`, shared `ui/components/visualization/AeonSparkline.kt`.
 
-- Add a small trend sparkline under the figure, and open a full chart on tap.
-- `AccountHeroCard.kt` already has `BalanceSparkline`, a Canvas-based line with no axes. Reuse or generalise it
-  rather than writing a second one.
-- Open questions: which period the sparkline covers (follow the card's timeline range), and whether net worth
-  history is already computed anywhere. It may need a new series in the computer, which is the main cost.
-- Not yet investigated: how `mapNetWorth` gets its data.
+- A trend line under the figure shows the running balance across the card's period. Dragging along it replaces the
+  figure with the value on that date (the comparison line shows the date); releasing snaps back.
+- There is no stored balance history. The line is the opening balance (net flow before the period) plus the running
+  net flow per bucket, built from one day-by-day query, and uses the same balance semantics as the headline figure.
+- **Known limit:** every point is converted with today's exchange rates, because the app keeps only one rate set.
+  For multi-currency data the line shows today's value of past holdings, not their value at the time. The setting
+  description says so. Fixing it needs stored daily rates.
+- The Cash Flow perspective draws the same balance line: the headline figure is the balance in both perspectives.
+- `AccountHeroCard` now uses the shared `AeonSparkline` (no scrubbing there).
+- Tests: `NetWorthTrendTest`. Not done: tap-through to a full chart (no such screen exists).
+
+---
 
 ## 3. Budgets
 

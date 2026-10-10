@@ -349,7 +349,6 @@ private fun PlannedPaymentRow(
             showTags = false,
             showDividers = false,
             isPlanned = true,
-            showStatusBadge = false,
             plannedBorderColor = if (isOverdue) AppColors.negative else AppColors.primary,
             containerColor = Color.Transparent,
             footer = {

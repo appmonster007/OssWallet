@@ -208,7 +208,7 @@ object NetWorthRemoteViewsRenderer {
         val intent = Intent(context, MainActivity::class.java)
             .putExtra(MainActivity.EXTRA_WIDGET_NAV, nav)
             .apply { filterJson?.let { putExtra(MainActivity.EXTRA_WIDGET_FILTER, it) } }
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         return PendingIntent.getActivity(
             context,
             requestCode,

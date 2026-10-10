@@ -73,7 +73,7 @@ object RecentActivitiesRemoteViewsRenderer {
         val viewAllIntent = Intent(context, MainActivity::class.java)
             .putExtra(MainActivity.EXTRA_WIDGET_NAV, "records")
             .putExtra(MainActivity.EXTRA_WIDGET_FILTER, prefs[RecentActivitiesWidgetKeys.VIEW_ALL_FILTER] ?: "")
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         viewAllPill.setOnClickPendingIntent(
             R.id.tv_header_action_pill,
             PendingIntent.getActivity(
@@ -89,7 +89,7 @@ object RecentActivitiesRemoteViewsRenderer {
         // RecentActivitiesRemoteViewsFactory.getViewAt()'s fill-in Intent (EXTRA_TRANSACTION_ID).
         val itemTemplateIntent = Intent(context, MainActivity::class.java)
             .putExtra(MainActivity.EXTRA_WIDGET_NAV, "transaction_entry")
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         views.setPendingIntentTemplate(
             R.id.lv_ra_list,
             PendingIntent.getActivity(

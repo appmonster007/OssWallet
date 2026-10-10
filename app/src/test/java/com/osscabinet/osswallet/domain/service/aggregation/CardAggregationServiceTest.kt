@@ -6,6 +6,8 @@ import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.LoanStatus
+import com.osscabinet.ossWallet.domain.model.settings.LoanSortMode
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -400,6 +402,44 @@ class CardAggregationServiceTest {
 
         assertEquals(emptyList<Any>(), result.trend)
         coVerify(exactly = 0) { TransactionAggregationService.getSummaryByCurrencyByDay(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `computeLoansCard hides settled loans unless asked and orders before the cut`() = runBlocking {
+        fun loan(name: String, status: LoanStatus, due: Long?) = Loan(
+            id = name.hashCode().toLong(),
+            name = name,
+            principalAmount = BigDecimal("1000"),
+            currency = "USD",
+            startDate = 0L,
+            lenderOrBorrowerName = "x",
+            loanType = LoanType.BORROWED,
+            linkedAccountId = "",
+            expectedSettlementDate = due,
+            status = status,
+            profileId = profileId
+        )
+        val loans = listOf(
+            loan("later", LoanStatus.ACTIVE, due = 900L),
+            loan("done", LoanStatus.SETTLED, due = 50L),
+            loan("sooner", LoanStatus.ACTIVE, due = 100L)
+        )
+        coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
+            Result.success(emptyMap())
+        val input = baseInput(loans = loans)
+
+        val hidden = CardAggregationService.computeLoansCard(
+            queryService, profileId, input,
+            LoansCardConfig(cardId = "t", sortBy = LoanSortMode.DUE_SOONEST, maxItems = 1)
+        )
+        // The cut comes after ordering: the soonest active loan, not the first one saved.
+        assertEquals(listOf("sooner"), hidden.items.map { it.loan.name })
+
+        val shown = CardAggregationService.computeLoansCard(
+            queryService, profileId, input,
+            LoansCardConfig(cardId = "t", showSettled = true, sortBy = LoanSortMode.DUE_SOONEST)
+        )
+        assertEquals(listOf("done", "sooner", "later"), shown.items.map { it.loan.name })
     }
 
     @Test

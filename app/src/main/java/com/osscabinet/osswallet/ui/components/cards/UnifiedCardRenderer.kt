@@ -149,6 +149,7 @@ fun UnifiedCardRenderer(
                     exchangeRates = renderData.exchangeRates,
                     config = renderData.config,
                     previousItems = renderData.previousItems,
+                    summary = renderData.summary,
                     callbacks = cardWithCallbacks.callbacks,
                     layoutProps = effectiveProps
                 )

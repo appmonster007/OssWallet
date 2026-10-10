@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.service.aggregation
 
+import com.osscabinet.ossWallet.domain.model.LoanStatus
 import com.osscabinet.ossWallet.domain.card.CardComputerUtils
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
@@ -337,7 +338,9 @@ object CardAggregationService {
                     (tagSet.isEmpty() || budget.tags.isEmpty() || budget.tags.any { it in tagSet })
         }
 
-        val items = budgets.take(config.maxItems).map { budget ->
+        // Sorting needs every budget's progress, so only a saved-order card can stop early.
+        val candidates = if (config.sortBy == BudgetSortMode.SAVED) budgets.take(config.maxItems) else budgets
+        val progress = candidates.map { budget ->
             val budgetFilter = BudgetService.buildTransactionFilter(budget, now, input.categories, effectiveFilter.timelineRange.excludeFuture)
             val finalFilter = budgetFilter.copy(
                 accountIds = if (budget.accountIds.isEmpty()) effectiveFilter.accountIds else budget.accountIds
@@ -353,8 +356,14 @@ object CardAggregationService {
                 computeBudgetRollover(queryService, profileId, budget, input, effectiveFilter.accountIds, now, effectiveFilter.timelineRange.excludeFuture)
             } else BigDecimal.ZERO
 
-            BudgetService.buildProgress(budget, spent, rollover)
+            BudgetService.buildProgress(budget, spent, rollover, BudgetService.elapsedFraction(budget, now))
         }
+
+        val items = when (config.sortBy) {
+            BudgetSortMode.SAVED -> progress
+            BudgetSortMode.MOST_USED -> progress.sortedByDescending { it.percentage }
+            BudgetSortMode.AHEAD_OF_PACE -> progress.sortedByDescending { it.percentage - (it.elapsedFraction ?: it.percentage) }
+        }.take(config.maxItems)
 
         return CardRenderData.Budgets(
             config = config,
@@ -428,11 +437,21 @@ object CardAggregationService {
         }
 
         val filtered = baseFiltered.filter { loan ->
-            (mergedFilter.accountIds.isEmpty() || loan.linkedAccountId.isBlank() || loan.linkedAccountId in mergedFilter.accountIds) &&
+            (config.showSettled || loan.status == LoanStatus.ACTIVE) &&
+                    (mergedFilter.accountIds.isEmpty() || loan.linkedAccountId.isBlank() || loan.linkedAccountId in mergedFilter.accountIds) &&
                     (mergedFilter.currencies.isEmpty() || loan.currency in mergedFilter.currencies)
         }
 
-        val items = filtered.take(config.maxItems).map { loan: Loan ->
+        // Order before the cut so the rows shown are the ones the user asked for. Only "most owed"
+        // needs every loan's summary; the other orders work from the loans themselves.
+        val ordered = when (config.sortBy) {
+            LoanSortMode.DUE_SOONEST -> LoanService.sortByDueDate(filtered)
+            LoanSortMode.NAME -> LoanService.sortByName(filtered)
+            else -> filtered
+        }
+        val toSummarize = if (config.sortBy == LoanSortMode.MOST_OWED) ordered else ordered.take(config.maxItems)
+
+        val summaries = toSummarize.map { loan: Loan ->
             val loanFilter = LoanService.buildTransactionFilter(loan, input.categories)
             
             val summaryByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, loanFilter)
@@ -458,6 +477,9 @@ object CardAggregationService {
                 interestAccrued = interest.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
             )
         }
+        val items = if (config.sortBy == LoanSortMode.MOST_OWED) {
+            LoanService.sortByOwed(summaries, input.targetCurrency, input.exchangeRates).take(config.maxItems)
+        } else summaries
         return CardRenderData.Loans(
             config = config,
             items = items,

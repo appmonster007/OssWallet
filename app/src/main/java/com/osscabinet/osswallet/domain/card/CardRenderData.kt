@@ -148,7 +148,9 @@ sealed class CardRenderData {
         val items: List<PlannedPaymentSummary>,
         val currency: String,
         val previousItems: List<PlannedPaymentSummary>? = null,
-        val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
+        val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap()),
+        // Cash due in the next few days; null when the summary is off.
+        val summary: PlannedPaymentsSummary? = null
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.PLANNED_PAYMENTS
     }

@@ -33,9 +33,9 @@ Settings UI should reuse what the bar chart cards already use in `ui/components/
 |---|------|---------|--------|
 | 1 | Category Pie and Treemap | Configurable grouping, legend rows and sort, per-category change | Medium |
 | 2 | Net Worth | Trend line (done) | Medium |
-| 3 | Budgets | Pace marker and over-budget styling | Medium |
-| 4 | Planned Payments | Cash needed in the next 7 or 30 days | Small |
-| 5 | Loans | Payoff progress and projected payoff date | Medium |
+| 3 | Budgets | Pace marker and over-budget styling (done) | Medium |
+| 4 | Planned Payments | Cash needed in the next 7 or 30 days (done) | Small |
+| 5 | Loans | Settled filter, sort, segmented type (done; projected payoff left out) | Medium |
 | 6 | Currency Balances and Accounts | Sort and hide-zero options | Small |
 | 7 | TagUpSet Plot | "How to read this" hint | Small |
 
@@ -96,31 +96,37 @@ Files: `NetWorthCard.kt`, `NetWorthCardConfig.showTrendLine`, `domain/card/NetWo
 
 ---
 
-## 3. Budgets
+## 3. Budgets (done)
 
-Files: `BudgetsCard.kt` (`BudgetProgressRow`, `mapBudgets`), `BudgetsCardConfig`.
+Files: `BudgetsCard.kt`, `BudgetService.elapsedFraction` / `paceStatus`, `BudgetsCardConfig` (`showPaceMarker`,
+`showWarningStyle`, `sortBy`), `BudgetProgress.elapsedFraction`.
 
-- Add a pace marker on each progress bar showing where spending should be by today's date, and style rows
-  that are over budget or on course to be.
-- Needs each budget's period start and end, which the data may already carry. Not yet investigated.
-- Current settings: `showArchived`, `showComparison`, `maxItems`.
+- A tick on each bar shows how far through the period you are today, with an ON TRACK / AHEAD OF PACE / NEAR LIMIT / OVER chip.
+  Ahead of pace means spending is more than 10 points ahead of the elapsed share. All Time budgets have no pace.
+- Amber styling uses each budget's own alert threshold (previously only "exceeded" was styled).
+- Order setting (As saved / Most used / Over pace) sorts before the "max items" cut.
+- Tests: `BudgetPaceTest`.
 
-## 4. Planned Payments
+## 4. Planned Payments (done)
 
-Files: `PlannedPaymentsCard.kt`, `PlannedPaymentsCardConfig`.
+Files: `PlannedPaymentsCard.kt` (`PlannedPaymentsSummaryStrip`), `domain/card/PlannedPaymentsSummary.kt`,
+`PlannedPaymentsCardConfig` (`summaryDays`, `countOverdueInSummary`).
 
-- Add a summary of cash needed in the next 7 or 30 days.
-- Existing config: `maxItems`, `showComparison`, `showOverdue`, `viewMode`. The occurrences are already generated
-  by `PlannedPaymentService`, so this should be a sum over existing data.
-- Open question: whether overdue items count toward the total.
+- A strip above the list shows Out, In and Net for the next 7 or 30 days (default 7, can be off), worked out from every
+  payment due in the window, not just the rows shown. Transfers and paused payments are left out.
+- Overdue expenses are shown beside the heading by default and can be counted into Out.
+- Tests: `PlannedPaymentsSummaryTest`.
 
-## 5. Loans
+## 5. Loans (done, without projected payoff)
 
-Files: `LoansCard.kt` (`LoanSummaryRow`, `mapLoans`), `LoansCardConfig`.
+Files: `LoansCard.kt`, `LoanService` (`sortByDueDate`, `sortByName`, `sortByOwed`), `LoansCardConfig` (`showSettled`, `sortBy`).
 
-- Add a payoff progress bar and a projected payoff date.
-- Add sort and "show only active" options. Existing config: `showType`, `maxItems`.
-- Not yet investigated: whether repayment schedules or only balances are available. The projected date depends on it.
+- Settled loans are hidden by default (toggle to show them, with a SETTLED chip).
+- Show Type is now the same segmented control as other cards; new Order setting applied before the "max items" cut.
+- **Not built, on purpose:** a projected payoff date. If it is added later, use the loan's expected settlement date and
+  fall back to the repayment pace over the last 6 months; the pace needs one extra day-by-day query per loan.
+- The paid progress bar and principal already existed.
+- Tests: `LoanOrderingTest` and a Loans case in `CardAggregationServiceTest`.
 
 ## 6. Currency Balances and Accounts
 
@@ -129,6 +135,8 @@ Files: `CurrencyBalancesCard.kt`, `AccountsCard.kt`, and their configs.
 - Sort options (by balance, name, or recent activity) on both.
 - Hide zero balances on Currency Balances. This is the cheapest item on the list.
 - Currency Balances config today: `layout`, `gridColumns`, `showBaseConversion`.
+
+---
 
 ## 7. TagUpSet Plot
 

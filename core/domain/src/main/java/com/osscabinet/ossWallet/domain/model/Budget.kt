@@ -7,6 +7,9 @@ import java.math.BigDecimal
 
 enum class BudgetAlertLevel { NONE, WARNING, EXCEEDED }
 
+/** How a budget is doing against both its limit and how far through its period we are. */
+enum class BudgetPaceStatus { ON_TRACK, AHEAD_OF_PACE, NEAR_LIMIT, OVER }
+
 @Serializable
 data class Budget(
     val id: Long = 0,
@@ -46,5 +49,7 @@ data class BudgetProgress(
     val percentage: Float,
     val alertLevel: BudgetAlertLevel,
     @Serializable(with = BigDecimalSerializer::class)
-    val rolloverAmount: BigDecimal = BigDecimal.ZERO
+    val rolloverAmount: BigDecimal = BigDecimal.ZERO,
+    // Share (0..1) of the budget's current period that has passed; null for All Time budgets.
+    val elapsedFraction: Float? = null
 )

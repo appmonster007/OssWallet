@@ -1,5 +1,17 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
+import com.osscabinet.ossWallet.ui.components.AeonStatusChip
+import androidx.compose.ui.text.style.TextOverflow
+import com.osscabinet.ossWallet.ui.theme.WarningColor
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSegmentedRow
+import com.osscabinet.ossWallet.domain.service.management.BudgetService
+import com.osscabinet.ossWallet.domain.model.settings.BudgetSortMode
+import com.osscabinet.ossWallet.domain.model.BudgetPaceStatus
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -48,8 +60,6 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 
-// TODO(card-upgrade): add a pace marker (spent vs expected by today) on each progress bar and over-budget styling.
-// See docs/guides/card-upgrade-roadmap.md
 @Composable
 fun BudgetsCard(
     items: List<BudgetProgress>,
@@ -95,10 +105,31 @@ fun BudgetsCard(
                     val previousProgress = previousItems?.find { it.budget.id == budgetId }
                     BudgetProgressRow(
                         progress = progress,
+                        showPaceMarker = config.showPaceMarker,
+                        showWarningStyle = config.showWarningStyle,
                         previousProgress = if (config.showComparison) previousProgress else null,
                         showDivider = index < items.lastIndex,
                         onClick = onClick
                     )
+                }
+                if (config.showPaceMarker && items.any { it.elapsedFraction != null }) {
+                    Row(
+                        modifier = Modifier.padding(top = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(2.dp)
+                                .height(10.dp)
+                                .background(AppColors.contentPrimary.copy(alpha = 0.7f))
+                        )
+                        Text(
+                            text = "WHERE YOU SHOULD BE BY TODAY",
+                            style = AppTextStyles.metaLabel.copy(fontSize = 9.sp),
+                            color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             }
         }
@@ -113,6 +144,30 @@ private fun BudgetsSettingsContent(
     val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
     val currentOnShowComparisonChange = rememberUpdatedState(callbacks.onShowComparisonChange)
 
+    CardSettingsSection("Pace") {
+        AeonSettingsToggle(
+            label = "Pace Marker",
+            description = "Mark how far through the period you are on each bar",
+            checked = config.showPaceMarker,
+            onCheckedChange = { currentOnUpdate.value(config.copy(showPaceMarker = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Warning Colour",
+            description = "Amber once a budget reaches its alert threshold",
+            checked = config.showWarningStyle,
+            onCheckedChange = { currentOnUpdate.value(config.copy(showWarningStyle = it)) },
+            showBackground = false
+        )
+    }
+    CardSettingsSection("Order") {
+        CardSettingsSegmentedRow(
+            options = BudgetSortMode.entries,
+            selected = config.sortBy,
+            onSelected = { currentOnUpdate.value(config.copy(sortBy = it)) },
+            labelProvider = { it.displayName }
+        )
+    }
     CardSettingsSection("Display") {
         AeonSettingsToggle(
             label = "Show archived budgets",
@@ -133,13 +188,32 @@ private fun BudgetsSettingsContent(
 @Composable
 private fun BudgetProgressRow(
     progress: BudgetProgress,
+    showPaceMarker: Boolean,
+    showWarningStyle: Boolean,
     previousProgress: BudgetProgress? = null,
     showDivider: Boolean,
     onClick: () -> Unit
 ) {
     val pct = progress.percentage.coerceIn(0f, 1f)
-    val over = progress.alertLevel == BudgetAlertLevel.EXCEEDED
-    val fillColor = if (over) AppColors.negative else AppColors.accent
+    val status = remember(progress, showPaceMarker, showWarningStyle) {
+        // Settings can switch off the pace and warning signals, falling back to what the card showed before.
+        when (val raw = BudgetService.paceStatus(progress)) {
+            BudgetPaceStatus.AHEAD_OF_PACE -> when {
+                showPaceMarker -> raw
+                progress.alertLevel == BudgetAlertLevel.WARNING && showWarningStyle -> BudgetPaceStatus.NEAR_LIMIT
+                else -> BudgetPaceStatus.ON_TRACK
+            }
+            BudgetPaceStatus.NEAR_LIMIT -> if (showWarningStyle) raw else BudgetPaceStatus.ON_TRACK
+            else -> raw
+        }
+    }
+    val fillColor = when {
+        status == BudgetPaceStatus.OVER -> AppColors.negative
+        showWarningStyle && (status == BudgetPaceStatus.AHEAD_OF_PACE || status == BudgetPaceStatus.NEAR_LIMIT) -> WarningColor
+        else -> AppColors.accent
+    }
+    val elapsed = progress.elapsedFraction
+    val tickColor = AppColors.contentPrimary.copy(alpha = 0.7f)
     val currency = progress.budget.currency
 
     Column(
@@ -159,11 +233,26 @@ private fun BudgetProgressRow(
             verticalAlignment = Alignment.Bottom
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = progress.budget.name,
-                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
-                    color = AppColors.contentPrimary
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = progress.budget.name,
+                        style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
+                        color = AppColors.contentPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    val chip: Pair<String, Color>? = when (status) {
+                        BudgetPaceStatus.OVER -> "OVER" to AppColors.negative
+                        BudgetPaceStatus.AHEAD_OF_PACE -> "AHEAD OF PACE" to WarningColor
+                        BudgetPaceStatus.NEAR_LIMIT -> "NEAR LIMIT" to WarningColor
+                        BudgetPaceStatus.ON_TRACK -> if (showPaceMarker && elapsed != null) "ON TRACK" to AppColors.positive else null
+                    }
+                    if (chip != null) AeonStatusChip(text = chip.first, color = chip.second)
+                }
                 if (previousProgress != null) {
                     val change = progress.spent.subtract(previousProgress.spent)
                     if ((change.signum() != 0) && (previousProgress.spent.signum() != 0)) {
@@ -211,6 +300,18 @@ private fun BudgetProgressRow(
                 .fillMaxWidth()
                 .height(2.dp)
                 .background(AppColors.outlineVariant)
+                .drawWithContent {
+                    drawContent()
+                    if (showPaceMarker && elapsed != null) {
+                        val x = size.width * elapsed
+                        drawLine(
+                            color = tickColor,
+                            start = Offset(x, -4.dp.toPx()),
+                            end = Offset(x, size.height + 4.dp.toPx()),
+                            strokeWidth = 2.dp.toPx()
+                        )
+                    }
+                }
         ) {
             Box(
                 modifier = Modifier

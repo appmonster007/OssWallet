@@ -72,6 +72,8 @@ fun RecentActivitiesCard(
             onRecordsClick = callbacks.onRecordsClick,
             baseCurrency = baseCurrency,
             modifier = Modifier.height(300.dp),
+            // TODO(glass): re-enable (remove this override) once RA card glass behavior is fixed
+            hazeLayers = null,
             showHeader = false,
             showCurrencyBreakdown = config.showCurrencyBreakdown,
             allTxnBreakdown = config.allTxnBreakdown,

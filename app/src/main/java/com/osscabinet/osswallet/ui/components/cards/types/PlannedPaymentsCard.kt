@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -54,7 +55,6 @@ import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.components.AeonStepperField
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.ConvertedWithNativeSubtext
-import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
@@ -70,6 +70,21 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Surface
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.theme.scaledSp
+import androidx.compose.foundation.shape.RoundedCornerShape
+// import com.osscabinet.ossWallet.ui.components.aeonHazeSource
+// import com.osscabinet.ossWallet.ui.theme.HazeLayer
+// import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -130,11 +145,13 @@ fun PlannedPaymentsCard(
             }
         }
 
+        // TODO(glass): re-enable once PP card glass behavior is fixed
+        // val overlayState = LocalAeonHaze.current?.states?.getOrNull(HazeLayer.Overlay)
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp),
+                // .aeonHazeSource(overlayState),
             contentPadding = PaddingValues(bottom = dims.cardPadding)
         ) {
             if (items.isEmpty()) {
@@ -158,6 +175,11 @@ fun PlannedPaymentsCard(
             ) { summary ->
                 PlannedPaymentRow(
                     title = summary.name,
+                    accountName = summary.accountName,
+                    categoryName = summary.categoryName,
+                    categoryIcon = summary.categoryIcon,
+                    categoryColor = summary.categoryColor,
+                    note = summary.note,
                     amount = summary.amount,
                     currency = summary.currency,
                     targetCurrency = targetCurrency,
@@ -265,6 +287,11 @@ private fun PlannedPaymentsSettingsContent(
 @Composable
 private fun PlannedPaymentRow(
     title: String,
+    accountName: String,
+    categoryName: String,
+    categoryIcon: String?,
+    categoryColor: Int,
+    note: String?,
     amount: BigDecimal,
     currency: String,
     targetCurrency: String,
@@ -278,6 +305,7 @@ private fun PlannedPaymentRow(
 ) {
     val haptic = LocalHapticFeedback.current
     val dims = AeonTheme.dimensions
+    val uiScale = AeonTheme.uiScale
     var isPressed by remember { mutableStateOf(value = false) }
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.98f else 1f,
@@ -292,12 +320,42 @@ private fun PlannedPaymentRow(
         entryMode == EntryMode.TRANSFER -> AccentBlue
         else -> AppColors.negative
     }
+    val borderColor = if (isOverdue) AppColors.negative else AppColors.primary
+    val cornerRadius = dims.componentCornerRadius
+    val outerPadding = 6.dp
+    val iconTint = if (categoryColor != -1) Color(categoryColor) else AppColors.primary
+    val subtitle = listOf(categoryName, note.orEmpty()).filter { it.isNotBlank() }
+        .joinToString(" · ")
 
+    // TODO(glass): re-enable once PP card glass behavior is fixed
+    // val surfaceState = LocalAeonHaze.current?.states?.getOrNull(HazeLayer.Surface)
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { scaleX = scale; scaleY = scale },
+            // .aeonHazeSource(surfaceState),
+        shape = RoundedCornerShape(cornerRadius),
+        color = AppColors.panelSurface
+    ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .aeonDottedUnderline(AppColors.outlineVariant)
+            .padding(horizontal = outerPadding, vertical = 4.dp)
+            .drawWithContent {
+                drawContent()
+                drawRoundRect(
+                    color = borderColor,
+                    style = Stroke(
+                        width = 1.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(
+                            floatArrayOf(6.dp.toPx(), 4.dp.toPx()),
+                            0f
+                        )
+                    ),
+                    cornerRadius = CornerRadius(cornerRadius.toPx())
+                )
+            }
             .pointerInput(onClick) {
                 detectTapGestures(
                     onPress = {
@@ -310,29 +368,71 @@ private fun PlannedPaymentRow(
                         onClick()
                     }
                 )
-            },
+            }
+            .padding(horizontal = dims.listPadding - outerPadding, vertical = dims.spacingSm),
     ) {
-        Row(
-            modifier = Modifier.padding(vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.size(dims.iconSizeLg)) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    shape = CircleShape,
+                    color = iconTint.copy(alpha = 0.2f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            getIconByName(categoryIcon),
+                            contentDescription = null,
+                            tint = iconTint,
+                            modifier = Modifier.size(dims.iconSizeSm)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.width(dims.spacingSm))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
-                    color = AppColors.contentPrimary,
+                    style = AppTextStyles.transactionTitle.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = scaledSp(12f, uiScale)
+                    ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (accountName.isNotBlank()) {
+                    Text(
+                        text = accountName,
+                        style = AppTextStyles.transactionSwipeAction.copy(
+                            fontSize = scaledSp(10f, uiScale),
+                            fontWeight = FontWeight.Medium
+                        ),
+                        color = AppColors.contentSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                if (subtitle.isNotEmpty()) {
+                    Text(
+                        text = subtitle,
+                        style = AppTextStyles.caption.copy(fontSize = scaledSp(11f, uiScale)),
+                        color = AppColors.contentSecondary,
+                        modifier = Modifier.padding(top = 2.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 Text(
                     text = dateLabel.uppercase(),
-                    style = AppTextStyles.metaLabel,
+                    style = AppTextStyles.metaLabel.copy(
+                        fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Normal
+                    ),
                     color = if (isOverdue) AppColors.negative
                     else AppColors.contentSecondary.copy(alpha = 0.8f),
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
+
             ConvertedWithNativeSubtext(
                 amount = amount,
                 nativeCurrency = currency,
@@ -340,26 +440,43 @@ private fun PlannedPaymentRow(
                 rates = exchangeRates,
                 primaryStyle = AppTextStyles.transactionAmount.copy(
                     fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp,
+                    fontSize = scaledSp(15f, uiScale),
                     color = typeColor
                 ),
                 primaryColor = typeColor,
-                subtextStyle = AppTextStyles.metaLabel,
-                subtextColor = AppColors.contentSecondary.copy(alpha = 0.7f)
+                subtextStyle = AppTextStyles.transactionAmountMeta,
+                subtextColor = AppColors.contentSecondary.copy(alpha = 0.8f)
             )
-            if (onConfirm != null || (onSkip != null)) {
+
+            if (isOverdue && onConfirm != null) {
+                IconButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onConfirm()
+                    },
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .size(dims.iconSizeMd)
+                ) {
+                    Icon(
+                        Icons.Rounded.CheckCircle,
+                        contentDescription = "Confirm",
+                        modifier = Modifier.size(dims.iconSizeSm),
+                        tint = AppColors.primary
+                    )
+                }
+            }
+            if (onConfirm != null || onSkip != null) {
                 Box {
                     IconButton(
                         onClick = { showActions = true },
-                        modifier = Modifier
-                            .padding(start = 6.dp)
-                            .size(dims.iconSizeMd)
+                        modifier = Modifier.size(dims.iconSizeMd)
                     ) {
                         Icon(
                             Icons.Default.MoreVert,
                             contentDescription = "Actions",
                             modifier = Modifier.size(14.dp),
-                            tint = AppColors.contentSecondary.copy(alpha = 0.4f)
+                            tint = AppColors.contentSecondary.copy(alpha = 0.6f)
                         )
                     }
                     DropdownMenu(
@@ -406,6 +523,7 @@ private fun PlannedPaymentRow(
                 }
             }
         }
+    }
     }
 }
 

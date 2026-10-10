@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
+import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -260,6 +261,7 @@ fun TransactionFilterPill(
         )
 
         GlassSurface(
+            element = GlassElement.HEADER,
             modifier = Modifier
                 .nestedScroll(nestedScrollConnection)
                 .padding(horizontal = horizMargin)

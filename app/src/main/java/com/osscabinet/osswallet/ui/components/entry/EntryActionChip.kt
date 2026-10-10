@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
+import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -92,6 +93,7 @@ fun EntryActionChip(
     )
 
     GlassSurface(
+        element = GlassElement.ENTRY,
         modifier = modifier
             .height(scaledDp(48f, uiScale))
             .graphicsLayer {

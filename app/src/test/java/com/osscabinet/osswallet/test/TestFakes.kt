@@ -74,6 +74,7 @@ class FakeSettingsRepository(
     override val analyticsCardsConfig: Flow<String> = flowOf("")
     override val analyticsCommonFilterEnabled: Flow<Boolean> = flowOf(false)
     override val glassmorphismEnabled: Flow<Boolean> = flowOf(false)
+    override val glassDisabledElements: Flow<Set<String>> = flowOf(emptySet())
     override val contourBgVersion: Flow<Int> = flowOf(0)
     override val contourLinesEnabled: Flow<Boolean> = flowOf(false)
     override val randomizeContourEachLoad: Flow<Boolean> = flowOf(false)
@@ -109,6 +110,7 @@ class FakeSettingsRepository(
     override suspend fun saveAnalyticsCommonFilterEnabled(enabled: Boolean) {}
     override suspend fun saveShortlistedCurrencies(currencies: Set<String>) {}
     override suspend fun saveGlassmorphismEnabled(enabled: Boolean) {}
+    override suspend fun saveGlassDisabledElements(elements: Set<String>) {}
     override suspend fun saveContourBgVersion(version: Int) {}
     override suspend fun saveContourLinesEnabled(enabled: Boolean) {}
     override suspend fun saveRandomizeContourEachLoad(enabled: Boolean) {}

@@ -66,6 +66,10 @@ class MainActivity : FragmentActivity() {
             val numberingSystem by settingsRepository.numberingSystem.collectAsStateWithLifecycle(initialValue = "WESTERN")
             val use24Hour by settingsRepository.use24HourFormat.collectAsStateWithLifecycle(initialValue = false)
             val glassmorphismEnabled by settingsRepository.glassmorphismEnabled.collectAsStateWithLifecycle(initialValue = true)
+            val glassDisabledNames by settingsRepository.glassDisabledElements.collectAsStateWithLifecycle(initialValue = emptySet())
+            val glassDisabledElements = remember(glassDisabledNames) {
+                com.osscabinet.ossWallet.ui.theme.GlassElement.entries.filter { it.name in glassDisabledNames }.toSet()
+            }
             val contourBgVersion by settingsRepository.contourBgVersion.collectAsStateWithLifecycle(initialValue = 4)
             val contourLinesEnabled by settingsRepository.contourLinesEnabled.collectAsStateWithLifecycle(initialValue = true)
             val randomizeContourEachLoad by settingsRepository.randomizeContourEachLoad.collectAsStateWithLifecycle(initialValue = true)
@@ -102,6 +106,7 @@ class MainActivity : FragmentActivity() {
             ) {
                 CompositionLocalProvider(
                     LocalGlassmorphismEnabled provides glassmorphismEnabled,
+                    com.osscabinet.ossWallet.ui.theme.LocalGlassDisabledElements provides glassDisabledElements,
                     com.osscabinet.ossWallet.ui.theme.LocalContourBgVersion provides contourBgVersion,
                     com.osscabinet.ossWallet.ui.theme.LocalContourLinesEnabled provides contourLinesEnabled,
                     com.osscabinet.ossWallet.ui.theme.LocalRandomizeContourEachLoad provides randomizeContourEachLoad

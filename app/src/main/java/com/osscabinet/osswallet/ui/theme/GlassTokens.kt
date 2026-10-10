@@ -233,6 +233,24 @@ val LocalHazeDepth = staticCompositionLocalOf { 0 }
 
 /** When false, all hazeEffect/glassmorphism modifiers are skipped app-wide. */
 val LocalGlassmorphismEnabled = staticCompositionLocalOf { true }
+
+/**
+ * Kinds of glass surface that can be switched off individually (Design Lab → Glass Elements),
+ * so the cost of each can be measured and tuned. Pass one to [GlassSurface] via `element`.
+ */
+enum class GlassElement(val label: String, val description: String) {
+    CARD("Cards", "Dashboard and analytics card shells"),
+    TOP_BAR("Top bar", "Top bar pills, search field and tab pills"),
+    DRAWER("Drawer", "Navigation drawer"),
+    NAV_PILL("Bottom navigation", "Bottom nav pill, its menus and the FAB"),
+    HEADER("List headers", "Transaction group headers and filter pill"),
+    SHEET("Sheets", "Glass bottom sheets and quick add"),
+    ENTRY("Entry & lists", "Entry form sections, chips, dialogs and list items"),
+    OTHER("Other", "Anything not listed above");
+}
+
+/** Elements whose blur is individually disabled. Empty by default (everything blurs). */
+val LocalGlassDisabledElements = staticCompositionLocalOf<Set<GlassElement>> { emptySet() }
 val LocalContourBgVersion = staticCompositionLocalOf { 4 }
 val LocalContourLinesEnabled = staticCompositionLocalOf { true }
 val LocalRandomizeContourEachLoad = staticCompositionLocalOf { true }

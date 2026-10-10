@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
+import com.osscabinet.ossWallet.ui.theme.GlassElement
 import android.content.ClipData
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.togetherWith
@@ -218,6 +219,7 @@ fun ExchangeRatesScreen(
                 ) {
                         // Custom Tab Row Pill - Glassmorphism correctly implemented here
                         GlassSurface(
+                            element = GlassElement.TOP_BAR,
                             shape = CircleShape,
                             glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Pill,
                             modifier = Modifier

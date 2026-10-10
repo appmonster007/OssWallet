@@ -2,6 +2,7 @@
 
 package com.osscabinet.ossWallet.ui.components
 
+import com.osscabinet.ossWallet.ui.theme.GlassElement
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -189,6 +190,7 @@ fun AeonTopBarPill(
     content: @Composable RowScope.() -> Unit
 ) {
     GlassSurface(
+        element = GlassElement.TOP_BAR,
         shape = CircleShape,
         hazeLayer = hazeLayer,
         hazeStyle = GlassTokens.pillStyle(),
@@ -487,6 +489,7 @@ fun AeonTopBarDropdown(
             offset = IntOffset(0, 100) // Positioned below the pill
         ) {
             GlassSurface(
+                element = GlassElement.TOP_BAR,
                 modifier = Modifier.width(IntrinsicSize.Max),
                 shape = RoundedCornerShape(AeonSize.D16.value),
                 hazeLayer = HazeLayer.Overlay,

@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
+import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -121,6 +122,7 @@ fun AeonTagSelectionDialog(
         ) {
             val dims = AeonTheme.dimensions
             GlassSurface(
+                element = GlassElement.ENTRY,
                 modifier = Modifier
                     .widthIn(max = 340.dp)
                     .fillMaxWidth(0.85f)
@@ -324,6 +326,7 @@ fun AeonTagCreateDialog(
             contentAlignment = Alignment.Center
         ) {
             GlassSurface(
+                element = GlassElement.ENTRY,
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .widthIn(max = 340.dp)

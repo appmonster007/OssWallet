@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components
 
+import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -406,6 +407,7 @@ fun AeonFlowBadge(
     val isDark = mode.isDarkTheme
 
     GlassSurface(
+        element = GlassElement.ENTRY,
         modifier = if (onClick != null) modifier.clickable { onClick() } else modifier,
         shape = RoundedCornerShape(8.dp),
         glassVariant = GlassVariant.Card, // Using card variant for consistent glass morphism

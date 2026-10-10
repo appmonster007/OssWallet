@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components
 
+import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -96,6 +97,7 @@ fun AppDrawerContent(
     )
 
     GlassSurface(
+        element = GlassElement.DRAWER,
         modifier = Modifier
             .width(scaledDp(280f, uiScale))
             .fillMaxHeight(),

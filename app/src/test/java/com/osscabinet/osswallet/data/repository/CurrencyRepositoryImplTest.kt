@@ -159,6 +159,7 @@ private class FakeSettingsRepository(currencyProviderId: String) : SettingsRepos
     override val analyticsCommonFilterEnabled: Flow<Boolean> get() = unused
     override val shortlistedCurrencies: Flow<Set<String>?> get() = unused
     override val glassmorphismEnabled: Flow<Boolean> get() = unused
+    override val glassDisabledElements: Flow<Set<String>> get() = unused
     override val contourBgVersion: Flow<Int> get() = unused
     override val contourLinesEnabled: Flow<Boolean> get() = unused
     override val randomizeContourEachLoad: Flow<Boolean> get() = unused
@@ -194,6 +195,7 @@ private class FakeSettingsRepository(currencyProviderId: String) : SettingsRepos
     override suspend fun saveAnalyticsCommonFilterEnabled(enabled: Boolean) = unused
     override suspend fun saveShortlistedCurrencies(currencies: Set<String>) = unused
     override suspend fun saveGlassmorphismEnabled(enabled: Boolean) = unused
+    override suspend fun saveGlassDisabledElements(elements: Set<String>) = unused
     override suspend fun saveContourBgVersion(version: Int) = unused
     override suspend fun saveContourLinesEnabled(enabled: Boolean) = unused
     override suspend fun saveRandomizeContourEachLoad(enabled: Boolean) = unused

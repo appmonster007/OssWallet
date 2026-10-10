@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
+import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -80,6 +81,7 @@ fun <T> EntryTypeSelector(
     )
 
     GlassSurface(
+        element = GlassElement.ENTRY,
         modifier = Modifier.height(scaledDp(44f, uiScale)),
         shape = RoundedCornerShape(32.dp),
         hazeStyle = GlassTokens.pillStyle(),

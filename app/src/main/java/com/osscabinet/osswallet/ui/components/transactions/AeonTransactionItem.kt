@@ -147,7 +147,7 @@ fun AeonTransactionItem(
         color = containerColor,
         shape = RectangleShape
     ) {
-        Column {
+        Column(modifier = Modifier.padding(horizontal = 4.dp)) {
             Column(
                 modifier = if (isPlanned) {
                     Modifier

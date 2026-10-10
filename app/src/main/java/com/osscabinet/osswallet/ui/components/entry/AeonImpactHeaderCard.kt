@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
+import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -275,6 +276,7 @@ fun <T> AeonImpactHeaderCard(
     val activeAmountColor = source.color ?: AppColors.primary
 
     GlassSurface(
+        element = GlassElement.ENTRY,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         hazeStyle = GlassTokens.cardStyle(),

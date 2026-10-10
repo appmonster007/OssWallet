@@ -33,6 +33,8 @@ interface SettingsRepository {
     val analyticsCommonFilterEnabled: Flow<Boolean>
     val shortlistedCurrencies: Flow<Set<String>?>
     val glassmorphismEnabled: Flow<Boolean>
+    /** Names of glass element kinds whose blur is switched off individually (see GlassElement). */
+    val glassDisabledElements: Flow<Set<String>>
     val contourBgVersion: Flow<Int>
     val contourLinesEnabled: Flow<Boolean>
     val randomizeContourEachLoad: Flow<Boolean>
@@ -68,6 +70,7 @@ interface SettingsRepository {
     suspend fun saveAnalyticsCommonFilterEnabled(enabled: Boolean)
     suspend fun saveShortlistedCurrencies(currencies: Set<String>)
     suspend fun saveGlassmorphismEnabled(enabled: Boolean)
+    suspend fun saveGlassDisabledElements(elements: Set<String>)
     suspend fun saveContourBgVersion(version: Int)
     suspend fun saveContourLinesEnabled(enabled: Boolean)
     suspend fun saveRandomizeContourEachLoad(enabled: Boolean)

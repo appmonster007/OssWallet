@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.navigation
 
+import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -281,6 +282,7 @@ fun PillNavigationBar(
         contentAlignment = Alignment.Center
     ) {
         GlassSurface(
+            element = GlassElement.NAV_PILL,
             modifier = Modifier
                 .width(barWidth)
                 .height(barHeight),
@@ -514,6 +516,7 @@ fun FabMenuItem(
         ) {
             // Label Glass/Solid Surface
             GlassSurface(
+                element = GlassElement.NAV_PILL,
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
                     .clickable(
@@ -567,6 +570,7 @@ fun FabMenuItem(
 
             // Icon Glass/Solid Surface
             GlassSurface(
+                element = GlassElement.NAV_PILL,
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)

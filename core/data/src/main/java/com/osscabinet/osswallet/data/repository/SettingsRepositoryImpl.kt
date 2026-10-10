@@ -44,6 +44,7 @@ class SettingsRepositoryImpl @Inject constructor(
         settingsDataStore.analyticsCommonFilterEnabled
     override val shortlistedCurrencies: Flow<Set<String>?> = settingsDataStore.shortlistedCurrencies
     override val glassmorphismEnabled: Flow<Boolean> = settingsDataStore.glassmorphismEnabled
+    override val glassDisabledElements: Flow<Set<String>> = settingsDataStore.glassDisabledElements
     override val contourBgVersion: Flow<Int> = settingsDataStore.contourBgVersion
     override val contourLinesEnabled: Flow<Boolean> = settingsDataStore.contourLinesEnabled
     override val randomizeContourEachLoad: Flow<Boolean> =
@@ -129,6 +130,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun saveGlassmorphismEnabled(enabled: Boolean) =
         settingsDataStore.saveGlassmorphismEnabled(enabled)
+
+    override suspend fun saveGlassDisabledElements(elements: Set<String>) =
+        settingsDataStore.saveGlassDisabledElements(elements)
 
     override suspend fun saveContourBgVersion(version: Int) =
         settingsDataStore.saveContourBgVersion(version)

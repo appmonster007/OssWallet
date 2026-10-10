@@ -105,6 +105,9 @@ class SettingsViewModel @Inject constructor(
     val glassmorphismEnabled: StateFlow<Boolean> = settingsRepository.glassmorphismEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val glassDisabledElements: StateFlow<Set<String>> = settingsRepository.glassDisabledElements
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
     val contourBgVersion: StateFlow<Int> = settingsRepository.contourBgVersion
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
@@ -354,6 +357,13 @@ class SettingsViewModel @Inject constructor(
     fun setGlassmorphismEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.saveGlassmorphismEnabled(enabled)
+        }
+    }
+
+    fun setGlassElementEnabled(element: String, enabled: Boolean) {
+        viewModelScope.launch {
+            val current = settingsRepository.glassDisabledElements.first()
+            settingsRepository.saveGlassDisabledElements(if (enabled) current - element else current + element)
         }
     }
 

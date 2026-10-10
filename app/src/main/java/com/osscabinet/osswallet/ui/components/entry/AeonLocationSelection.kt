@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
+import com.osscabinet.ossWallet.ui.theme.GlassElement
 import android.annotation.SuppressLint
 import android.content.ClipData
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -535,6 +536,7 @@ private fun AeonLocationSelectionContent(
                 exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top)
             ) {
                 GlassSurface(
+                    element = GlassElement.ENTRY,
                     modifier = Modifier.heightIn(max = 320.dp),
                     shape = RoundedCornerShape(dims.containerCornerRadius),
                     hazeLayer = HazeLayer.Overlay,
@@ -646,6 +648,7 @@ private fun AeonLocationSelectionContent(
                 exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
             ) {
                 GlassSurface(
+                    element = GlassElement.ENTRY,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(
                         topStart = dims.dialogCornerRadius,

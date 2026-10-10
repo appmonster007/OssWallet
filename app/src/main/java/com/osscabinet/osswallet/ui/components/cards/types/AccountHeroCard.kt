@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
+import com.osscabinet.ossWallet.ui.components.visualization.AeonSparkline
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -203,7 +204,7 @@ fun AccountHeroCard(
             // ── 2. Sparkline (gated on data availability) ───────────────────
             if (balanceHistory.size >= 2) {
                 val isNeg = summary.balance.signum() < 0
-                BalanceSparkline(
+                AeonSparkline(
                     points = balanceHistory,
                     lineColor = if (isNeg) AppColors.negative else AppColors.positive,
                     modifier = Modifier
@@ -561,49 +562,6 @@ private fun GhostChip(modifier: Modifier = Modifier) {
             .fillMaxHeight()
             .background(AppColors.contentPrimary.copy(alpha = 0.015f), RoundedCornerShape(18.dp))
     )
-}
-
-/** Minimal filled sparkline for a per-account balance series. */
-@Composable
-private fun BalanceSparkline(
-    points: List<BigDecimal>,
-    lineColor: Color,
-    modifier: Modifier = Modifier,
-) {
-    val values = remember(points) { points.map { it.toFloat() } }
-    Canvas(modifier = modifier) {
-        if (values.size < 2) return@Canvas
-        val minV = values.min()
-        val maxV = values.max()
-        val range = (maxV - minV).takeIf { it != 0f } ?: 1f
-        val stepX = size.width / (values.size - 1)
-        val topPad = size.height * 0.1f
-        val usableH = size.height * 0.8f
-
-        fun yFor(v: Float) = topPad + usableH * (1f - (v - minV) / range)
-
-        val linePath = Path().apply {
-            moveTo(0f, yFor(values.first()))
-            for (i in 1 until values.size) lineTo(i * stepX, yFor(values[i]))
-        }
-        val fillPath = Path().apply {
-            addPath(linePath)
-            lineTo(size.width, size.height)
-            lineTo(0f, size.height)
-            close()
-        }
-        drawPath(
-            path = fillPath,
-            brush = Brush.verticalGradient(
-                colors = listOf(lineColor.copy(alpha = 0.28f), lineColor.copy(alpha = 0f))
-            )
-        )
-        drawPath(
-            path = linePath,
-            color = lineColor,
-            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
-        )
-    }
 }
 
 @Composable

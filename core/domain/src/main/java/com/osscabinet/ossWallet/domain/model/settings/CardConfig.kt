@@ -159,6 +159,8 @@ data class NetWorthCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val fontSize: String = "Medium",
     val showComparison: Boolean = true,
+    // Running net worth line under the figure; drag along it to read the value on a date.
+    val showTrendLine: Boolean = true,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
     // Accounting perspective only: show transfer in / out as separate rows rather than a net value.

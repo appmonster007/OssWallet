@@ -4,6 +4,8 @@ import com.osscabinet.ossWallet.domain.card.CardComputerUtils
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
+import com.osscabinet.ossWallet.domain.card.NetWorthTrend
+import com.osscabinet.ossWallet.domain.card.NetWorthTrendPoint
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -90,11 +92,70 @@ object CardAggregationService {
             } else null
         } else null
 
+        val trend = if (config.showTrendLine) {
+            computeNetWorthTrend(queryService, profileId, input, currentFilter)
+        } else emptyList()
+
         return CardRenderData.NetWorth(
             config = config,
             currentPeriodMetrics = currentPeriodMetrics,
             currency = input.targetCurrency,
-            previousPeriodMetrics = previousPeriodMetrics
+            previousPeriodMetrics = previousPeriodMetrics,
+            trend = trend
+        )
+    }
+
+    /**
+     * Running net worth across the card's period. Uses the same balance semantics as the headline
+     * figure (all accounts in the filter, no category / tag filters, internal transfers included),
+     * so the last point matches the figure when the period ends today.
+     */
+    private suspend fun computeNetWorthTrend(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        input: CardInput,
+        currentFilter: TransactionFilter
+    ): List<NetWorthTrendPoint> {
+        val balanceFilter = currentFilter.toBalanceFilter()
+        val range = currentFilter.timelineRange
+        val zone = TimelineService.systemZoneId
+        val now = System.currentTimeMillis()
+
+        val (rawStart, rawEnd) = TimelineService.getDateRange(range)
+        val end = minOf(rawEnd ?: now, now)
+        val start = rawStart ?: run {
+            val minTs = queryService.getMinTransactionTimestamp(profileId) ?: return emptyList()
+            Instant.ofEpochMilli(minTs).atZone(zone).toLocalDate()
+                .atStartOfDay(zone).toInstant().toEpochMilli()
+        }
+        if (start >= end) return emptyList()
+
+        val buckets = CardComputerUtils.generateBuckets(
+            start, end, CardComputerUtils.resolveGranularity(start, end)
+        )
+        if (buckets.size < 2) return emptyList()
+
+        val openingByCurrency: Map<String, BigDecimal> = if (rawStart == null) emptyMap() else {
+            TransactionAggregationService.getSummaryByCurrency(
+                queryService, profileId,
+                balanceFilter.copy(
+                    timelineRange = TimelineRange.CustomRange(end = start - 1, excludeFuture = range.excludeFuture)
+                )
+            ).getOrDefault(emptyMap()).mapValues { it.value.netFlow }
+        }
+
+        val dailyNet: Map<String, Map<String, BigDecimal>> = TransactionAggregationService.getSummaryByCurrencyByDay(
+            queryService, profileId,
+            balanceFilter.copy(timelineRange = TimelineRange.CustomRange(start, end, excludeFuture = range.excludeFuture)),
+            false
+        ).getOrDefault(emptyMap()).mapValues { (_, byCurrency) -> byCurrency.mapValues { it.value.netFlow } }
+
+        return NetWorthTrend.build(
+            buckets = buckets,
+            openingByCurrency = openingByCurrency,
+            dailyNetByCurrency = dailyNet,
+            targetCurrency = input.targetCurrency,
+            exchangeRates = input.exchangeRates
         )
     }
 

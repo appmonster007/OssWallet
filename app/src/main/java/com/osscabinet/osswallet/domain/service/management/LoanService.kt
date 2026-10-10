@@ -36,6 +36,26 @@ object LoanService {
             .divide(BigDecimal(365), 10, RoundingMode.HALF_UP)
     }
 
+    /** Loans with an expected settlement date first, earliest first; the rest keep their relative order. */
+    fun sortByDueDate(loans: List<Loan>): List<Loan> =
+        loans.sortedWith(compareBy<Loan>({ it.expectedSettlementDate == null }, { it.expectedSettlementDate }))
+
+    fun sortByName(loans: List<Loan>): List<Loan> = loans.sortedBy { it.name.lowercase() }
+
+    /** Largest amount still owed first (balance plus interest), compared in [targetCurrency]. */
+    fun sortByOwed(
+        summaries: List<LoanSummary>,
+        targetCurrency: String,
+        exchangeRates: ExchangeRateSnapshot
+    ): List<LoanSummary> = summaries.sortedByDescending {
+        CurrencyService.convertAmount(
+            amount = it.remainingBalance + it.interestAccrued,
+            fromCurrency = it.loan.currency,
+            toCurrency = targetCurrency,
+            exchangeRates = exchangeRates
+        )
+    }
+
     fun getAmortizationSchedule(
         loan: Loan,
         monthlyPayment: BigDecimal,

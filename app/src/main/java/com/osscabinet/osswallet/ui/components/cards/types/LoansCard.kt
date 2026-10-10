@@ -1,5 +1,13 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
+import com.osscabinet.ossWallet.ui.components.AeonStatusChip
+import androidx.compose.ui.text.style.TextOverflow
+import com.osscabinet.ossWallet.domain.model.LoanStatus
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSegmentedRow
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsChipGrid
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.domain.model.settings.LoanSortMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,9 +59,6 @@ import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-// TODO(card-upgrade): add payoff progress and a projected payoff date, plus sort and 'only active' options.
-// TODO(card-upgrade): check whether repayment schedules are available; the projected date depends on it.
-// See docs/guides/card-upgrade-roadmap.md
 @Composable
 fun LoansCard(
     items: List<LoanSummary>,
@@ -118,24 +123,28 @@ private fun LoansSettingsContent(
     val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
 
     CardSettingsSection("Show Type") {
-        listOf("ALL", "LENT", "BORROWED").forEach { type ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    type.lowercase().replaceFirstChar { it.uppercase() },
-                    style = AppTextStyles.transactionTitle
-                )
-                RadioButton(
-                    selected = config.showType == type,
-                    onClick = { currentOnUpdate.value(config.copy(showType = type)) }
-                )
-            }
-        }
+        CardSettingsSegmentedRow(
+            options = listOf("ALL", "LENT", "BORROWED"),
+            selected = config.showType,
+            onSelected = { currentOnUpdate.value(config.copy(showType = it)) },
+            labelProvider = { it.lowercase().replaceFirstChar { c -> c.uppercase() } }
+        )
+        AeonSettingsToggle(
+            label = "Show Settled",
+            description = "Include loans that are fully repaid",
+            checked = config.showSettled,
+            onCheckedChange = { currentOnUpdate.value(config.copy(showSettled = it)) },
+            showBackground = false
+        )
+    }
+    CardSettingsSection("Order") {
+        CardSettingsChipGrid(
+            options = LoanSortMode.entries,
+            selected = config.sortBy,
+            onSelected = { currentOnUpdate.value(config.copy(sortBy = it)) },
+            labelProvider = { it.displayName },
+            columns = 2
+        )
     }
 }
 
@@ -172,11 +181,22 @@ private fun LoanSummaryRow(
             verticalAlignment = Alignment.Bottom
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = summary.loan.name,
-                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
-                    color = AppColors.contentPrimary
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = summary.loan.name,
+                        style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
+                        color = AppColors.contentPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    if (summary.loan.status == LoanStatus.SETTLED) {
+                        AeonStatusChip(text = "SETTLED", color = AppColors.contentSecondary)
+                    }
+                }
                 Text(
                     text = if (summary.loan.loanType == LoanType.LENT) "LENT TO ${summary.loan.lenderOrBorrowerName}".uppercase()
                     else "BORROWED FROM ${summary.loan.lenderOrBorrowerName}".uppercase(),

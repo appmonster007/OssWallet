@@ -1,5 +1,15 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
+import com.osscabinet.ossWallet.ui.components.aeonDashedTopRule
+import com.osscabinet.ossWallet.ui.components.AeonStatusChip
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.background
+import com.osscabinet.ossWallet.ui.util.formatCurrency
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSegmentedRow
+import com.osscabinet.ossWallet.domain.card.PlannedPaymentsSummary
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -80,8 +90,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 // import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import java.math.BigDecimal
 
-// TODO(card-upgrade): add a 'cash needed in the next 7 / 30 days' summary built from the existing occurrences; decide whether overdue counts.
-// See docs/guides/card-upgrade-roadmap.md
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlannedPaymentsCard(
@@ -94,6 +102,7 @@ fun PlannedPaymentsCard(
     config: PlannedPaymentsCardConfig,
     callbacks: CardCallbacks.PlannedPayments,
     previousItems: List<PlannedPaymentSummary>? = null,
+    summary: PlannedPaymentsSummary? = null,
     layoutProps: CardLayoutProps = CardLayoutProps()
 ) {
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
@@ -121,6 +130,14 @@ fun PlannedPaymentsCard(
             },
         ) {
         val dims = AeonTheme.dimensions
+
+        if (summary != null && config.summaryDays > 0) {
+            PlannedPaymentsSummaryStrip(
+                summary = summary,
+                currency = targetCurrency,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+        }
 
         // Total comparison readout if showComparison is enabled
         if (config.showComparison && (previousItems != null)) {
@@ -238,6 +255,22 @@ private fun PlannedPaymentsSettingsContent(
             }
         }
     }
+    CardSettingsSection("Cash Summary") {
+        CardSettingsSegmentedRow(
+            options = listOf(0, 7, 30),
+            selected = config.summaryDays,
+            onSelected = { currentOnUpdate.value(config.copy(summaryDays = it)) },
+            labelProvider = { if (it == 0) "Off" else "$it days" }
+        )
+        AeonSettingsToggle(
+            label = "Count overdue",
+            description = "Add overdue expenses to the outflow total",
+            checked = config.countOverdueInSummary,
+            enabled = config.summaryDays > 0,
+            onCheckedChange = { currentOnUpdate.value(config.copy(countOverdueInSummary = it)) },
+            showBackground = false
+        )
+    }
     CardSettingsSection("Display") {
         Row(
             modifier = Modifier
@@ -276,6 +309,83 @@ private fun PlannedPaymentsSettingsContent(
             onCheckedChange = { currentOnShowComparisonChange.value(config.cardId, it) },
             showBackground = false
         )
+    }
+}
+
+/**
+ * Cash due in the next few days, laid out like the Net Worth flow row: a heading line, then Out / In / Net
+ * columns split by thin separators under a dashed rule. Overdue expenses that are not counted get a chip.
+ */
+@Composable
+private fun PlannedPaymentsSummaryStrip(
+    summary: PlannedPaymentsSummary,
+    currency: String,
+    modifier: Modifier = Modifier,
+) {
+    val spec = CurrencyDisplaySpec(useSemanticColor = false, shortenThreshold = 11)
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "NEXT ${summary.days} DAYS",
+                style = AppTextStyles.sectionOverline.copy(fontSize = 10.sp),
+                color = AppColors.contentSecondary.copy(alpha = 0.6f)
+            )
+            if (!summary.overdueCounted && summary.overdueOutflow.signum() != 0) {
+                AeonStatusChip(
+                    text = "${formatCurrency(summary.overdueOutflow.abs(), currency, spec)} OVERDUE",
+                    color = AppColors.negative
+                )
+            }
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg),
+            modifier = Modifier
+                .fillMaxWidth()
+                .aeonDashedTopRule()
+                .padding(top = 12.dp)
+                .height(IntrinsicSize.Min)
+        ) {
+            val columns = listOf(
+                Triple("OUT", summary.outflow, AppColors.negative),
+                Triple("IN", summary.inflow, AppColors.positive),
+                Triple("NET", summary.net, if (summary.net.signum() < 0) AppColors.negative else AppColors.contentPrimary)
+            )
+            columns.forEachIndexed { index, (label, amount, color) ->
+                if (index > 0) {
+                    Box(
+                        modifier = Modifier
+                            .width(1.dp)
+                            .fillMaxHeight()
+                            .background(AppColors.outlineVariant)
+                    )
+                }
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = label,
+                        style = AppTextStyles.sectionOverline.copy(fontSize = 10.sp),
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = formatCurrency(amount, currency, spec.copy(forceShowPlus = label == "IN" && amount.signum() > 0)),
+                        style = AppTextStyles.transactionAmount.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        color = color,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
     }
 }
 

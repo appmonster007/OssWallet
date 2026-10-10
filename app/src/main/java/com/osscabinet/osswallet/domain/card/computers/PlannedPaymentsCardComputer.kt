@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.card.CardDataComputer
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.card.PlannedPaymentsSummary
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentSummary
@@ -103,11 +104,25 @@ class PlannedPaymentsCardComputer :
             summarize(it.plannedPayment, it.scheduledDate, false)
         }
 
+        // Totals cover every payment due in the window, not just the rows shown above.
+        val summary = if (config.summaryDays > 0) {
+            PlannedPaymentsSummary.build(
+                payments = filteredPayments,
+                overdue = overdue,
+                now = now,
+                days = config.summaryDays,
+                countOverdue = config.countOverdueInSummary,
+                targetCurrency = input.targetCurrency,
+                exchangeRates = input.exchangeRates
+            )
+        } else null
+
         return CardRenderData.PlannedPayments(
             config = config,
             items = overdueSummaries + upcomingSummaries,
             currency = input.targetCurrency,
-            exchangeRates = input.exchangeRates
+            exchangeRates = input.exchangeRates,
+            summary = summary
         )
     }
 }

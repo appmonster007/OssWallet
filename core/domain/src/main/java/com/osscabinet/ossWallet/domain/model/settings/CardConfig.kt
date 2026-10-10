@@ -364,6 +364,23 @@ data class AccountHeroCardConfig(
 @Serializable
 enum class PlannedPaymentsViewMode { OVERDUE_ONLY, BOTH, FUTURE_ONLY }
 
+/** Order of the rows on the Loans card, applied before the "max items" cut. */
+@Serializable
+enum class LoanSortMode(val displayName: String) {
+    SAVED("As saved"),
+    MOST_OWED("Most owed"),
+    DUE_SOONEST("Due soonest"),
+    NAME("Name")
+}
+
+/** Order of the rows on the Budgets card, applied before the "max items" cut. */
+@Serializable
+enum class BudgetSortMode(val displayName: String) {
+    SAVED("As saved"),
+    MOST_USED("Most used"),
+    AHEAD_OF_PACE("Over pace")
+}
+
 @Serializable
 enum class UpSetDynamicFilteringMode { OFF, HORIZONTAL, VERTICAL }
 
@@ -386,6 +403,10 @@ data class PlannedPaymentsCardConfig(
     /** Legacy field kept for JSON backwards-compat; prefer viewMode. */
     val showOverdue: Boolean = true,
     val viewMode: PlannedPaymentsViewMode = PlannedPaymentsViewMode.BOTH,
+    // Days of cash shown in the summary strip above the list: 0 (off), 7 or 30.
+    val summaryDays: Int = 7,
+    // Whether overdue expenses are added to the summary's outflow (otherwise shown beside it).
+    val countOverdueInSummary: Boolean = false,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,
@@ -411,6 +432,11 @@ data class BudgetsCardConfig(
     val showArchived: Boolean = false,
     val showComparison: Boolean = true,
     val maxItems: Int = 5,
+    // A tick on each bar for how far through the period we are today.
+    val showPaceMarker: Boolean = true,
+    // Amber styling for budgets that are near their alert threshold or ahead of pace.
+    val showWarningStyle: Boolean = true,
+    val sortBy: BudgetSortMode = BudgetSortMode.SAVED,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,
@@ -435,6 +461,9 @@ data class LoansCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showType: String = "ALL",
     val maxItems: Int = 5,
+    // Settled loans are done with; hide them unless asked.
+    val showSettled: Boolean = false,
+    val sortBy: LoanSortMode = LoanSortMode.SAVED,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,

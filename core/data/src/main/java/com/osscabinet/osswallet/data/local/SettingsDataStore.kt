@@ -54,7 +54,6 @@ class SettingsDataStore(private val context: Context) {
         val ANALYTICS_COMMON_FILTER_ENABLED_KEY =
             booleanPreferencesKey("analytics_common_filter_enabled")
         val GLASSMORPHISM_ENABLED_KEY = booleanPreferencesKey("glassmorphism_enabled")
-        val GLASS_DISABLED_ELEMENTS_KEY = stringSetPreferencesKey("glass_disabled_elements")
         val CONTOUR_BG_VERSION_KEY = intPreferencesKey("contour_bg_version")
         val CONTOUR_LINES_ENABLED_KEY = booleanPreferencesKey("contour_lines_enabled")
         val RANDOMIZE_CONTOUR_EACH_LOAD_KEY = booleanPreferencesKey("randomize_contour_each_load")
@@ -181,10 +180,6 @@ class SettingsDataStore(private val context: Context) {
 
     val glassmorphismEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[GLASSMORPHISM_ENABLED_KEY] ?: false
-    }
-
-    val glassDisabledElements: Flow<Set<String>> = context.dataStore.data.map { preferences ->
-        preferences[GLASS_DISABLED_ELEMENTS_KEY] ?: emptySet()
     }
 
     val contourBgVersion: Flow<Int> = context.dataStore.data.map { preferences ->
@@ -385,12 +380,6 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveGlassmorphismEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[GLASSMORPHISM_ENABLED_KEY] = enabled
-        }
-    }
-
-    suspend fun saveGlassDisabledElements(elements: Set<String>) {
-        context.dataStore.edit { preferences ->
-            preferences[GLASS_DISABLED_ELEMENTS_KEY] = elements
         }
     }
 

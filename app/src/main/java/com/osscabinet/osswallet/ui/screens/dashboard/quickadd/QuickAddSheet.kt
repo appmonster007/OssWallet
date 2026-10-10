@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
 
-import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -335,7 +334,6 @@ internal fun QuickAddSheetInternal(
 
                 if (glassEnabled) {
                     GlassSurface(
-                        element = GlassElement.SHEET,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable(

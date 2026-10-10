@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
-import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
@@ -279,7 +278,6 @@ private fun AeonCardSideShell(
         LocalGlassmorphismEnabled provides true, LocalParentGlassHaze provides surfaceHazeState
     ) {
         GlassSurface(
-            element = GlassElement.CARD,
             modifier = modifier.fillMaxWidth(),
             shape = cardShape,
             hazeState = surfaceHazeState,

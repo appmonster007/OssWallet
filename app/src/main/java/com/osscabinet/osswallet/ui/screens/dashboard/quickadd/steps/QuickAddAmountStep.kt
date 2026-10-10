@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps
 
-import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -261,7 +260,6 @@ private fun EditorialContextStrip(
     val categoryIcon = getIconByName(displayCategory?.iconName)
 
     GlassSurface(
-        element = GlassElement.SHEET,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         glassVariant = GlassVariant.Item,

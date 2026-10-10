@@ -92,6 +92,7 @@ fun EntryActionChip(
     )
 
     GlassSurface(
+        glassToggle = GlassVariant.Item,
         modifier = modifier
             .height(scaledDp(48f, uiScale))
             .graphicsLayer {

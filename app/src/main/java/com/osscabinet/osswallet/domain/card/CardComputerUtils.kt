@@ -6,6 +6,7 @@ import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.temporal.IsoFields
 import java.time.temporal.TemporalAdjusters
 
 object CardComputerUtils {
@@ -69,6 +70,8 @@ object CardComputerUtils {
             BarChartGranularity.MONTH -> format(monthFormatter)
             BarChartGranularity.QUARTER -> "Q${(monthValue - 1) / 3 + 1}"
             BarChartGranularity.YEAR -> format(yearFormatter)
+            // ISO week number (weeks start on Monday, matching the bucket alignment).
+            BarChartGranularity.WEEK -> "W%02d".format(get(IsoFields.WEEK_OF_WEEK_BASED_YEAR))
             else -> format(dayFormatter)
         }
 

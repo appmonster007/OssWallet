@@ -546,6 +546,10 @@ data class CashFlowComparisonCardConfig(
     val showSamePeriodLastYear: Boolean = true,
     val isCumulative: Boolean = true,
     val showGridLines: Boolean = true,
+    // Lines are compared across periods, so the whole range stays on screen unless the user opts in.
+    val viewMode: BarChartViewMode = BarChartViewMode.FIXED,
+    // Only used in SCROLLABLE mode.
+    val scrollGranularity: BarChartGranularity = BarChartGranularity.AUTO,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,

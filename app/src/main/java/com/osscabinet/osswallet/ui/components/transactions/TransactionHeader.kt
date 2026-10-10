@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
-import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -84,7 +83,6 @@ fun TransactionHeader(
     }
 
     GlassSurface(
-        element = GlassElement.HEADER,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = AeonSize.D16.value, vertical = AeonSize.D8.value),

@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -92,7 +91,6 @@ fun AeonFilterSelection(
 
                     val createInteractionSource = remember { MutableInteractionSource() }
                     GlassSurface(
-                        element = GlassElement.ENTRY,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable(
@@ -136,7 +134,6 @@ fun AeonFilterSelection(
                         val isSelected = filter.id == selectedFilterId
                         val interactionSource = remember { MutableInteractionSource() }
                         GlassSurface(
-                            element = GlassElement.ENTRY,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable(

@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components.management
 
-import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -133,7 +132,6 @@ fun AeonListItem(
     } else Modifier
 
     GlassSurface(
-        element = GlassElement.ENTRY,
         modifier = modifier
             .fillMaxWidth()
             .scale(scale)

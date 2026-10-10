@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components
 
-import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -59,7 +58,6 @@ fun AeonSearchField(
     if (showBorder) {
         val config = GlassTokens.configForVariant(GlassVariant.Popup)
         GlassSurface(
-            element = GlassElement.TOP_BAR,
             modifier = fieldModifier,
             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
             hazeStyle = GlassTokens.popupStyle(),

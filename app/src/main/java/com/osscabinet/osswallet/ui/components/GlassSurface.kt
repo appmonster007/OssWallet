@@ -40,8 +40,6 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
-import com.osscabinet.ossWallet.ui.theme.GlassElement
-import com.osscabinet.ossWallet.ui.theme.LocalGlassDisabledElements
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.LocalHazeDepth
 import com.osscabinet.ossWallet.ui.theme.LocalParentGlassHaze
@@ -142,12 +140,10 @@ fun GlassSurface(
     borderColor: Color? = null,
     borderAlpha: Float? = null,
     borderWidth: Dp? = null,
-    element: GlassElement = GlassElement.OTHER,
     content: @Composable BoxScope.() -> Unit
 ) {
     val isDark = LocalThemeMode.current.isDarkTheme
-    val glassEnabled = LocalGlassmorphismEnabled.current &&
-        element !in LocalGlassDisabledElements.current
+    val glassEnabled = LocalGlassmorphismEnabled.current
     val layers = LocalAeonHaze.current
     val depth = hazeLayer ?: LocalHazeDepth.current
     val config =
@@ -272,7 +268,6 @@ fun AeonGlassSheet(
                 modifier = modifier
             ) {
                 GlassSurface(
-                    element = GlassElement.SHEET,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
                     hazeLayer = hazeLayer,

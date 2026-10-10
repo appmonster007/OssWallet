@@ -107,7 +107,6 @@ fun DesignLabScreen(
 ) {
     val glassSettings by viewModel.glassSettings.collectAsState()
     val glassmorphismEnabled by viewModel.glassmorphismEnabled.collectAsStateWithLifecycle()
-    val glassDisabledElements by viewModel.glassDisabledElements.collectAsStateWithLifecycle()
     val contourLinesEnabled by viewModel.contourLinesEnabled.collectAsStateWithLifecycle()
     val contourBgVersion by viewModel.contourBgVersion.collectAsStateWithLifecycle()
     val randomizeContourEachLoad by viewModel.randomizeContourEachLoad.collectAsStateWithLifecycle()
@@ -115,13 +114,11 @@ fun DesignLabScreen(
     DesignLabContent(
         glassSettings = glassSettings,
         glassmorphismEnabled = glassmorphismEnabled,
-        glassDisabledElements = glassDisabledElements,
         contourLinesEnabled = contourLinesEnabled,
         contourBgVersion = contourBgVersion,
         randomizeContourEachLoad = randomizeContourEachLoad,
         onBack = onBack,
         onGlassmorphismToggle = { viewModel.setGlassmorphismEnabled(it) },
-        onGlassElementToggle = { element, enabled -> viewModel.setGlassElementEnabled(element, enabled) },
         onContourLinesToggle = { viewModel.setContourLinesEnabled(it) },
         onContourBgVersionChange = { viewModel.setContourBgVersion(it) },
         onRandomizeContourToggle = { viewModel.setRandomizeContourEachLoad(it) },
@@ -136,13 +133,11 @@ fun DesignLabScreen(
 fun DesignLabContent(
     glassSettings: GlassSettings,
     glassmorphismEnabled: Boolean,
-    glassDisabledElements: Set<String>,
     contourLinesEnabled: Boolean,
     contourBgVersion: Int,
     randomizeContourEachLoad: Boolean,
     onBack: () -> Unit,
     onGlassmorphismToggle: (Boolean) -> Unit,
-    onGlassElementToggle: (String, Boolean) -> Unit,
     onContourLinesToggle: (Boolean) -> Unit,
     onContourBgVersionChange: (Int) -> Unit,
     onRandomizeContourToggle: (Boolean) -> Unit,
@@ -571,23 +566,6 @@ fun DesignLabContent(
                                 onCheckedChange = onGlassmorphismToggle,
                                 isFlush = false
                             )
-                            if (glassmorphismEnabled) {
-                                com.osscabinet.ossWallet.ui.theme.GlassElement.entries.forEach { element ->
-                                    HorizontalDivider(
-                                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                                        thickness = 0.5.dp,
-                                        color = AppColors.divider.copy(alpha = 0.5f)
-                                    )
-                                    EntrySwitchRow(
-                                        label = "Glass: ${element.label}",
-                                        subtitle = element.description,
-                                        icon = Icons.Rounded.BlurOn,
-                                        checked = element.name !in glassDisabledElements,
-                                        onCheckedChange = { onGlassElementToggle(element.name, it) },
-                                        isFlush = false
-                                    )
-                                }
-                            }
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
                                 thickness = 0.5.dp,
@@ -1291,13 +1269,11 @@ private fun DesignLabPreview() {
         DesignLabContent(
             glassSettings = GlassSettings(),
             glassmorphismEnabled = true,
-            glassDisabledElements = emptySet(),
             contourLinesEnabled = false,
             contourBgVersion = 1,
             randomizeContourEachLoad = false,
             onBack = {},
             onGlassmorphismToggle = {},
-            onGlassElementToggle = { _, _ -> },
             onContourLinesToggle = {},
             onContourBgVersionChange = {},
             onRandomizeContourToggle = {},

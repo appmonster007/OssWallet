@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -186,7 +185,6 @@ fun EntryEditorialInput(
             .bringIntoViewRequester(bringIntoViewRequester)
     ) {
         GlassSurface(
-            element = GlassElement.ENTRY,
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
                 .fillMaxWidth()

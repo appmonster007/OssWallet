@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import com.osscabinet.ossWallet.ui.theme.GlassElement
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,7 +45,6 @@ fun EntrySection(
     val glassEnabled = com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled.current
 
     GlassSurface(
-        element = GlassElement.ENTRY,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         hazeStyle = GlassTokens.cardStyle().copyStyle(bgColor = AppColors.surfaceContainerLow),

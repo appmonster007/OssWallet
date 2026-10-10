@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentSummary
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.analytics.*
+import com.osscabinet.ossWallet.domain.model.settings.BarChartGranularity
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.util.BigDecimalSerializer
 import com.osscabinet.ossWallet.domain.service.*
@@ -209,7 +210,9 @@ sealed class CardRenderData {
         val currency: String,
         // Index of the last bucket whose start time is ≤ today.
         // -1 means all buckets are in the future. Used to terminate the net line at today.
-        val todayBucketIndex: Int = -1
+        val todayBucketIndex: Int = -1,
+        // Bucket size actually used (never AUTO). `granularity` above maps QUARTER / YEAR to MONTH.
+        val chartGranularity: BarChartGranularity = BarChartGranularity.MONTH
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.INCOME_EXPENSE_BAR
     }
@@ -220,7 +223,9 @@ sealed class CardRenderData {
         val buckets: List<CategorySpendingBucket>,
         val granularity: CashFlowComparisonGranularity,
         val activeCategories: List<CategorySummary>,
-        val currency: String
+        val currency: String,
+        // Bucket size actually used (never AUTO). `granularity` above maps QUARTER / YEAR to MONTH.
+        val chartGranularity: BarChartGranularity = BarChartGranularity.MONTH
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.CATEGORY_SPENDING_TREND
     }

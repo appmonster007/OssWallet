@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
+import com.osscabinet.ossWallet.domain.model.settings.BarChartViewMode
+import com.osscabinet.ossWallet.ui.components.cards.BarChartModeSettings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +48,7 @@ import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartBar
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartGroup
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarLineChart
+import com.osscabinet.ossWallet.ui.components.visualization.charts.visibleBars
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonChartLegend
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLegendItemData
 import com.osscabinet.ossWallet.ui.theme.AccentOrange
@@ -314,6 +317,8 @@ fun IncomeExpenseBarCard(
                     currency = renderData.currency,
                     showGrid = config.showGridLines,
                     animate = layoutProps.animate,
+                    scrollable = config.viewMode == BarChartViewMode.SCROLLABLE,
+                    visibleBars = renderData.chartGranularity.visibleBars(),
                     onNavigateToRecords = { index ->
                         val bucket = if (isCumulative) {
                             if (index > 0) renderData.buckets.getOrNull(index - 1) else null
@@ -546,6 +551,12 @@ private fun IncomeExpenseBarSettingsContent(
             showBackground = false
         )
     }
+    BarChartModeSettings(
+        viewMode = config.viewMode,
+        onViewModeChange = { onUpdate(config.copy(viewMode = it)) },
+        granularity = config.scrollGranularity,
+        onGranularityChange = { onUpdate(config.copy(scrollGranularity = it)) }
+    )
     CardPerspectiveSettings(
         perspective = config.perspective,
         onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },

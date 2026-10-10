@@ -101,6 +101,8 @@ fun mapTagUpSetPlot(
     filterSheetEnabled = filterSheetEnabled
 )
 
+// TODO(card-upgrade): add a short 'how to read this' hint. Do not add more settings; the card is already highly configurable.
+// See docs/guides/card-upgrade-roadmap.md
 @Composable
 fun TagUpSetPlotCard(
     renderData: CardRenderData.TagUpSetPlot,

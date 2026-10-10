@@ -1,0 +1,144 @@
+# Card upgrade roadmap
+
+Planned (not yet implemented) upgrades for the dashboard cards, beyond the scrollable charts work.
+Each card has a matching `TODO(card-upgrade)` comment above its composable that points back here.
+
+Grep for open items:
+
+```bash
+grep -rn "TODO(card-upgrade)" app core
+```
+
+## How to work through this
+
+Do one card (or one tightly coupled pair) at a time and finish it before starting the next:
+
+1. Read the card's composable, config and computer.
+2. Write an HTML mock and a short list of decisions, and agree them before coding.
+3. Implement: config field with a default that keeps today's behavior, settings UI, computer/UI change.
+4. Verify on a device or emulator, add JVM tests for any new pure logic, then commit.
+
+Adding a config field does not need a Room migration if the config is `@Serializable` and the new field has a
+default (configs are decoded with `ignoreUnknownKeys` and missing fields fall back to their defaults).
+Adding a new `CardType` is a different matter and needs the 15-file checklist in `adding-new-card.md`;
+none of the items below add a card type.
+
+Settings UI should reuse what the bar chart cards already use in `ui/components/cards/AeonCardSettingsScaffold.kt`:
+`CardSettingsSection`, `CardSettingsSegmentedRow` (2 to 3 short options), `CardSettingsChipGrid` (more options), and
+`AeonSettingsToggle`. Do not add new dropdown styles.
+
+## Order
+
+| # | Card | Upgrade | Effort |
+|---|------|---------|--------|
+| 1 | Category Pie and Treemap | Configurable grouping, legend rows and sort, per-category change | Medium |
+| 2 | Net Worth | Trend sparkline | Medium |
+| 3 | Budgets | Pace marker and over-budget styling | Medium |
+| 4 | Planned Payments | Cash needed in the next 7 or 30 days | Small |
+| 5 | Loans | Payoff progress and projected payoff date | Medium |
+| 6 | Currency Balances and Accounts | Sort and hide-zero options | Small |
+| 7 | TagUpSet Plot | "How to read this" hint | Small |
+
+Effort for items 2 to 7 is a rough guess. Only the pie and treemap code has been read in detail.
+
+---
+
+## 1. Category Pie and Treemap
+
+Files: `ui/components/cards/types/CategoryPieChartCard.kt`, `CategoryTreemapCard.kt`, `CategoryChartData.kt`,
+`domain/service/aggregation/CardAggregationService.kt` (builds the data), configs `CategoryPieChartCardConfig` and
+`CategoryTreemapCardConfig` in `core/domain/.../settings/CardConfig.kt`.
+
+### Already there (do not rebuild)
+
+- Slices below 2% merge into a "More Categories" slice that can be tapped to drill in.
+- Parent categories drill into subcategories, with breadcrumbs.
+- Tapping a slice or legend row opens its records.
+- The total shows its change against the previous period.
+- The legend shows the top 5 rows, or everything with the `showFullBreakdown` switch.
+
+### Upgrades
+
+1. **Configurable small-slice grouping.** The 2% threshold is a hardcoded literal (`0.02f`) in both cards.
+   Add a config field (for example `groupBelowPercent`: Off, 1%, 2%, 5%) with a default of 2% so nothing changes.
+2. **Legend rows and sort.** The legend uses a hardcoded `take(5)`. Add a row count (5, 10, All) and a sort
+   (Amount, Biggest change, A to Z). Default stays 5 rows by amount. `showFullBreakdown` can map onto "All".
+3. **Per-category change.** `CategoryChartData.previousAmount` is already filled for each category but only summed
+   into the total. Show a change chip on each legend row (spending up in the error colour, down in the success
+   colour). Decisions to confirm: default on or off, and "Biggest change" ranked by absolute amount (recommended)
+   or by percentage.
+
+### Notes
+
+- The grouping logic is duplicated in both cards (about 40 lines each). Extract one shared function (taking the
+  threshold) before adding the setting, so the two cards cannot drift apart. It is pure Kotlin and should have
+  unit tests: threshold boundaries, a single small slice (not merged), previous amounts summed into the group.
+- Keep change chips out of the treemap tiles (too small). Legend only.
+- Mock: the interactive preview agreed in the design discussion (grouping, rows, sort and change controls).
+
+---
+
+## 2. Net Worth
+
+Files: `ui/components/cards/types/NetWorthCard.kt`, `NetWorthCardConfig`, `mapNetWorth`.
+
+- Add a small trend sparkline under the figure, and open a full chart on tap.
+- `AccountHeroCard.kt` already has `BalanceSparkline`, a Canvas-based line with no axes. Reuse or generalise it
+  rather than writing a second one.
+- Open questions: which period the sparkline covers (follow the card's timeline range), and whether net worth
+  history is already computed anywhere. It may need a new series in the computer, which is the main cost.
+- Not yet investigated: how `mapNetWorth` gets its data.
+
+## 3. Budgets
+
+Files: `BudgetsCard.kt` (`BudgetProgressRow`, `mapBudgets`), `BudgetsCardConfig`.
+
+- Add a pace marker on each progress bar showing where spending should be by today's date, and style rows
+  that are over budget or on course to be.
+- Needs each budget's period start and end, which the data may already carry. Not yet investigated.
+- Current settings: `showArchived`, `showComparison`, `maxItems`.
+
+## 4. Planned Payments
+
+Files: `PlannedPaymentsCard.kt`, `PlannedPaymentsCardConfig`.
+
+- Add a summary of cash needed in the next 7 or 30 days.
+- Existing config: `maxItems`, `showComparison`, `showOverdue`, `viewMode`. The occurrences are already generated
+  by `PlannedPaymentService`, so this should be a sum over existing data.
+- Open question: whether overdue items count toward the total.
+
+## 5. Loans
+
+Files: `LoansCard.kt` (`LoanSummaryRow`, `mapLoans`), `LoansCardConfig`.
+
+- Add a payoff progress bar and a projected payoff date.
+- Add sort and "show only active" options. Existing config: `showType`, `maxItems`.
+- Not yet investigated: whether repayment schedules or only balances are available. The projected date depends on it.
+
+## 6. Currency Balances and Accounts
+
+Files: `CurrencyBalancesCard.kt`, `AccountsCard.kt`, and their configs.
+
+- Sort options (by balance, name, or recent activity) on both.
+- Hide zero balances on Currency Balances. This is the cheapest item on the list.
+- Currency Balances config today: `layout`, `gridColumns`, `showBaseConversion`.
+
+## 7. TagUpSet Plot
+
+Files: `TagUpSetPlotCard.kt`, `AeonUpSetPlot.kt`.
+
+- Already highly configurable. Add only a short "how to read this" hint, since UpSet plots are unfamiliar.
+- Do not add more settings.
+
+---
+
+## Cross-cutting ideas
+
+- **Tap-through everywhere.** The bar and line charts open Records from the tooltip, and the pie does from a slice.
+  Treemap tiles, Budgets rows and Loans rows could do the same where they do not already.
+- **Empty states.** Replace blank space with a short message that says what is missing and what to try
+  (for example widen the time range).
+- **Reuse the chart scroll helpers** (`AeonChartScroll.kt`: scroll state, Y-axis zoom) for any new time-series chart,
+  such as a budget-over-time chart.
+- **Web payload.** `data/web/WebMappingUtils.kt` and `CardDataDto.kt` mirror card configs for the companion web
+  client. New config fields are not sent unless added there. The chart settings added so far were left out on purpose.

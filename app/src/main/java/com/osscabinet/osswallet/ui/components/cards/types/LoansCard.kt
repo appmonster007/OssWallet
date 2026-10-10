@@ -51,6 +51,9 @@ import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+// TODO(card-upgrade): add payoff progress and a projected payoff date, plus sort and 'only active' options.
+// TODO(card-upgrade): check whether repayment schedules are available; the projected date depends on it.
+// See docs/guides/card-upgrade-roadmap.md
 @Composable
 fun LoansCard(
     items: List<LoanSummary>,

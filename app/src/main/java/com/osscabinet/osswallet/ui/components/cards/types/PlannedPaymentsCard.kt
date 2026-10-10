@@ -80,6 +80,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 // import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import java.math.BigDecimal
 
+// TODO(card-upgrade): add a 'cash needed in the next 7 / 30 days' summary built from the existing occurrences; decide whether overdue counts.
+// See docs/guides/card-upgrade-roadmap.md
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlannedPaymentsCard(

@@ -48,6 +48,8 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 
+// TODO(card-upgrade): add a pace marker (spent vs expected by today) on each progress bar and over-budget styling.
+// See docs/guides/card-upgrade-roadmap.md
 @Composable
 fun BudgetsCard(
     items: List<BudgetProgress>,

@@ -137,6 +137,8 @@ fun AeonTransactionItem(
     } else Modifier
 
     val outerPadding = 6.dp
+    // Small inset applied to row content only; the planned dashed border is not affected.
+    val contentInset = 4.dp
 
     Surface(
         modifier = modifier
@@ -147,19 +149,19 @@ fun AeonTransactionItem(
         color = containerColor,
         shape = RectangleShape
     ) {
-        Column(modifier = Modifier.padding(horizontal = if (isPlanned) 0.dp else 4.dp)) {
+        Column {
             Column(
                 modifier = if (isPlanned) {
                     Modifier
                         .padding(horizontal = outerPadding, vertical = 4.dp)
                         .then(dashedBorder)
                         .padding(
-                            horizontal = AeonTheme.dimensions.listPadding - outerPadding,
+                            horizontal = AeonTheme.dimensions.listPadding - outerPadding + contentInset,
                             vertical = AeonTheme.dimensions.spacingSm
                         )
                 } else {
                     Modifier.padding(
-                        horizontal = AeonTheme.dimensions.listPadding,
+                        horizontal = AeonTheme.dimensions.listPadding + contentInset,
                         vertical = AeonTheme.dimensions.spacingSm
                     )
                 }

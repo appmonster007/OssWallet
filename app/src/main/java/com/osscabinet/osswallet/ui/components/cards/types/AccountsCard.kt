@@ -57,6 +57,8 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
+// TODO(card-upgrade): add sort options (balance / name / recent activity).
+// See docs/guides/card-upgrade-roadmap.md
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AccountsCard(

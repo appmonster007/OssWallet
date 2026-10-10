@@ -67,6 +67,9 @@ import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+// TODO(card-upgrade): add a trend sparkline under the figure and a tap-through to a full chart; reuse AccountHeroCard's BalanceSparkline.
+// TODO(card-upgrade): check whether net worth history exists; a new series in the computer may be needed.
+// See docs/guides/card-upgrade-roadmap.md
 @Composable
 fun NetWorthCard(
     currentPeriodMetrics: NetWorthMetrics,

@@ -53,6 +53,8 @@ import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 
+// TODO(card-upgrade): add a 'hide zero balances' toggle and sort options (balance / name / recent activity).
+// See docs/guides/card-upgrade-roadmap.md
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CurrencyBalancesCard(

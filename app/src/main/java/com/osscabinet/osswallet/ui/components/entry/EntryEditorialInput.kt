@@ -185,6 +185,7 @@ fun EntryEditorialInput(
             .bringIntoViewRequester(bringIntoViewRequester)
     ) {
         GlassSurface(
+            glassToggle = GlassVariant.Item,
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
                 .fillMaxWidth()

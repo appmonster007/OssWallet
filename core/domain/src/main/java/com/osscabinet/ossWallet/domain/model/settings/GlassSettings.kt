@@ -23,6 +23,8 @@ data class SurfaceProperties(
 data class GlassStyleConfig(
     val glass: GlassProperties,
     val surface: SurfaceProperties,
+    /** When false, surfaces using this style render solid instead of blurred. */
+    val enabled: Boolean = true,
 )
 
 @Serializable

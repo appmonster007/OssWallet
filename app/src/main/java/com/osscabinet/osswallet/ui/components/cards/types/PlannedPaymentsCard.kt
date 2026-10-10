@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -70,16 +69,10 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Surface
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.theme.scaledSp
 import androidx.compose.foundation.shape.RoundedCornerShape
 // import com.osscabinet.ossWallet.ui.components.aeonHazeSource
@@ -320,12 +313,6 @@ private fun PlannedPaymentRow(
         entryMode == EntryMode.TRANSFER -> AccentBlue
         else -> AppColors.negative
     }
-    val borderColor = if (isOverdue) AppColors.negative else AppColors.primary
-    val cornerRadius = dims.componentCornerRadius
-    val outerPadding = 6.dp
-    val iconTint = if (categoryColor != -1) Color(categoryColor) else AppColors.primary
-    val subtitle = listOf(categoryName, note.orEmpty()).filter { it.isNotBlank() }
-        .joinToString(" · ")
 
     // TODO(glass): re-enable once PP card glass behavior is fixed
     // val surfaceState = LocalAeonHaze.current?.states?.getOrNull(HazeLayer.Surface)
@@ -333,29 +320,8 @@ private fun PlannedPaymentRow(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .graphicsLayer { scaleX = scale; scaleY = scale },
-            // .aeonHazeSource(surfaceState),
-        shape = RoundedCornerShape(cornerRadius),
-        color = AppColors.panelSurface
-    ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = outerPadding, vertical = 4.dp)
-            .drawWithContent {
-                drawContent()
-                drawRoundRect(
-                    color = borderColor,
-                    style = Stroke(
-                        width = 1.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(
-                            floatArrayOf(6.dp.toPx(), 4.dp.toPx()),
-                            0f
-                        )
-                    ),
-                    cornerRadius = CornerRadius(cornerRadius.toPx())
-                )
-            }
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            // .aeonHazeSource(surfaceState)
             .pointerInput(onClick) {
                 detectTapGestures(
                     onPress = {
@@ -368,60 +334,25 @@ private fun PlannedPaymentRow(
                         onClick()
                     }
                 )
-            }
-            .padding(horizontal = dims.listPadding - outerPadding, vertical = dims.spacingSm),
+            },
+        shape = RoundedCornerShape(dims.componentCornerRadius),
+        color = AppColors.panelSurface
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(dims.iconSizeLg)) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    shape = CircleShape,
-                    color = iconTint.copy(alpha = 0.2f)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            getIconByName(categoryIcon),
-                            contentDescription = null,
-                            tint = iconTint,
-                            modifier = Modifier.size(dims.iconSizeSm)
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.width(dims.spacingSm))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = AppTextStyles.transactionTitle.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = scaledSp(12f, uiScale)
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (accountName.isNotBlank()) {
-                    Text(
-                        text = accountName,
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontSize = scaledSp(10f, uiScale),
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = AppColors.contentSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                if (subtitle.isNotEmpty()) {
-                    Text(
-                        text = subtitle,
-                        style = AppTextStyles.caption.copy(fontSize = scaledSp(11f, uiScale)),
-                        color = AppColors.contentSecondary,
-                        modifier = Modifier.padding(top = 2.dp),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+        AeonTransactionItem(
+            title = title,
+            category = categoryName,
+            account = accountName,
+            note = note,
+            icon = getIconByName(categoryIcon),
+            iconBg = if (categoryColor != -1) Color(categoryColor) else null,
+            showAccount = accountName.isNotBlank(),
+            showTags = false,
+            showDividers = false,
+            isPlanned = true,
+            showStatusBadge = false,
+            plannedBorderColor = if (isOverdue) AppColors.negative else AppColors.primary,
+            containerColor = Color.Transparent,
+            footer = {
                 Text(
                     text = dateLabel.uppercase(),
                     style = AppTextStyles.metaLabel.copy(
@@ -431,99 +362,100 @@ private fun PlannedPaymentRow(
                     else AppColors.contentSecondary.copy(alpha = 0.8f),
                     modifier = Modifier.padding(top = 2.dp)
                 )
-            }
-
-            ConvertedWithNativeSubtext(
-                amount = amount,
-                nativeCurrency = currency,
-                targetCurrency = targetCurrency,
-                rates = exchangeRates,
-                primaryStyle = AppTextStyles.transactionAmount.copy(
-                    fontWeight = FontWeight.Medium,
-                    fontSize = scaledSp(15f, uiScale),
-                    color = typeColor
-                ),
-                primaryColor = typeColor,
-                subtextStyle = AppTextStyles.transactionAmountMeta,
-                subtextColor = AppColors.contentSecondary.copy(alpha = 0.8f)
-            )
-
-            if (isOverdue && onConfirm != null) {
-                IconButton(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onConfirm()
-                    },
-                    modifier = Modifier
-                        .padding(start = 4.dp)
-                        .size(dims.iconSizeMd)
-                ) {
-                    Icon(
-                        Icons.Rounded.CheckCircle,
-                        contentDescription = "Confirm",
-                        modifier = Modifier.size(dims.iconSizeSm),
-                        tint = AppColors.primary
-                    )
-                }
-            }
-            if (onConfirm != null || onSkip != null) {
-                Box {
+            },
+            amountContent = {
+                ConvertedWithNativeSubtext(
+                    amount = amount,
+                    nativeCurrency = currency,
+                    targetCurrency = targetCurrency,
+                    rates = exchangeRates,
+                    primaryStyle = AppTextStyles.transactionAmount.copy(
+                        fontWeight = FontWeight.Medium,
+                        fontSize = scaledSp(15f, uiScale),
+                        color = typeColor
+                    ),
+                    primaryColor = typeColor,
+                    subtextStyle = AppTextStyles.transactionAmountMeta,
+                    subtextColor = AppColors.contentSecondary.copy(alpha = 0.8f)
+                )
+            },
+            trailingContent = {
+                if (isOverdue && onConfirm != null) {
                     IconButton(
-                        onClick = { showActions = true },
-                        modifier = Modifier.size(dims.iconSizeMd)
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onConfirm()
+                        },
+                        modifier = Modifier
+                            .padding(start = 4.dp)
+                            .size(dims.iconSizeMd)
                     ) {
                         Icon(
-                            Icons.Default.MoreVert,
-                            contentDescription = "Actions",
-                            modifier = Modifier.size(14.dp),
-                            tint = AppColors.contentSecondary.copy(alpha = 0.6f)
+                            Icons.Rounded.CheckCircle,
+                            contentDescription = "Confirm",
+                            modifier = Modifier.size(dims.iconSizeSm),
+                            tint = AppColors.primary
                         )
                     }
-                    DropdownMenu(
-                        expanded = showActions,
-                        onDismissRequest = { showActions = false }
-                    ) {
-                        if (onConfirm != null) {
-                            DropdownMenuItem(
-                                text = { Text("Confirm") },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Rounded.CheckCircle,
-                                        contentDescription = null,
-                                        tint = AppColors.primary,
-                                        modifier = Modifier.size(dims.iconSizeSm)
-                                    )
-                                },
-                                onClick = {
-                                    showActions = false
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    onConfirm()
-                                }
+                }
+                if (onConfirm != null || onSkip != null) {
+                    Box {
+                        IconButton(
+                            onClick = { showActions = true },
+                            modifier = Modifier.size(dims.iconSizeMd)
+                        ) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "Actions",
+                                modifier = Modifier.size(14.dp),
+                                tint = AppColors.contentSecondary.copy(alpha = 0.6f)
                             )
                         }
-                        if (onSkip != null) {
-                            DropdownMenuItem(
-                                text = { Text("Skip") },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Rounded.SkipNext,
-                                        contentDescription = null,
-                                        tint = AppColors.contentSecondary,
-                                        modifier = Modifier.size(dims.iconSizeSm)
-                                    )
-                                },
-                                onClick = {
-                                    showActions = false
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    onSkip()
-                                }
-                            )
+                        DropdownMenu(
+                            expanded = showActions,
+                            onDismissRequest = { showActions = false }
+                        ) {
+                            if (onConfirm != null) {
+                                DropdownMenuItem(
+                                    text = { Text("Confirm") },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Rounded.CheckCircle,
+                                            contentDescription = null,
+                                            tint = AppColors.primary,
+                                            modifier = Modifier.size(dims.iconSizeSm)
+                                        )
+                                    },
+                                    onClick = {
+                                        showActions = false
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        onConfirm()
+                                    }
+                                )
+                            }
+                            if (onSkip != null) {
+                                DropdownMenuItem(
+                                    text = { Text("Skip") },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Rounded.SkipNext,
+                                            contentDescription = null,
+                                            tint = AppColors.contentSecondary,
+                                            modifier = Modifier.size(dims.iconSizeSm)
+                                        )
+                                    },
+                                    onClick = {
+                                        showActions = false
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        onSkip()
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
-    }
+        )
     }
 }
 

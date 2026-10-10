@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -61,13 +63,13 @@ import com.osscabinet.ossWallet.ui.theme.scaledSp
 fun AeonTransactionItem(
     category: String,
     account: String,
-    amount: String,
+    amount: String = "",
     modifier: Modifier = Modifier,
     convertedAmount: String? = null,
-    balanceBefore: String,
-    balanceAfter: String,
-    type: CashFlowType,
-    timestamp: String,
+    balanceBefore: String = "",
+    balanceAfter: String = "",
+    type: CashFlowType = CashFlowType.EXPENSE,
+    timestamp: String = "",
     note: String? = null,
     tags: List<TagUiModel> = emptyList(),
     icon: ImageVector? = null,
@@ -85,23 +87,38 @@ fun AeonTransactionItem(
     showIcon: Boolean = true,
     containerColor: Color = AppColors.screenBackground,
     isPlanned: Boolean = false,
+    /** When set, replaces [category]/[note] as the header; category and note move to the bottom line. */
+    title: String? = null,
+    plannedBorderColor: Color = AppColors.primary,
+    showStatusBadge: Boolean = true,
+    /** Rendered under the text column (e.g. a due-date label). */
+    footer: (@Composable () -> Unit)? = null,
+    /** When set, replaces the whole right-hand amount/balance/timestamp column. */
+    amountContent: (@Composable ColumnScope.() -> Unit)? = null,
+    /** Rendered after the amount column (e.g. row actions). */
+    trailingContent: (@Composable RowScope.() -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
     val uiScale = AeonTheme.uiScale
     val isNoteHeader = useNoteAsHeader && !note.isNullOrBlank()
-    val headerText = remember(isNoteHeader, showNote, note, showCategory, category) {
-        if (isNoteHeader) (if (showNote) note else if (showCategory) category else "")
+    val headerText = remember(title, isNoteHeader, showNote, note, showCategory, category) {
+        if (title != null) title
+        else if (isNoteHeader) (if (showNote) note else if (showCategory) category else "")
         else (if (showCategory) category else if (showNote) note else "")
     }
-    val bottomText = remember(isNoteHeader, showCategory, showNote, category, note) {
-        if (isNoteHeader) (if (showCategory) category else "")
+    val bottomText = remember(title, isNoteHeader, showCategory, showNote, category, note) {
+        if (title != null) listOfNotNull(
+            category.takeIf { showCategory && it.isNotBlank() },
+            note.takeIf { showNote && !it.isNullOrBlank() }
+        ).joinToString(" · ")
+        else if (isNoteHeader) (if (showCategory) category else "")
         else (if (showNote) note else "")
     }
 
     val itemContainerColor = containerColor
 
     val dashedBorder = if (isPlanned) {
-        val borderColor = AppColors.primary
+        val borderColor = plannedBorderColor
         val cornerRadius = AeonTheme.dimensions.componentCornerRadius
         Modifier.drawWithContent {
             drawContent()
@@ -170,7 +187,7 @@ fun AeonTransactionItem(
                             }
 
                             // Status indicator
-                            if (status != TransactionStatus.UNCLEARED || isPlanned) {
+                            if (showStatusBadge && (status != TransactionStatus.UNCLEARED || isPlanned)) {
                                 Surface(
                                     modifier = Modifier
                                         .size(AeonTheme.dimensions.iconSizeSm)
@@ -244,9 +261,13 @@ fun AeonTransactionItem(
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
+                            footer?.invoke()
                         }
 
                         Column(horizontalAlignment = Alignment.End) {
+                            if (amountContent != null) {
+                                amountContent()
+                            } else {
                             val amountColor =
                                 if (type == CashFlowType.INCOME) AppColors.positive else AppColors.negative
                             Text(
@@ -289,8 +310,10 @@ fun AeonTransactionItem(
                                     modifier = Modifier.padding(top = 2.dp)
                                 )
                             }
+                            }
                         }
                     }
+                    trailingContent?.invoke(this)
                 }
 
                 if (showTags && tags.isNotEmpty()) {

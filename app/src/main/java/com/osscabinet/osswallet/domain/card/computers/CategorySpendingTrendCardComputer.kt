@@ -11,6 +11,8 @@ import com.osscabinet.ossWallet.domain.card.CategorySummary
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
+import com.osscabinet.ossWallet.domain.model.settings.BarChartGranularity
+import com.osscabinet.ossWallet.domain.model.settings.BarChartViewMode
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.service.financial.extractFrom
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -46,9 +48,18 @@ class CategorySpendingTrendCardComputer(
         val categoryNatureById = input.categories.associate { it.id to it.nature }
         val categoryById = input.categories.associateBy { it.id }
         val now = System.currentTimeMillis()
-        val granularity = CardComputerUtils.resolveGranularity(currentStart, currentEnd)
+        val scrollable = config.viewMode == BarChartViewMode.SCROLLABLE
+        val chartGranularity = CardComputerUtils.resolveBarGranularity(
+            if (scrollable) config.scrollGranularity else BarChartGranularity.AUTO,
+            currentStart, currentEnd
+        )
+        val granularity = with(CardComputerUtils) { chartGranularity.toLegacyGranularity() }
         // Cap chart at today — future buckets always show 0
-        val rawBuckets = CardComputerUtils.generateBuckets(currentStart, minOf(currentEnd, now), granularity)
+        val rawBuckets = if (scrollable) {
+            CardComputerUtils.generateAlignedBuckets(currentStart, minOf(currentEnd, now), chartGranularity)
+        } else {
+            CardComputerUtils.generateBuckets(currentStart, minOf(currentEnd, now), granularity)
+        }
 
         val categoryTotalsMap = mutableMapOf<Long, BigDecimal>()
 
@@ -140,7 +151,8 @@ class CategorySpendingTrendCardComputer(
             buckets = buckets,
             granularity = granularity,
             activeCategories = activeCategories,
-            currency = input.targetCurrency
+            currency = input.targetCurrency,
+            chartGranularity = chartGranularity
         )
     }
 

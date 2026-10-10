@@ -573,6 +573,9 @@ data class CategorySpendingTrendCardConfig(
     val selectedNatures: Set<CategoryNature> = CategoryNature.entries.toSet(),
     val isCumulative: Boolean = false,
     val showGridLines: Boolean = true,
+    val viewMode: BarChartViewMode = BarChartViewMode.SCROLLABLE,
+    // Only used in SCROLLABLE mode.
+    val scrollGranularity: BarChartGranularity = BarChartGranularity.AUTO,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,
@@ -598,6 +601,9 @@ data class IncomeExpenseBarCardConfig(
     // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
     val splitTransfers: Boolean = false,
     val showGridLines: Boolean = true,
+    val viewMode: BarChartViewMode = BarChartViewMode.SCROLLABLE,
+    // Only used in SCROLLABLE mode.
+    val scrollGranularity: BarChartGranularity = BarChartGranularity.AUTO,
     val visibleMetrics: Set<ChartMetric> = setOf(
         ChartMetric.INCOME,
         ChartMetric.EXPENSE,

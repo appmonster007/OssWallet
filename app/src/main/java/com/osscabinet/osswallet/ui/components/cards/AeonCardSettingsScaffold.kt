@@ -1,5 +1,15 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.unit.Dp
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.runtime.CompositionLocalProvider
+import com.osscabinet.ossWallet.domain.model.settings.BarChartViewMode
+import com.osscabinet.ossWallet.domain.model.settings.BarChartGranularity
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -309,6 +319,151 @@ fun CardSettingsStandardizationLab() {
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Chart Mode (fixed scale / scrollable) plus, in scrollable mode, the bucket granularity.
+ * Shared by the bar chart cards so both settings screens stay identical.
+ */
+@Composable
+fun BarChartModeSettings(
+    viewMode: BarChartViewMode,
+    onViewModeChange: (BarChartViewMode) -> Unit,
+    granularity: BarChartGranularity,
+    onGranularityChange: (BarChartGranularity) -> Unit,
+) {
+    CardSettingsSection("Chart") {
+        CardSettingsSegmentedRow(
+            options = BarChartViewMode.entries,
+            selected = viewMode,
+            onSelected = onViewModeChange,
+            labelProvider = { it.displayName }
+        )
+        // Always shown so the setting is discoverable; greyed out while the fixed scale picks buckets itself.
+        val scrollable = viewMode == BarChartViewMode.SCROLLABLE
+        Text(
+            text = "GRANULARITY",
+            style = AppTextStyles.overlineLabel.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.2.sp,
+                fontSize = 10.sp
+            ),
+            color = AppColors.primary.copy(alpha = if (scrollable) 1f else 0.4f),
+            modifier = Modifier.padding(top = 4.dp)
+        )
+        CardSettingsChipGrid(
+            options = BarChartGranularity.entries,
+            selected = granularity,
+            onSelected = onGranularityChange,
+            labelProvider = { it.displayName },
+            columns = 3,
+            enabled = scrollable
+        )
+    }
+}
+
+/** Segmented row styled like the Perspective selector; for two or three short options. */
+@Composable
+fun <T> CardSettingsSegmentedRow(
+    options: List<T>,
+    selected: T,
+    onSelected: (T) -> Unit,
+    labelProvider: (T) -> String,
+    modifier: Modifier = Modifier
+) {
+    SingleChoiceSegmentedButtonRow(modifier = modifier.fillMaxWidth()) {
+        options.forEachIndexed { index, option ->
+            SegmentedButton(
+                selected = selected == option,
+                onClick = { onSelected(option) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                label = {
+                    Text(
+                        text = labelProvider(option),
+                        style = AppTextStyles.caption.copy(
+                            fontSize = 11.sp,
+                            fontWeight = if (selected == option) FontWeight.Bold else FontWeight.Normal
+                        )
+                    )
+                },
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = AppColors.primary.copy(alpha = 0.1f),
+                    activeContentColor = AppColors.primary,
+                    inactiveContainerColor = Color.Transparent,
+                    inactiveContentColor = AppColors.contentSecondary,
+                    activeBorderColor = AppColors.primary.copy(alpha = 0.2f),
+                    inactiveBorderColor = AppColors.outlineVariant
+                )
+            )
+        }
+    }
+}
+
+/**
+ * Single-choice chips laid out in equal-width rows of [columns]; for options too many for a
+ * segmented row. When [enabled] is false the grid is dimmed and ignores taps.
+ */
+@Composable
+fun <T> CardSettingsChipGrid(
+    options: List<T>,
+    selected: T,
+    onSelected: (T) -> Unit,
+    labelProvider: (T) -> String,
+    modifier: Modifier = Modifier,
+    columns: Int = 3,
+    enabled: Boolean = true
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .alpha(if (enabled) 1f else 0.38f),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+    ) {
+        options.chunked(columns).forEach { rowOptions ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+            ) {
+                rowOptions.forEach { option ->
+                    val isSelected = selected == option
+                    // Drop the 48dp touch-target padding so the row gap is spacingSm, like the segmented rows.
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onSelected(option) },
+                            enabled = enabled,
+                            modifier = Modifier.weight(1f),
+                            label = {
+                                Text(
+                                    text = labelProvider(option),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center,
+                                    style = AppTextStyles.caption.copy(
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = Color.Transparent,
+                                labelColor = AppColors.contentSecondary,
+                                selectedContainerColor = AppColors.primary.copy(alpha = 0.1f),
+                                selectedLabelColor = AppColors.primary
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = enabled,
+                                selected = isSelected,
+                                borderColor = AppColors.outlineVariant,
+                                selectedBorderColor = AppColors.primary.copy(alpha = 0.2f)
+                            )
+                        )
+                    }
+                }
+                // Keep the last row's chips the same width as the full rows.
+                repeat(columns - rowOptions.size) { Spacer(modifier = Modifier.weight(1f)) }
             }
         }
     }

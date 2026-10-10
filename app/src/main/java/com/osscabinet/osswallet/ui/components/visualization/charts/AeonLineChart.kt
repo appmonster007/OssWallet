@@ -1,5 +1,8 @@
 package com.osscabinet.ossWallet.ui.components.visualization.charts
 
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -75,7 +78,9 @@ fun AeonLineChart(
     // When non-empty, these labels are used for the x-axis instead of deriving from the first series.
     xAxisLabels: List<String?> = emptyList(),
     markers: List<AeonChartMarker> = emptyList(),
-    onNavigateToRecords: ((AeonLineChartPoint) -> Unit)? = null
+    onNavigateToRecords: ((AeonLineChartPoint) -> Unit)? = null,
+    scrollable: Boolean = false,
+    visibleSlots: Int = DEFAULT_VISIBLE_BARS
 ) {
     if (series.isEmpty() || series.all { it.dataPoints.isEmpty() }) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -131,8 +136,38 @@ fun AeonLineChart(
             return@BoxWithConstraints
         }
 
-        val minY = allValues.minOf { it }
-        val maxY = allValues.maxOf { it }
+        val effectiveTotal =
+            if (totalXSlots > 0) totalXSlots else (series.firstOrNull()?.dataPoints?.size ?: 1)
+
+        // Scroll mode: `visibleSlots` slots fill the viewport and the rest scrolls in from the left.
+        val isScrollable = scrollable && effectiveTotal > visibleSlots.coerceAtLeast(1)
+        val scrollState = rememberAeonChartScrollState(effectiveTotal)
+        val slotWidth =
+            if (isScrollable) chartWidth / visibleSlots.coerceAtLeast(1)
+            else chartWidth / effectiveTotal.coerceAtLeast(1)
+        val maxScrollPx = if (isScrollable) (slotWidth * effectiveTotal - chartWidth).coerceAtLeast(0f) else 0f
+        val scrollX = if (isScrollable) scrollState.offsetPx.coerceIn(0f, maxScrollPx) else 0f
+        val yZoom = if (isScrollable) scrollState.yZoom else 1f
+        val scrollableState = rememberAeonChartScrollable(scrollState, maxScrollPx) { selectedIndex = -1 }
+
+        // Y-zoom shrinks the visible range around its centre so the data stays in view.
+        val dataMinY = allValues.minOf { it }
+        val dataMaxY = allValues.maxOf { it }
+        val zoomDivisor = BigDecimal.valueOf(yZoom.toDouble())
+        // Anchor the zoom on the primary line's latest window (where the chart opens) so it stays put while scrolling.
+        val latestFirstIndex = (effectiveTotal - visibleSlots.coerceAtLeast(1)).coerceAtLeast(0)
+        // The first series with data is the primary line; the others are comparisons against it.
+        val anchorValues = series.firstOrNull { it.dataPoints.isNotEmpty() }
+            ?.dataPoints?.drop(latestFirstIndex)?.map { p -> p.y }
+            .orEmpty()
+            .ifEmpty { allValues }
+        val anchorMinY = anchorValues.minOf { it }
+        val anchorMaxY = anchorValues.maxOf { it }
+        val centerY = (anchorMinY + anchorMaxY).divide(BigDecimal(2), 4, RoundingMode.HALF_UP)
+        val minY = if (yZoom == 1f) dataMinY
+            else centerY - (centerY - dataMinY).divide(zoomDivisor, 4, RoundingMode.HALF_UP)
+        val maxY = if (yZoom == 1f) dataMaxY
+            else centerY + (dataMaxY - centerY).divide(zoomDivisor, 4, RoundingMode.HALF_UP)
 
         // Calculate a "nice" step size based on the data range
         val dataRange = (maxY - minY).abs().toDouble().coerceAtLeast(1.0)
@@ -167,12 +202,8 @@ fun AeonLineChart(
         val labelColor = AppColors.contentSecondary.copy(alpha = 0.6f)
         val axisLabelColor = AppColors.contentSecondary.copy(alpha = 0.8f)
 
-        val effectiveTotal =
-            if (totalXSlots > 0) totalXSlots else (series.firstOrNull()?.dataPoints?.size ?: 1)
-        val slotWidth = chartWidth / effectiveTotal.coerceAtLeast(1)
-
         fun indexToX(index: Float, total: Int): Float {
-            return leftPadding + (index + 0.5f) * slotWidth
+            return leftPadding + (index + 0.5f) * slotWidth - scrollX
         }
 
         fun findClosestIndex(offsetX: Float): Int {
@@ -202,21 +233,26 @@ fun AeonLineChart(
                 .fillMaxSize()
                 .semantics {
                     contentDescription = "Line chart showing ${series.joinToString { it.name }}. " +
-                            "Drag or tap to explore data points."
+                            if (isScrollable) "Swipe to scroll, tap to explore data points."
+                            else "Drag or tap to explore data points."
                 }
-                .pointerInput(series) {
-                    detectDragGestures(
-                        onDragStart = { offset ->
-                            selectedIndex = findClosestIndex(offset.x)
-                        },
-                        onDrag = { change, _ ->
-                            selectedIndex = findClosestIndex(change.position.x)
-                        },
-                        onDragEnd = { selectedIndex = -1 },
-                        onDragCancel = { selectedIndex = -1 }
-                    )
-                }
-                .pointerInput(series) {
+                .then(
+                    if (isScrollable) Modifier.scrollable(scrollableState, Orientation.Horizontal)
+                    else Modifier.pointerInput(series) {
+                        detectDragGestures(
+                            onDragStart = { offset ->
+                                selectedIndex = findClosestIndex(offset.x)
+                            },
+                            onDrag = { change, _ ->
+                                selectedIndex = findClosestIndex(change.position.x)
+                            },
+                            onDragEnd = { selectedIndex = -1 },
+                            onDragCancel = { selectedIndex = -1 }
+                        )
+                    }
+                )
+                // Keyed on scrollX so the tap handler never maps taps with a stale scroll offset.
+                .pointerInput(series, scrollX) {
                     detectTapGestures(
                         onTap = { offset ->
                             selectedIndex = findClosestIndex(offset.x)
@@ -260,190 +296,167 @@ fun AeonLineChart(
                 }
             }
 
-            // 1.5 Draw Period Background Bars
-            if (showPeriodBars) {
-                if (effectiveTotal > 0) {
-                    val periodBarWidth = slotWidth * 0.95f
-                    for (i in 0 until effectiveTotal) {
-                        val centerX = indexToX(i.toFloat(), effectiveTotal)
-                        drawRect(
-                            color = periodBarColor,
-                            topLeft = Offset(centerX - periodBarWidth / 2, topPadding),
-                            size = Size(periodBarWidth, chartHeight)
-                        )
-                    }
-                }
-            }
-
-            // 2. Draw Data Series
-            series.forEach { s ->
-                // Draw Confidence Interval (Shaded Area)
-                s.confidenceIntervals?.let { intervals ->
-                    if (intervals.size == s.dataPoints.size) {
-                        val confidencePath = Path()
-                        // Top boundary
-                        s.dataPoints.forEachIndexed { index, _ ->
-                            val x = indexToX(index.toFloat(), s.dataPoints.size)
-                            val y = valueToY(intervals[index].second)
-                            val animY = zeroY + (y - zeroY) * animationProgress.value
-                            if (index == 0) confidencePath.moveTo(
-                                x,
-                                animY
-                            ) else confidencePath.lineTo(x, animY)
-                        }
-                        // Bottom boundary (reverse)
-                        for (index in (s.dataPoints.size - 1) downTo 0) {
-                            val x = indexToX(index.toFloat(), s.dataPoints.size)
-                            val y = valueToY(intervals[index].first)
-                            val animY = zeroY + (y - zeroY) * animationProgress.value
-                            confidencePath.lineTo(x, animY)
-                        }
-                        confidencePath.close()
-                        drawPath(
-                            path = confidencePath,
-                            color = s.color.copy(alpha = 0.15f)
-                        )
-                    }
-                }
-
-                val linePath = Path()
-                val areaPath = Path()
-                val pts = s.dataPoints
-                val n = pts.size
-
-                pts.forEachIndexed { index, point ->
-                    val x = indexToX(index.toFloat(), n)
-                    val y = valueToY(point.y)
-                    val animY = zeroY + (y - zeroY) * animationProgress.value
-
-                    if (index == 0) {
-                        linePath.moveTo(x, animY)
-                        areaPath.moveTo(x, zeroY)
-                        areaPath.lineTo(x, animY)
-                    } else {
-                        // Smooth cubic bezier with reduced tension (0.3) — moderately curved
-                        val prevX = indexToX((index - 1).toFloat(), n)
-                        val prevY = run {
-                            val py = valueToY(pts[index - 1].y)
-                            zeroY + (py - zeroY) * animationProgress.value
-                        }
-                        val dx = x - prevX
-                        val cp1x = prevX + dx * 0.3f
-                        val cp2x = x - dx * 0.3f
-                        linePath.cubicTo(cp1x, prevY, cp2x, animY, x, animY)
-                        areaPath.cubicTo(cp1x, prevY, cp2x, animY, x, animY)
-                    }
-
-                    if (index == n - 1) {
-                        areaPath.lineTo(x, zeroY)
-                        areaPath.close()
-                    }
-                }
-
-                if (s.fillGradient) {
-                    drawPath(
-                        path = areaPath,
-                        brush = Brush.verticalGradient(
-                            colors = listOf(s.color.copy(alpha = 0.2f), ColorTransparent),
-                            startY = topPadding,
-                            endY = topPadding + chartHeight
-                        )
-                    )
-                }
-
-                val strokePx = if (lineThicknessDp > 0f) {
-                    with(density) { lineThicknessDp.dp.toPx() }
-                } else {
-                    (dims.spacingXs * 0.9f).toPx()
-                }
-                drawPath(
-                    path = linePath,
-                    color = s.color,
-                    style = Stroke(
-                        width = strokePx,
-                        cap = StrokeCap.Round,
-                        join = StrokeJoin.Round,
-                        pathEffect = if (s.isDashed) PathEffect.dashPathEffect(
-                            floatArrayOf(
-                                12f,
-                                8f
+            clipRect(
+                left = if (isScrollable) leftPadding else 0f,
+                right = if (isScrollable) w - rightPadding else w
+            ) {
+                // 1.5 Draw Period Background Bars
+                if (showPeriodBars) {
+                    if (effectiveTotal > 0) {
+                        val periodBarWidth = slotWidth * 0.95f
+                        for (i in 0 until effectiveTotal) {
+                            val centerX = indexToX(i.toFloat(), effectiveTotal)
+                            drawRect(
+                                color = periodBarColor,
+                                topLeft = Offset(centerX - periodBarWidth / 2, topPadding),
+                                size = Size(periodBarWidth, chartHeight)
                             )
-                        ) else null
-                    )
-                )
-
-                if (s.showEndDot && pts.isNotEmpty()) {
-                    val lastIdx = pts.size - 1
-                    val ex = indexToX(lastIdx.toFloat(), n)
-                    val ey = run {
-                        val raw = valueToY(pts[lastIdx].y)
-                        zeroY + (raw - zeroY) * animationProgress.value
+                        }
                     }
-                    drawCircle(
-                        color = ChartDotHighlight,
-                        radius = strokePx * 1.5f,
-                        center = Offset(ex, ey)
-                    )
-                    drawCircle(
-                        color = s.color,
-                        radius = strokePx * 1.5f,
-                        center = Offset(ex, ey),
-                        style = Stroke(width = strokePx * 0.6f)
-                    )
                 }
-            }
 
-            // X-axis labels — prefer explicit xAxisLabels list, fall back to first series labels
-            if (showXAxisLabels || xAxisLabels.isNotEmpty()) {
-                val labelPaint = AndroidPaint().apply {
-                    isAntiAlias = true
-                    color = axisLabelColor.toArgb()
-                    textAlign = AndroidPaint.Align.CENTER
-                    textSize = 9.sp.toPx()
-                }
-                val labelY = h - bottomPadding + with(density) { 14.dp.toPx() }
-
-                if (xAxisLabels.isNotEmpty()) {
-                    val total = xAxisLabels.size
-
-                    // Find first and last non-null labels to define the range for 7 labels
-                    val firstValidIdx = xAxisLabels.indexOfFirst { it != null }
-                    val lastValidIdx = xAxisLabels.indexOfLast { it != null }
-
-                    val indicesToShow = mutableSetOf<Int>()
-                    if (firstValidIdx != -1 && lastValidIdx != -1) {
-                        indicesToShow.add(firstValidIdx)
-                        indicesToShow.add(lastValidIdx)
-
-                        val validRange = lastValidIdx - firstValidIdx
-                        if (validRange > 0) {
-                            val interval = validRange.toFloat() / 6f
-                            for (i in 1..5) {
-                                indicesToShow.add(firstValidIdx + Math.round(i * interval))
+                clipRect(top = if (isScrollable) topPadding else 0f, bottom = if (isScrollable) topPadding + chartHeight else h) {
+                    // 2. Draw Data Series
+                    series.forEach { s ->
+                        // Draw Confidence Interval (Shaded Area)
+                        s.confidenceIntervals?.let { intervals ->
+                            if (intervals.size == s.dataPoints.size) {
+                                val confidencePath = Path()
+                                // Top boundary
+                                s.dataPoints.forEachIndexed { index, _ ->
+                                    val x = indexToX(index.toFloat(), s.dataPoints.size)
+                                    val y = valueToY(intervals[index].second)
+                                    val animY = zeroY + (y - zeroY) * animationProgress.value
+                                    if (index == 0) confidencePath.moveTo(
+                                        x,
+                                        animY
+                                    ) else confidencePath.lineTo(x, animY)
+                                }
+                                // Bottom boundary (reverse)
+                                for (index in (s.dataPoints.size - 1) downTo 0) {
+                                    val x = indexToX(index.toFloat(), s.dataPoints.size)
+                                    val y = valueToY(intervals[index].first)
+                                    val animY = zeroY + (y - zeroY) * animationProgress.value
+                                    confidencePath.lineTo(x, animY)
+                                }
+                                confidencePath.close()
+                                drawPath(
+                                    path = confidencePath,
+                                    color = s.color.copy(alpha = 0.15f)
+                                )
                             }
                         }
-                    }
 
-                    xAxisLabels.forEachIndexed { index, lbl ->
-                        if (lbl != null && indicesToShow.contains(index)) {
-                            drawContext.canvas.nativeCanvas.drawText(
-                                lbl,
-                                indexToX(index.toFloat(), total),
-                                labelY,
-                                labelPaint
+                        val linePath = Path()
+                        val areaPath = Path()
+                        val pts = s.dataPoints
+                        val n = pts.size
+
+                        pts.forEachIndexed { index, point ->
+                            val x = indexToX(index.toFloat(), n)
+                            val y = valueToY(point.y)
+                            val animY = zeroY + (y - zeroY) * animationProgress.value
+
+                            if (index == 0) {
+                                linePath.moveTo(x, animY)
+                                areaPath.moveTo(x, zeroY)
+                                areaPath.lineTo(x, animY)
+                            } else {
+                                // Smooth cubic bezier with reduced tension (0.3) — moderately curved
+                                val prevX = indexToX((index - 1).toFloat(), n)
+                                val prevY = run {
+                                    val py = valueToY(pts[index - 1].y)
+                                    zeroY + (py - zeroY) * animationProgress.value
+                                }
+                                val dx = x - prevX
+                                val cp1x = prevX + dx * 0.3f
+                                val cp2x = x - dx * 0.3f
+                                linePath.cubicTo(cp1x, prevY, cp2x, animY, x, animY)
+                                areaPath.cubicTo(cp1x, prevY, cp2x, animY, x, animY)
+                            }
+
+                            if (index == n - 1) {
+                                areaPath.lineTo(x, zeroY)
+                                areaPath.close()
+                            }
+                        }
+
+                        if (s.fillGradient) {
+                            drawPath(
+                                path = areaPath,
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(s.color.copy(alpha = 0.2f), ColorTransparent),
+                                    startY = topPadding,
+                                    endY = topPadding + chartHeight
+                                )
+                            )
+                        }
+
+                        val strokePx = if (lineThicknessDp > 0f) {
+                            with(density) { lineThicknessDp.dp.toPx() }
+                        } else {
+                            (dims.spacingXs * 0.9f).toPx()
+                        }
+                        drawPath(
+                            path = linePath,
+                            color = s.color,
+                            style = Stroke(
+                                width = strokePx,
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Round,
+                                pathEffect = if (s.isDashed) PathEffect.dashPathEffect(
+                                    floatArrayOf(
+                                        12f,
+                                        8f
+                                    )
+                                ) else null
+                            )
+                        )
+
+                        if (s.showEndDot && pts.isNotEmpty()) {
+                            val lastIdx = pts.size - 1
+                            val ex = indexToX(lastIdx.toFloat(), n)
+                            val ey = run {
+                                val raw = valueToY(pts[lastIdx].y)
+                                zeroY + (raw - zeroY) * animationProgress.value
+                            }
+                            drawCircle(
+                                color = ChartDotHighlight,
+                                radius = strokePx * 1.5f,
+                                center = Offset(ex, ey)
+                            )
+                            drawCircle(
+                                color = s.color,
+                                radius = strokePx * 1.5f,
+                                center = Offset(ex, ey),
+                                style = Stroke(width = strokePx * 0.6f)
                             )
                         }
                     }
-                } else {
-                    val labelSeries = series.firstOrNull { it.dataPoints.isNotEmpty() }
-                    if (labelSeries != null) {
-                        val total = labelSeries.dataPoints.size
+                }
 
-                        val firstValidIdx = labelSeries.dataPoints.indexOfFirst { it.label != null }
-                        val lastValidIdx = labelSeries.dataPoints.indexOfLast { it.label != null }
+                // X-axis labels — prefer explicit xAxisLabels list, fall back to first series labels
+                if (showXAxisLabels || xAxisLabels.isNotEmpty()) {
+                    val labelPaint = AndroidPaint().apply {
+                        isAntiAlias = true
+                        color = axisLabelColor.toArgb()
+                        textAlign = AndroidPaint.Align.CENTER
+                        textSize = 9.sp.toPx()
+                    }
+                    val labelY = h - bottomPadding + with(density) { 14.dp.toPx() }
+
+                    if (xAxisLabels.isNotEmpty()) {
+                        val total = xAxisLabels.size
+
+                        // Find first and last non-null labels to define the range for 7 labels
+                        val firstValidIdx = xAxisLabels.indexOfFirst { it != null }
+                        val lastValidIdx = xAxisLabels.indexOfLast { it != null }
 
                         val indicesToShow = mutableSetOf<Int>()
-                        if (firstValidIdx != -1 && lastValidIdx != -1) {
+                        if (isScrollable) {
+                            // Scrolling charts label every slot.
+                            indicesToShow.addAll(xAxisLabels.indices)
+                        } else if (firstValidIdx != -1 && lastValidIdx != -1) {
                             indicesToShow.add(firstValidIdx)
                             indicesToShow.add(lastValidIdx)
 
@@ -456,9 +469,8 @@ fun AeonLineChart(
                             }
                         }
 
-                        labelSeries.dataPoints.forEachIndexed { index, point ->
-                            val lbl = point.label ?: return@forEachIndexed
-                            if (indicesToShow.contains(index)) {
+                        xAxisLabels.forEachIndexed { index, lbl ->
+                            if (lbl != null && indicesToShow.contains(index)) {
                                 drawContext.canvas.nativeCanvas.drawText(
                                     lbl,
                                     indexToX(index.toFloat(), total),
@@ -467,101 +479,149 @@ fun AeonLineChart(
                                 )
                             }
                         }
+                    } else {
+                        val labelSeries = series.firstOrNull { it.dataPoints.isNotEmpty() }
+                        if (labelSeries != null) {
+                            val total = labelSeries.dataPoints.size
+
+                            val firstValidIdx = labelSeries.dataPoints.indexOfFirst { it.label != null }
+                            val lastValidIdx = labelSeries.dataPoints.indexOfLast { it.label != null }
+
+                            val indicesToShow = mutableSetOf<Int>()
+                            if (isScrollable) {
+                                indicesToShow.addAll(labelSeries.dataPoints.indices)
+                            } else if (firstValidIdx != -1 && lastValidIdx != -1) {
+                                indicesToShow.add(firstValidIdx)
+                                indicesToShow.add(lastValidIdx)
+
+                                val validRange = lastValidIdx - firstValidIdx
+                                if (validRange > 0) {
+                                    val interval = validRange.toFloat() / 6f
+                                    for (i in 1..5) {
+                                        indicesToShow.add(firstValidIdx + Math.round(i * interval))
+                                    }
+                                }
+                            }
+
+                            labelSeries.dataPoints.forEachIndexed { index, point ->
+                                val lbl = point.label ?: return@forEachIndexed
+                                if (indicesToShow.contains(index)) {
+                                    drawContext.canvas.nativeCanvas.drawText(
+                                        lbl,
+                                        indexToX(index.toFloat(), total),
+                                        labelY,
+                                        labelPaint
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
-            }
 
-            // 3. Draw Markers
-            if (markers.isNotEmpty()) {
-                val sortedMarkers = markers.sortedBy { it.x }
-                // Gap below which adjacent marker labels are staggered vertically
-                val markerMinGapPx = with(density) { 80.dp.toPx() }
-                val markerLabelHeightPx = with(density) { 14.dp.toPx() }
-                // Top baseline offset for the first stagger level
-                val markerLabelTopOffsetPx = with(density) { 10.dp.toPx() }
-                // Horizontal nudge between the marker line and its label
-                val markerLabelNudgePx = with(density) { 4.dp.toPx() }
-                // x threshold (fraction of chartWidth) past which label right-aligns
-                val markerEndThreshold = 0.8f
+                // 3. Draw Markers
+                if (markers.isNotEmpty()) {
+                    val sortedMarkers = markers.sortedBy { it.x }
+                    // Gap below which adjacent marker labels are staggered vertically
+                    val markerMinGapPx = with(density) { 80.dp.toPx() }
+                    val markerLabelHeightPx = with(density) { 14.dp.toPx() }
+                    // Top baseline offset for the first stagger level
+                    val markerLabelTopOffsetPx = with(density) { 10.dp.toPx() }
+                    // Horizontal nudge between the marker line and its label
+                    val markerLabelNudgePx = with(density) { 4.dp.toPx() }
+                    // x threshold (fraction of chartWidth) past which label right-aligns
+                    val markerEndThreshold = 0.8f
 
-                val markerLabelPaint = AndroidPaint().apply {
-                    textSize = with(density) { 9.sp.toPx() }
-                    isAntiAlias = true
-                    typeface = android.graphics.Typeface.create(
-                        android.graphics.Typeface.DEFAULT,
-                        android.graphics.Typeface.BOLD
-                    )
+                    val markerLabelPaint = AndroidPaint().apply {
+                        textSize = with(density) { 9.sp.toPx() }
+                        isAntiAlias = true
+                        typeface = android.graphics.Typeface.create(
+                            android.graphics.Typeface.DEFAULT,
+                            android.graphics.Typeface.BOLD
+                        )
+                    }
+
+                    var lastMarkerX = -1000f
+                    var currentLevel = 0
+
+                    sortedMarkers.forEach { marker ->
+                        // marker.x is in the same index space as totalXSlots; `total` arg is unused when totalXSlots > 0
+                        val x = indexToX(marker.x, totalXSlots.coerceAtLeast(1))
+                        val markerColor = marker.color.copy(alpha = 0.6f)
+
+                        currentLevel =
+                            if (abs(x - lastMarkerX) < markerMinGapPx) (currentLevel + 1) % 3 else 0
+                        lastMarkerX = x
+
+                        drawLine(
+                            color = markerColor,
+                            start = Offset(x, topPadding),
+                            end = Offset(x, topPadding + chartHeight),
+                            strokeWidth = 1.dp.toPx(),
+                            pathEffect = if (marker.isDashed) PathEffect.dashPathEffect(
+                                floatArrayOf(
+                                    10f,
+                                    10f
+                                )
+                            ) else null
+                        )
+
+                        val isAtEnd = x > leftPadding + chartWidth * markerEndThreshold
+                        markerLabelPaint.color = markerColor.toArgb()
+                        markerLabelPaint.textAlign =
+                            if (isAtEnd) AndroidPaint.Align.RIGHT else AndroidPaint.Align.LEFT
+
+                        val labelY =
+                            topPadding + markerLabelTopOffsetPx + (currentLevel * markerLabelHeightPx)
+                        drawContext.canvas.nativeCanvas.drawText(
+                            marker.label,
+                            if (isAtEnd) x - markerLabelNudgePx else x + markerLabelNudgePx,
+                            labelY,
+                            markerLabelPaint
+                        )
+                    }
                 }
 
-                var lastMarkerX = -1000f
-                var currentLevel = 0
-
-                sortedMarkers.forEach { marker ->
-                    // marker.x is in the same index space as totalXSlots; `total` arg is unused when totalXSlots > 0
-                    val x = indexToX(marker.x, totalXSlots.coerceAtLeast(1))
-                    val markerColor = marker.color.copy(alpha = 0.6f)
-
-                    currentLevel =
-                        if (abs(x - lastMarkerX) < markerMinGapPx) (currentLevel + 1) % 3 else 0
-                    lastMarkerX = x
-
+                if (selectedIndex != -1) {
+                    val x = indexToX(selectedIndex.toFloat(), series[0].dataPoints.size)
                     drawLine(
-                        color = markerColor,
+                        color = verticalGuideColor,
                         start = Offset(x, topPadding),
                         end = Offset(x, topPadding + chartHeight),
-                        strokeWidth = 1.dp.toPx(),
-                        pathEffect = if (marker.isDashed) PathEffect.dashPathEffect(
-                            floatArrayOf(
-                                10f,
-                                10f
+                        strokeWidth = (dims.spacingXs / 4).toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
+                    )
+
+                    // Draw focus dots for all series at this index
+                    series.forEach { s ->
+                        if (selectedIndex < s.dataPoints.size) {
+                            val p = s.dataPoints[selectedIndex]
+                            val y = valueToY(p.y)
+                            drawCircle(
+                                color = ChartDotHighlight,
+                                radius = (dims.spacingXs * 1.25f).toPx(),
+                                center = Offset(x, y)
                             )
-                        ) else null
-                    )
-
-                    val isAtEnd = x > leftPadding + chartWidth * markerEndThreshold
-                    markerLabelPaint.color = markerColor.toArgb()
-                    markerLabelPaint.textAlign =
-                        if (isAtEnd) AndroidPaint.Align.RIGHT else AndroidPaint.Align.LEFT
-
-                    val labelY =
-                        topPadding + markerLabelTopOffsetPx + (currentLevel * markerLabelHeightPx)
-                    drawContext.canvas.nativeCanvas.drawText(
-                        marker.label,
-                        if (isAtEnd) x - markerLabelNudgePx else x + markerLabelNudgePx,
-                        labelY,
-                        markerLabelPaint
-                    )
-                }
-            }
-
-            if (selectedIndex != -1) {
-                val x = indexToX(selectedIndex.toFloat(), series[0].dataPoints.size)
-                drawLine(
-                    color = verticalGuideColor,
-                    start = Offset(x, topPadding),
-                    end = Offset(x, topPadding + chartHeight),
-                    strokeWidth = (dims.spacingXs / 4).toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
-                )
-
-                // Draw focus dots for all series at this index
-                series.forEach { s ->
-                    if (selectedIndex < s.dataPoints.size) {
-                        val p = s.dataPoints[selectedIndex]
-                        val y = valueToY(p.y)
-                        drawCircle(
-                            color = ChartDotHighlight,
-                            radius = (dims.spacingXs * 1.25f).toPx(),
-                            center = Offset(x, y)
-                        )
-                        drawCircle(
-                            color = s.color,
-                            radius = (dims.spacingXs * 1.25f).toPx(),
-                            center = Offset(x, y),
-                            style = Stroke(width = (dims.spacingXs / 2).toPx())
-                        )
+                            drawCircle(
+                                color = s.color,
+                                radius = (dims.spacingXs * 1.25f).toPx(),
+                                center = Offset(x, y),
+                                style = Stroke(width = (dims.spacingXs / 2).toPx())
+                            )
+                        }
                     }
                 }
+            }
+        }
+
+        if (isScrollable) {
+            AeonChartYAxisZoomZone(scrollState, with(density) { leftPadding.toDp() })
+            if (yZoom > 1.02f) {
+                Text(
+                    text = "×${"%.1f".format(yZoom)}",
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary,
+                    modifier = Modifier.align(Alignment.TopStart)
+                )
             }
         }
 

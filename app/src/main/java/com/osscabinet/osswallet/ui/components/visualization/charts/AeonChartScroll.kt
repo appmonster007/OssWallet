@@ -63,6 +63,14 @@ fun BarChartGranularity.visibleBars(): Int = when (this) {
     BarChartGranularity.YEAR -> 5
 }
 
+/** Points shown per screen before a line chart starts to scroll. */
+fun BarChartGranularity.visibleLineSlots(): Int = when (this) {
+    BarChartGranularity.DAY, BarChartGranularity.WEEK -> 8
+    BarChartGranularity.MONTH, BarChartGranularity.AUTO -> 6
+    BarChartGranularity.QUARTER -> 4
+    BarChartGranularity.YEAR -> 5
+}
+
 /** Y-axis ceiling used when a scrollable chart has only empty buckets, so the axis still reads sensibly. */
 internal const val EMPTY_CHART_MAX = 100L
 

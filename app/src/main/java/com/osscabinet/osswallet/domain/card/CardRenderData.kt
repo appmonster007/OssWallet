@@ -197,7 +197,9 @@ sealed class CardRenderData {
         // Used to draw "End of Period" markers when lengths differ.
         val currentTotalBuckets: Int = 0,
         val previousTotalBuckets: Int = 0,
-        val lastYearTotalBuckets: Int = 0
+        val lastYearTotalBuckets: Int = 0,
+        // Bucket size actually used (never AUTO). `granularity` above maps QUARTER / YEAR to MONTH.
+        val chartGranularity: BarChartGranularity = BarChartGranularity.MONTH
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.CASHFLOW_COMPARISON
     }

@@ -29,6 +29,9 @@ import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConf
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
+import com.osscabinet.ossWallet.domain.model.settings.BarChartViewMode
+import com.osscabinet.ossWallet.ui.components.cards.BarChartModeSettings
+import com.osscabinet.ossWallet.ui.components.visualization.charts.visibleLineSlots
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -179,6 +182,8 @@ fun CashFlowComparisonCard(
                     xAxisLabels = xAxisLabels,
                     markers = markers,
                     animate = layoutProps.animate,
+                    scrollable = config.viewMode == BarChartViewMode.SCROLLABLE,
+                    visibleSlots = renderData.chartGranularity.visibleLineSlots(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(220.dp)
@@ -388,6 +393,12 @@ private fun CashFlowComparisonSettingsContent(
             showBackground = false
         )
     }
+    BarChartModeSettings(
+        viewMode = config.viewMode,
+        onViewModeChange = { onUpdate(config.copy(viewMode = it)) },
+        granularity = config.scrollGranularity,
+        onGranularityChange = { onUpdate(config.copy(scrollGranularity = it)) }
+    )
     CardSettingsSection("Series") {
         AeonSettingsToggle(
             label = "Current Period",

@@ -325,7 +325,7 @@ fun CardSettingsStandardizationLab() {
 }
 
 /**
- * Chart Mode (fixed scale / scrollable) plus, in scrollable mode, the bucket granularity.
+ * Chart Mode (fixed scale / scrollable) plus the bucket granularity (greyed out in fixed scale).
  * Shared by the bar chart cards so both settings screens stay identical.
  */
 @Composable

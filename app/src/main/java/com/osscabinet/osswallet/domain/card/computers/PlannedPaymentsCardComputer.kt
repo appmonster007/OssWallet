@@ -73,27 +73,34 @@ class PlannedPaymentsCardComputer :
             }
         }
 
-        val overdueSummaries = shownOverdue.map { p ->
-            PlannedPaymentSummary(
+        val categoriesById = input.categories.associateBy { it.id }
+        val accountsById = input.accounts.associateBy { it.id }
+
+        fun summarize(
+            p: com.osscabinet.ossWallet.domain.model.PlannedPayment,
+            scheduledDate: Long,
+            isOverdue: Boolean
+        ): PlannedPaymentSummary {
+            val category = categoriesById[p.categoryId]
+            return PlannedPaymentSummary(
                 id = p.id,
                 name = p.name,
                 amount = p.amount,
                 currency = p.currency,
                 entryMode = p.entryMode,
-                scheduledDate = p.schedule.nextDueDate,
-                isOverdue = true
+                scheduledDate = scheduledDate,
+                isOverdue = isOverdue,
+                categoryName = category?.name.orEmpty(),
+                categoryIcon = category?.iconName,
+                categoryColor = category?.colorHex ?: -1,
+                accountName = p.accountId?.let { accountsById[it]?.name }.orEmpty(),
+                note = p.note
             )
         }
-        val upcomingSummaries = shownUpcoming.map { item ->
-            PlannedPaymentSummary(
-                id = item.plannedPayment.id,
-                name = item.plannedPayment.name,
-                amount = item.plannedPayment.amount,
-                currency = item.plannedPayment.currency,
-                entryMode = item.plannedPayment.entryMode,
-                scheduledDate = item.scheduledDate,
-                isOverdue = false
-            )
+
+        val overdueSummaries = shownOverdue.map { summarize(it, it.schedule.nextDueDate, true) }
+        val upcomingSummaries = shownUpcoming.map {
+            summarize(it.plannedPayment, it.scheduledDate, false)
         }
 
         return CardRenderData.PlannedPayments(

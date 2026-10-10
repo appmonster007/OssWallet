@@ -43,7 +43,9 @@ data class GlassSettings(
     ),
     val card: GlassStyleConfig = GlassStyleConfig(
         glass = GlassProperties(6f, 0.40f, 0.60f),
-        surface = SurfaceProperties(8f, 0.15f, 0.10f, 0.20f, 0.5f)
+        surface = SurfaceProperties(8f, 0.15f, 0.10f, 0.20f, 0.5f),
+        // Card shells are the biggest blur cost (see perf profiling); solid by default.
+        enabled = false
     ),
     val sheet: GlassStyleConfig = GlassStyleConfig(
         glass = GlassProperties(14f, 0.52f, 0.78f),

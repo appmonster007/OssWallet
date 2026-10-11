@@ -62,6 +62,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -78,10 +79,22 @@ import java.util.Date
 import java.util.Locale
 
 /**
+ * The "up to now" flag to keep when switching between period types. All Time's flag is a
+ * sentinel default, not a user choice, so leaving it uses [defaultExcludeFuture] instead.
+ */
+private fun TimelineRange.carriedExcludeFuture(defaultExcludeFuture: Boolean): Boolean =
+    if (this is TimelineRange.AllTime) defaultExcludeFuture else excludeFuture
+
+/**
  * Optimized Timeline Period Selector.
  * 
  * @param swipeEntireComponent If true, the entire navigation row (buttons + icons + dates) swipes.
  *                            If false, buttons and icons are fixed and only the date value swipes.
+ * @param defaultThisPeriod Period used when the user switches to the "This" tab from another tab.
+ *                          The up-to-now (exclude future) flag is carried over from the current range.
+ * @param defaultExcludeFuture Up-to-now flag used when leaving the All Time tab. Defaults to the
+ *                             app-wide initial timeline; forms that define periods (budgets,
+ *                             loans, saved filters) pass false so their periods stay whole.
  */
 @Composable
 fun AeonTimelinePeriodSelector(
@@ -89,6 +102,8 @@ fun AeonTimelinePeriodSelector(
     onRangeSelected: (TimelineRange) -> Unit,
     modifier: Modifier = Modifier,
     swipeEntireComponent: Boolean = false,
+    defaultThisPeriod: ThisPeriodType = ThisPeriodType.YEAR,
+    defaultExcludeFuture: Boolean = DefaultTimeline.INITIAL.excludeFuture,
     isFlush: Boolean = false,
     isActive: Boolean = false,
     containerColor: Color = AppColors.cardSurface,
@@ -122,11 +137,13 @@ fun AeonTimelinePeriodSelector(
         val newRange = when (pagerState.settledPage) {
             0 -> TimelineRange.AllTime()
             1 -> if (currentRange is TimelineRange.ThisPeriod) currentRange else TimelineRange.ThisPeriod(
-                ThisPeriodType.MONTH
+                defaultThisPeriod,
+                excludeFuture = currentRange.carriedExcludeFuture(defaultExcludeFuture)
             )
 
             2 -> if (currentRange is TimelineRange.LastPeriod) currentRange else TimelineRange.LastPeriod(
-                LastPeriodType.LAST_30_DAYS
+                LastPeriodType.LAST_30_DAYS,
+                excludeFuture = currentRange.carriedExcludeFuture(defaultExcludeFuture)
             )
 
             3 -> if (currentRange is TimelineRange.CustomRange) currentRange else {
@@ -449,7 +466,7 @@ private fun DateDisplayArea(
                         DropdownMenuItem(
                             text = { Text(type.label, style = AppTextStyles.drawerItemLabel) },
                             onClick = {
-                                onRangeSelected(TimelineRange.ThisPeriod(type))
+                                onRangeSelected(TimelineRange.ThisPeriod(type, excludeFuture = currentRange.excludeFuture))
                                 onDropdownShow(false)
                             }
                         )
@@ -459,7 +476,7 @@ private fun DateDisplayArea(
                         DropdownMenuItem(
                             text = { Text(type.label, style = AppTextStyles.drawerItemLabel) },
                             onClick = {
-                                onRangeSelected(TimelineRange.LastPeriod(type))
+                                onRangeSelected(TimelineRange.LastPeriod(type, excludeFuture = currentRange.excludeFuture))
                                 onDropdownShow(false)
                             }
                         )

@@ -113,7 +113,7 @@ object BudgetService {
             linkedTransactionIds = budget.linkedTransactionIds,
             transactionTypes = budget.trackTypes,
             timelineRange = resolvedRange
-        )
+        ).let { budget.advanced.applyTo(it).copy(matchAllTags = budget.matchAllTags) }
     }
 
     fun filterTransactionsForBudget(

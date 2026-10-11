@@ -34,6 +34,7 @@ data class Budget(
     val note: String = "",
     val customStartDate: Long? = null,
     val customEndDate: Long? = null,
+    val advanced: AdvancedFilterCriteria = AdvancedFilterCriteria(),
     val filterId: Long? = null
 )
 

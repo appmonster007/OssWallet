@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -349,9 +350,7 @@ data class AccountHeroCardConfig(
     // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
     val splitTransfers: Boolean = false,
     override val filter: TransactionFilter = TransactionFilter(
-        timelineRange = TimelineRange.AllTime(
-            excludeFuture = true
-        )
+        timelineRange = DefaultTimeline.INITIAL
     )
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.ACCOUNT_HERO
@@ -771,9 +770,7 @@ fun CardConfig.withClearedFilter(): CardConfig = when (this) {
 
     is AccountHeroCardConfig -> copy(
         filter = TransactionFilter(
-            timelineRange = TimelineRange.AllTime(
-                excludeFuture = true
-            )
+            timelineRange = DefaultTimeline.INITIAL
         )
     )
 

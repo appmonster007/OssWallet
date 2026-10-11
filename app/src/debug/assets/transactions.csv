@@ -66,8 +66,8 @@ seedId,title,amount,category,categoryId,timestamp,currency,transactionType,accou
 1012,USD to SGD Transfer,400.00,Transfer,1005,,SGD,transfer,acc_sgd,BANK_TRANSFER,,Top up SGD account,,,1,,,,cleared,12,acc_bank,USD,0.75
 1013,IDR to USD Repatriation,-780000.00,Transfer,1005,,IDR,transfer,acc_idr,DIGITAL_WALLET,,Converting leftover IDR back to USD,,,1,,,,cleared,6,acc_bank,USD,0.000064
 1014,IDR to USD Repatriation,50.00,Transfer,1005,,USD,transfer,acc_bank,BANK_TRANSFER,,Converting leftover IDR back to USD,,,1,,,,cleared,6,acc_idr,IDR,15600.0
-2000,Unpaid Invoice,500.00,Freelance,198,,USD,income,acc_bank,BANK_TRANSFER,Client Z,Pending payment,Project,,1,,,,pending,2,,,
-2001,Returned Item,45.00,Shopping,124,,USD,expense,acc_credit,CREDIT_CARD,Target,Cancelled order,Shopping,,1,,,,cancelled,5,,,
+2000,Unpaid Invoice,500.00,Freelance,198,,USD,income,acc_bank,BANK_TRANSFER,Client Z,Pending payment,Project,,1,,,,uncleared,2,,,
+2001,Returned Item,45.00,Shopping,124,,USD,expense,acc_credit,CREDIT_CARD,Target,Cancelled order,Shopping,,1,,,,uncleared,5,,,
 2002,Lunch at Cafe,-25.00,Dining Out,102,,USD,expense,acc_cash,CASH,Cafe Lola,Lunch,Social,,1,40.7128,-74.0060,,cleared,1,,,
 2003,New Monitor,-300.00,Electronics,121,,USD,expense,acc_credit,CREDIT_CARD,Best Buy,UltraWide,Work,,1,,,,cleared,10,,,
 2004,Upcoming Subscription,-15.00,Streaming,185,,USD,expense,acc_credit,CREDIT_CARD,Hulu,Next month,Entertainment,,1,,,,cleared,-15,,,

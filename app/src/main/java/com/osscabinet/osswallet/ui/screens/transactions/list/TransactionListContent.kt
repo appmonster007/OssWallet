@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.list
 
+import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -183,6 +184,7 @@ fun TransactionListContent(
                 onFilterEvent = onFilterEvent,
                 onSaveFilterClick = onSaveFilterClick,
                 onAddTag = onAddTag,
+                baseFilter = TransactionFilter(timelineRange = DefaultTimeline.INITIAL),
                 modifier = Modifier.fillMaxSize()
             )
         }

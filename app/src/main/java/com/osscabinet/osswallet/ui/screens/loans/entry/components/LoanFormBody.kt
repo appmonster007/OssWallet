@@ -199,7 +199,8 @@ fun LoanFormBody(
                     AeonTimelinePeriodSelector(
                         currentRange = state.timelineRange,
                         onRangeSelected = { onEvent(LoanEntryEvent.SetTimelineRange(it)) },
-                        swipeEntireComponent = false
+                        swipeEntireComponent = false,
+                        defaultExcludeFuture = false
                     )
 
                     // Filter Preset

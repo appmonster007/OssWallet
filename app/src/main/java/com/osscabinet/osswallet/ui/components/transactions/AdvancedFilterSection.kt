@@ -74,7 +74,7 @@ fun AdvancedFilterSection(
     val categoryMap = remember(allCategories) { allCategories.associateBy { it.id } }
     val accountNames = remember(accounts) { accounts.associate { it.id to it.name } }
 
-    val hasBaseFilters = countActiveFilters(baseFilter) > 0
+    val hasBaseFilters = hasBaseScope(baseFilter)
 
     Column(
         modifier = modifier

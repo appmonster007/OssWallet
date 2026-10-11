@@ -295,9 +295,12 @@ fun CategoryTreemapCard(
 
             // Summary Section with Total and Comparison
             val total = remember(currentData) { currentData.sumOf { it.amount } }
-            val previousTotalValue = remember(currentData) {
-                if (currentData.any { it.previousAmount != null }) {
-                    currentData.sumOf { it.previousAmount ?: BigDecimal.ZERO }
+            // At the top level, categories hidden for having no spend now still count towards last
+            // period's baseline; summing only what is displayed would understate it.
+            val previousTotalValue = remember(currentData, data, navigationStack.size) {
+                val source = if (navigationStack.size == 1) data else currentData
+                if (source.any { it.previousAmount != null }) {
+                    source.sumOf { it.previousAmount ?: BigDecimal.ZERO }
                 } else null
             }
             ChartSummarySection(

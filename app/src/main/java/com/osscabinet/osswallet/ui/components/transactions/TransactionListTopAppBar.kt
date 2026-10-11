@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
+import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -80,7 +81,7 @@ fun TransactionListTopAppBar(
             content = {
                 AeonTopBarNavTitlePill(
                     title = "Records",
-                    subtitle = if (filter == TransactionFilter()) "Showing all transactions" else "Filtered results",
+                    subtitle = if (filter == TransactionFilter(timelineRange = DefaultTimeline.INITIAL)) "Showing ${DefaultTimeline.INITIAL.toDisplayString().lowercase()}" else "Filtered results",
                     onBackClick = onBackClick,
                     onMenuClick = onMenuClick,
                     isTopLevel = isTopLevel

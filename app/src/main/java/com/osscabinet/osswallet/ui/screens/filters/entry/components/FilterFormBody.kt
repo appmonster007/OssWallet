@@ -111,7 +111,8 @@ fun FilterFormBody(
                 // Default Period for this filter
                 AeonTimelinePeriodSelector(
                     currentRange = state.timelineRange,
-                    onRangeSelected = { onEvent(FilterEntryEvent.SetTimelineRange(it)) }
+                    onRangeSelected = { onEvent(FilterEntryEvent.SetTimelineRange(it)) },
+                    defaultExcludeFuture = false
                 )
             }
 

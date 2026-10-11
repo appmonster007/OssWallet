@@ -10,6 +10,24 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 /**
  * Counts active filter criteria in a TransactionFilter relative to a base filter and rules.
  */
+/**
+ * True when [baseFilter] locks any scope the sheet lists under "Base scope" (accounts, categories,
+ * types, ...). The timeline is deliberately ignored: a screen's default period is not a scope.
+ */
+fun hasBaseScope(baseFilter: TransactionFilter): Boolean =
+    countActiveFilters(baseFilter.copy(timelineRange = TransactionFilter().timelineRange)) > 0
+
+/**
+ * A card's own filter leaves accounts, categories and types empty to mean "whatever the screen
+ * scopes it to" (e.g. the locked account on Account Detail). Fills those from [base] so the filter
+ * can be compared with the base to tell whether the user has actually changed anything.
+ */
+fun TransactionFilter.inheritingScopeFrom(base: TransactionFilter): TransactionFilter = copy(
+    accountIds = accountIds.ifEmpty { base.accountIds },
+    categoryIds = categoryIds.ifEmpty { base.categoryIds },
+    transactionTypes = transactionTypes.ifEmpty { base.transactionTypes }
+)
+
 fun countActiveFilters(
     filter: TransactionFilter,
     baseFilter: TransactionFilter = TransactionFilter(),

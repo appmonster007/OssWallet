@@ -5,7 +5,7 @@ import com.osscabinet.ossWallet.data.local.query.QueryCache
 import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
 
 /**
- * Watches the transactions table via Room's InvalidationTracker.
+ * Watches every table the widget fetchers read via Room's InvalidationTracker.
  *
  * This is the fallback invalidation path — it fires for any database write, including writes
  * from the seeder, backup restore, or any DAO call that bypasses TransactionManager.
@@ -23,13 +23,15 @@ class WidgetInvalidationObserver(
     private val queryCache: QueryCache,
     private val trigger: WidgetRefreshTrigger
 ) {
-    private val observer = object : InvalidationTracker.Observer("transactions") {
+    private val observer = object : InvalidationTracker.Observer(
+        "transactions", "accounts", "categories", "currency_rates", "profiles", "transaction_links"
+    ) {
         override fun onInvalidated(tables: Set<String>) {
             // Clear the cache before calling trigger() so that trigger()'s synchronous
             // cache.clear() and this clear() are both no-ops if they race — ConcurrentHashMap
             // makes both operations thread-safe.
             queryCache.clear()
-            trigger.trigger()
+            trigger.onDatabaseChanged()
         }
     }
 

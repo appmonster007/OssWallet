@@ -15,9 +15,10 @@ import kotlinx.coroutines.launch
  * Shared shape for the plain (non-Glance) homescreen widget providers — raw RemoteViews,
  * built by each widget's own renderer.
  *
- * Refresh path: TransactionManager -> WidgetRefreshTrigger -> WorkManagerWidgetRefreshTrigger
- *   -> WidgetRefreshWorker.enqueueNow() -> that widget's fetcher updates an in-memory Preferences
- *   -> that widget's RemoteViews renderer -> AppWidgetManager.updateAppWidget().
+ * Refresh path: TransactionManager / Room observer -> WidgetRefreshTrigger
+ *   -> WidgetRefreshCoordinator (records what is dirty) -> WidgetRefreshWorker pass loop -> that
+ *   widget's fetcher updates an in-memory Preferences -> its RemoteViews renderer
+ *   -> AppWidgetManager.updateAppWidget(). onUpdate and resize request only their own widgets.
  *
  * [onUpdate] pushes a cheap loading placeholder SYNCHRONOUSLY before enqueueing the real async
  * refresh. This isn't just belt-and-suspenders: Android's own widget-picker "generated preview"
@@ -47,7 +48,7 @@ abstract class BaseWidgetProvider(
                 appWidgetManager.updateAppWidget(widgetId, RemoteViews(context.packageName, loadingLayoutResId))
             }
         }
-        WidgetRefreshWorker.enqueueNow(context)
+        WidgetRefreshCoordinator.requestWidgets(context, appWidgetIds)
     }
 
     override fun onAppWidgetOptionsChanged(
@@ -56,7 +57,7 @@ abstract class BaseWidgetProvider(
         appWidgetId: Int,
         newOptions: Bundle
     ) {
-        WidgetRefreshWorker.enqueueNow(context)
+        WidgetRefreshCoordinator.requestWidgets(context, listOf(appWidgetId))
         onResized(context, appWidgetManager, appWidgetId)
     }
 
@@ -64,7 +65,7 @@ abstract class BaseWidgetProvider(
      * Override point for a provider whose content includes a ListView
      * (RecentActivitiesWidgetProvider) — a resize needs an explicit
      * notifyAppWidgetViewDataChanged too, not just the header re-render
-     * WidgetRefreshWorker.enqueueNow above already schedules.
+     * the WidgetRefreshCoordinator request above already schedules.
      */
     protected open fun onResized(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) = Unit
 

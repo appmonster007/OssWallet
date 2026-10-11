@@ -27,6 +27,7 @@ import androidx.work.Configuration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
@@ -114,9 +115,19 @@ class OssWalletApp : Application(), Configuration.Provider {
                     // so a profile switch naturally misses the cache. We still clear the previous
                     // profile's slots to keep the cache from growing unboundedly across many switches.
                     cardRenderCache.invalidateProfile(prev)
+                    widgetRefreshTrigger.trigger()
                 }
                 previousProfileId = profileId
             }
+            .launchIn(applicationScope)
+
+        // Currency and precision change what widgets display without touching any observed table.
+        combine(settingsRepository.currency, settingsRepository.decimalPrecision) { currency, precision ->
+            currency to precision
+        }
+            .distinctUntilChanged()
+            .drop(1)
+            .onEach { widgetRefreshTrigger.trigger() }
             .launchIn(applicationScope)
 
         // Auto-stop WebServer if it shouldn't stay alive in background

@@ -17,8 +17,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Shared shape for the three widget APPWIDGET_CONFIGURE activities shown before a pinned widget
- * is placed: resolves the widget id, loads/saves config through [prefsStore], and re-enqueues
- * [WidgetRefreshWorker] on save (raw-RemoteViews widgets have no Glance update/updateAll call to
+ * is placed: resolves the widget id, loads/saves config through [prefsStore], and requests a
+ * [WidgetRefreshCoordinator] refresh for that widget on save (raw-RemoteViews widgets have no Glance update/updateAll call to
  * make instead — the worker computes fresh data and pushes RemoteViews directly).
  */
 abstract class BaseWidgetConfigActivity<T> : ComponentActivity() {
@@ -63,7 +63,7 @@ abstract class BaseWidgetConfigActivity<T> : ComponentActivity() {
                     onSave = {
                         scope.launch {
                             prefsStore.save(widgetId, config)
-                            WidgetRefreshWorker.enqueueNow(applicationContext)
+                            WidgetRefreshCoordinator.requestWidgets(applicationContext, listOf(widgetId))
                             val resultValue = Intent().putExtra(
                                 AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId
                             )

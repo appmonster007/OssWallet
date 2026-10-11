@@ -237,7 +237,14 @@ object CardAggregationService {
                 amountInBase = CurrencyService.convertAmount(summary.netFlow, curr, input.targetCurrency, input.exchangeRates, 10)
                     .setScale(CurrencyService.precision, RoundingMode.HALF_UP)
             )
-        }.sortedByDescending { it.amountInBase.abs() }
+        }.let { items ->
+            val visible = if (config.hideZeroBalances) items.filter { it.amount.signum() != 0 } else items
+            when (config.sortBy) {
+                CurrencySortMode.BIGGEST -> visible.sortedByDescending { it.amountInBase.abs() }
+                CurrencySortMode.SMALLEST -> visible.sortedBy { it.amountInBase.abs() }
+                CurrencySortMode.NAME -> visible.sortedBy { it.currency }
+            }
+        }
 
         return CardRenderData.CurrencyBalances(
             config = config,

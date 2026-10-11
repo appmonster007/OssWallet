@@ -212,6 +212,14 @@ interface CardUpdateHandler {
         }
     }
     
+    fun updateCardCurrencyBalancesConfig(cardId: String, newConfig: CurrencyBalancesCardConfig) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is CurrencyBalancesCardConfig) newConfig else config
+            }
+        }
+    }
+
     fun updateCardCurrencyBalancesFilter(cardId: String, filter: TransactionFilter) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->

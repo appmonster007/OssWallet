@@ -19,6 +19,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CurrencySortMode
 import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
@@ -247,6 +248,36 @@ class CardAggregationServiceTest {
         assertEquals(1, result.items.size)
         assertEquals("USD", result.items[0].currency)
         assertEquals(0, BigDecimal("5000.00").compareTo(result.items[0].amount))
+    }
+
+    @Test
+    fun `computeCurrencyBalancesCard hides zero balances and orders by the chosen mode`() = runBlocking {
+        val rates = ExchangeRateSnapshot(anchor = "USD", rates = mapOf("USD" to BigDecimal.ONE, "EUR" to BigDecimal("0.5")))
+        val input = baseInput().copy(exchangeRates = rates)
+        coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
+            Result.success(
+                mapOf(
+                    "USD" to fs(income = "300.00"),
+                    "EUR" to fs(income = "400.00"),
+                    "JPY" to fs(),
+                )
+            )
+        fun config(sort: CurrencySortMode, hide: Boolean) = CurrencyBalancesCardConfig(
+            cardId = "t",
+            hideZeroBalances = hide,
+            sortBy = sort,
+            filter = TransactionFilter(timelineRange = TimelineRange.AllTime())
+        )
+
+        // 400 EUR at 0.5 EUR per USD is 800 USD, so EUR is the biggest.
+        val biggest = CardAggregationService.computeCurrencyBalancesCard(queryService, profileId, input, config(CurrencySortMode.BIGGEST, hide = true))
+        assertEquals(listOf("EUR", "USD"), biggest.items.map { it.currency })
+
+        val smallest = CardAggregationService.computeCurrencyBalancesCard(queryService, profileId, input, config(CurrencySortMode.SMALLEST, hide = true))
+        assertEquals(listOf("USD", "EUR"), smallest.items.map { it.currency })
+
+        val byName = CardAggregationService.computeCurrencyBalancesCard(queryService, profileId, input, config(CurrencySortMode.NAME, hide = false))
+        assertEquals(listOf("EUR", "JPY", "USD"), byName.items.map { it.currency })
     }
 
     @Test

@@ -13,14 +13,13 @@ import com.osscabinet.ossWallet.widget.WidgetDataLoader.CommonData
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.math.BigDecimal
 
 object AccountsWidgetKeys {
     val IS_LOADED = stringPreferencesKey("accounts_is_loaded")
+    /** Number of rows, so the header can tell an empty list from a loaded one. */
+    val COUNT = stringPreferencesKey("accounts_count")
     val TOTAL_FORMATTED = stringPreferencesKey("accounts_total_formatted")
-    val ROWS_JSON = stringPreferencesKey("accounts_rows_json")
     /** Name of a [WidgetTheme] constant — see NetWorthWidgetKeys.THEME. */
     val THEME = stringPreferencesKey("accounts_theme")
 }
@@ -30,13 +29,20 @@ data class AccountWidgetRow(
     val accountId: String,
     val name: String,
     val colorHex: String,
-    /** Account icon name, resolved with getIconByName like every card does. */
+    /** Account icon name, resolved with getAccountIconByName like the Accounts card. */
     val iconName: String,
     val balanceFormatted: String,
     val balanceNegative: Boolean,
     /** Net flow over the widget's period, e.g. "+$1,200.00 · This Month". */
     val netCaption: String,
     val netNegative: Boolean
+)
+
+/** Everything the Accounts widget shows: every active account in order, and the header total. */
+data class AccountsSnapshot(
+    val rows: List<AccountWidgetRow>,
+    val totalFormatted: String,
+    val theme: WidgetTheme
 )
 
 /** Drives the widget off the same [AccountsCardComputer] the dashboard card uses. */
@@ -47,62 +53,73 @@ class AccountsWidgetFetcher : WidgetDataFetcher {
         common: CommonData,
         prefs: MutablePreferences
     ) {
-        val config = AccountsWidgetPrefsStore(context).loadSafe(widgetId)
-        val ep = EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            WidgetDataLoaderEntryPoint::class.java
-        )
-        val accounts = ep.accountRepository().getAllAccounts(common.profileId).first()
+        val snapshot = load(context, widgetId, common)
+        prefs[AccountsWidgetKeys.IS_LOADED] = "true"
+        prefs[AccountsWidgetKeys.COUNT] = snapshot.rows.size.toString()
+        prefs[AccountsWidgetKeys.THEME] = snapshot.theme.name
+        prefs[AccountsWidgetKeys.TOTAL_FORMATTED] = snapshot.totalFormatted
+    }
 
-        val effectiveFilter = config.filter.copy(
-            timelineRange = config.filter.timelineRange.withExcludeFuture(true)
-        )
-        val input = CardInput(
-            profileId = common.profileId,
-            targetCurrency = common.baseCurrency,
-            exchangeRates = ExchangeRateSnapshot(anchor = common.baseCurrency, rates = common.exchangeRates),
-            filter = effectiveFilter,
-            accounts = accounts,
-            categories = emptyList()
-        )
-        val cardConfig = AccountsCardConfig(
-            cardId = "accounts_widget_$widgetId",
-            filter = effectiveFilter
-        )
-        val renderData = runCatching {
-            AccountsCardComputer(common.databaseQueryService).compute(input, cardConfig)
-        }.getOrNull()
+    companion object {
+        suspend fun load(context: Context, widgetId: Int, common: CommonData): AccountsSnapshot {
+            val config = AccountsWidgetPrefsStore(context).loadSafe(widgetId)
+            val ep = EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                WidgetDataLoaderEntryPoint::class.java
+            )
+            val accounts = ep.accountRepository().getAllAccounts(common.profileId).first()
 
-        val ordered = renderData?.updatedAccounts
-            .orEmpty()
-            .filter { !it.isArchived }
-            .sortedBy { it.displayOrder }
+            val effectiveFilter = config.filter.copy(
+                timelineRange = config.filter.timelineRange.withExcludeFuture(true)
+            )
+            val input = CardInput(
+                profileId = common.profileId,
+                targetCurrency = common.baseCurrency,
+                exchangeRates = ExchangeRateSnapshot(anchor = common.baseCurrency, rates = common.exchangeRates),
+                filter = effectiveFilter,
+                accounts = accounts,
+                categories = emptyList()
+            )
+            val cardConfig = AccountsCardConfig(
+                cardId = "accounts_widget_$widgetId",
+                filter = effectiveFilter
+            )
+            val renderData = runCatching {
+                AccountsCardComputer(common.databaseQueryService).compute(input, cardConfig)
+            }.getOrNull()
 
-        val rows = ordered.take(AccountsWidgetConfig.MAX_ROWS).map { account ->
-            val summary = renderData?.accountSummaries?.get(account.id)
-            val balance = summary?.balance ?: BigDecimal.ZERO
-            val net = summary?.currentPeriodMetrics?.netFlow ?: BigDecimal.ZERO
-            val sign = if (net.signum() > 0) "+" else ""
-            AccountWidgetRow(
-                accountId = account.id,
-                name = account.name,
-                colorHex = account.colorHex,
-                iconName = account.icon,
-                balanceFormatted = formatCurrency(balance, account.currencyCode),
-                balanceNegative = balance.signum() < 0,
-                netCaption = "$sign${formatCurrency(net, account.currencyCode)} · ${config.periodLabel}",
-                netNegative = net.signum() < 0
+            val ordered = renderData?.updatedAccounts
+                .orEmpty()
+                .filter { !it.isArchived }
+                .sortedBy { it.displayOrder }
+
+            val rows = ordered.map { account ->
+                val summary = renderData?.accountSummaries?.get(account.id)
+                val balance = summary?.balance ?: BigDecimal.ZERO
+                val net = summary?.currentPeriodMetrics?.netFlow ?: BigDecimal.ZERO
+                val sign = if (net.signum() > 0) "+" else ""
+                AccountWidgetRow(
+                    accountId = account.id,
+                    name = account.name,
+                    colorHex = account.colorHex,
+                    iconName = account.icon,
+                    balanceFormatted = formatCurrency(balance, account.currencyCode),
+                    balanceNegative = balance.signum() < 0,
+                    netCaption = "$sign${formatCurrency(net, account.currencyCode)} · ${config.periodLabel}",
+                    netNegative = net.signum() < 0
+                )
+            }
+
+            // The header total covers the same accounts the list shows.
+            val total = ordered
+                .mapNotNull { renderData?.accountSummaries?.get(it.id)?.balanceInBase }
+                .fold(BigDecimal.ZERO) { acc, v -> acc.add(v) }
+
+            return AccountsSnapshot(
+                rows = rows,
+                totalFormatted = formatCurrency(total, common.baseCurrency),
+                theme = config.theme
             )
         }
-
-        // The header total covers every active account, not just the visible rows.
-        val total = ordered
-            .mapNotNull { renderData?.accountSummaries?.get(it.id)?.balanceInBase }
-            .fold(BigDecimal.ZERO) { acc, v -> acc.add(v) }
-
-        prefs[AccountsWidgetKeys.IS_LOADED] = "true"
-        prefs[AccountsWidgetKeys.THEME] = config.theme.name
-        prefs[AccountsWidgetKeys.TOTAL_FORMATTED] = formatCurrency(total, common.baseCurrency)
-        prefs[AccountsWidgetKeys.ROWS_JSON] = Json.encodeToString(rows)
     }
 }

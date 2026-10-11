@@ -196,7 +196,7 @@ fun FilterSheetContent(
         }
 
         // 1. Base Scope Indicator (Standardized)
-        val hasBaseFilters = countActiveFilters(baseFilter) > 0
+        val hasBaseFilters = hasBaseScope(baseFilter)
         if (hasBaseFilters) {
             Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
                 Text(

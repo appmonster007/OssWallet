@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.detail
 
+import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.core.util.DispatcherProvider
@@ -80,7 +81,10 @@ class AccountDetailViewModel @Inject constructor(
 
     // Lock the account ID for this screen
     private val filterManager = FilterManager().apply {
-        setFilter("account_scope", TransactionFilter(accountIds = setOf(accountId)))
+        setFilter(
+            "account_scope",
+            TransactionFilter(accountIds = setOf(accountId), timelineRange = DefaultTimeline.INITIAL)
+        )
     }
 
     // Expose merged filter as StateFlow

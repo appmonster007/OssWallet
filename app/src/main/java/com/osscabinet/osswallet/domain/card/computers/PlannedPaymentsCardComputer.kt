@@ -42,7 +42,12 @@ class PlannedPaymentsCardComputer :
                     (tagSet.isEmpty() || pp.tags.any { it in tagSet })
         }
 
-        val (rangeStart, rangeEnd) = TimelineService.getDateRange(mergedFilter.timelineRange)
+        val (rangeStart, _) = TimelineService.getDateRange(mergedFilter.timelineRange)
+        // Upcoming payments are in the future by definition, so the horizon ignores "exclude
+        // future" (which would cap the range at now and always leave this list empty).
+        val (_, rangeEnd) = TimelineService.getDateRange(
+            mergedFilter.timelineRange.withExcludeFuture(false)
+        )
 
         // Overdue: past-due payments, optionally bounded by the timeline start so stale items
         // outside the selected range are not surfaced.

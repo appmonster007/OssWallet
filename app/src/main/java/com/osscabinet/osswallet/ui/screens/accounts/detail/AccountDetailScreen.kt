@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.detail
 
+import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -763,7 +764,10 @@ fun DynamicAccountDetailCards(
     }
 
     val accountLockFilter = remember(state.account.id) {
-        TransactionFilter(accountIds = setOf(state.account.id))
+        TransactionFilter(
+            accountIds = setOf(state.account.id),
+            timelineRange = DefaultTimeline.INITIAL
+        )
     }
     val sharedCardInput = remember(state, state.currentFilter) {
         CardInput(

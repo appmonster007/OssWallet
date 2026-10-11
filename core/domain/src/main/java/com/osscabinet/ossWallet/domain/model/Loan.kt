@@ -15,6 +15,7 @@ data class Loan(
     @Serializable(with = BigDecimalSerializer::class)
     val principalAmount: BigDecimal,
     val currency: String,
+    /** Annual rate as a percentage: 3.5 means 3.5%. */
     val interestRate: Float? = null,
     val startDate: Long,
     val lenderOrBorrowerName: String,
@@ -32,6 +33,7 @@ data class Loan(
     val statuses: Set<TransactionStatus> = emptySet(),
     val linkedTransactionIds: Set<Long> = emptySet(),
     val timelineRange: TimelineRange = TimelineRange.AllTime(),
+    val advanced: AdvancedFilterCriteria = AdvancedFilterCriteria(),
     val filterId: Long? = null
 )
 

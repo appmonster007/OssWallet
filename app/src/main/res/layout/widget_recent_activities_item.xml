@@ -7,8 +7,9 @@
      setPendingIntentTemplate — see RecentActivitiesRemoteViewsRenderer for the template and
      RecentActivitiesRemoteViewsFactory for the fill-in extras (transaction id).
 
-     Design pick (canvas "Row B" + "Density B", time moved to the right): tv_ra_item_indicator
-     is a circular initial badge (widget_oval_bg tinted per-row by sign — see the factory) in
+     Design pick (canvas "Row B" + "Density B", time moved to the right): the badge shows the
+     category icon (iv_ra_item_icon, drawn by WidgetIconRenderer from the app's own vector icons),
+     falling back to tv_ra_item_indicator, a circular initial badge (widget_oval_bg tinted per-row by sign — see the factory) in
      place of the old color bar; tv_ra_item_subtitle is account+category only (no time); the
      relative time sits under the amount on the right instead, in its own
      tv_ra_item_time line. -->
@@ -40,6 +41,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:src="@drawable/widget_oval_negative_bg"
+                    android:contentDescription="@null" />
+
+            <ImageView
+                    android:id="@+id/iv_ra_item_icon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:visibility="gone"
                     android:contentDescription="@null" />
 
             <TextView

@@ -17,13 +17,12 @@ import com.osscabinet.ossWallet.widget.WidgetDataLoader.CommonData
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.math.BigDecimal
 
 object BudgetsWidgetKeys {
     val IS_LOADED = stringPreferencesKey("budgets_is_loaded")
-    val ROWS_JSON = stringPreferencesKey("budgets_rows_json")
+    /** Number of rows, so the header can tell an empty list from a loaded one. */
+    val COUNT = stringPreferencesKey("budgets_count")
     /** Budgets over their limit / at or ahead of their alert pace, across all budgets, not just the visible rows. */
     val OVER_COUNT = stringPreferencesKey("budgets_over_count")
     val NEAR_COUNT = stringPreferencesKey("budgets_near_count")
@@ -51,6 +50,14 @@ data class BudgetWidgetRow(
     val hasRollover: Boolean
 )
 
+/** Everything the Budgets widget shows: the header counts and every row, most urgent first. */
+data class BudgetsSnapshot(
+    val rows: List<BudgetWidgetRow>,
+    val overCount: Int,
+    val nearCount: Int,
+    val theme: WidgetTheme
+)
+
 /** Drives the widget off the same [BudgetsCardComputer] the dashboard card uses. */
 class BudgetsWidgetFetcher : WidgetDataFetcher {
     override suspend fun updateState(
@@ -59,82 +66,92 @@ class BudgetsWidgetFetcher : WidgetDataFetcher {
         common: CommonData,
         prefs: MutablePreferences
     ) {
-        val config = BudgetsWidgetPrefsStore(context).loadSafe(widgetId)
-        val ep = EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            WidgetDataLoaderEntryPoint::class.java
-        )
-        val accounts = ep.accountRepository().getAllAccounts(common.profileId).first()
-        val budgets = ep.budgetRepository().getAllBudgets(common.profileId).first()
-
-        val effectiveFilter = config.filter.copy(
-            timelineRange = config.filter.timelineRange.withExcludeFuture(true)
-        )
-        val input = CardInput(
-            profileId = common.profileId,
-            targetCurrency = common.baseCurrency,
-            exchangeRates = ExchangeRateSnapshot(anchor = common.baseCurrency, rates = common.exchangeRates),
-            filter = effectiveFilter,
-            accounts = accounts,
-            categories = emptyList(),
-            budgets = budgets
-        )
-        // Every budget is computed, not just the visible rows: the header chip counts them all,
-        // and the rows are picked by urgency after sorting.
-        val cardConfig = BudgetsCardConfig(
-            cardId = "budgets_widget_$widgetId",
-            filter = effectiveFilter,
-            showArchived = config.showArchived,
-            maxItems = Int.MAX_VALUE
-        )
-        val items = runCatching { BudgetsCardComputer(common.databaseQueryService).compute(input, cardConfig) }
-            .getOrNull()?.items.orEmpty()
-
-        val withPace = items.map { it to BudgetService.paceStatus(it) }
-        // Over first, then budgets spending faster than their period, then near their alert
-        // threshold, then the rest. sortedBy is stable, so saved order holds inside each group.
-        val rows = withPace.sortedBy { (_, pace) -> pace.urgency() }
-            .take(BudgetsWidgetConfig.MAX_ROWS)
-            .map { (progress, pace) -> progress.toRow(pace) }
-
+        val snapshot = load(context, widgetId, common)
         prefs[BudgetsWidgetKeys.IS_LOADED] = "true"
-        prefs[BudgetsWidgetKeys.THEME] = config.theme.name
-        prefs[BudgetsWidgetKeys.OVER_COUNT] = withPace.count { it.second == BudgetPaceStatus.OVER }.toString()
-        prefs[BudgetsWidgetKeys.NEAR_COUNT] = withPace.count {
-            it.second == BudgetPaceStatus.AHEAD_OF_PACE || it.second == BudgetPaceStatus.NEAR_LIMIT
-        }.toString()
-        prefs[BudgetsWidgetKeys.ROWS_JSON] = Json.encodeToString(rows)
+        prefs[BudgetsWidgetKeys.COUNT] = snapshot.rows.size.toString()
+        prefs[BudgetsWidgetKeys.THEME] = snapshot.theme.name
+        prefs[BudgetsWidgetKeys.OVER_COUNT] = snapshot.overCount.toString()
+        prefs[BudgetsWidgetKeys.NEAR_COUNT] = snapshot.nearCount.toString()
     }
 
-    private fun BudgetPaceStatus.urgency() = when (this) {
-        BudgetPaceStatus.OVER -> 0
-        BudgetPaceStatus.AHEAD_OF_PACE -> 1
-        BudgetPaceStatus.NEAR_LIMIT -> 2
-        BudgetPaceStatus.ON_TRACK -> 3
-    }
+    companion object {
+        suspend fun load(context: Context, widgetId: Int, common: CommonData): BudgetsSnapshot {
+            val config = BudgetsWidgetPrefsStore(context).loadSafe(widgetId)
+            val ep = EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                WidgetDataLoaderEntryPoint::class.java
+            )
+            val accounts = ep.accountRepository().getAllAccounts(common.profileId).first()
+            val budgets = ep.budgetRepository().getAllBudgets(common.profileId).first()
 
-    private fun BudgetProgress.toRow(pace: BudgetPaceStatus): BudgetWidgetRow {
-        val currency = budget.currency
-        return BudgetWidgetRow(
-            budgetId = budget.id,
-            name = budget.name,
-            spentFormatted = formatCurrency(spent, currency),
-            limitFormatted = formatCurrency(limit, currency),
-            remainingFormatted = formatCurrency(remaining, currency),
-            overByFormatted = formatCurrency((spent - limit).max(BigDecimal.ZERO), currency),
-            percentage = percentage * 100f,
-            pace = pace.name,
-            elapsedPercent = elapsedFraction?.let { (it * 100f).toInt().coerceIn(0, 100) },
-            periodLabel = budget.timelineRange.budgetPeriodLabel(),
-            rolloverAmountFormatted = formatCurrency(rolloverAmount, currency),
-            hasRollover = rolloverAmount.signum() != 0
-        )
-    }
+            val effectiveFilter = config.filter.copy(
+                timelineRange = config.filter.timelineRange.withExcludeFuture(true)
+            )
+            val input = CardInput(
+                profileId = common.profileId,
+                targetCurrency = common.baseCurrency,
+                exchangeRates = ExchangeRateSnapshot(anchor = common.baseCurrency, rates = common.exchangeRates),
+                filter = effectiveFilter,
+                accounts = accounts,
+                categories = emptyList(),
+                budgets = budgets
+            )
+            // Every budget is computed: the header chip counts them all, and the list scrolls.
+            val cardConfig = BudgetsCardConfig(
+                cardId = "budgets_widget_$widgetId",
+                filter = effectiveFilter,
+                showArchived = config.showArchived,
+                maxItems = Int.MAX_VALUE
+            )
+            val items = runCatching { BudgetsCardComputer(common.databaseQueryService).compute(input, cardConfig) }
+                .getOrNull()?.items.orEmpty()
 
-    private fun TimelineRange.budgetPeriodLabel(): String = when (this) {
-        is TimelineRange.AllTime -> "All time"
-        is TimelineRange.ThisPeriod -> period.label
-        is TimelineRange.LastPeriod -> "Last ${period.label}"
-        is TimelineRange.CustomRange -> "Custom range"
+            val withPace = items.map { it to BudgetService.paceStatus(it) }
+            // Over first, then budgets spending faster than their period, then near their alert
+            // threshold, then the rest. sortedBy is stable, so saved order holds inside each group.
+            val rows = withPace.sortedBy { (_, pace) -> pace.urgency() }
+                .map { (progress, pace) -> progress.toRow(pace) }
+
+            return BudgetsSnapshot(
+                rows = rows,
+                overCount = withPace.count { it.second == BudgetPaceStatus.OVER },
+                nearCount = withPace.count {
+                    it.second == BudgetPaceStatus.AHEAD_OF_PACE || it.second == BudgetPaceStatus.NEAR_LIMIT
+                },
+                theme = config.theme
+            )
+        }
+
+        private fun BudgetPaceStatus.urgency() = when (this) {
+            BudgetPaceStatus.OVER -> 0
+            BudgetPaceStatus.AHEAD_OF_PACE -> 1
+            BudgetPaceStatus.NEAR_LIMIT -> 2
+            BudgetPaceStatus.ON_TRACK -> 3
+        }
+
+        private fun BudgetProgress.toRow(pace: BudgetPaceStatus): BudgetWidgetRow {
+            val currency = budget.currency
+            return BudgetWidgetRow(
+                budgetId = budget.id,
+                name = budget.name,
+                spentFormatted = formatCurrency(spent, currency),
+                limitFormatted = formatCurrency(limit, currency),
+                remainingFormatted = formatCurrency(remaining, currency),
+                overByFormatted = formatCurrency((spent - limit).max(BigDecimal.ZERO), currency),
+                percentage = percentage * 100f,
+                pace = pace.name,
+                elapsedPercent = elapsedFraction?.let { (it * 100f).toInt().coerceIn(0, 100) },
+                periodLabel = budget.timelineRange.budgetPeriodLabel(),
+                rolloverAmountFormatted = formatCurrency(rolloverAmount, currency),
+                hasRollover = rolloverAmount.signum() != 0
+            )
+        }
+
+        private fun TimelineRange.budgetPeriodLabel(): String = when (this) {
+            is TimelineRange.AllTime -> "All time"
+            is TimelineRange.ThisPeriod -> period.label
+            is TimelineRange.LastPeriod -> "Last ${period.label}"
+            is TimelineRange.CustomRange -> "Custom range"
+        }
     }
 }

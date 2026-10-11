@@ -6,9 +6,8 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.serialization.Serializable
 
 /**
- * Per-instance config for the Budgets widget. The number of visible rows isn't configurable: it
- * follows the widget's height (see [BudgetsRemoteViewsRenderer]), up to [MAX_ROWS]. Each budget
- * is measured over its own period, so the filter only contributes its "exclude future" flag.
+ * Per-instance config for the Budgets widget. Each budget is measured over its own period, so the
+ * filter only contributes its "exclude future" flag. The list scrolls, so every budget is shown.
  */
 @Serializable
 data class BudgetsWidgetConfig(
@@ -17,8 +16,4 @@ data class BudgetsWidgetConfig(
     ),
     val showArchived: Boolean = false,
     val theme: WidgetTheme = WidgetTheme.SYSTEM
-) {
-    companion object {
-        const val MAX_ROWS = 4
-    }
-}
+)

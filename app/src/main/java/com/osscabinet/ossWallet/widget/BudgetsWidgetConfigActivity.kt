@@ -35,21 +35,18 @@ internal fun BudgetsWidgetConfigScreen(
         onSave = onSave
     ) {
         EntrySwitchRow(
-            label = "Show Comparison",
-            subtitle = "Compare spend with the previous period",
-            checked = config.showComparison,
-            onCheckedChange = { onConfigChange(config.copy(showComparison = it)) },
-            isFlush = true
-        )
-
-        WidgetConfigDivider()
-
-        EntrySwitchRow(
             label = "Show Archived Budgets",
             subtitle = "Include archived budgets in this widget",
             checked = config.showArchived,
             onCheckedChange = { onConfigChange(config.copy(showArchived = it)) },
             isFlush = true
+        )
+
+        WidgetConfigDivider()
+
+        WidgetThemeOptions(
+            selected = config.theme,
+            onSelect = { onConfigChange(config.copy(theme = it)) }
         )
 
         WidgetConfigDivider()

@@ -149,6 +149,7 @@ fun OssWalletNavGraph(
                     appNavigator.navigateTo(AnalyticsRoute, widgetNavOptions)
                 }
                 "exchange_rates" -> appNavigator.navigateTo(ExchangeRatesRoute, widgetNavOptions)
+                "budgets"        -> appNavigator.navigateTo(BudgetListRoute, widgetNavOptions)
                 // Opens a transaction for editing — the Recent Activities widget's per-row tap
                 // target, same as RecentActivitiesCard's own onTransactionClick. id comes from
                 // the ListView's fill-in Intent (see RecentActivitiesRemoteViewsService), not

@@ -26,7 +26,7 @@ import kotlinx.coroutines.withContext
  * parallel; a failed pass is aborted and retried by WorkManager with its work still pending.
  *
  * SHELVED (2026-10-08): every widget except Net Worth (three provider registrations, see
- * AndroidManifest.xml) and Recent Activities moved to `shelved-widgets/`; see its README.
+ * AndroidManifest.xml), Recent Activities and Budgets moved to `shelved-widgets/`; see its README.
  */
 class WidgetRefreshWorker(
     appContext: Context,
@@ -48,6 +48,12 @@ class WidgetRefreshWorker(
             RecentActivitiesWidgetFetcher()
         ) { ctx, prefs, widgetId, mgr ->
             RecentActivitiesRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
+        },
+        ProviderSpec(
+            BudgetsWidgetProvider::class.java,
+            BudgetsWidgetFetcher()
+        ) { ctx, prefs, widgetId, mgr ->
+            BudgetsRemoteViewsRenderer.render(ctx, prefs, widgetId, mgr)
         }
     )
 

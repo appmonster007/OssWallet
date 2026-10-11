@@ -22,6 +22,13 @@
     <color name="widget_positive_container">#0D1E9B4F</color>
     <color name="widget_negative_container">#0DC8463F</color>
     <color name="widget_transfer_container">#0D3B6EA8</color>
+    <!-- Budgets widget: warning amber, bar track, pace tick, and status-chip fills. -->
+    <color name="widget_warning">#B7791F</color>
+    <color name="widget_track">#EDE8DA</color>
+    <color name="widget_tick">#B31B1914</color>
+    <color name="widget_chip_negative_bg">#F4DDDA</color>
+    <color name="widget_chip_warning_bg">#F5E6C8</color>
+    <color name="widget_chip_neutral_bg">#EDE8DA</color>
 
     <!-- Aliases for static XML preview layouts — NOT used in Glance Kotlin code -->
     <color name="widget_subtle">@color/widget_on_surface_variant</color>

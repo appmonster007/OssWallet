@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Budgets widget content. Header is the shared widget_header_row.xml shell; rows are
+     widget_budgets_row.xml instances added into ll_budgets_rows by BudgetsRemoteViewsRenderer
+     (how many depends on the widget's height). tv_budgets_empty_text shows when there are no budgets. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/ll_widget_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/widget_surface"
+        android:orientation="vertical">
+
+    <include layout="@layout/widget_header_row" />
+
+    <FrameLayout
+            android:id="@+id/ll_budgets_body"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+        <LinearLayout
+                android:id="@+id/ll_budgets_rows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        <TextView
+                android:id="@+id/tv_budgets_empty_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:padding="16dp"
+                android:fontFamily="@font/jetbrains_mono"
+                android:gravity="center"
+                android:text="No budgets yet — create one in the app."
+                android:textColor="@color/widget_on_surface_variant"
+                android:textSize="11sp"
+                android:visibility="gone" />
+
+    </FrameLayout>
+
+</LinearLayout>

@@ -5,21 +5,20 @@ import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.serialization.Serializable
 
+/**
+ * Per-instance config for the Budgets widget. The number of visible rows isn't configurable: it
+ * follows the widget's height (see [BudgetsRemoteViewsRenderer]), up to [MAX_ROWS]. Each budget
+ * is measured over its own period, so the filter only contributes its "exclude future" flag.
+ */
 @Serializable
 data class BudgetsWidgetConfig(
     val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH, excludeFuture = true)
     ),
-    val showComparison: Boolean = true,
     val showArchived: Boolean = false,
-    val maxItems: Int = 5
+    val theme: WidgetTheme = WidgetTheme.SYSTEM
 ) {
-    val timelineRange: TimelineRange get() = filter.timelineRange
-
-    val periodLabel: String get() = when (val tr = filter.timelineRange) {
-        is TimelineRange.AllTime -> "All Time"
-        is TimelineRange.ThisPeriod -> tr.period.label
-        is TimelineRange.LastPeriod -> "Last ${tr.period.label}"
-        is TimelineRange.CustomRange -> "Custom Range"
+    companion object {
+        const val MAX_ROWS = 4
     }
 }

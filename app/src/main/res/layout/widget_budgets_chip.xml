@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status chip for widget_header_row.xml's ll_widget_header_extra slot ("1 OVER", "1 NEAR", "ON TRACK"). -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/tv_budgets_chip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:fontFamily="@font/jetbrains_mono"
+        android:textSize="8sp"
+        android:textStyle="bold"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="1dp"
+        android:paddingBottom="1dp" />

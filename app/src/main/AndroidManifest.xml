@@ -126,6 +126,28 @@
                 android:resource="@xml/recent_activities_widget_info" />
         </receiver>
 
+        <receiver
+            android:name=".widget.BudgetsWidgetProvider"
+            android:label="@string/widget_budgets_label"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/budgets_widget_info" />
+        </receiver>
+
+        <activity
+            android:name=".widget.BudgetsWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".widget.NetWorthWidgetConfigActivity"
             android:exported="true"

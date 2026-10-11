@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Row count follows the widget's height (see BudgetsRemoteViewsRenderer): 2 rows at the 4x2
+     floor, up to 4 when stretched taller. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-        android:description="@string/app_name"
+        android:description="@string/widget_budgets_description"
         android:initialLayout="@layout/widget_budgets_loading"
         android:minWidth="180dp"
         android:minHeight="110dp"
         android:minResizeWidth="180dp"
         android:minResizeHeight="110dp"
         android:targetCellWidth="4"
-        android:targetCellHeight="3"
+        android:targetCellHeight="2"
         android:resizeMode="horizontal|vertical"
         android:updatePeriodMillis="1800000"
         android:configure="com.osscabinet.ossWallet.widget.BudgetsWidgetConfigActivity"
-        android:previewLayout="@layout/widget_budgets_table"
-        android:previewImage="@mipmap/ic_launcher"
-        android:widgetCategory="home_screen" />
+        android:previewLayout="@layout/widget_budgets_preview"
+        android:widgetCategory="home_screen"
+        android:widgetFeatures="reconfigurable" />

@@ -24,7 +24,7 @@ class WidgetInvalidationObserver(
     private val trigger: WidgetRefreshTrigger
 ) {
     private val observer = object : InvalidationTracker.Observer(
-        "transactions", "accounts", "categories", "currency_rates", "profiles", "transaction_links"
+        "transactions", "accounts", "categories", "currency_rates", "profiles", "transaction_links", "budgets"
     ) {
         override fun onInvalidated(tables: Set<String>) {
             // Clear the cache before calling trigger() so that trigger()'s synchronous

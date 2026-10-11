@@ -34,6 +34,8 @@
     <string name="widget_net_worth_settings_description">Widget settings</string>
 
     <string name="widget_recent_activities_label">Recent Activities</string>
+    <string name="widget_budgets_label">Budgets</string>
+    <string name="widget_budgets_description">Spending progress against your budgets.</string>
     <string name="widget_recent_activities_description">A scrolling list of your most recent transactions.</string>
 
     <!-- Common Actions -->

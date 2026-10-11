@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A 2dp tick at the right edge of whatever bounds it is given. widget_budget_progress_*
+     scales these bounds to the elapsed share of the period, so the tick marks "you should be here". -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:gravity="end" android:width="2dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_tick" />
+        </shape>
+    </item>
+</layer-list>

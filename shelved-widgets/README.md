@@ -1,5 +1,7 @@
 # Shelved widgets
 
+> **Update:** Budgets was restored and redesigned (see `app/.../widget/Budgets*`); ignore it in the lists below.
+
 Everything here was pulled out of the active build on 2026-10-08, keeping only the
 **Net Worth** home screen widget wired up. Nothing was deleted — these are the exact files
 that used to live under `app/src/main/`, just moved aside so they don't compile/package.

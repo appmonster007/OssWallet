@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Status chip for widget_header_row.xml's ll_widget_header_extra slot ("1 OVER", "1 NEAR", "ON TRACK"). -->
+<!-- A chip for widget_header_row.xml's ll_widget_header_extra slot (Budgets "1 OVER", Accounts total). See WidgetHeader.addChip. -->
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/tv_budgets_chip"
+        android:id="@+id/tv_header_chip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"

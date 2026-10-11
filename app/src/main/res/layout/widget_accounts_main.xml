@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Accounts widget content. Header is the shared widget_header_row.xml shell; rows are
+     widget_accounts_row.xml instances added into ll_accounts_rows by AccountsRemoteViewsRenderer
+     (how many depends on the widget's height). tv_accounts_empty_text shows when there are none. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/ll_widget_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/widget_surface"
+        android:orientation="vertical">
+
+    <include layout="@layout/widget_header_row" />
+
+    <FrameLayout
+            android:id="@+id/ll_accounts_body"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+        <LinearLayout
+                android:id="@+id/ll_accounts_rows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        <TextView
+                android:id="@+id/tv_accounts_empty_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:padding="16dp"
+                android:fontFamily="@font/jetbrains_mono"
+                android:gravity="center"
+                android:text="No accounts yet — add one in the app."
+                android:textColor="@color/widget_on_surface_variant"
+                android:textSize="11sp"
+                android:visibility="gone" />
+
+    </FrameLayout>
+
+</LinearLayout>

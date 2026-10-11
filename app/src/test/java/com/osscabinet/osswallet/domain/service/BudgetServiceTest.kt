@@ -185,4 +185,18 @@ class BudgetServiceTest {
         val spent = BudgetService.calculateSpent(budget, transactions, ExchangeRateSnapshot.EMPTY, "USD", now)
         assertEquals(0, BigDecimal("200").compareTo(spent))
     }
+
+    @Test
+    fun `budget filter applies payee criteria and tag matching mode`() {
+        val budget = makeBudget().copy(
+            matchAllTags = false,
+            advanced = com.osscabinet.ossWallet.domain.model.AdvancedFilterCriteria(
+                queryPayee = "Starbucks",
+                matchAllTags = false
+            )
+        )
+        val filter = BudgetService.buildTransactionFilter(budget, now = System.currentTimeMillis())
+        assertEquals("Starbucks", filter.queryPayee)
+        assertEquals(false, filter.matchAllTags)
+    }
 }

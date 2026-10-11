@@ -1,5 +1,15 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
+import com.osscabinet.ossWallet.ui.components.aeonDashedTopRule
+import com.osscabinet.ossWallet.ui.components.AeonStatusChip
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.background
+import com.osscabinet.ossWallet.ui.util.formatCurrency
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSegmentedRow
+import com.osscabinet.ossWallet.domain.card.PlannedPaymentsSummary
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -54,7 +64,6 @@ import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.components.AeonStepperField
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.ConvertedWithNativeSubtext
-import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
@@ -70,6 +79,15 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.Color
+import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
+import com.osscabinet.ossWallet.ui.theme.scaledSp
+import androidx.compose.foundation.shape.RoundedCornerShape
+// import com.osscabinet.ossWallet.ui.components.aeonHazeSource
+// import com.osscabinet.ossWallet.ui.theme.HazeLayer
+// import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -84,6 +102,7 @@ fun PlannedPaymentsCard(
     config: PlannedPaymentsCardConfig,
     callbacks: CardCallbacks.PlannedPayments,
     previousItems: List<PlannedPaymentSummary>? = null,
+    summary: PlannedPaymentsSummary? = null,
     layoutProps: CardLayoutProps = CardLayoutProps()
 ) {
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
@@ -112,6 +131,14 @@ fun PlannedPaymentsCard(
         ) {
         val dims = AeonTheme.dimensions
 
+        if (summary != null && config.summaryDays > 0) {
+            PlannedPaymentsSummaryStrip(
+                summary = summary,
+                currency = targetCurrency,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+        }
+
         // Total comparison readout if showComparison is enabled
         if (config.showComparison && (previousItems != null)) {
             val currentTotal = items.sumOf { it.amount }
@@ -130,11 +157,13 @@ fun PlannedPaymentsCard(
             }
         }
 
+        // TODO(glass): re-enable once PP card glass behavior is fixed
+        // val overlayState = LocalAeonHaze.current?.states?.getOrNull(HazeLayer.Overlay)
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp),
+                // .aeonHazeSource(overlayState),
             contentPadding = PaddingValues(bottom = dims.cardPadding)
         ) {
             if (items.isEmpty()) {
@@ -158,6 +187,11 @@ fun PlannedPaymentsCard(
             ) { summary ->
                 PlannedPaymentRow(
                     title = summary.name,
+                    accountName = summary.accountName,
+                    categoryName = summary.categoryName,
+                    categoryIcon = summary.categoryIcon,
+                    categoryColor = summary.categoryColor,
+                    note = summary.note,
                     amount = summary.amount,
                     currency = summary.currency,
                     targetCurrency = targetCurrency,
@@ -221,6 +255,22 @@ private fun PlannedPaymentsSettingsContent(
             }
         }
     }
+    CardSettingsSection("Cash Summary") {
+        CardSettingsSegmentedRow(
+            options = listOf(0, 7, 30),
+            selected = config.summaryDays,
+            onSelected = { currentOnUpdate.value(config.copy(summaryDays = it)) },
+            labelProvider = { if (it == 0) "Off" else "$it days" }
+        )
+        AeonSettingsToggle(
+            label = "Count overdue",
+            description = "Add overdue expenses to the outflow total",
+            checked = config.countOverdueInSummary,
+            enabled = config.summaryDays > 0,
+            onCheckedChange = { currentOnUpdate.value(config.copy(countOverdueInSummary = it)) },
+            showBackground = false
+        )
+    }
     CardSettingsSection("Display") {
         Row(
             modifier = Modifier
@@ -262,9 +312,91 @@ private fun PlannedPaymentsSettingsContent(
     }
 }
 
+/**
+ * Cash due in the next few days, laid out like the Net Worth flow row: a heading line, then Out / In / Net
+ * columns split by thin separators under a dashed rule. Overdue expenses that are not counted get a chip.
+ */
+@Composable
+private fun PlannedPaymentsSummaryStrip(
+    summary: PlannedPaymentsSummary,
+    currency: String,
+    modifier: Modifier = Modifier,
+) {
+    val spec = CurrencyDisplaySpec(useSemanticColor = false, shortenThreshold = 11)
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "NEXT ${summary.days} DAYS",
+                style = AppTextStyles.sectionOverline.copy(fontSize = 10.sp),
+                color = AppColors.contentSecondary.copy(alpha = 0.6f)
+            )
+            if (!summary.overdueCounted && summary.overdueOutflow.signum() != 0) {
+                AeonStatusChip(
+                    text = "${formatCurrency(summary.overdueOutflow.abs(), currency, spec)} OVERDUE",
+                    color = AppColors.negative
+                )
+            }
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg),
+            modifier = Modifier
+                .fillMaxWidth()
+                .aeonDashedTopRule()
+                .padding(top = 12.dp)
+                .height(IntrinsicSize.Min)
+        ) {
+            val columns = listOf(
+                Triple("OUT", summary.outflow, AppColors.negative),
+                Triple("IN", summary.inflow, AppColors.positive),
+                Triple("NET", summary.net, if (summary.net.signum() < 0) AppColors.negative else AppColors.contentPrimary)
+            )
+            columns.forEachIndexed { index, (label, amount, color) ->
+                if (index > 0) {
+                    Box(
+                        modifier = Modifier
+                            .width(1.dp)
+                            .fillMaxHeight()
+                            .background(AppColors.outlineVariant)
+                    )
+                }
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = label,
+                        style = AppTextStyles.sectionOverline.copy(fontSize = 10.sp),
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = formatCurrency(amount, currency, spec.copy(forceShowPlus = label == "IN" && amount.signum() > 0)),
+                        style = AppTextStyles.transactionAmount.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        color = color,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun PlannedPaymentRow(
     title: String,
+    accountName: String,
+    categoryName: String,
+    categoryIcon: String?,
+    categoryColor: Int,
+    note: String?,
     amount: BigDecimal,
     currency: String,
     targetCurrency: String,
@@ -278,6 +410,7 @@ private fun PlannedPaymentRow(
 ) {
     val haptic = LocalHapticFeedback.current
     val dims = AeonTheme.dimensions
+    val uiScale = AeonTheme.uiScale
     var isPressed by remember { mutableStateOf(value = false) }
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.98f else 1f,
@@ -293,11 +426,14 @@ private fun PlannedPaymentRow(
         else -> AppColors.negative
     }
 
-    Box(
+    // TODO(glass): re-enable once PP card glass behavior is fixed
+    // val surfaceState = LocalAeonHaze.current?.states?.getOrNull(HazeLayer.Surface)
+
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .aeonDottedUnderline(AppColors.outlineVariant)
+            // .aeonHazeSource(surfaceState)
             .pointerInput(onClick) {
                 detectTapGestures(
                     onPress = {
@@ -311,101 +447,126 @@ private fun PlannedPaymentRow(
                     }
                 )
             },
+        shape = RoundedCornerShape(dims.componentCornerRadius),
+        color = AppColors.panelSurface
     ) {
-        Row(
-            modifier = Modifier.padding(vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
-                    color = AppColors.contentPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+        AeonTransactionItem(
+            title = title,
+            category = categoryName,
+            account = accountName,
+            note = note,
+            icon = getIconByName(categoryIcon),
+            iconBg = if (categoryColor != -1) Color(categoryColor) else null,
+            showAccount = accountName.isNotBlank(),
+            showTags = false,
+            showDividers = false,
+            isPlanned = true,
+            plannedBorderColor = if (isOverdue) AppColors.negative else AppColors.primary,
+            containerColor = Color.Transparent,
+            footer = {
                 Text(
                     text = dateLabel.uppercase(),
-                    style = AppTextStyles.metaLabel,
+                    style = AppTextStyles.metaLabel.copy(
+                        fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Normal
+                    ),
                     color = if (isOverdue) AppColors.negative
                     else AppColors.contentSecondary.copy(alpha = 0.8f),
                     modifier = Modifier.padding(top = 2.dp)
                 )
-            }
-            ConvertedWithNativeSubtext(
-                amount = amount,
-                nativeCurrency = currency,
-                targetCurrency = targetCurrency,
-                rates = exchangeRates,
-                primaryStyle = AppTextStyles.transactionAmount.copy(
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp,
-                    color = typeColor
-                ),
-                primaryColor = typeColor,
-                subtextStyle = AppTextStyles.metaLabel,
-                subtextColor = AppColors.contentSecondary.copy(alpha = 0.7f)
-            )
-            if (onConfirm != null || (onSkip != null)) {
-                Box {
+            },
+            amountContent = {
+                ConvertedWithNativeSubtext(
+                    amount = amount,
+                    nativeCurrency = currency,
+                    targetCurrency = targetCurrency,
+                    rates = exchangeRates,
+                    primaryStyle = AppTextStyles.transactionAmount.copy(
+                        fontWeight = FontWeight.Medium,
+                        fontSize = scaledSp(15f, uiScale),
+                        color = typeColor
+                    ),
+                    primaryColor = typeColor,
+                    subtextStyle = AppTextStyles.transactionAmountMeta,
+                    subtextColor = AppColors.contentSecondary.copy(alpha = 0.8f)
+                )
+            },
+            trailingContent = {
+                if (isOverdue && onConfirm != null) {
                     IconButton(
-                        onClick = { showActions = true },
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onConfirm()
+                        },
                         modifier = Modifier
-                            .padding(start = 6.dp)
+                            .padding(start = 4.dp)
                             .size(dims.iconSizeMd)
                     ) {
                         Icon(
-                            Icons.Default.MoreVert,
-                            contentDescription = "Actions",
-                            modifier = Modifier.size(14.dp),
-                            tint = AppColors.contentSecondary.copy(alpha = 0.4f)
+                            Icons.Rounded.CheckCircle,
+                            contentDescription = "Confirm",
+                            modifier = Modifier.size(dims.iconSizeSm),
+                            tint = AppColors.primary
                         )
                     }
-                    DropdownMenu(
-                        expanded = showActions,
-                        onDismissRequest = { showActions = false }
-                    ) {
-                        if (onConfirm != null) {
-                            DropdownMenuItem(
-                                text = { Text("Confirm") },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Rounded.CheckCircle,
-                                        contentDescription = null,
-                                        tint = AppColors.primary,
-                                        modifier = Modifier.size(dims.iconSizeSm)
-                                    )
-                                },
-                                onClick = {
-                                    showActions = false
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    onConfirm()
-                                }
+                }
+                if (onConfirm != null || onSkip != null) {
+                    Box {
+                        IconButton(
+                            onClick = { showActions = true },
+                            modifier = Modifier.size(dims.iconSizeMd)
+                        ) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "Actions",
+                                modifier = Modifier.size(14.dp),
+                                tint = AppColors.contentSecondary.copy(alpha = 0.6f)
                             )
                         }
-                        if (onSkip != null) {
-                            DropdownMenuItem(
-                                text = { Text("Skip") },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Rounded.SkipNext,
-                                        contentDescription = null,
-                                        tint = AppColors.contentSecondary,
-                                        modifier = Modifier.size(dims.iconSizeSm)
-                                    )
-                                },
-                                onClick = {
-                                    showActions = false
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    onSkip()
-                                }
-                            )
+                        DropdownMenu(
+                            expanded = showActions,
+                            onDismissRequest = { showActions = false }
+                        ) {
+                            if (onConfirm != null) {
+                                DropdownMenuItem(
+                                    text = { Text("Confirm") },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Rounded.CheckCircle,
+                                            contentDescription = null,
+                                            tint = AppColors.primary,
+                                            modifier = Modifier.size(dims.iconSizeSm)
+                                        )
+                                    },
+                                    onClick = {
+                                        showActions = false
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        onConfirm()
+                                    }
+                                )
+                            }
+                            if (onSkip != null) {
+                                DropdownMenuItem(
+                                    text = { Text("Skip") },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Rounded.SkipNext,
+                                            contentDescription = null,
+                                            tint = AppColors.contentSecondary,
+                                            modifier = Modifier.size(dims.iconSizeSm)
+                                        )
+                                    },
+                                    onClick = {
+                                        showActions = false
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        onSkip()
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
+        )
     }
 }
 

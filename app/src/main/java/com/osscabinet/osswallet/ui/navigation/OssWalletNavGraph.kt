@@ -14,10 +14,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.serialization.json.Json
+import java.net.URLDecoder
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,6 +57,8 @@ fun OssWalletNavGraph(
     navController: NavHostController,
     onSplashConditionChanged: (Boolean) -> Unit = {},
     pendingWidgetRoute: String? = null,
+    pendingWidgetFilter: String? = null,
+    pendingWidgetTransactionId: Long? = null,
     onWidgetRouteHandled: () -> Unit = {},
 ) {
     val vms = SharedNavViewModels(
@@ -112,7 +117,7 @@ fun OssWalletNavGraph(
     // divergence from the drawer's save/restore semantics may be intentional (a widget tap
     // landing on a fresh, un-restored screen rather than resuming prior scroll/filter state)
     // and isn't this change's call to silently alter.
-    LaunchedEffect(pendingWidgetRoute) {
+    LaunchedEffect(pendingWidgetRoute, pendingWidgetFilter, pendingWidgetTransactionId) {
         pendingWidgetRoute?.let { route ->
             val widgetNavOptions: androidx.navigation.NavOptionsBuilder.() -> Unit = {
                 popUpTo<DashboardRoute> { inclusive = false; saveState = false }
@@ -121,9 +126,38 @@ fun OssWalletNavGraph(
             }
             when (route) {
                 "dashboard"      -> appNavigator.navigateTo(DashboardRoute(), widgetNavOptions)
-                "records"        -> appNavigator.navigateTo(TransactionListRoute(), widgetNavOptions)
-                "analytics"      -> appNavigator.navigateTo(AnalyticsRoute, widgetNavOptions)
+                // pendingWidgetFilter is already URL-encoded JSON in the same shape
+                // navigateToRecords() produces for TransactionListRoute.filterJson — the widget
+                // builds it with the identical encoding (see NetWorthWidgetFetcher), so it's
+                // passed straight through rather than decoded and re-encoded here.
+                "records"        -> appNavigator.navigateTo(
+                    TransactionListRoute(filterJson = pendingWidgetFilter ?: "", topLevel = false),
+                    widgetNavOptions
+                )
+                // AnalyticsRoute carries no filter argument — AnalyticsViewModel holds its own
+                // screenFilter StateFlow instead, so a widget-driven filter is pushed into it
+                // directly before navigating, same shape as how the "records" case feeds
+                // TransactionListRoute.filterJson, just via a different mechanism because
+                // Analytics itself works that way (not something this change invented).
+                "analytics"      -> {
+                    pendingWidgetFilter?.let { encoded ->
+                        runCatching {
+                            val decoded = URLDecoder.decode(encoded, "UTF-8")
+                            vms.analyticsViewModel.updateScreenFilter(Json.decodeFromString<TransactionFilter>(decoded))
+                        }
+                    }
+                    appNavigator.navigateTo(AnalyticsRoute, widgetNavOptions)
+                }
                 "exchange_rates" -> appNavigator.navigateTo(ExchangeRatesRoute, widgetNavOptions)
+                "budgets"        -> appNavigator.navigateTo(BudgetListRoute, widgetNavOptions)
+                "accounts"       -> appNavigator.navigateTo(AccountListRoute, widgetNavOptions)
+                // Opens a transaction for editing — the Recent Activities widget's per-row tap
+                // target, same as RecentActivitiesCard's own onTransactionClick. id comes from
+                // the ListView's fill-in Intent (see RecentActivitiesRemoteViewsService), not
+                // this route string itself.
+                "transaction_entry" -> pendingWidgetTransactionId?.let { id ->
+                    appNavigator.navigateTo(TransactionEntryRoute(transactionId = id), widgetNavOptions)
+                }
             }
             onWidgetRouteHandled()
         }

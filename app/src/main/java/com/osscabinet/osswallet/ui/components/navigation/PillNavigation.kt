@@ -514,6 +514,7 @@ fun FabMenuItem(
         ) {
             // Label Glass/Solid Surface
             GlassSurface(
+                glassToggle = GlassVariant.Pill,
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
                     .clickable(
@@ -567,6 +568,7 @@ fun FabMenuItem(
 
             // Icon Glass/Solid Surface
             GlassSurface(
+                glassToggle = GlassVariant.Pill,
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)

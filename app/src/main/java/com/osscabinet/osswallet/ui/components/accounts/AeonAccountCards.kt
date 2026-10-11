@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -95,6 +97,7 @@ fun AeonAccountCardSmall(
     val account = summary.account
     val dotColor = accountDotColor(account)
     val shape = RoundedCornerShape(12.dp)
+    val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
     Box(
         modifier = modifier
@@ -105,6 +108,16 @@ fun AeonAccountCardSmall(
             .clickable { onClick() }
             .padding(8.dp)
     ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .size(28.dp)
+                .graphicsLayer { alpha = 0.12f },
+            tint = dotColor
+        )
+
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -147,6 +160,7 @@ fun AeonAccountCardMedium(
     val account = summary.account
     val dotColor = accountDotColor(account)
     val shape = RoundedCornerShape(16.dp)
+    val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
     Box(
         modifier = modifier
@@ -157,6 +171,16 @@ fun AeonAccountCardMedium(
             .clickable { onClick() }
             .padding(10.dp)
     ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .size(40.dp)
+                .graphicsLayer { alpha = 0.12f },
+            tint = dotColor
+        )
+
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -225,6 +249,7 @@ fun AeonAccountCardLarge(
     val account = summary.account
     val dotColor = accountDotColor(account)
     val shape = RoundedCornerShape(20.dp)
+    val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
     Box(
         modifier = modifier
@@ -235,6 +260,16 @@ fun AeonAccountCardLarge(
             .clickable { onClick() }
             .padding(12.dp)
     ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .size(56.dp)
+                .graphicsLayer { alpha = 0.12f },
+            tint = dotColor
+        )
+
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

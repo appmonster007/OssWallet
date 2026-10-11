@@ -1,0 +1,726 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recent Activities "list" tier (4x4), pushed via RemoteViews from
+     RecentTransactionsRemoteViewsRenderer.renderList(). Up to 5 row slots; unused rows
+     are set to GONE. Each row: a small uppercase date-label caption (shown only when it
+     changes from the previous row), a colored circular avatar (monogram, or a dashed
+     outline for an overdue planned payment), category name + an optional status/overdue/
+     tag pill, an account+time/planned/transfer subtitle line, and a trailing amount with
+     an optional "≈ {base}" second line. See RECENT_ACTIVITIES target model in
+     docs/card-data-summary.md. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/widget_surface"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:padding="12dp">
+
+    <LinearLayout
+            android:id="@+id/ll_rt_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="8dp"
+            android:baselineAligned="false">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/recent_activities_header"
+                android:textColor="@color/widget_subtle"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+        <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+        <TextView
+                android:id="@+id/tv_rt_period"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_subtle"
+                android:textSize="10sp"
+                tools:text="THIS MONTH" />
+    </LinearLayout>
+
+    <TextView
+            android:id="@+id/tv_rt_empty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/no_recent_activities"
+            android:textColor="@color/widget_subtle"
+            android:textSize="11sp"
+            android:visibility="gone" />
+
+    <!-- Row 1 -->
+    <TextView
+            android:id="@+id/tv_rt_row1_datecap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/widget_text_muted"
+            android:textSize="7sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:visibility="gone"
+            tools:text="TODAY"
+            tools:visibility="visible" />
+
+    <LinearLayout
+            android:id="@+id/ll_rt_row1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingVertical="3dp"
+            android:gravity="center_vertical"
+            android:baselineAligned="false">
+
+        <FrameLayout
+                android:layout_width="36dp"
+                android:layout_height="36dp">
+
+            <ImageView
+                    android:id="@+id/iv_rt_row1_icon"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/widget_circle_badge"
+                    android:contentDescription="@null"
+                    tools:ignore="ContentDescription" />
+
+            <TextView
+                    android:id="@+id/tv_rt_row1_initial"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    tools:text="F" />
+        </FrameLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                <TextView
+                        android:id="@+id/tv_rt_row1_title"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/widget_text_primary"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        tools:text="Food &amp; Drinks" />
+
+                <TextView
+                        android:id="@+id/tv_rt_row1_pill"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:paddingStart="5dp"
+                        android:paddingEnd="5dp"
+                        android:paddingTop="1dp"
+                        android:paddingBottom="1dp"
+                        android:textSize="6sp"
+                        android:textStyle="bold"
+                        android:maxWidth="56dp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:visibility="gone"
+                        tools:text="Overdue"
+                        tools:visibility="visible" />
+
+            </LinearLayout>
+
+            <TextView
+                    android:id="@+id/tv_rt_row1_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_subtle"
+                    android:textSize="8sp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="Checking · 10:30 AM" />
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:gravity="end"
+                android:orientation="vertical">
+
+            <TextView
+                    android:id="@+id/tv_rt_row1_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="-5.50"
+                    tools:textColor="@color/widget_expense_color" />
+
+            <TextView
+                    android:id="@+id/tv_rt_row1_amount_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_text_muted"
+                    android:textSize="7sp"
+                    android:visibility="gone"
+                    tools:text="≈ 6.00 $"
+                    tools:visibility="visible" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Divider — use FrameLayout: bare <View> is blocked by the Android 12+
+         RemoteViews class allowlist. Visibility mirrors ll_rt_row2: no
+         trailing divider when there are fewer than 2 transactions. -->
+    <FrameLayout
+            android:id="@+id/v_rt_divider1"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/widget_outline" />
+
+    <!-- Row 2 -->
+    <TextView
+            android:id="@+id/tv_rt_row2_datecap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/widget_text_muted"
+            android:textSize="7sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:visibility="gone"
+            tools:text="YESTERDAY" />
+
+    <LinearLayout
+            android:id="@+id/ll_rt_row2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingVertical="3dp"
+            android:gravity="center_vertical"
+            android:baselineAligned="false">
+
+        <FrameLayout
+                android:layout_width="36dp"
+                android:layout_height="36dp">
+
+            <ImageView
+                    android:id="@+id/iv_rt_row2_icon"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/widget_circle_badge"
+                    android:contentDescription="@null"
+                    tools:ignore="ContentDescription" />
+
+            <TextView
+                    android:id="@+id/tv_rt_row2_initial"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    tools:text="S" />
+        </FrameLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                <TextView
+                        android:id="@+id/tv_rt_row2_title"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/widget_text_primary"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        tools:text="Salary" />
+
+                <TextView
+                        android:id="@+id/tv_rt_row2_pill"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:paddingStart="5dp"
+                        android:paddingEnd="5dp"
+                        android:paddingTop="1dp"
+                        android:paddingBottom="1dp"
+                        android:textSize="6sp"
+                        android:textStyle="bold"
+                        android:maxWidth="56dp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:visibility="gone" />
+
+            </LinearLayout>
+
+            <TextView
+                    android:id="@+id/tv_rt_row2_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_subtle"
+                    android:textSize="8sp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="Checking · Yesterday" />
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:gravity="end"
+                android:orientation="vertical">
+
+            <TextView
+                    android:id="@+id/tv_rt_row2_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="+2,500.00"
+                    tools:textColor="@color/widget_income_color" />
+
+            <TextView
+                    android:id="@+id/tv_rt_row2_amount_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_text_muted"
+                    android:textSize="7sp"
+                    android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Visibility mirrors ll_rt_row3. -->
+    <FrameLayout
+            android:id="@+id/v_rt_divider2"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/widget_outline" />
+
+    <!-- Row 3 -->
+    <TextView
+            android:id="@+id/tv_rt_row3_datecap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/widget_text_muted"
+            android:textSize="7sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:visibility="gone" />
+
+    <LinearLayout
+            android:id="@+id/ll_rt_row3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingVertical="3dp"
+            android:gravity="center_vertical"
+            android:baselineAligned="false">
+
+        <FrameLayout
+                android:layout_width="36dp"
+                android:layout_height="36dp">
+
+            <ImageView
+                    android:id="@+id/iv_rt_row3_icon"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/widget_circle_badge"
+                    android:contentDescription="@null"
+                    tools:ignore="ContentDescription" />
+
+            <TextView
+                    android:id="@+id/tv_rt_row3_initial"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    tools:text="T" />
+        </FrameLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                <TextView
+                        android:id="@+id/tv_rt_row3_title"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/widget_text_primary"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        tools:text="Transport" />
+
+                <TextView
+                        android:id="@+id/tv_rt_row3_pill"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:paddingStart="5dp"
+                        android:paddingEnd="5dp"
+                        android:paddingTop="1dp"
+                        android:paddingBottom="1dp"
+                        android:textSize="6sp"
+                        android:textStyle="bold"
+                        android:maxWidth="56dp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:visibility="gone" />
+
+            </LinearLayout>
+
+            <TextView
+                    android:id="@+id/tv_rt_row3_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_subtle"
+                    android:textSize="8sp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="Metro card top-up" />
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:gravity="end"
+                android:orientation="vertical">
+
+            <TextView
+                    android:id="@+id/tv_rt_row3_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="-15.00"
+                    tools:textColor="@color/widget_expense_color" />
+
+            <TextView
+                    android:id="@+id/tv_rt_row3_amount_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_text_muted"
+                    android:textSize="7sp"
+                    android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Visibility mirrors ll_rt_row4 — only shown at height >= 200dp. -->
+    <FrameLayout
+            android:id="@+id/v_rt_divider3"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/widget_outline" />
+
+    <!-- Row 4 -->
+    <TextView
+            android:id="@+id/tv_rt_row4_datecap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/widget_text_muted"
+            android:textSize="7sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:visibility="gone" />
+
+    <LinearLayout
+            android:id="@+id/ll_rt_row4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingVertical="3dp"
+            android:gravity="center_vertical"
+            android:baselineAligned="false">
+
+        <FrameLayout
+                android:layout_width="36dp"
+                android:layout_height="36dp">
+
+            <ImageView
+                    android:id="@+id/iv_rt_row4_icon"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/widget_circle_badge"
+                    android:contentDescription="@null"
+                    tools:ignore="ContentDescription" />
+
+            <TextView
+                    android:id="@+id/tv_rt_row4_initial"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    tools:text="G" />
+        </FrameLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                <TextView
+                        android:id="@+id/tv_rt_row4_title"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/widget_text_primary"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        tools:text="Groceries" />
+
+                <TextView
+                        android:id="@+id/tv_rt_row4_pill"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:paddingStart="5dp"
+                        android:paddingEnd="5dp"
+                        android:paddingTop="1dp"
+                        android:paddingBottom="1dp"
+                        android:textSize="6sp"
+                        android:textStyle="bold"
+                        android:maxWidth="56dp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:visibility="gone" />
+
+            </LinearLayout>
+
+            <TextView
+                    android:id="@+id/tv_rt_row4_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_subtle"
+                    android:textSize="8sp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="Weekly shop" />
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:gravity="end"
+                android:orientation="vertical">
+
+            <TextView
+                    android:id="@+id/tv_rt_row4_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="-42.50"
+                    tools:textColor="@color/widget_expense_color" />
+
+            <TextView
+                    android:id="@+id/tv_rt_row4_amount_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_text_muted"
+                    android:textSize="7sp"
+                    android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Visibility mirrors ll_rt_row5 — only shown at height >= 200dp. -->
+    <FrameLayout
+            android:id="@+id/v_rt_divider4"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/widget_outline" />
+
+    <!-- Row 5 -->
+    <TextView
+            android:id="@+id/tv_rt_row5_datecap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/widget_text_muted"
+            android:textSize="7sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:visibility="gone" />
+
+    <LinearLayout
+            android:id="@+id/ll_rt_row5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingVertical="3dp"
+            android:gravity="center_vertical"
+            android:baselineAligned="false">
+
+        <FrameLayout
+                android:layout_width="36dp"
+                android:layout_height="36dp">
+
+            <ImageView
+                    android:id="@+id/iv_rt_row5_icon"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/widget_circle_badge"
+                    android:contentDescription="@null"
+                    tools:ignore="ContentDescription" />
+
+            <TextView
+                    android:id="@+id/tv_rt_row5_initial"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    tools:text="W" />
+        </FrameLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                <TextView
+                        android:id="@+id/tv_rt_row5_title"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/widget_text_primary"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        tools:text="Wages" />
+
+                <TextView
+                        android:id="@+id/tv_rt_row5_pill"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:paddingStart="5dp"
+                        android:paddingEnd="5dp"
+                        android:paddingTop="1dp"
+                        android:paddingBottom="1dp"
+                        android:textSize="6sp"
+                        android:textStyle="bold"
+                        android:maxWidth="56dp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:visibility="gone" />
+
+            </LinearLayout>
+
+            <TextView
+                    android:id="@+id/tv_rt_row5_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_subtle"
+                    android:textSize="8sp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="Freelance invoice" />
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:gravity="end"
+                android:orientation="vertical">
+
+            <TextView
+                    android:id="@+id/tv_rt_row5_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="+320.00"
+                    tools:textColor="@color/widget_income_color" />
+
+            <TextView
+                    android:id="@+id/tv_rt_row5_amount_base"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_text_muted"
+                    android:textSize="7sp"
+                    android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

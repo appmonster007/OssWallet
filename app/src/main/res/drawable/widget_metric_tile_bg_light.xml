@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Forced-light variant of widget_metric_tile_bg.xml — hardcoded hex, not @color/widget_row_chip_bg,
+     because that reference still resolves against the DEVICE's current config regardless of a
+     per-widget theme override (see WidgetColors). Value copied from values/colors.xml. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+        android:shape="rectangle">
+    <solid android:color="#E6EEEC" />
+    <corners android:radius="8dp" />
+</shape>

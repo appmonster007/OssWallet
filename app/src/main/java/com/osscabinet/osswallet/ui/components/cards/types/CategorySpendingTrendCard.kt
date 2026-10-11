@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
+import com.osscabinet.ossWallet.domain.model.settings.BarChartViewMode
+import com.osscabinet.ossWallet.ui.components.cards.BarChartModeSettings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -59,6 +61,7 @@ import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.ChartSummarySection
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChart
+import com.osscabinet.ossWallet.ui.components.visualization.charts.visibleBars
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartBar
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartGroup
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonChartLegend
@@ -159,7 +162,9 @@ fun CategorySpendingTrendCard(
                     showGrid = config.showGridLines,
                     showXAxisLabels = true,
                     roundedBars = false,
-                    animate = layoutProps.animate
+                    animate = layoutProps.animate,
+                    scrollable = config.viewMode == BarChartViewMode.SCROLLABLE,
+                    visibleBars = renderData.chartGranularity.visibleBars()
                 )
             }
 
@@ -343,6 +348,12 @@ private fun CategorySpendingSettingsContent(
             showBackground = false
         )
     }
+    BarChartModeSettings(
+        viewMode = config.viewMode,
+        onViewModeChange = { onUpdate(config.copy(viewMode = it)) },
+        granularity = config.scrollGranularity,
+        onGranularityChange = { onUpdate(config.copy(scrollGranularity = it)) }
+    )
     CardPerspectiveSettings(
         perspective = config.perspective,
         onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },

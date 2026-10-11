@@ -29,14 +29,22 @@ class MainActivity : FragmentActivity() {
 
     companion object {
         const val EXTRA_WIDGET_NAV = "WIDGET_NAV"
+        /** URL-encoded JSON of a [com.osscabinet.ossWallet.domain.model.TransactionFilter] — same encoding [com.osscabinet.ossWallet.ui.navigation.NavigationExtensions.navigateToRecords] uses for [com.osscabinet.ossWallet.ui.navigation.TransactionListRoute.filterJson]. Only meaningful when EXTRA_WIDGET_NAV is "records". */
+        const val EXTRA_WIDGET_FILTER = "WIDGET_FILTER"
+        /** Transaction id (Long) to open for editing. Only meaningful when EXTRA_WIDGET_NAV is "transaction_entry" — set via the Recent Activities widget's per-row fill-in Intent. */
+        const val EXTRA_WIDGET_TRANSACTION_ID = "WIDGET_TRANSACTION_ID"
     }
 
     private var pendingWidgetRoute by mutableStateOf<String?>(null)
+    private var pendingWidgetFilter by mutableStateOf<String?>(null)
+    private var pendingWidgetTransactionId by mutableStateOf<Long?>(null)
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         pendingWidgetRoute = intent.getStringExtra(EXTRA_WIDGET_NAV)
+        pendingWidgetFilter = intent.getStringExtra(EXTRA_WIDGET_FILTER)
+        pendingWidgetTransactionId = intent.getLongExtra(EXTRA_WIDGET_TRANSACTION_ID, -1L).takeIf { it != -1L }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,6 +54,8 @@ class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
 
         pendingWidgetRoute = intent?.getStringExtra(EXTRA_WIDGET_NAV)
+        pendingWidgetFilter = intent?.getStringExtra(EXTRA_WIDGET_FILTER)
+        pendingWidgetTransactionId = intent?.getLongExtra(EXTRA_WIDGET_TRANSACTION_ID, -1L)?.takeIf { it != -1L }
 
         setContent {
             val theme by settingsRepository.theme.collectAsStateWithLifecycle(initialValue = "System")
@@ -106,7 +116,13 @@ class MainActivity : FragmentActivity() {
                         navController = navController,
                         onSplashConditionChanged = { keepSplashOnScreen = it },
                         pendingWidgetRoute = pendingWidgetRoute,
-                        onWidgetRouteHandled = { pendingWidgetRoute = null }
+                        pendingWidgetFilter = pendingWidgetFilter,
+                        pendingWidgetTransactionId = pendingWidgetTransactionId,
+                        onWidgetRouteHandled = {
+                            pendingWidgetRoute = null
+                            pendingWidgetFilter = null
+                            pendingWidgetTransactionId = null
+                        }
                     )
                 }
                 } // CompositionLocalProvider

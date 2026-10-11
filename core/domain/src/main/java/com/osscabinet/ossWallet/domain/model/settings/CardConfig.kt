@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -159,6 +160,8 @@ data class NetWorthCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val fontSize: String = "Medium",
     val showComparison: Boolean = true,
+    // Running net worth line under the figure; drag along it to read the value on a date.
+    val showTrendLine: Boolean = true,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
     // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
@@ -189,6 +192,9 @@ data class CurrencyBalancesCardConfig(
     val layout: String = "scroll",
     val gridColumns: Int = 3,
     val showBaseConversion: Boolean = true,
+    // Currencies once used but now holding nothing are noise on the card.
+    val hideZeroBalances: Boolean = true,
+    val sortBy: CurrencySortMode = CurrencySortMode.BIGGEST,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,
@@ -344,9 +350,7 @@ data class AccountHeroCardConfig(
     // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
     val splitTransfers: Boolean = false,
     override val filter: TransactionFilter = TransactionFilter(
-        timelineRange = TimelineRange.AllTime(
-            excludeFuture = true
-        )
+        timelineRange = DefaultTimeline.INITIAL
     )
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.ACCOUNT_HERO
@@ -361,6 +365,31 @@ data class AccountHeroCardConfig(
 /** Three-stage visibility mode for the planned-payments dashboard card. */
 @Serializable
 enum class PlannedPaymentsViewMode { OVERDUE_ONLY, BOTH, FUTURE_ONLY }
+
+/** Order of the currencies on the Currency Balances card. */
+@Serializable
+enum class CurrencySortMode(val displayName: String) {
+    BIGGEST("Biggest"),
+    SMALLEST("Smallest"),
+    NAME("A to Z")
+}
+
+/** Order of the rows on the Loans card, applied before the "max items" cut. */
+@Serializable
+enum class LoanSortMode(val displayName: String) {
+    SAVED("As saved"),
+    MOST_OWED("Most owed"),
+    DUE_SOONEST("Due soonest"),
+    NAME("Name")
+}
+
+/** Order of the rows on the Budgets card, applied before the "max items" cut. */
+@Serializable
+enum class BudgetSortMode(val displayName: String) {
+    SAVED("As saved"),
+    MOST_USED("Most used"),
+    AHEAD_OF_PACE("Over pace")
+}
 
 @Serializable
 enum class UpSetDynamicFilteringMode { OFF, HORIZONTAL, VERTICAL }
@@ -384,6 +413,10 @@ data class PlannedPaymentsCardConfig(
     /** Legacy field kept for JSON backwards-compat; prefer viewMode. */
     val showOverdue: Boolean = true,
     val viewMode: PlannedPaymentsViewMode = PlannedPaymentsViewMode.BOTH,
+    // Days of cash shown in the summary strip above the list: 0 (off), 7 or 30.
+    val summaryDays: Int = 7,
+    // Whether overdue expenses are added to the summary's outflow (otherwise shown beside it).
+    val countOverdueInSummary: Boolean = false,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,
@@ -409,6 +442,11 @@ data class BudgetsCardConfig(
     val showArchived: Boolean = false,
     val showComparison: Boolean = true,
     val maxItems: Int = 5,
+    // A tick on each bar for how far through the period we are today.
+    val showPaceMarker: Boolean = true,
+    // Amber styling for budgets that are near their alert threshold or ahead of pace.
+    val showWarningStyle: Boolean = true,
+    val sortBy: BudgetSortMode = BudgetSortMode.SAVED,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,
@@ -433,6 +471,9 @@ data class LoansCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showType: String = "ALL",
     val maxItems: Int = 5,
+    // Settled loans are done with; hide them unless asked.
+    val showSettled: Boolean = false,
+    val sortBy: LoanSortMode = LoanSortMode.SAVED,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,
@@ -546,6 +587,10 @@ data class CashFlowComparisonCardConfig(
     val showSamePeriodLastYear: Boolean = true,
     val isCumulative: Boolean = true,
     val showGridLines: Boolean = true,
+    // Lines are compared across periods, so the whole range stays on screen unless the user opts in.
+    val viewMode: BarChartViewMode = BarChartViewMode.FIXED,
+    // Only used in SCROLLABLE mode.
+    val scrollGranularity: BarChartGranularity = BarChartGranularity.AUTO,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,
@@ -573,6 +618,9 @@ data class CategorySpendingTrendCardConfig(
     val selectedNatures: Set<CategoryNature> = CategoryNature.entries.toSet(),
     val isCumulative: Boolean = false,
     val showGridLines: Boolean = true,
+    val viewMode: BarChartViewMode = BarChartViewMode.SCROLLABLE,
+    // Only used in SCROLLABLE mode.
+    val scrollGranularity: BarChartGranularity = BarChartGranularity.AUTO,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,
@@ -598,6 +646,9 @@ data class IncomeExpenseBarCardConfig(
     // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
     val splitTransfers: Boolean = false,
     val showGridLines: Boolean = true,
+    val viewMode: BarChartViewMode = BarChartViewMode.SCROLLABLE,
+    // Only used in SCROLLABLE mode.
+    val scrollGranularity: BarChartGranularity = BarChartGranularity.AUTO,
     val visibleMetrics: Set<ChartMetric> = setOf(
         ChartMetric.INCOME,
         ChartMetric.EXPENSE,
@@ -719,9 +770,7 @@ fun CardConfig.withClearedFilter(): CardConfig = when (this) {
 
     is AccountHeroCardConfig -> copy(
         filter = TransactionFilter(
-            timelineRange = TimelineRange.AllTime(
-                excludeFuture = true
-            )
+            timelineRange = DefaultTimeline.INITIAL
         )
     )
 

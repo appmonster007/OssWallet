@@ -99,9 +99,7 @@ dependencies {
     implementation(libs.vico.core)
     implementation(libs.cronutils)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.androidx.glance)
-    implementation(libs.androidx.glance.appwidget)
-    implementation(libs.androidx.glance.material3)
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.osmdroid.android)
 
     // Ktor embedded HTTP server (Open in Web feature)
@@ -148,6 +146,4 @@ dependencies {
     androidTestImplementation(libs.androidx.runner)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    debugImplementation(libs.androidx.glance.appwidget.preview)
-    debugImplementation(libs.androidx.glance.preview)
 }

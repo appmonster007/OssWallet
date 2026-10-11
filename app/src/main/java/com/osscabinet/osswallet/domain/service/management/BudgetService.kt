@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.service.management
 
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
+import com.osscabinet.ossWallet.domain.model.BudgetPaceStatus
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -21,6 +22,33 @@ object BudgetService {
         val (start, end) = TimelineService.getDateRange(budget.timelineRange, referenceTime = now)
         return Pair(start ?: now, end ?: now)
     }
+
+    /**
+     * Share (0..1) of the budget's current period that has passed at [now], or null when the budget
+     * has no fixed period (All Time) or the period has no length.
+     */
+    fun elapsedFraction(budget: Budget, now: Long): Float? {
+        if (budget.timelineRange is TimelineRange.AllTime) return null
+        val (start, end) = getCurrentPeriodRange(budget, now)
+        if (end <= start) return null
+        return ((now - start).toFloat() / (end - start).toFloat()).coerceIn(0f, 1f)
+    }
+
+    /**
+     * Over the limit wins, then spending clearly faster than the period (more than [PACE_TOLERANCE]
+     * ahead of the elapsed share), then reaching the budget's own alert threshold.
+     */
+    fun paceStatus(progress: BudgetProgress): BudgetPaceStatus {
+        val elapsed = progress.elapsedFraction
+        return when {
+            progress.alertLevel == BudgetAlertLevel.EXCEEDED -> BudgetPaceStatus.OVER
+            elapsed != null && progress.percentage > elapsed + PACE_TOLERANCE -> BudgetPaceStatus.AHEAD_OF_PACE
+            progress.alertLevel == BudgetAlertLevel.WARNING -> BudgetPaceStatus.NEAR_LIMIT
+            else -> BudgetPaceStatus.ON_TRACK
+        }
+    }
+
+    const val PACE_TOLERANCE = 0.10f
 
     fun calculateSpent(
         budget: Budget,
@@ -85,7 +113,7 @@ object BudgetService {
             linkedTransactionIds = budget.linkedTransactionIds,
             transactionTypes = budget.trackTypes,
             timelineRange = resolvedRange
-        )
+        ).let { budget.advanced.applyTo(it).copy(matchAllTags = budget.matchAllTags) }
     }
 
     fun filterTransactionsForBudget(
@@ -104,7 +132,8 @@ object BudgetService {
     fun buildProgress(
         budget: Budget,
         spent: BigDecimal,
-        rolloverAmount: BigDecimal = BigDecimal.ZERO
+        rolloverAmount: BigDecimal = BigDecimal.ZERO,
+        elapsedFraction: Float? = null
     ): BudgetProgress {
         val effective = budget.limitAmount.add(rolloverAmount)
         // Remaining balance = budget amount (effective) - total transactions amount after converting to base currency
@@ -124,7 +153,8 @@ object BudgetService {
             remaining = remaining,
             percentage = percentage,
             alertLevel = alertLevel,
-            rolloverAmount = rolloverAmount
+            rolloverAmount = rolloverAmount,
+            elapsedFraction = elapsedFraction
         )
     }
 

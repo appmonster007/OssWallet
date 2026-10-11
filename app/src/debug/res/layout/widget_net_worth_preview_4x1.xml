@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dev-reference preview only — see widget_net_worth_preview_3x1.xml for the full explanation.
+     4-column x 1-row grid cell (250dp x 40dp via 70dp*n-30dp). Still below MICRO_HEIGHT_DP
+     (75dp), so it's the same MICRO tier as the 3x1 preview, just wider. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+    <include
+            layout="@layout/widget_net_worth_micro"
+            android:layout_width="250dp"
+            android:layout_height="40dp" />
+
+</FrameLayout>

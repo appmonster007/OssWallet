@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.transactions
 
+import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
@@ -100,9 +101,15 @@ class TransactionViewModel @Inject constructor(
             if (mode == RecordNavigationMode.PERSISTENT) persistentFilterManager.mergedFilter
             else transientFilterManager.mergedFilter
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TransactionFilter())
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            TransactionFilter(timelineRange = DefaultTimeline.INITIAL)
+        )
 
-    private val _initialFilter = MutableStateFlow<TransactionFilter>(TransactionFilter())
+    private val _initialFilter = MutableStateFlow<TransactionFilter>(
+        TransactionFilter(timelineRange = DefaultTimeline.INITIAL)
+    )
     val initialFilter: StateFlow<TransactionFilter> = _initialFilter.asStateFlow()
 
     private val _revealedCardIdsList = MutableStateFlow<List<String>>(emptyList())
@@ -152,7 +159,7 @@ class TransactionViewModel @Inject constructor(
 
     init {
         val baseFilter =
-            TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
+            TransactionFilter(timelineRange = DefaultTimeline.INITIAL)
         persistentFilterManager.setFilter("base", baseFilter)
         _initialFilter.value = baseFilter
     }

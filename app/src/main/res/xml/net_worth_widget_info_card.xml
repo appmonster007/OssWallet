@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Card" tier picker entry — targets 3 grid rows / 4 grid columns. Per h(n) = 70dp*n - 30dp:
+     h(3) = 180dp (minHeight), w(4) = 250dp (minWidth) — targetCellWidth/Height alone are just
+     hints some launchers ignore, so minWidth/minHeight must agree with them. maxResizeHeight is
+     also 180dp: card is the last tier (nothing taller to grow into), so there's no resize
+     headroom left on the vertical axis at all here — see net_worth_widget_info.xml's comment
+     for why an unbounded maxResizeHeight caused oddly-stretched "4-5 row" appearances. See
+     NetWorthRemoteViewsRenderer's MICRO_HEIGHT_DP/STRIP_HEIGHT_DP — this file's own minHeight,
+     not an independently guessed value. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+        android:description="@string/widget_net_worth_card_description"
+        android:initialLayout="@layout/widget_net_worth"
+        android:minWidth="250dp"
+        android:minHeight="180dp"
+        android:minResizeWidth="180dp"
+        android:minResizeHeight="50dp"
+        android:maxResizeHeight="280dp"
+        android:targetCellWidth="4"
+        android:targetCellHeight="3"
+        android:resizeMode="horizontal|vertical"
+        android:updatePeriodMillis="1800000"
+        android:configure="com.osscabinet.ossWallet.widget.NetWorthWidgetConfigActivity"
+        android:previewLayout="@layout/widget_net_worth_picker_card"
+        android:widgetCategory="home_screen"
+        android:widgetFeatures="reconfigurable" />

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One row of the Recent Activities widget's ListView — built per-item by
+     RecentActivitiesRemoteViewsFactory.getViewAt(), not via NetWorthRemoteViewsRenderer's
+     style of a single static RemoteViews tree; a new RemoteViews(this layout) is inflated for
+     every Transaction in the current page. ll_ra_item_root carries the per-row fill-in Intent
+     (RemoteViews.setOnClickFillInIntent) that completes the ListView's
+     setPendingIntentTemplate — see RecentActivitiesRemoteViewsRenderer for the template and
+     RecentActivitiesRemoteViewsFactory for the fill-in extras (transaction id).
+
+     Design pick (canvas "Row B" + "Density B", time moved to the right): the badge shows the
+     category icon (iv_ra_item_icon, drawn by WidgetIconRenderer from the app's own vector icons),
+     falling back to tv_ra_item_indicator, a circular initial badge (widget_oval_bg tinted per-row by sign — see the factory) in
+     place of the old color bar; tv_ra_item_subtitle is account+category only (no time); the
+     relative time sits under the amount on the right instead, in its own
+     tv_ra_item_time line. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+    <LinearLayout
+            android:id="@+id/ll_ra_item_root"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+        <FrameLayout
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginEnd="10dp">
+
+            <ImageView
+                    android:id="@+id/iv_ra_item_badge_bg"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_oval_negative_bg"
+                    android:contentDescription="@null" />
+
+            <ImageView
+                    android:id="@+id/iv_ra_item_icon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
+            <TextView
+                    android:id="@+id/tv_ra_item_indicator"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:textColor="@color/widget_negative"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    tools:text="G" />
+
+        </FrameLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+            <TextView
+                    android:id="@+id/tv_ra_item_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/manrope"
+                    android:textColor="@color/widget_on_surface"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="Grocery Store" />
+
+            <TextView
+                    android:id="@+id/tv_ra_item_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:textColor="@color/widget_on_surface_variant"
+                    android:textSize="9sp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="Cash · Groceries" />
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:orientation="vertical"
+                android:gravity="end">
+
+            <TextView
+                    android:id="@+id/tv_ra_item_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/manrope"
+                    android:textColor="@color/widget_negative"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    tools:text="-24.50 $" />
+
+            <TextView
+                    android:id="@+id/tv_ra_item_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:textColor="@color/widget_on_surface_variant"
+                    android:textSize="8sp"
+                    android:maxLines="1"
+                    tools:text="2h ago" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <FrameLayout
+            android:id="@+id/v_ra_item_divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:background="@color/widget_outline" />
+
+</LinearLayout>

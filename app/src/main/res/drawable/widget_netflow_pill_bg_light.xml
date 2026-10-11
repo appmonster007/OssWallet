@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Forced-light variant of widget_netflow_pill_bg.xml — see widget_metric_tile_bg_light.xml
+     for why this can't just reference @color. Value copied from values/colors.xml. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+        android:shape="rectangle">
+    <solid android:color="#DCEDE8" />
+    <corners android:radius="10dp" />
+</shape>

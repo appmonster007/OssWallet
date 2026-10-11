@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Track, fill, and a pace tick. The tick is the secondary progress layer: ScaleDrawable shrinks
+     widget_budget_pace_tick to the elapsed share of the period (a clip would only crop it), so the
+     tick sits at that point. Listed last so it draws over the fill. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <corners android:radius="4dp" />
+            <solid android:color="@color/widget_track" />
+        </shape>
+    </item>
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape android:shape="rectangle">
+                <corners android:radius="4dp" />
+                <solid android:color="@color/widget_warning" />
+            </shape>
+        </clip>
+    </item>
+    <item android:id="@android:id/secondaryProgress">
+        <scale
+                android:drawable="@drawable/widget_budget_pace_tick"
+                android:scaleWidth="100%"
+                android:scaleGravity="left" />
+    </item>
+</layer-list>

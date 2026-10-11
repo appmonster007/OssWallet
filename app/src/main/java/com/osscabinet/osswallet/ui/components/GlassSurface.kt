@@ -135,6 +135,8 @@ fun GlassSurface(
     hazeLayer: Int? = null,
     hazeStyle: HazeStyle = GlassTokens.style(),
     glassVariant: String? = null,
+    /** Style token whose [GlassStyleConfig.enabled] switch governs this surface when [glassVariant] is not set. */
+    glassToggle: String? = null,
     fallbackColor: Color = AppColors.cardSurfaceProminent,
     shadowElevation: Dp? = null,
     borderColor: Color? = null,
@@ -143,13 +145,14 @@ fun GlassSurface(
     content: @Composable BoxScope.() -> Unit
 ) {
     val isDark = LocalThemeMode.current.isDarkTheme
-    val glassEnabled = LocalGlassmorphismEnabled.current
     val layers = LocalAeonHaze.current
     val depth = hazeLayer ?: LocalHazeDepth.current
     val config =
         if (glassVariant != null) GlassTokens.configForVariant(glassVariant) else GlassTokens.config(
             depth
         )
+    val toggleConfig = glassToggle?.let { GlassTokens.configForVariant(it) } ?: config
+    val glassEnabled = LocalGlassmorphismEnabled.current && toggleConfig.enabled
 
     // Default glass rim that catches light at the edges
     val effectiveBorderAlpha = borderAlpha ?: config.surface.borderAlpha

@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.analytics
 
+import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.core.util.DispatcherProvider
 import com.osscabinet.ossWallet.domain.cache.CardRenderCache
@@ -90,7 +91,7 @@ class AnalyticsViewModel @Inject constructor(
         }
     }
 
-    private val _screenFilter = MutableStateFlow(TransactionFilter())
+    private val _screenFilter = MutableStateFlow(TransactionFilter(timelineRange = DefaultTimeline.INITIAL))
     val screenFilter: StateFlow<TransactionFilter> = _screenFilter.asStateFlow()
 
     val commonFilterEnabled: StateFlow<Boolean> = settingsRepository.analyticsCommonFilterEnabled

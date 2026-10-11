@@ -6,6 +6,8 @@ import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.LoanStatus
+import com.osscabinet.ossWallet.domain.model.settings.LoanSortMode
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -17,6 +19,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CurrencySortMode
 import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
@@ -204,6 +207,7 @@ class CardAggregationServiceTest {
         val config = NetWorthCardConfig(
             cardId = "t",
             showComparison = false,
+            showTrendLine = false,
             filter = TransactionFilter(timelineRange = TimelineRange.AllTime())
         )
         coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
@@ -244,6 +248,36 @@ class CardAggregationServiceTest {
         assertEquals(1, result.items.size)
         assertEquals("USD", result.items[0].currency)
         assertEquals(0, BigDecimal("5000.00").compareTo(result.items[0].amount))
+    }
+
+    @Test
+    fun `computeCurrencyBalancesCard hides zero balances and orders by the chosen mode`() = runBlocking {
+        val rates = ExchangeRateSnapshot(anchor = "USD", rates = mapOf("USD" to BigDecimal.ONE, "EUR" to BigDecimal("0.5")))
+        val input = baseInput().copy(exchangeRates = rates)
+        coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
+            Result.success(
+                mapOf(
+                    "USD" to fs(income = "300.00"),
+                    "EUR" to fs(income = "400.00"),
+                    "JPY" to fs(),
+                )
+            )
+        fun config(sort: CurrencySortMode, hide: Boolean) = CurrencyBalancesCardConfig(
+            cardId = "t",
+            hideZeroBalances = hide,
+            sortBy = sort,
+            filter = TransactionFilter(timelineRange = TimelineRange.AllTime())
+        )
+
+        // 400 EUR at 0.5 EUR per USD is 800 USD, so EUR is the biggest.
+        val biggest = CardAggregationService.computeCurrencyBalancesCard(queryService, profileId, input, config(CurrencySortMode.BIGGEST, hide = true))
+        assertEquals(listOf("EUR", "USD"), biggest.items.map { it.currency })
+
+        val smallest = CardAggregationService.computeCurrencyBalancesCard(queryService, profileId, input, config(CurrencySortMode.SMALLEST, hide = true))
+        assertEquals(listOf("USD", "EUR"), smallest.items.map { it.currency })
+
+        val byName = CardAggregationService.computeCurrencyBalancesCard(queryService, profileId, input, config(CurrencySortMode.NAME, hide = false))
+        assertEquals(listOf("EUR", "JPY", "USD"), byName.items.map { it.currency })
     }
 
     @Test
@@ -345,6 +379,7 @@ class CardAggregationServiceTest {
         val config = NetWorthCardConfig(
             cardId = "t",
             showComparison = true,
+            showTrendLine = false,
             filter = TransactionFilter(timelineRange = TimelineRange.AllTime())
         )
         every { TimelineService.getPreviousRange(any(), any()) } returns Pair(1000L, 2000L)
@@ -355,6 +390,87 @@ class CardAggregationServiceTest {
 
         assertNotNull(result.previousPeriodMetrics)
         assertEquals(0, BigDecimal("5000.00").compareTo(result.previousPeriodMetrics!!.netWorth))
+    }
+
+    @Test
+    fun `computeNetWorthCard builds the trend from opening balance plus daily net flow`() = runBlocking {
+        val zone = TimelineService.systemZoneId
+        val start = java.time.LocalDate.of(2025, 1, 1).atStartOfDay(zone).toInstant().toEpochMilli()
+        val end = java.time.LocalDate.of(2025, 1, 3).atTime(23, 59, 59).atZone(zone).toInstant().toEpochMilli()
+        val config = NetWorthCardConfig(
+            cardId = "t",
+            showComparison = false,
+            showTrendLine = true,
+            filter = TransactionFilter(timelineRange = TimelineRange.CustomRange(start, end))
+        )
+        every { TimelineService.getDateRange(any(), any()) } returns Pair<Long?, Long?>(start, end)
+        // Opening balance (everything before Jan 1) is 5000 and Jan 2 adds 100.
+        coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
+            Result.success(mapOf("USD" to fs(income = "5200.00", expense = "-200.00")))
+        coEvery { TransactionAggregationService.getSummaryByCurrencyByDay(any(), any(), any(), any()) } returns
+            Result.success(mapOf("2025-01-02" to mapOf("USD" to fs(income = "100.00"))))
+
+        val result = CardAggregationService.computeNetWorthCard(queryService, profileId, baseInput(), config)
+
+        assertEquals(
+            listOf("5000.00", "5100.00", "5100.00"),
+            result.trend.map { it.value.setScale(2).toPlainString() }
+        )
+    }
+
+    @Test
+    fun `computeNetWorthCard skips the trend when the setting is off`() = runBlocking {
+        val config = NetWorthCardConfig(
+            cardId = "t",
+            showComparison = false,
+            showTrendLine = false,
+            filter = TransactionFilter(timelineRange = TimelineRange.AllTime())
+        )
+        coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
+            Result.success(mapOf("USD" to fs(income = "5200.00", expense = "-200.00")))
+
+        val result = CardAggregationService.computeNetWorthCard(queryService, profileId, baseInput(), config)
+
+        assertEquals(emptyList<Any>(), result.trend)
+        coVerify(exactly = 0) { TransactionAggregationService.getSummaryByCurrencyByDay(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `computeLoansCard hides settled loans unless asked and orders before the cut`() = runBlocking {
+        fun loan(name: String, status: LoanStatus, due: Long?) = Loan(
+            id = name.hashCode().toLong(),
+            name = name,
+            principalAmount = BigDecimal("1000"),
+            currency = "USD",
+            startDate = 0L,
+            lenderOrBorrowerName = "x",
+            loanType = LoanType.BORROWED,
+            linkedAccountId = "",
+            expectedSettlementDate = due,
+            status = status,
+            profileId = profileId
+        )
+        val loans = listOf(
+            loan("later", LoanStatus.ACTIVE, due = 900L),
+            loan("done", LoanStatus.SETTLED, due = 50L),
+            loan("sooner", LoanStatus.ACTIVE, due = 100L)
+        )
+        coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
+            Result.success(emptyMap())
+        val input = baseInput(loans = loans)
+
+        val hidden = CardAggregationService.computeLoansCard(
+            queryService, profileId, input,
+            LoansCardConfig(cardId = "t", sortBy = LoanSortMode.DUE_SOONEST, maxItems = 1)
+        )
+        // The cut comes after ordering: the soonest active loan, not the first one saved.
+        assertEquals(listOf("sooner"), hidden.items.map { it.loan.name })
+
+        val shown = CardAggregationService.computeLoansCard(
+            queryService, profileId, input,
+            LoansCardConfig(cardId = "t", showSettled = true, sortBy = LoanSortMode.DUE_SOONEST)
+        )
+        assertEquals(listOf("done", "sooner", "later"), shown.items.map { it.loan.name })
     }
 
     @Test

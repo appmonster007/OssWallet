@@ -13,4 +13,17 @@
     <color name="widget_positive_container">#164DCE85</color>
     <color name="widget_negative_container">#16E27974</color>
     <color name="widget_transfer_container">#167BA7D4</color>
+    <color name="widget_warning">#E3A94A</color>
+    <color name="widget_track">#2A2A27</color>
+    <color name="widget_tick">#B3ECE8DD</color>
+    <color name="widget_chip_negative_bg">#3A2322</color>
+    <color name="widget_chip_warning_bg">#3A2E18</color>
+    <color name="widget_chip_neutral_bg">#2A2A27</color>
+
+    <!-- Net Worth widget's chip/pill fills (widget_metric_tile_bg / widget_netflow_pill_bg
+         drawables) — the mockup-derived light-only values from
+         values/colors.xml#widget_row_chip_bg / widget_netflow_chip_bg, dimmed to sit on the
+         dark widget_surface above instead of washing out against it. -->
+    <color name="widget_row_chip_bg">#1F1E1B</color>
+    <color name="widget_netflow_chip_bg">#1A2E2B</color>
 </resources>

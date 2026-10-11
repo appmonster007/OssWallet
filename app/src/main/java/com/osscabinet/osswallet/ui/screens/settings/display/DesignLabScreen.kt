@@ -648,6 +648,17 @@ fun DesignLabContent(
                             }
                         }
 
+                        if (glassmorphismEnabled) {
+                            EntrySwitchRow(
+                                label = "Glass Blur",
+                                subtitle = if (currentConfig.enabled) "Blur ${selectedToken.lowercase()} surfaces" else "${selectedToken} surfaces render solid",
+                                icon = if (currentConfig.enabled) Icons.Rounded.BlurOn else Icons.Rounded.BlurOff,
+                                checked = currentConfig.enabled,
+                                onCheckedChange = { v -> onUpdateStyle(selectedToken) { it.copy(enabled = v) } },
+                                isFlush = false
+                            )
+                        }
+
                         // GLASS EFFECT sliders — only visible when glass is on
                         AnimatedVisibility(
                             visible = glassmorphismEnabled,

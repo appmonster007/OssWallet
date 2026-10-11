@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.data.mapper
 import com.osscabinet.ossWallet.data.local.entity.LoanEntity
 import com.osscabinet.ossWallet.data.local.entity.LoanPaymentEntity
 import com.osscabinet.ossWallet.data.local.entity.LoanWithFilter
+import com.osscabinet.ossWallet.domain.model.AdvancedFilterCriteria
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanPayment
 import com.osscabinet.ossWallet.domain.model.LoanStatus
@@ -32,6 +33,7 @@ fun LoanWithFilter.toDomain(): Loan {
         statuses = filterDomain.filter.statuses,
         linkedTransactionIds = filterDomain.filter.linkedTransactionIds,
         timelineRange = filterDomain.filter.timelineRange,
+        advanced = AdvancedFilterCriteria.from(filterDomain.filter),
         filterId = loan.filterId
     )
 }

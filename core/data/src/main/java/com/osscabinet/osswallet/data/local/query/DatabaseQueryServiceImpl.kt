@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.data.local.query
 
 import androidx.room.InvalidationTracker
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
+import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.data.mapper.toDomain
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -14,7 +15,9 @@ import com.osscabinet.ossWallet.domain.model.query.TimeGranularity
 import com.osscabinet.ossWallet.domain.service.query.AggregationPlanner
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.map
 import java.math.BigDecimal
 
@@ -60,7 +63,8 @@ class DatabaseQueryServiceImpl(
         return try {
             val plan = planner.plan(dimensions, metrics, timeGranularity, useCase)
             val query = queryBuilder.buildAggregationQuery(
-                profileId, filter, plan, excludeInternalTransfers
+                profileId, filter, plan, excludeInternalTransfers,
+                restrictToIds = resolveRegexMatches(profileId, filter)
             )
 
             val rawResults = transactionDao.aggregateTransactionsSync(query)
@@ -73,6 +77,7 @@ class DatabaseQueryServiceImpl(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeAggregate(
         profileId: Int,
         dimensions: List<AggregationDimension>,
@@ -82,6 +87,21 @@ class DatabaseQueryServiceImpl(
         useCase: AggregationPlanner.UseCase
     ): Flow<Result<List<AggregatedData>>> {
         val plan = planner.plan(dimensions, metrics, timeGranularity, useCase)
+
+        if (FilterSql.hasRegexCriteria(filter)) {
+            // Regex can't run in SQL: re-resolve the matching ids whenever transactions change,
+            // then aggregate over exactly those rows.
+            return transactionDao.getFilteredTransactions(queryBuilder.buildListQuery(profileId, filter))
+                .mapLatest { candidates ->
+                    val ids = candidates.regexMatchIds(filter)
+                    val query = queryBuilder.buildAggregationQuery(
+                        profileId, filter, plan, restrictToIds = ids
+                    )
+                    Result.success(processResults(transactionDao.aggregateTransactionsSync(query), plan))
+                }
+                .catch { e -> emit(Result.failure(e)) }
+        }
+
         val query = queryBuilder.buildAggregationQuery(profileId, filter, plan)
 
         return transactionDao.aggregateTransactions(query)
@@ -92,11 +112,32 @@ class DatabaseQueryServiceImpl(
     override fun observeFilteredTransactions(
         profileId: Int, filter: TransactionFilter, limit: Int?
     ): Flow<List<Transaction>> {
+        if (FilterSql.hasRegexCriteria(filter)) {
+            // The limit has to apply after the regex test, not before it.
+            val query = queryBuilder.buildListQuery(profileId, filter, limit = null)
+            return transactionDao.getFilteredTransactions(query).map { entities ->
+                val matching = entities.filter {
+                    FilterSql.matchesRegexCriteria(filter, it.note, it.payee)
+                }
+                (if (limit != null) matching.take(limit) else matching).map { it.toDomain() }
+            }
+        }
         val query = queryBuilder.buildListQuery(profileId, filter, limit)
         return transactionDao.getFilteredTransactions(query).map { entities ->
             entities.map { it.toDomain() }
         }
     }
+
+    /** Ids of the rows passing the regex note/payee criteria, or null when there are none. */
+    private suspend fun resolveRegexMatches(profileId: Int, filter: TransactionFilter): Set<Long>? {
+        if (!FilterSql.hasRegexCriteria(filter)) return null
+        return transactionDao
+            .getFilteredTransactionsSync(queryBuilder.buildListQuery(profileId, filter))
+            .regexMatchIds(filter)
+    }
+
+    private fun List<TransactionEntity>.regexMatchIds(filter: TransactionFilter): Set<Long> =
+        filter { FilterSql.matchesRegexCriteria(filter, it.note, it.payee) }.mapTo(HashSet()) { it.id }
 
     override suspend fun getMinTransactionTimestamp(profileId: Int): Long? =
         transactionDao.getMinTransactionTimestamp(profileId)

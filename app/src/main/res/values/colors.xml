@@ -22,6 +22,13 @@
     <color name="widget_positive_container">#0D1E9B4F</color>
     <color name="widget_negative_container">#0DC8463F</color>
     <color name="widget_transfer_container">#0D3B6EA8</color>
+    <!-- Budgets widget: warning amber, bar track, pace tick, and status-chip fills. -->
+    <color name="widget_warning">#B7791F</color>
+    <color name="widget_track">#EDE8DA</color>
+    <color name="widget_tick">#B31B1914</color>
+    <color name="widget_chip_negative_bg">#F4DDDA</color>
+    <color name="widget_chip_warning_bg">#F5E6C8</color>
+    <color name="widget_chip_neutral_bg">#EDE8DA</color>
 
     <!-- Aliases for static XML preview layouts — NOT used in Glance Kotlin code -->
     <color name="widget_subtle">@color/widget_on_surface_variant</color>
@@ -43,4 +50,39 @@
     <color name="widget_badge_transfer_bg">@color/widget_transfer_container</color>
     <color name="widget_transfer_fill">@color/widget_transfer_container</color>
     <color name="widget_transfer_stroke">@color/widget_transfer</color>
+
+    <!-- Phase 1 widget rebuild — new mockup-specific chrome tokens (net worth / cash flow /
+         recent activities richer tiers). These sit alongside the existing Aeon H-theme
+         widget_* tokens above rather than replacing them: widget_positive/widget_negative
+         keep doing income/expense tinting everywhere they already do, these are additive.
+         widget_wall and widget_text_muted_alt were removed 2026-10-08: the Net Worth widget's
+         own "wall" shell and its dark-text-on-light surface were a misreading of the design
+         mockup (the mockup's dark background was the canvas/artboard page color, simulating a
+         wallpaper behind several widget previews, not the widget's own chrome) — Net Worth now
+         uses the already theme-adaptive widget_surface/widget_on_surface/widget_on_surface_variant
+         tokens instead. widget_inner_surface/widget_accent_teal/widget_text_primary/
+         widget_text_muted are still used by the Cash Flow / Recent Activities / Phase 2-3
+         widgets currently shelved in shelved-widgets/ at the repo root — don't remove those
+         without checking there first. -->
+    <color name="widget_inner_surface">#F5F8F7</color>
+    <color name="widget_accent_teal">#1F6F66</color>
+    <color name="widget_text_primary">#14201E</color>
+    <color name="widget_text_muted">#4C5C59</color>
+    <color name="widget_row_chip_bg">#E6EEEC</color>
+    <color name="widget_netflow_chip_bg">#DCEDE8</color>
+    <color name="widget_divider_soft">#D7E0DD</color>
+    <color name="widget_overdue_text">#A12A20</color>
+    <color name="widget_overdue_pill_bg">#F6DEDA</color>
+    <color name="widget_warning_text">#8A5A0B</color>
+    <color name="widget_pending_outline">#B7791F</color>
+    <color name="widget_tag_chip_bg">#E3ECEA</color>
+
+    <!-- Phase 3 widget rebuild — fixed qualitative series/legend palette fallback. Only used
+         when a CategoryChartData/CategorySummary/TagUpSetSet entry carries no own colorHex. -->
+    <color name="widget_series_blue">#1F5C8A</color>
+    <color name="widget_series_green">#2E6B45</color>
+    <color name="widget_series_brown">#8A4B12</color>
+    <color name="widget_series_purple">#6B3F86</color>
+    <color name="widget_series_gray">#9AA8A5</color>
+    <color name="widget_series_amber">#D49A55</color>
 </resources>

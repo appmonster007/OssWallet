@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.analytics
 
+import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -395,7 +396,7 @@ fun AnalyticsScreen(
                                 when (event) {
                                     is FilterEvent.Apply -> viewModel.updateScreenFilter(event.filter)
                                     is FilterEvent.Reset -> viewModel.updateScreenFilter(
-                                        TransactionFilter()
+                                        TransactionFilter(timelineRange = DefaultTimeline.INITIAL)
                                     )
 
                                     is FilterEvent.UpdateTimeline -> viewModel.updateScreenFilter(
@@ -406,6 +407,7 @@ fun AnalyticsScreen(
                                 }
                             },
                             onSaveFilterClick = {},
+                            baseFilter = TransactionFilter(timelineRange = DefaultTimeline.INITIAL),
                             modifier = Modifier.fillMaxSize()
                         )
                     }

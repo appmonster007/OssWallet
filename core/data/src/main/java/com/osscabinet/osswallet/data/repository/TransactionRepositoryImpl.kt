@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
+import com.osscabinet.ossWallet.data.local.query.FilterSql
 import com.osscabinet.ossWallet.data.mapper.toDomain
 import com.osscabinet.ossWallet.data.mapper.toEntity
 import com.osscabinet.ossWallet.domain.model.CurrencySummary
@@ -96,68 +97,7 @@ class TransactionRepositoryImpl @Inject constructor(
             queryBuilder.append(" AND accountId IN ($placeholders)")
             args.addAll(filter.accountIds)
         }
-        if (filter.categoryIds.isNotEmpty()) {
-            val placeholders = filter.categoryIds.toList().joinByComma { "?" }
-            queryBuilder.append(" AND categoryId IN ($placeholders)")
-            args.addAll(filter.categoryIds)
-        }
-        if (filter.transactionTypes.isNotEmpty()) {
-            val placeholders = filter.transactionTypes.toList().joinByComma { "?" }
-            queryBuilder.append(" AND transactionType IN ($placeholders)")
-            args.addAll(filter.transactionTypes.map { it.value })
-        }
-        val minAmount = filter.minAmount
-        if (minAmount != null) {
-            queryBuilder.append(" AND amount >= ?")
-            args.add(minAmount)
-        }
-        val maxAmount = filter.maxAmount
-        if (maxAmount != null) {
-            queryBuilder.append(" AND amount <= ?")
-            args.add(maxAmount)
-        }
-        if (filter.paymentMethods.isNotEmpty()) {
-            val placeholders = filter.paymentMethods.toList().joinByComma { "?" }
-            queryBuilder.append(" AND paymentMethod IN ($placeholders)")
-            args.addAll(filter.paymentMethods.map { it.name })
-        }
-        if (filter.hasWarranty == true) {
-            queryBuilder.append(" AND warrantyExpiration IS NOT NULL")
-        } else if (filter.hasWarranty == false) {
-            queryBuilder.append(" AND warrantyExpiration IS NULL")
-        }
-        val warrantyExpirationStart = filter.warrantyExpirationStart
-        if (warrantyExpirationStart != null) {
-            queryBuilder.append(" AND warrantyExpiration >= ?")
-            args.add(warrantyExpirationStart)
-        }
-        val warrantyExpirationEnd = filter.warrantyExpirationEnd
-        if (warrantyExpirationEnd != null) {
-            queryBuilder.append(" AND warrantyExpiration <= ?")
-            args.add(warrantyExpirationEnd)
-        }
-        if (filter.currencies.isNotEmpty()) {
-            val placeholders = filter.currencies.toList().joinByComma { "?" }
-            queryBuilder.append(" AND currency IN ($placeholders)")
-            args.addAll(filter.currencies)
-        }
-        val queryNote = filter.queryNote
-        if (!queryNote.isNullOrBlank() && !filter.isNoteRegex) {
-            // Use COLLATE NOCASE for case-insensitive matching (SQLite default)
-            queryBuilder.append(" AND note LIKE ? COLLATE NOCASE")
-            args.add("%${queryNote}%")
-        }
-        val queryPayee = filter.queryPayee
-        if (!queryPayee.isNullOrBlank() && !filter.isPayeeRegex) {
-            // Use COLLATE NOCASE for case-insensitive matching (SQLite default)
-            queryBuilder.append(" AND payee LIKE ? COLLATE NOCASE")
-            args.add("%${queryPayee}%")
-        }
-        if (filter.statuses.isNotEmpty()) {
-            val placeholders = filter.statuses.toList().joinByComma { "?" }
-            queryBuilder.append(" AND status IN ($placeholders)")
-            args.addAll(filter.statuses.map { it.name })
-        }
+        FilterSql.appendCriteria(queryBuilder, args, filter)
         queryBuilder.append(" ORDER BY timestamp DESC")
         return Pair(queryBuilder.toString(), args)
     }

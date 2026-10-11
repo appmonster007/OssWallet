@@ -128,6 +128,17 @@ fun ActionableTransactionItem(
         label = "swipeOffset"
     )
 
+    // While swiped open, a tap collapses the row instead of opening the record.
+    val onRowClick: () -> Unit = {
+        if (isRevealed || animatedOffset != 0f) {
+            offsetX = 0f
+            swipeDirection = SwipeDirection.NONE
+            onEvent(TransactionItemEvent.Collapse(record.id))
+        } else {
+            onEvent(TransactionItemEvent.Click(record.id))
+        }
+    }
+
     // Calculate progress for expressive scaling (0 to 1)
     val progress = when {
         animatedOffset > 0f -> (animatedOffset / rightSwipeThresholdPx).coerceIn(0f, 1f)
@@ -214,7 +225,7 @@ fun ActionableTransactionItem(
                 .then(
                     if (actionEnabled) {
                         Modifier.combinedClickable(
-                            onClick = { onEvent(TransactionItemEvent.Click(record.id)) },
+                            onClick = onRowClick,
                             onLongClick = {
                                 if (!isSwipeActionEnabled) {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -223,7 +234,7 @@ fun ActionableTransactionItem(
                             }
                         )
                     } else {
-                        Modifier.clickable { onEvent(TransactionItemEvent.Click(record.id)) }
+                        Modifier.clickable(onClick = onRowClick)
                     }
                 )
                 .then(

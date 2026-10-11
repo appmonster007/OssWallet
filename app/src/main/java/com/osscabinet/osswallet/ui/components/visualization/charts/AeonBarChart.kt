@@ -3,7 +3,9 @@ package com.osscabinet.ossWallet.ui.components.visualization.charts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -31,6 +33,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
@@ -57,6 +60,8 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import android.graphics.Paint as AndroidPaint
 
+internal const val DEFAULT_VISIBLE_BARS = 7
+
 /**
  * High-fidelity, interactive bar chart supporting both simple and stacked visualizations.
  * Refined with professional grid logic and dynamic scaling.
@@ -71,9 +76,12 @@ fun AeonBarChart(
     showGrid: Boolean = true,
     showPeriodBars: Boolean = true,
     showXAxisLabels: Boolean = true,
-    roundedBars: Boolean = false
+    roundedBars: Boolean = false,
+    scrollable: Boolean = false,
+    visibleBars: Int = DEFAULT_VISIBLE_BARS
 ) {
-    if (groups.isEmpty() || groups.all { it.bars.isEmpty() }) {
+    // A scrollable chart keeps its empty buckets so the x-axis still shows every period.
+    if (groups.isEmpty() || (!scrollable && groups.all { it.bars.isEmpty() })) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("No data available", style = AppTextStyles.caption)
         }
@@ -108,6 +116,17 @@ fun AeonBarChart(
         val chartWidth = widthPx - leftPadding - rightPadding
         val chartHeight = heightPx - topPadding - bottomPadding
 
+        // Scroll mode: `visibleBars` slots fill the viewport and the rest scrolls in from the left.
+        val isScrollable = scrollable && groups.size > visibleBars.coerceAtLeast(1)
+        val scrollState = rememberAeonChartScrollState(groups.size)
+        val slotWidth =
+            if (isScrollable) chartWidth / visibleBars.coerceAtLeast(1)
+            else chartWidth / groups.size.coerceAtLeast(1)
+        val maxScrollPx = if (isScrollable) (slotWidth * groups.size - chartWidth).coerceAtLeast(0f) else 0f
+        val scrollX = if (isScrollable) scrollState.offsetPx.coerceIn(0f, maxScrollPx) else 0f
+        val yZoom = if (isScrollable) scrollState.yZoom else 1f
+        val scrollableState = rememberAeonChartScrollable(scrollState, maxScrollPx) { selectedIndex = null }
+
         // Calculate limits for stacked or simple bars
         val groupTotals = groups.map { g ->
             val pos = g.bars.filter { it.value > BigDecimal.ZERO }.sumOf { it.value }
@@ -115,8 +134,15 @@ fun AeonBarChart(
             pos to neg
         }
 
+        val zoomDivisor = BigDecimal.valueOf(yZoom.toDouble())
         val minY = groupTotals.minOf { it.second }.coerceAtMost(BigDecimal.ZERO)
-        val maxY = groupTotals.maxOf { it.first }.coerceAtLeast(BigDecimal.ONE)
+            .divide(zoomDivisor, 4, RoundingMode.HALF_UP)
+        val emptyCeiling = if (isScrollable && groupTotals.all { it.first.signum() == 0 && it.second.signum() == 0 }) {
+            BigDecimal.valueOf(EMPTY_CHART_MAX)
+        } else BigDecimal.ONE
+        val maxY = groupTotals.maxOf { it.first }.coerceAtLeast(emptyCeiling)
+            .divide(zoomDivisor, 4, RoundingMode.HALF_UP)
+            .coerceAtLeast(BigDecimal.ONE)
 
         // Nice step logic from AeonLineChart
         val dataRange = (maxY - minY).abs().toDouble().coerceAtLeast(1.0)
@@ -144,8 +170,7 @@ fun AeonBarChart(
 
         fun indexToX(index: Int, total: Int): Float {
             if (total == 0) return leftPadding + chartWidth / 2
-            val slotWidth = chartWidth / total
-            return leftPadding + (index * slotWidth) + (slotWidth / 2)
+            return leftPadding + (index * slotWidth) + (slotWidth / 2) - scrollX
         }
 
         val zeroY = valueToY(BigDecimal.ZERO)
@@ -167,8 +192,7 @@ fun AeonBarChart(
         fun findIndex(offsetX: Float): Int {
             val total = groups.size
             if (total == 0) return -1
-            val slotWidth = chartWidth / total
-            return ((offsetX - leftPadding) / slotWidth).toInt().coerceIn(0, total - 1)
+            return ((offsetX - leftPadding + scrollX) / slotWidth).toInt().coerceIn(0, total - 1)
         }
 
         Canvas(
@@ -176,17 +200,22 @@ fun AeonBarChart(
                 .fillMaxSize()
                 .semantics {
                     contentDescription =
-                        "Bar chart showing ${groups.size} periods. Drag or tap for details."
+                        if (isScrollable) "Bar chart showing ${groups.size} periods. Swipe to scroll, tap for details."
+                        else "Bar chart showing ${groups.size} periods. Drag or tap for details."
                 }
-                .pointerInput(groups) {
-                    detectDragGestures(
-                        onDragStart = { offset -> selectedIndex = findIndex(offset.x) },
-                        onDrag = { change, _ -> selectedIndex = findIndex(change.position.x) },
-                        onDragEnd = { selectedIndex = null },
-                        onDragCancel = { selectedIndex = null }
-                    )
-                }
-                .pointerInput(groups) {
+                .then(
+                    if (isScrollable) Modifier.scrollable(scrollableState, Orientation.Horizontal)
+                    else Modifier.pointerInput(groups) {
+                        detectDragGestures(
+                            onDragStart = { offset -> selectedIndex = findIndex(offset.x) },
+                            onDrag = { change, _ -> selectedIndex = findIndex(change.position.x) },
+                            onDragEnd = { selectedIndex = null },
+                            onDragCancel = { selectedIndex = null }
+                        )
+                    }
+                )
+                // Keyed on scrollX so the tap handler never maps taps with a stale scroll offset.
+                .pointerInput(groups, scrollX) {
                     detectTapGestures(
                         onTap = { offset -> selectedIndex = findIndex(offset.x) }
                     )
@@ -228,119 +257,147 @@ fun AeonBarChart(
                 }
             }
 
-            // 1.5 Draw Period Background Bars
-            if (showPeriodBars && groups.isNotEmpty()) {
-                val totalSlots = groups.size
-                val slotWidth = chartWidth / totalSlots
-                groups.forEachIndexed { index, _ ->
-                    val slotCenterX = indexToX(index, totalSlots)
-                    val barWidth = slotWidth * 0.95f
-                    drawRect(
-                        color = periodBarColor,
-                        topLeft = Offset(slotCenterX - barWidth / 2, topPadding),
-                        size = Size(barWidth, chartHeight)
-                    )
-                }
-            }
+            // Everything below scrolls; keep it out of the pinned Y-axis gutter.
+            clipRect(
+                left = if (isScrollable) leftPadding else 0f,
+                right = if (isScrollable) widthPx - rightPadding else widthPx
+            ) {
+                val plotTop = topPadding
+                val plotBottom = heightPx - bottomPadding
+                fun isOffscreen(x: Float) = isScrollable && (x + slotWidth < leftPadding || x - slotWidth > widthPx)
 
-            // 2. Zero Line
-            drawLine(
-                color = ChartZeroLineColor,
-                start = Offset(leftPadding, zeroY),
-                end = Offset(widthPx - rightPadding, zeroY),
-                strokeWidth = (dims.spacingXs / 4).toPx()
-            )
-
-            // 3. Draw Bars (Simple or Stacked)
-            val slotWidth = chartWidth / groups.size.coerceAtLeast(1)
-            val barWidth = slotWidth * 0.85f
-
-            val total = groups.size
-            val firstValidIdx =
-                groups.indexOfFirst { it.label.isNotBlank() }.takeIf { it != -1 } ?: 0
-            val lastValidIdx =
-                groups.indexOfLast { it.label.isNotBlank() }.takeIf { it != -1 } ?: (total - 1)
-
-            val indicesToShow = mutableSetOf<Int>()
-            if (total > 0) {
-                indicesToShow.add(firstValidIdx)
-                indicesToShow.add(lastValidIdx)
-                val range = lastValidIdx - firstValidIdx
-                if (range > 0) {
-                    val interval = range.toFloat() / 6f
-                    for (i in 1..5) {
-                        indicesToShow.add(firstValidIdx + Math.round(i * interval))
+                // 1.5 Draw Period Background Bars
+                if (showPeriodBars && groups.isNotEmpty()) {
+                    val totalSlots = groups.size
+                    groups.forEachIndexed { index, _ ->
+                        val slotCenterX = indexToX(index, totalSlots)
+                        if (isOffscreen(slotCenterX)) return@forEachIndexed
+                        val barWidth = slotWidth * 0.95f
+                        drawRect(
+                            color = periodBarColor,
+                            topLeft = Offset(slotCenterX - barWidth / 2, topPadding),
+                            size = Size(barWidth, chartHeight)
+                        )
                     }
                 }
-            }
 
-            groups.forEachIndexed { groupIndex, group ->
-                val centerX = indexToX(groupIndex, groups.size)
+                // 2. Zero Line
+                drawLine(
+                    color = ChartZeroLineColor,
+                    start = Offset(leftPadding, zeroY),
+                    end = Offset(widthPx - rightPadding, zeroY),
+                    strokeWidth = (dims.spacingXs / 4).toPx()
+                )
 
-                var currentPosAccumulator = BigDecimal.ZERO
-                var currentNegAccumulator = BigDecimal.ZERO
+                // 3. Draw Bars (Simple or Stacked)
+                val barWidth = slotWidth * 0.85f
 
-                group.bars.forEach { bar ->
-                    val isPositive = bar.value >= BigDecimal.ZERO
+                val total = groups.size
+                val firstValidIdx =
+                    groups.indexOfFirst { it.label.isNotBlank() }.takeIf { it != -1 } ?: 0
+                val lastValidIdx =
+                    groups.indexOfLast { it.label.isNotBlank() }.takeIf { it != -1 } ?: (total - 1)
 
-                    val startVal = if (isPositive) currentPosAccumulator else currentNegAccumulator
-                    val endVal = startVal + bar.value
-
-                    // Correct stacking animation: both start and end points of the segment are scaled from baseline
-                    val animatedStart =
-                        startVal.multiply(BigDecimal.valueOf(animationProgress.value.toDouble()))
-                    val animatedEnd =
-                        endVal.multiply(BigDecimal.valueOf(animationProgress.value.toDouble()))
-
-                    val startY = valueToY(animatedStart)
-                    val endY = valueToY(animatedEnd)
-
-                    val top = if (isPositive) endY else startY
-                    val bottom = if (isPositive) startY else endY
-
-                    val radiusPx = if (roundedBars) with(density) { 4.dp.toPx() } else 0f
-                    drawRoundRect(
-                        color = bar.color.copy(alpha = 0.85f),
-                        topLeft = Offset(centerX - barWidth / 2, top),
-                        size = Size(barWidth, (bottom - top).coerceAtLeast(1f)),
-                        cornerRadius = CornerRadius(radiusPx, radiusPx)
-                    )
-
-                    if (isPositive) currentPosAccumulator = endVal
-                    else currentNegAccumulator = endVal
+                val indicesToShow = mutableSetOf<Int>()
+                if (total > 0) {
+                    indicesToShow.add(firstValidIdx)
+                    indicesToShow.add(lastValidIdx)
+                    val range = lastValidIdx - firstValidIdx
+                    if (range > 0) {
+                        val interval = range.toFloat() / 6f
+                        for (i in 1..5) {
+                            indicesToShow.add(firstValidIdx + Math.round(i * interval))
+                        }
+                    }
                 }
 
-                if (showXAxisLabels) {
-                    val labelPaint = AndroidPaint().apply {
-                        isAntiAlias = true
-                        color = axisLabelColor.toArgb()
-                        textAlign = AndroidPaint.Align.CENTER
-                        textSize = 9.sp.toPx()
+                groups.forEachIndexed { groupIndex, group ->
+                    val centerX = indexToX(groupIndex, groups.size)
+                    if (isOffscreen(centerX)) return@forEachIndexed
+
+                    var currentPosAccumulator = BigDecimal.ZERO
+                    var currentNegAccumulator = BigDecimal.ZERO
+
+                    group.bars.forEach { bar ->
+                        val isPositive = bar.value >= BigDecimal.ZERO
+
+                        val startVal = if (isPositive) currentPosAccumulator else currentNegAccumulator
+                        val endVal = startVal + bar.value
+
+                        // Correct stacking animation: both start and end points of the segment are scaled from baseline
+                        val animatedStart =
+                            startVal.multiply(BigDecimal.valueOf(animationProgress.value.toDouble()))
+                        val animatedEnd =
+                            endVal.multiply(BigDecimal.valueOf(animationProgress.value.toDouble()))
+
+                        val startY = valueToY(animatedStart)
+                        val endY = valueToY(animatedEnd)
+
+                        val rawTop = if (isPositive) endY else startY
+                        val rawBottom = if (isPositive) startY else endY
+                        // Y-zoom can push bars past the plot area; clamp, and skip the ones fully outside.
+                        val top = if (isScrollable) rawTop.coerceIn(plotTop, plotBottom) else rawTop
+                        val bottom = if (isScrollable) rawBottom.coerceIn(plotTop, plotBottom) else rawBottom
+                        val fullyOutside = isScrollable && (rawBottom < plotTop || rawTop > plotBottom)
+
+                        val radiusPx = if (roundedBars) with(density) { 4.dp.toPx() } else 0f
+                        if (!fullyOutside) drawRoundRect(
+                            color = bar.color.copy(alpha = 0.85f),
+                            topLeft = Offset(centerX - barWidth / 2, top),
+                            size = Size(barWidth, (bottom - top).coerceAtLeast(1f)),
+                            cornerRadius = CornerRadius(radiusPx, radiusPx)
+                        )
+
+                        if (isPositive) currentPosAccumulator = endVal
+                        else currentNegAccumulator = endVal
                     }
 
-                    if (groupIndex in indicesToShow) {
-                        drawContext.canvas.nativeCanvas.drawText(
-                            group.label,
-                            centerX,
-                            heightPx - bottomPadding + with(density) { 14.dp.toPx() },
-                            labelPaint
+                    if (showXAxisLabels) {
+                        val labelPaint = AndroidPaint().apply {
+                            isAntiAlias = true
+                            color = axisLabelColor.toArgb()
+                            textAlign = AndroidPaint.Align.CENTER
+                            textSize = 9.sp.toPx()
+                        }
+
+                        // Scrolling charts label every bar; the squeezed chart thins its labels.
+                        val showLabel = if (isScrollable) group.label.isNotBlank() else groupIndex in indicesToShow
+                        if (showLabel) {
+                            drawContext.canvas.nativeCanvas.drawText(
+                                group.label,
+                                centerX,
+                                heightPx - bottomPadding + with(density) { 14.dp.toPx() },
+                                labelPaint
+                            )
+                        }
+                    }
+                }
+
+                // 5. Selection Highlight
+                selectedIndex?.let { index ->
+                    if (index in groups.indices) {
+                        val x = indexToX(index, groups.size)
+                        drawLine(
+                            color = selectionLineColor,
+                            start = Offset(x, topPadding),
+                            end = Offset(x, heightPx - bottomPadding),
+                            strokeWidth = (dims.spacingXs / 4).toPx(),
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
                         )
                     }
                 }
             }
+        }
 
-            // 5. Selection Highlight
-            selectedIndex?.let { index ->
-                if (index in groups.indices) {
-                    val x = indexToX(index, groups.size)
-                    drawLine(
-                        color = selectionLineColor,
-                        start = Offset(x, topPadding),
-                        end = Offset(x, heightPx - bottomPadding),
-                        strokeWidth = (dims.spacingXs / 4).toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
-                    )
-                }
+        if (isScrollable) {
+            AeonChartYAxisZoomZone(scrollState, with(density) { leftPadding.toDp() })
+            if (yZoom > 1.02f) {
+                Text(
+                    text = "×${"%.1f".format(yZoom)}",
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary,
+                    modifier = Modifier.align(Alignment.TopStart)
+                )
             }
         }
 

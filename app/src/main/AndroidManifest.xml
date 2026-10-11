@@ -22,9 +22,24 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.OssWallet">
+
+        <!-- OssWalletApp implements Configuration.Provider (on-demand WorkManager init),
+             so the default WorkManagerInitializer must be removed. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:label="@string/app_name"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.App.Starting">
@@ -50,9 +65,27 @@
             android:exported="true"
             android:theme="@style/Theme.OssWallet" />
 
-        <!-- NetWorth homescreen widget -->
+        <!-- NetWorth homescreen widget — three provider registrations (Compact/Trend/Card) so
+             the system widget picker shows each tier's own preview thumbnail as a separate
+             choice, instead of one dummy static preview. All three share the same fetcher/
+             renderer/prefs store/config activity and are each freely resizable across the
+             full range after placement — only the starting size and picker thumbnail differ. -->
+        <receiver
+            android:name=".widget.NetWorthWidgetProviderMicro"
+            android:label="@string/widget_net_worth_micro_label"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/net_worth_widget_info_micro" />
+        </receiver>
+
         <receiver
             android:name=".widget.NetWorthWidgetProvider"
+            android:label="@string/widget_net_worth_strip_label"
             android:exported="true"
             android:permission="android.permission.BIND_APPWIDGET">
             <intent-filter>
@@ -63,9 +96,9 @@
                 android:resource="@xml/net_worth_widget_info" />
         </receiver>
 
-        <!-- Cash Flow homescreen widget -->
         <receiver
-            android:name=".widget.CashFlowWidgetProvider"
+            android:name=".widget.NetWorthWidgetProviderCard"
+            android:label="@string/widget_net_worth_card_label"
             android:exported="true"
             android:permission="android.permission.BIND_APPWIDGET">
             <intent-filter>
@@ -73,12 +106,16 @@
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/cash_flow_widget_info" />
+                android:resource="@xml/net_worth_widget_info_card" />
         </receiver>
 
-        <!-- Recent Transactions homescreen widget -->
+        <!-- Cash Flow and every Phase 2/3 widget's <receiver>/<activity> entries were removed
+             here when those widgets were shelved (2026-10-08) — see shelved-widgets/README.md
+             and shelved-widgets/restore.patch at the repo root. -->
+
         <receiver
-            android:name=".widget.RecentTransactionsWidgetProvider"
+            android:name=".widget.RecentActivitiesWidgetProvider"
+            android:label="@string/widget_recent_activities_label"
             android:exported="true"
             android:permission="android.permission.BIND_APPWIDGET">
             <intent-filter>
@@ -86,8 +123,52 @@
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/recent_transactions_widget_info" />
+                android:resource="@xml/recent_activities_widget_info" />
         </receiver>
+
+        <receiver
+            android:name=".widget.AccountsWidgetProvider"
+            android:label="@string/widget_accounts_label"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/accounts_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.BudgetsWidgetProvider"
+            android:label="@string/widget_budgets_label"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/budgets_widget_info" />
+        </receiver>
+
+        <activity
+            android:name=".widget.AccountsWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.BudgetsWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".widget.NetWorthWidgetConfigActivity"
@@ -99,7 +180,7 @@
         </activity>
 
         <activity
-            android:name=".widget.CashFlowWidgetConfigActivity"
+            android:name=".widget.RecentActivitiesWidgetConfigActivity"
             android:exported="true"
             android:theme="@style/Theme.OssWallet">
             <intent-filter>
@@ -107,14 +188,14 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".widget.RecentTransactionsWidgetConfigActivity"
-            android:exported="true"
-            android:theme="@style/Theme.OssWallet">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
-            </intent-filter>
-        </activity>
+        <!-- Backs RecentActivitiesWidgetProvider's ListView — BIND_REMOTEVIEWS is required for
+             any RemoteViewsService a widget's RemoteViews references via setRemoteAdapter, and
+             exported must stay false (the system binds to it on the widget host's behalf; this
+             is never meant to be reachable by other apps). -->
+        <service
+            android:name=".widget.RecentActivitiesRemoteViewsService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
 
         <service
             android:name=".service.WebServerService"

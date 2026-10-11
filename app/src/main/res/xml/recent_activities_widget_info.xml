@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- minHeight/minResizeHeight = h(2) = 70dp*2-30dp = 110dp (the same per-row formula Net Worth's
+     widget-info XMLs use) — the user asked for a 2-row floor, so unlike Net Worth's micro tier
+     this can't be resized shorter than that either. No maxResizeHeight at all: the user asked
+     for no upper bound, and unlike Net Worth (a fixed set of tiers that stops making sense past
+     its tallest design) this widget's content is a genuinely scrolling ListView — taller just
+     means more visible rows, with no design reason to cap it. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+        android:description="@string/widget_recent_activities_description"
+        android:initialLayout="@layout/widget_recent_activities_loading"
+        android:minWidth="180dp"
+        android:minHeight="110dp"
+        android:minResizeWidth="180dp"
+        android:minResizeHeight="110dp"
+        android:targetCellWidth="3"
+        android:targetCellHeight="2"
+        android:resizeMode="horizontal|vertical"
+        android:updatePeriodMillis="1800000"
+        android:configure="com.osscabinet.ossWallet.widget.RecentActivitiesWidgetConfigActivity"
+        android:previewLayout="@layout/widget_recent_activities_preview"
+        android:widgetCategory="home_screen"
+        android:widgetFeatures="reconfigurable" />

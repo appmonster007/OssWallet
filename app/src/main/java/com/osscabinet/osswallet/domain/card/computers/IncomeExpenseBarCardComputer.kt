@@ -6,6 +6,8 @@ import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity
+import com.osscabinet.ossWallet.domain.model.settings.BarChartGranularity
+import com.osscabinet.ossWallet.domain.model.settings.BarChartViewMode
 import com.osscabinet.ossWallet.domain.card.CashFlowComparisonSeries
 import com.osscabinet.ossWallet.domain.card.CashFlowTimePoint
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
@@ -63,9 +65,19 @@ class IncomeExpenseBarCardComputer(
         val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
         val (currentStart, currentEnd) = resolveIncomeExpenseTimeBounds(mergedFilter.timelineRange, input.profileId, queryService)
 
-        val granularity = CardComputerUtils.resolveGranularity(currentStart, currentEnd)
+        val scrollable = config.viewMode == BarChartViewMode.SCROLLABLE
+        val chartGranularity = if (scrollable) {
+            CardComputerUtils.resolveBarGranularity(config.scrollGranularity, currentStart, currentEnd)
+        } else {
+            CardComputerUtils.resolveBarGranularity(BarChartGranularity.AUTO, currentStart, currentEnd)
+        }
+        val granularity = with(CardComputerUtils) { chartGranularity.toLegacyGranularity() }
         val today = System.currentTimeMillis()
-        val buckets = CardComputerUtils.generateBuckets(currentStart, currentEnd, granularity)
+        val buckets = if (scrollable) {
+            CardComputerUtils.generateAlignedBuckets(currentStart, currentEnd, chartGranularity)
+        } else {
+            CardComputerUtils.generateBuckets(currentStart, currentEnd, granularity)
+        }
 
         // Binary search: last bucket whose start is ≤ today.
         val todayBucketIndex = run {
@@ -98,7 +110,8 @@ class IncomeExpenseBarCardComputer(
             buckets = series.points,
             granularity = granularity,
             currency = input.targetCurrency,
-            todayBucketIndex = todayBucketIndex
+            todayBucketIndex = todayBucketIndex,
+            chartGranularity = chartGranularity
         )
     }
 

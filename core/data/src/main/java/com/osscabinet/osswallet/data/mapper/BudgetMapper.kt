@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.data.mapper
 
 import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
 import com.osscabinet.ossWallet.data.local.entity.BudgetWithFilter
+import com.osscabinet.ossWallet.domain.model.AdvancedFilterCriteria
 import com.osscabinet.ossWallet.domain.model.Budget
 
 fun BudgetWithFilter.toDomain(): Budget {
@@ -26,6 +27,7 @@ fun BudgetWithFilter.toDomain(): Budget {
         isArchived = budget.isArchived,
         profileId = budget.profileId,
         note = budget.note,
+        advanced = AdvancedFilterCriteria.from(filterDomain.filter),
         filterId = budget.filterId
     )
 }

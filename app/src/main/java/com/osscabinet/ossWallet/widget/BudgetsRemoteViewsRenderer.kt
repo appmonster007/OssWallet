@@ -96,12 +96,12 @@ object BudgetsRemoteViewsRenderer {
             views.setTextColor(R.id.tv_budgets_empty_text, palette.onSurfaceVariant)
         }
 
-        views.removeAllViews(R.id.ll_widget_header_extra)
+        WidgetHeader.clearExtras(views)
         if (rows.isNotEmpty()) {
-            if (overCount > 0) addChip(context, views, "$overCount OVER", R.drawable.widget_budget_chip_negative, R.color.widget_negative, palette?.negative)
-            if (nearCount > 0) addChip(context, views, "$nearCount NEAR", R.drawable.widget_budget_chip_warning, R.color.widget_warning, palette?.warning)
+            if (overCount > 0) WidgetHeader.addChip(context, views, "$overCount OVER", WidgetHeader.ChipStyle.NEGATIVE, palette)
+            if (nearCount > 0) WidgetHeader.addChip(context, views, "$nearCount NEAR", WidgetHeader.ChipStyle.WARNING, palette)
             if (overCount == 0 && nearCount == 0) {
-                addChip(context, views, "ON TRACK", R.drawable.widget_budget_chip_neutral, R.color.widget_on_surface_variant, palette?.onSurfaceVariant)
+                WidgetHeader.addChip(context, views, "ON TRACK", WidgetHeader.ChipStyle.NEUTRAL, palette)
             }
         }
 
@@ -138,21 +138,6 @@ object BudgetsRemoteViewsRenderer {
         }
 
         return views
-    }
-
-    private fun addChip(
-        context: Context,
-        parent: RemoteViews,
-        text: String,
-        backgroundRes: Int,
-        textColorRes: Int,
-        forcedTextColor: Int?
-    ) {
-        val chip = RemoteViews(context.packageName, R.layout.widget_budgets_chip)
-        chip.setTextViewText(R.id.tv_budgets_chip, text)
-        chip.setInt(R.id.tv_budgets_chip, "setBackgroundResource", backgroundRes)
-        chip.setTextColor(R.id.tv_budgets_chip, forcedTextColor ?: context.getColor(textColorRes))
-        parent.addView(R.id.ll_widget_header_extra, chip)
     }
 
     private fun buildRow(context: Context, row: BudgetWidgetRow, palette: WidgetPalette?): RemoteViews {

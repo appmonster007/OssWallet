@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Row count follows the widget's height (see AccountsRemoteViewsRenderer): 3 accounts at the
+     4x2 size, up to 6 when stretched taller. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+        android:description="@string/widget_accounts_description"
+        android:initialLayout="@layout/widget_accounts_loading"
+        android:minWidth="180dp"
+        android:minHeight="110dp"
+        android:minResizeWidth="180dp"
+        android:minResizeHeight="110dp"
+        android:targetCellWidth="4"
+        android:targetCellHeight="2"
+        android:resizeMode="horizontal|vertical"
+        android:updatePeriodMillis="1800000"
+        android:configure="com.osscabinet.ossWallet.widget.AccountsWidgetConfigActivity"
+        android:previewLayout="@layout/widget_accounts_preview"
+        android:widgetCategory="home_screen"
+        android:widgetFeatures="reconfigurable" />

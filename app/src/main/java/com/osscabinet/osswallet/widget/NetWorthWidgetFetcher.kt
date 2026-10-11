@@ -45,7 +45,6 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
                 ),
                 config = NetWorthCardConfig(
                     cardId = "nw_widget_$widgetId",
-                    fontSize = config.fontSize,
                     showComparison = config.showComparison,
                     perspective = config.perspective,
                     excludeInternalTransfers = config.excludeInternalTransfers,
@@ -85,7 +84,6 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
         prefs[NetWorthWidgetKeys.NET_WORTH_COMPARISON] =
             buildComparisonText(netWorth, prev?.netWorth, config.showComparison) ?: ""
         prefs[NetWorthWidgetKeys.PERIOD_LABEL] = config.timelineLabel
-        prefs[NetWorthWidgetKeys.FONT_SIZE] = config.fontSize
         prefs[NetWorthWidgetKeys.BASE_CURRENCY] = common.baseCurrency
         prefs[NetWorthWidgetKeys.PERSPECTIVE_LABEL] = if (isCashFlow) "Cash Flow" else "Accounting"
         prefs[NetWorthWidgetKeys.THEME] = config.theme.name

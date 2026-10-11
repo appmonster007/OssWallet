@@ -15,18 +15,18 @@
             android:gravity="center_vertical"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="4dp">
+            android:paddingTop="8dp"
+            android:paddingBottom="6dp">
 
         <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:fontFamily="@font/manrope"
-                android:textColor="@color/widget_on_surface"
-                android:textSize="13sp"
+                android:fontFamily="@font/jetbrains_mono"
+                android:textColor="@color/widget_on_surface_variant"
+                android:textSize="10sp"
                 android:textStyle="bold"
-                android:text="Recent Activities" />
+                android:text="RECENT ACTIVITIES" />
 
         <TextView
                 android:layout_width="wrap_content"
@@ -40,8 +40,9 @@
                 android:text="VIEW ALL" />
 
         <ImageView
-                android:layout_width="14dp"
-                android:layout_height="14dp"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="8dp"
                 android:src="@drawable/widget_ic_more_horiz"
                 android:contentDescription="@null" />
 

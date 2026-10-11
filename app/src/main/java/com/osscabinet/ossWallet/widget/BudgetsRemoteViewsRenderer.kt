@@ -11,6 +11,7 @@ import android.widget.RemoteViews
 import androidx.datastore.preferences.core.Preferences
 import com.osscabinet.ossWallet.MainActivity
 import com.osscabinet.ossWallet.R
+import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.BudgetPaceStatus
 import kotlinx.serialization.json.Json
 
@@ -28,7 +29,7 @@ import kotlinx.serialization.json.Json
 object BudgetsRemoteViewsRenderer {
 
     /** Height the header shell takes, and what one row takes (10dp gap included), in dp. */
-    private const val HEADER_HEIGHT_DP = 30
+    private const val HEADER_HEIGHT_DP = 36
     private const val ROW_HEIGHT_DP = 56
     /** A launcher's reported height runs slightly under the real one; the 4x2 floor is 110dp. */
     private const val ROW_SLACK_DP = 12
@@ -86,6 +87,7 @@ object BudgetsRemoteViewsRenderer {
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_budgets_main)
         views.setTextViewText(R.id.tv_widget_header_title, "BUDGETS")
+        WidgetHeader.bindIcon(context, views, CardType.BUDGETS, palette)
         if (palette != null) {
             views.setInt(R.id.ll_widget_root, "setBackgroundColor", palette.surface)
             views.setTextColor(R.id.tv_widget_header_title, palette.onSurfaceVariant)

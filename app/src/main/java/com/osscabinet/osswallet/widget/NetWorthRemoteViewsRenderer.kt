@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.SizeF
-import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
@@ -15,6 +14,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.osscabinet.ossWallet.MainActivity
 import com.osscabinet.ossWallet.R
+import com.osscabinet.ossWallet.domain.card.CardType
 
 /**
  * Preference keys written by [NetWorthWidgetFetcher]. Plays the same role
@@ -30,7 +30,6 @@ object NetWorthWidgetKeys {
     val NET_WORTH = stringPreferencesKey("nw_net_worth")
     val NET_WORTH_COMPARISON = stringPreferencesKey("nw_comparison")
     val PERIOD_LABEL = stringPreferencesKey("nw_period_label")
-    val FONT_SIZE = stringPreferencesKey("nw_font_size")
     val BASE_CURRENCY = stringPreferencesKey("nw_base_currency")
     val PERSPECTIVE_LABEL = stringPreferencesKey("nw_perspective_label")
     /** Name of a [WidgetTheme] constant — forces LIGHT/DARK regardless of the device's current night mode, or SYSTEM to leave every color/drawable as XML already declares it. */
@@ -164,13 +163,6 @@ object NetWorthRemoteViewsRenderer {
         )
     }
 
-    private fun fontSizeSp(fontSize: String?): Float = when (fontSize) {
-        "Small" -> 18f
-        "Large" -> 24f
-        "X-Large" -> 32f
-        else -> 20f
-    }
-
     /**
      * [NetWorthWidgetKeys.NET_WORTH_COMPARISON] (and every per-cell *_CMP key) is a bare
      * "+4.2%"/"-4.2%" (see buildComparisonText) — mirrors NetWorthCard's own
@@ -227,6 +219,7 @@ object NetWorthRemoteViewsRenderer {
     private fun bindRow1(views: RemoteViews, prefs: Preferences, context: Context, widgetId: Int, palette: WidgetPalette?) {
         val perspectiveLabel = prefs[NetWorthWidgetKeys.PERSPECTIVE_LABEL] ?: "Cash Flow"
         views.setTextViewText(R.id.tv_widget_header_title, "NET WORTH · ${perspectiveLabel.uppercase()}")
+        WidgetHeader.bindIcon(context, views, CardType.NET_WORTH, palette)
         if (palette != null) {
             views.setTextColor(R.id.tv_widget_header_title, palette.onSurfaceVariant)
             views.setInt(R.id.iv_widget_header_settings, "setColorFilter", palette.onSurfaceVariant)
@@ -256,11 +249,6 @@ object NetWorthRemoteViewsRenderer {
         )
 
         views.setTextViewText(R.id.tv_nw_row1_amount, prefs[NetWorthWidgetKeys.NET_WORTH] ?: "")
-        views.setTextViewTextSize(
-            R.id.tv_nw_row1_amount,
-            TypedValue.COMPLEX_UNIT_SP,
-            fontSizeSp(prefs[NetWorthWidgetKeys.FONT_SIZE])
-        )
         if (palette != null) {
             views.setTextColor(R.id.tv_nw_row1_amount, palette.onSurface)
         }

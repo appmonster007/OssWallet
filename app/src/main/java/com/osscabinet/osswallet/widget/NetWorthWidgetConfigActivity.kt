@@ -1,18 +1,9 @@
 package com.osscabinet.ossWallet.widget
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
 class NetWorthWidgetConfigActivity : BaseWidgetConfigActivity<NetWorthWidgetConfig>() {
@@ -44,14 +35,6 @@ internal fun NetWorthWidgetConfigScreen(
         onBack = onBack,
         onSave = onSave
     ) {
-        WidgetConfigSectionHeader("Font Size")
-        FontSizeOptions(
-            selected = config.fontSize,
-            onSelect = { onConfigChange(config.copy(fontSize = it)) }
-        )
-
-        WidgetConfigDivider()
-
         EntrySwitchRow(
             label = "Show Comparison",
             subtitle = "Compare with previous period",
@@ -88,26 +71,5 @@ internal fun NetWorthWidgetConfigScreen(
             onFilterChange = { onConfigChange(config.copy(filter = it)) },
             onClose = onBack
         )
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun FontSizeOptions(
-    selected: String,
-    onSelect: (String) -> Unit
-) {
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        listOf("Small", "Medium", "Large", "X-Large").forEach { size ->
-            FilterChip(
-                selected = size == selected,
-                onClick = { onSelect(size) },
-                label = { Text(size, style = AppTextStyles.chipLabel) }
-            )
-        }
     }
 }

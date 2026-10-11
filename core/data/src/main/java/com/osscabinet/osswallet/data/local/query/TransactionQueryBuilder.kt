@@ -19,22 +19,25 @@ class TransactionQueryBuilder {
         profileId: Int,
         filter: TransactionFilter,
         plan: AggregationPlanner.AggregationPlan,
-        excludeInternalTransfers: Boolean = false
+        excludeInternalTransfers: Boolean = false,
+        restrictToIds: Set<Long>? = null
     ): SupportSQLiteQuery {
         return buildQuery(
             profileId,
             filter,
             plan = plan,
-            excludeInternalTransfers = excludeInternalTransfers
+            excludeInternalTransfers = excludeInternalTransfers,
+            restrictToIds = restrictToIds
         )
     }
 
     fun buildListQuery(
         profileId: Int,
         filter: TransactionFilter,
-        limit: Int? = null
+        limit: Int? = null,
+        restrictToIds: Set<Long>? = null
     ): SupportSQLiteQuery {
-        return buildQuery(profileId, filter, limit = limit)
+        return buildQuery(profileId, filter, limit = limit, restrictToIds = restrictToIds)
     }
 
     private fun buildQuery(
@@ -42,7 +45,8 @@ class TransactionQueryBuilder {
         filter: TransactionFilter,
         plan: AggregationPlanner.AggregationPlan? = null,
         limit: Int? = null,
-        excludeInternalTransfers: Boolean = false
+        excludeInternalTransfers: Boolean = false,
+        restrictToIds: Set<Long>? = null
     ): SupportSQLiteQuery {
         val select = StringBuilder("SELECT ")
         val group = StringBuilder("GROUP BY ")
@@ -144,81 +148,8 @@ class TransactionQueryBuilder {
             where.append(" AND NOT (transactionType IN ('transfer_inflow','transfer_outflow') AND targetAccountId IN ($placeholders))")
             args.addAll(filter.accountIds)
         }
-        if (filter.categoryIds.isNotEmpty()) {
-            val placeholders = filter.categoryIds.joinToString(",") { "?" }
-            where.append(" AND categoryId IN ($placeholders)")
-            args.addAll(filter.categoryIds)
-        }
-        if (filter.transactionTypes.isNotEmpty()) {
-            val placeholders = filter.transactionTypes.joinToString(",") { "?" }
-            where.append(" AND transactionType IN ($placeholders)")
-            args.addAll(filter.transactionTypes.map { it.value })
-        }
-        if (filter.currencies.isNotEmpty()) {
-            val placeholders = filter.currencies.joinToString(",") { "?" }
-            where.append(" AND currency IN ($placeholders)")
-            args.addAll(filter.currencies)
-        }
-
-        // Amount Filters
-        val minAmount = filter.minAmount
-        if (minAmount != null) {
-            where.append(" AND ABS(CAST(amount AS REAL)) >= ?")
-            args.add(minAmount)
-        }
-        val maxAmount = filter.maxAmount
-        if (maxAmount != null) {
-            where.append(" AND ABS(CAST(amount AS REAL)) <= ?")
-            args.add(maxAmount)
-        }
-
-        if (filter.paymentMethods.isNotEmpty()) {
-            val placeholders = filter.paymentMethods.joinToString(",") { "?" }
-            where.append(" AND paymentMethod IN ($placeholders)")
-            args.addAll(filter.paymentMethods)
-        }
-
-        // Warranty Filters
-        if (filter.hasWarranty == true) {
-            where.append(" AND warrantyExpiration IS NOT NULL")
-        } else if (filter.hasWarranty == false) {
-            where.append(" AND warrantyExpiration IS NULL")
-        }
-        val warrantyExpirationStart = filter.warrantyExpirationStart
-        if (warrantyExpirationStart != null) {
-            where.append(" AND warrantyExpiration >= ?")
-            args.add(warrantyExpirationStart)
-        }
-        val warrantyExpirationEnd = filter.warrantyExpirationEnd
-        if (warrantyExpirationEnd != null) {
-            where.append(" AND warrantyExpiration <= ?")
-            args.add(warrantyExpirationEnd)
-        }
-
-        if (filter.tags.isNotEmpty()) {
-            where.append(" AND (")
-            filter.tags.forEachIndexed { i, tag ->
-                if (i > 0) where.append(" OR ")
-                where.append("tags LIKE ?")
-                args.add("%$tag%")
-            }
-            where.append(")")
-        }
-
-        // Text & Status Filters
-        if (!filter.queryNote.isNullOrBlank()) {
-            where.append(" AND note LIKE ?")
-            args.add("%${filter.queryNote}%")
-        }
-        if (!filter.queryPayee.isNullOrBlank()) {
-            where.append(" AND payee LIKE ?")
-            args.add("%${filter.queryPayee}%")
-        }
-        if (filter.statuses.isNotEmpty()) {
-            val placeholders = filter.statuses.joinToString(",") { "?" }
-            where.append(" AND status IN ($placeholders)")
-            args.addAll(filter.statuses.map { it.name })
-        }
+        FilterSql.appendCriteria(where, args, filter)
+        FilterSql.appendIdRestriction(where, restrictToIds)
 
         // 4. Combine
         var finalQuery = select.toString() + where.toString()

@@ -101,7 +101,8 @@ fun FilterSheetContent(
     accountNames: Map<String, String> = emptyMap(),
     onAddTag: (String, Int) -> Unit = { _, _ -> },
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
-    baseFilter: TransactionFilter = TransactionFilter()
+    baseFilter: TransactionFilter = TransactionFilter(),
+    scrollable: Boolean = true
 ) {
     var localFilter by rememberSaveable(saver = TransactionFilterSaver) { mutableStateOf(filter) }
 
@@ -152,7 +153,7 @@ fun FilterSheetContent(
         modifier = modifier
             .fillMaxWidth()
             .imePadding()
-            .verticalScroll(rememberScrollState())
+            .then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier)
             .background(backgroundColor)
             .padding(horizontal = AeonTheme.dimensions.screenPadding)
             .padding(top = if (hasHeroHeader) AeonTheme.dimensions.spacingLg else AeonTheme.dimensions.spacingMd)
@@ -195,7 +196,7 @@ fun FilterSheetContent(
         }
 
         // 1. Base Scope Indicator (Standardized)
-        val hasBaseFilters = countActiveFilters(baseFilter) > 0
+        val hasBaseFilters = hasBaseScope(baseFilter)
         if (hasBaseFilters) {
             Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
                 Text(

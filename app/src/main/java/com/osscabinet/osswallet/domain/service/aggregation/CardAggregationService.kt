@@ -1,9 +1,12 @@
 package com.osscabinet.ossWallet.domain.service.aggregation
 
+import com.osscabinet.ossWallet.domain.model.LoanStatus
 import com.osscabinet.ossWallet.domain.card.CardComputerUtils
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
+import com.osscabinet.ossWallet.domain.card.NetWorthTrend
+import com.osscabinet.ossWallet.domain.card.NetWorthTrendPoint
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -90,11 +93,70 @@ object CardAggregationService {
             } else null
         } else null
 
+        val trend = if (config.showTrendLine) {
+            computeNetWorthTrend(queryService, profileId, input, currentFilter)
+        } else emptyList()
+
         return CardRenderData.NetWorth(
             config = config,
             currentPeriodMetrics = currentPeriodMetrics,
             currency = input.targetCurrency,
-            previousPeriodMetrics = previousPeriodMetrics
+            previousPeriodMetrics = previousPeriodMetrics,
+            trend = trend
+        )
+    }
+
+    /**
+     * Running net worth across the card's period. Uses the same balance semantics as the headline
+     * figure (all accounts in the filter, no category / tag filters, internal transfers included),
+     * so the last point matches the figure when the period ends today.
+     */
+    private suspend fun computeNetWorthTrend(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        input: CardInput,
+        currentFilter: TransactionFilter
+    ): List<NetWorthTrendPoint> {
+        val balanceFilter = currentFilter.toBalanceFilter()
+        val range = currentFilter.timelineRange
+        val zone = TimelineService.systemZoneId
+        val now = System.currentTimeMillis()
+
+        val (rawStart, rawEnd) = TimelineService.getDateRange(range)
+        val end = minOf(rawEnd ?: now, now)
+        val start = rawStart ?: run {
+            val minTs = queryService.getMinTransactionTimestamp(profileId) ?: return emptyList()
+            Instant.ofEpochMilli(minTs).atZone(zone).toLocalDate()
+                .atStartOfDay(zone).toInstant().toEpochMilli()
+        }
+        if (start >= end) return emptyList()
+
+        val buckets = CardComputerUtils.generateBuckets(
+            start, end, CardComputerUtils.resolveGranularity(start, end)
+        )
+        if (buckets.size < 2) return emptyList()
+
+        val openingByCurrency: Map<String, BigDecimal> = if (rawStart == null) emptyMap() else {
+            TransactionAggregationService.getSummaryByCurrency(
+                queryService, profileId,
+                balanceFilter.copy(
+                    timelineRange = TimelineRange.CustomRange(end = start - 1, excludeFuture = range.excludeFuture)
+                )
+            ).getOrDefault(emptyMap()).mapValues { it.value.netFlow }
+        }
+
+        val dailyNet: Map<String, Map<String, BigDecimal>> = TransactionAggregationService.getSummaryByCurrencyByDay(
+            queryService, profileId,
+            balanceFilter.copy(timelineRange = TimelineRange.CustomRange(start, end, excludeFuture = range.excludeFuture)),
+            false
+        ).getOrDefault(emptyMap()).mapValues { (_, byCurrency) -> byCurrency.mapValues { it.value.netFlow } }
+
+        return NetWorthTrend.build(
+            buckets = buckets,
+            openingByCurrency = openingByCurrency,
+            dailyNetByCurrency = dailyNet,
+            targetCurrency = input.targetCurrency,
+            exchangeRates = input.exchangeRates
         )
     }
 
@@ -175,7 +237,14 @@ object CardAggregationService {
                 amountInBase = CurrencyService.convertAmount(summary.netFlow, curr, input.targetCurrency, input.exchangeRates, 10)
                     .setScale(CurrencyService.precision, RoundingMode.HALF_UP)
             )
-        }.sortedByDescending { it.amountInBase.abs() }
+        }.let { items ->
+            val visible = if (config.hideZeroBalances) items.filter { it.amount.signum() != 0 } else items
+            when (config.sortBy) {
+                CurrencySortMode.BIGGEST -> visible.sortedByDescending { it.amountInBase.abs() }
+                CurrencySortMode.SMALLEST -> visible.sortedBy { it.amountInBase.abs() }
+                CurrencySortMode.NAME -> visible.sortedBy { it.currency }
+            }
+        }
 
         return CardRenderData.CurrencyBalances(
             config = config,
@@ -276,7 +345,9 @@ object CardAggregationService {
                     (tagSet.isEmpty() || budget.tags.isEmpty() || budget.tags.any { it in tagSet })
         }
 
-        val items = budgets.take(config.maxItems).map { budget ->
+        // Sorting needs every budget's progress, so only a saved-order card can stop early.
+        val candidates = if (config.sortBy == BudgetSortMode.SAVED) budgets.take(config.maxItems) else budgets
+        val progress = candidates.map { budget ->
             val budgetFilter = BudgetService.buildTransactionFilter(budget, now, input.categories, effectiveFilter.timelineRange.excludeFuture)
             val finalFilter = budgetFilter.copy(
                 accountIds = if (budget.accountIds.isEmpty()) effectiveFilter.accountIds else budget.accountIds
@@ -292,8 +363,14 @@ object CardAggregationService {
                 computeBudgetRollover(queryService, profileId, budget, input, effectiveFilter.accountIds, now, effectiveFilter.timelineRange.excludeFuture)
             } else BigDecimal.ZERO
 
-            BudgetService.buildProgress(budget, spent, rollover)
+            BudgetService.buildProgress(budget, spent, rollover, BudgetService.elapsedFraction(budget, now))
         }
+
+        val items = when (config.sortBy) {
+            BudgetSortMode.SAVED -> progress
+            BudgetSortMode.MOST_USED -> progress.sortedByDescending { it.percentage }
+            BudgetSortMode.AHEAD_OF_PACE -> progress.sortedByDescending { it.percentage - (it.elapsedFraction ?: it.percentage) }
+        }.take(config.maxItems)
 
         return CardRenderData.Budgets(
             config = config,
@@ -367,11 +444,21 @@ object CardAggregationService {
         }
 
         val filtered = baseFiltered.filter { loan ->
-            (mergedFilter.accountIds.isEmpty() || loan.linkedAccountId.isBlank() || loan.linkedAccountId in mergedFilter.accountIds) &&
+            (config.showSettled || loan.status == LoanStatus.ACTIVE) &&
+                    (mergedFilter.accountIds.isEmpty() || loan.linkedAccountId.isBlank() || loan.linkedAccountId in mergedFilter.accountIds) &&
                     (mergedFilter.currencies.isEmpty() || loan.currency in mergedFilter.currencies)
         }
 
-        val items = filtered.take(config.maxItems).map { loan: Loan ->
+        // Order before the cut so the rows shown are the ones the user asked for. Only "most owed"
+        // needs every loan's summary; the other orders work from the loans themselves.
+        val ordered = when (config.sortBy) {
+            LoanSortMode.DUE_SOONEST -> LoanService.sortByDueDate(filtered)
+            LoanSortMode.NAME -> LoanService.sortByName(filtered)
+            else -> filtered
+        }
+        val toSummarize = if (config.sortBy == LoanSortMode.MOST_OWED) ordered else ordered.take(config.maxItems)
+
+        val summaries = toSummarize.map { loan: Loan ->
             val loanFilter = LoanService.buildTransactionFilter(loan, input.categories)
             
             val summaryByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, loanFilter)
@@ -397,6 +484,9 @@ object CardAggregationService {
                 interestAccrued = interest.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
             )
         }
+        val items = if (config.sortBy == LoanSortMode.MOST_OWED) {
+            LoanService.sortByOwed(summaries, input.targetCurrency, input.exchangeRates).take(config.maxItems)
+        } else summaries
         return CardRenderData.Loans(
             config = config,
             items = items,

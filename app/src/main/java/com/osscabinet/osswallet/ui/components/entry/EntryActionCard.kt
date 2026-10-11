@@ -115,6 +115,7 @@ fun EntryActionCard(
     )
 
     GlassSurface(
+        glassToggle = GlassVariant.Item,
         modifier = modifier
             .height(64.dp)
             .graphicsLayer {

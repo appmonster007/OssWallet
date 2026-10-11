@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.card.CardDataComputer
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.card.PlannedPaymentsSummary
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentSummary
@@ -41,7 +42,12 @@ class PlannedPaymentsCardComputer :
                     (tagSet.isEmpty() || pp.tags.any { it in tagSet })
         }
 
-        val (rangeStart, rangeEnd) = TimelineService.getDateRange(mergedFilter.timelineRange)
+        val (rangeStart, _) = TimelineService.getDateRange(mergedFilter.timelineRange)
+        // Upcoming payments are in the future by definition, so the horizon ignores "exclude
+        // future" (which would cap the range at now and always leave this list empty).
+        val (_, rangeEnd) = TimelineService.getDateRange(
+            mergedFilter.timelineRange.withExcludeFuture(false)
+        )
 
         // Overdue: past-due payments, optionally bounded by the timeline start so stale items
         // outside the selected range are not surfaced.
@@ -73,34 +79,55 @@ class PlannedPaymentsCardComputer :
             }
         }
 
-        val overdueSummaries = shownOverdue.map { p ->
-            PlannedPaymentSummary(
+        val categoriesById = input.categories.associateBy { it.id }
+        val accountsById = input.accounts.associateBy { it.id }
+
+        fun summarize(
+            p: com.osscabinet.ossWallet.domain.model.PlannedPayment,
+            scheduledDate: Long,
+            isOverdue: Boolean
+        ): PlannedPaymentSummary {
+            val category = categoriesById[p.categoryId]
+            return PlannedPaymentSummary(
                 id = p.id,
                 name = p.name,
                 amount = p.amount,
                 currency = p.currency,
                 entryMode = p.entryMode,
-                scheduledDate = p.schedule.nextDueDate,
-                isOverdue = true
+                scheduledDate = scheduledDate,
+                isOverdue = isOverdue,
+                categoryName = category?.name.orEmpty(),
+                categoryIcon = category?.iconName,
+                categoryColor = category?.colorHex ?: -1,
+                accountName = p.accountId?.let { accountsById[it]?.name }.orEmpty(),
+                note = p.note
             )
         }
-        val upcomingSummaries = shownUpcoming.map { item ->
-            PlannedPaymentSummary(
-                id = item.plannedPayment.id,
-                name = item.plannedPayment.name,
-                amount = item.plannedPayment.amount,
-                currency = item.plannedPayment.currency,
-                entryMode = item.plannedPayment.entryMode,
-                scheduledDate = item.scheduledDate,
-                isOverdue = false
-            )
+
+        val overdueSummaries = shownOverdue.map { summarize(it, it.schedule.nextDueDate, true) }
+        val upcomingSummaries = shownUpcoming.map {
+            summarize(it.plannedPayment, it.scheduledDate, false)
         }
+
+        // Totals cover every payment due in the window, not just the rows shown above.
+        val summary = if (config.summaryDays > 0) {
+            PlannedPaymentsSummary.build(
+                payments = filteredPayments,
+                overdue = overdue,
+                now = now,
+                days = config.summaryDays,
+                countOverdue = config.countOverdueInSummary,
+                targetCurrency = input.targetCurrency,
+                exchangeRates = input.exchangeRates
+            )
+        } else null
 
         return CardRenderData.PlannedPayments(
             config = config,
             items = overdueSummaries + upcomingSummaries,
             currency = input.targetCurrency,
-            exchangeRates = input.exchangeRates
+            exchangeRates = input.exchangeRates,
+            summary = summary
         )
     }
 }

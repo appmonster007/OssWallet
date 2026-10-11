@@ -46,6 +46,7 @@ fun UnifiedCardRenderer(
                     displayCurrency = renderData.currency,
                     config = renderData.config,
                     previousPeriodMetrics = renderData.previousPeriodMetrics,
+                    trend = renderData.trend,
                     callbacks = cardWithCallbacks.callbacks,
                     layoutProps = effectiveProps
                 )
@@ -148,6 +149,7 @@ fun UnifiedCardRenderer(
                     exchangeRates = renderData.exchangeRates,
                     config = renderData.config,
                     previousItems = renderData.previousItems,
+                    summary = renderData.summary,
                     callbacks = cardWithCallbacks.callbacks,
                     layoutProps = effectiveProps
                 )

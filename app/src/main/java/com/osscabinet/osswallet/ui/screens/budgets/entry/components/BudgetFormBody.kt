@@ -119,7 +119,9 @@ fun BudgetFormBody(
                     AeonTimelinePeriodSelector(
                         currentRange = state.timelineRange,
                         onRangeSelected = { onEvent(BudgetEntryEvent.SetTimelineRange(it)) },
-                        swipeEntireComponent = false
+                        swipeEntireComponent = false,
+                        defaultThisPeriod = com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH,
+                        defaultExcludeFuture = false
                     )
 
                     // Budget's own note

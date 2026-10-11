@@ -11,6 +11,8 @@ import com.osscabinet.ossWallet.domain.card.CashFlowTimePoint
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
+import com.osscabinet.ossWallet.domain.model.settings.BarChartGranularity
+import com.osscabinet.ossWallet.domain.model.settings.BarChartViewMode
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
@@ -66,8 +68,17 @@ class CashFlowComparisonCardComputer(
         val dayFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
         val masterEnd = if (excludeFuture) minOf(currentEnd, today) else currentEnd
-        val granularity = CardComputerUtils.resolveGranularity(currentStart, currentEnd)
-        val masterBuckets = CardComputerUtils.generateBuckets(currentStart, masterEnd, granularity)
+        val scrollable = config.viewMode == BarChartViewMode.SCROLLABLE
+        val chartGranularity = CardComputerUtils.resolveBarGranularity(
+            if (scrollable) config.scrollGranularity else BarChartGranularity.AUTO,
+            currentStart, currentEnd
+        )
+        val granularity = with(CardComputerUtils) { chartGranularity.toLegacyGranularity() }
+        // Scrollable mode uses calendar-aligned buckets; fixed mode keeps the original range-start buckets.
+        fun bucketsFor(start: Long, end: Long) =
+            if (scrollable) CardComputerUtils.generateAlignedBuckets(start, end, chartGranularity)
+            else CardComputerUtils.generateBuckets(start, end, granularity)
+        val masterBuckets = bucketsFor(currentStart, masterEnd)
 
         // 1. Current series — single DB call for full range, partitioned in-memory
         val currentDailyData = TransactionAggregationService.getSummaryByCurrencyByDay(
@@ -145,12 +156,12 @@ class CashFlowComparisonCardComputer(
             perspective = config.perspective
         )
 
-        val fullCurrentBuckets = if (excludeFuture) masterBuckets.size else CardComputerUtils.generateBuckets(currentStart, currentEnd, granularity).size
+        val fullCurrentBuckets = if (excludeFuture) masterBuckets.size else bucketsFor(currentStart, currentEnd).size
 
         val fullPrevBucketsCount = if (excludeFuture) {
             masterBuckets.size
         } else if (prevStart != null && prevEnd != null) {
-            CardComputerUtils.generateBuckets(prevStart, prevEnd, granularity).size
+            bucketsFor(prevStart, prevEnd).size
         } else 0
 
         val lastYearBucketsCount = if (excludeFuture) {
@@ -160,7 +171,7 @@ class CashFlowComparisonCardComputer(
                 .minusYears(1).toInstant().toEpochMilli()
             val lyEnd = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentEnd), zone)
                 .minusYears(1).toInstant().toEpochMilli()
-            CardComputerUtils.generateBuckets(lyStart, lyEnd, granularity).size
+            bucketsFor(lyStart, lyEnd).size
         }
 
         return CardRenderData.CashFlowComparison(
@@ -173,7 +184,8 @@ class CashFlowComparisonCardComputer(
             periodLabels = masterBuckets.map { it.third },
             currentTotalBuckets = fullCurrentBuckets,
             previousTotalBuckets = fullPrevBucketsCount,
-            lastYearTotalBuckets = lastYearBucketsCount
+            lastYearTotalBuckets = lastYearBucketsCount,
+            chartGranularity = chartGranularity
         )
     }
 

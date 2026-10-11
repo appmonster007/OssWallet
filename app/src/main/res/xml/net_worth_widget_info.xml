@@ -1,17 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- "Trend" (strip tier) picker entry — targets 2 grid rows. Per the n-cell height formula
+     h(n) = 70dp*n - 30dp: h(2) = 110dp, which is what minHeight/targetCellHeight declare here
+     (targetCellHeight alone, without a matching minHeight, is just a hint some launchers
+     ignore — both must agree). minWidth = w(3) = 180dp for the declared 3-column width.
+     maxResizeHeight = h(3) = 180dp — card's own target height, and the hard ceiling for the
+     whole widget: card is the last tier, so there's nothing to grow INTO past it, and a
+     launcher that rounds declared dp up to its own grid cells (observed on a real device:
+     this provider's 110dp placement rendered tall enough to trigger the card tier) made an
+     unbounded maxResizeHeight stretch card's 3 equal-weight rows into oddly-spaced, proportion-
+     less shapes at 4-5 "grid row" sizes. Capping it here removes that headroom entirely.
+     NetWorthRemoteViewsRenderer's MICRO_HEIGHT_DP/STRIP_HEIGHT_DP are this file's and
+     net_worth_widget_info_card.xml's own minHeight values (110dp/180dp) — not independently
+     guessed midpoints — for the same reason: keep the declared-size and the
+     detected-at-render-time threshold identical everywhere. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-        android:description="@string/app_name"
+        android:description="@string/widget_net_worth_strip_description"
         android:initialLayout="@layout/widget_net_worth"
         android:minWidth="180dp"
-        android:minHeight="50dp"
+        android:minHeight="110dp"
         android:minResizeWidth="180dp"
         android:minResizeHeight="50dp"
-        android:maxResizeHeight="200dp"
+        android:maxResizeHeight="280dp"
         android:targetCellWidth="3"
-        android:targetCellHeight="1"
+        android:targetCellHeight="2"
         android:resizeMode="horizontal|vertical"
         android:updatePeriodMillis="1800000"
         android:configure="com.osscabinet.ossWallet.widget.NetWorthWidgetConfigActivity"
         android:previewLayout="@layout/widget_net_worth_preview"
-        android:previewImage="@mipmap/ic_launcher"
-        android:widgetCategory="home_screen" />
+        android:widgetCategory="home_screen"
+        android:widgetFeatures="reconfigurable" />

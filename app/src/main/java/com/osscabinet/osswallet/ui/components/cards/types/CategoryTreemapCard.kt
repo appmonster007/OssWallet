@@ -73,6 +73,9 @@ import com.osscabinet.ossWallet.ui.util.toChartColor
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+// TODO(card-upgrade): same grouping threshold, legend rows/sort and per-category change as CategoryPieChartCard.
+// TODO(card-upgrade): share the 'More Categories' grouping with the pie card instead of duplicating it. No change chips on tiles; legend only.
+// See docs/guides/card-upgrade-roadmap.md
 @Composable
 fun CategoryTreemapCard(
     config: CategoryTreemapCardConfig,
@@ -131,6 +134,7 @@ fun CategoryTreemapCard(
             } else false
 
             if (!isMoreCategoriesDrillDown) {
+                // TODO(card-upgrade): hardcoded 2% threshold; read it from config (see roadmap).
                 val mainItems = sorted.filter { it.percentage >= 0.02f }
                 val others =
                     sorted.filter { (it.percentage < 0.02f) && (it.amount.abs() > BigDecimal.ZERO) }
@@ -291,9 +295,12 @@ fun CategoryTreemapCard(
 
             // Summary Section with Total and Comparison
             val total = remember(currentData) { currentData.sumOf { it.amount } }
-            val previousTotalValue = remember(currentData) {
-                if (currentData.any { it.previousAmount != null }) {
-                    currentData.sumOf { it.previousAmount ?: BigDecimal.ZERO }
+            // At the top level, categories hidden for having no spend now still count towards last
+            // period's baseline; summing only what is displayed would understate it.
+            val previousTotalValue = remember(currentData, data, navigationStack.size) {
+                val source = if (navigationStack.size == 1) data else currentData
+                if (source.any { it.previousAmount != null }) {
+                    source.sumOf { it.previousAmount ?: BigDecimal.ZERO }
                 } else null
             }
             ChartSummarySection(
@@ -401,6 +408,7 @@ fun TreemapLegend(
     onToggleBreakdown: (Boolean) -> Unit,
     onItemClick: (CategoryChartData) -> Unit
 ) {
+    // TODO(card-upgrade): hardcoded 5 rows and amount order; add row count and sort settings (see roadmap).
     val displayData = if (showFullBreakdown) data else data.take(5)
 
     Column(

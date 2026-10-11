@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Category Treemap widget — 4x2 tier. Single bitmap (WidgetTreemapRenderer) with cell
+     labels baked in; header shows period + total. Tap-inert. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/widget_inner_surface"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+    <TextView android:id="@+id/tv_ctm_header" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/widget_text_primary" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+
+    <ImageView android:id="@+id/iv_ctm_treemap" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="6dp" android:scaleType="fitXY" />
+
+</LinearLayout>

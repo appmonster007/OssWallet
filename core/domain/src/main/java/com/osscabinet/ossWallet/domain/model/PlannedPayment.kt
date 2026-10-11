@@ -123,5 +123,10 @@ data class PlannedPaymentSummary(
     val currency: String,
     val entryMode: EntryMode,
     val scheduledDate: Long,
-    val isOverdue: Boolean
+    val isOverdue: Boolean,
+    val categoryName: String = "",
+    val categoryIcon: String? = null,
+    val categoryColor: Int = -1,
+    val accountName: String = "",
+    val note: String? = null
 )

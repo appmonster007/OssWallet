@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cash Flow empty state (new tier), shown by CashFlowRemoteViewsRenderer.renderEmpty()
+     when the period has no currency rows. The "Add transaction" pill is rendered but
+     INTENTIONALLY UNWIRED — no PendingIntent, see Phase 1 widget rebuild report: tap
+     deep-links across all three widgets are a cross-cutting follow-up phase. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/widget_surface"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="16dp">
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No transactions yet"
+            android:textColor="@color/widget_text_primary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+    <TextView
+            android:id="@+id/tv_cf_empty_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="center"
+            android:textColor="@color/widget_text_muted"
+            android:textSize="9sp"
+            tools:text="This month income and expenses show up here." />
+
+    <TextView
+            android:id="@+id/tv_cf_empty_add"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/widget_accent_pill_bg"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="Add transaction"
+            android:textColor="@android:color/white"
+            android:textSize="9sp"
+            android:textStyle="bold" />
+
+</LinearLayout>

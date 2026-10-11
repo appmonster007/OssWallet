@@ -50,6 +50,8 @@ import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
+import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.rememberShimmerBrush
 import com.osscabinet.ossWallet.ui.reorderable.ReorderableItem
 import com.osscabinet.ossWallet.ui.reorderable.longPressToTrigger
@@ -293,10 +295,25 @@ private fun CardItem(
         filterSheetEnabled = !disableFilterSheet,
     )
 
-    val effectiveCard = remember(card, screenRules, baseFilter, disableFilterSheet) {
+    // The period a card falls back to: the screen's default when the screen drives the card's
+    // timeline, otherwise the card type's own default. Keeps Reset and the "filtered" indicator
+    // in line with what the card shows out of the box.
+    val screenDrivesTimeline = cardInput.screenOwnsTimeline ||
+            cardInput.filter.timelineRange !is TimelineRange.AllTime
+    val cardBaseFilter = remember(
+        baseFilter, cardConfig.cardType, cardConfig.screenContext, screenDrivesTimeline
+    ) {
+        baseFilter.copy(
+            timelineRange = if (screenDrivesTimeline) DefaultTimeline.INITIAL
+            else CardConfig.createDefault(cardConfig.cardType, cardConfig.screenContext)
+                .filter.timelineRange
+        )
+    }
+
+    val effectiveCard = remember(card, screenRules, cardBaseFilter, disableFilterSheet) {
         card.copyWithRules(
             rules = card.filterRules.layeredWith(screenRules),
-            baseFilter = baseFilter,
+            baseFilter = cardBaseFilter,
             filterSheetEnabled = !disableFilterSheet
         )
     }

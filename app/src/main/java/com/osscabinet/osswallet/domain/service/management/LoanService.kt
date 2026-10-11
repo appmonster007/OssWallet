@@ -23,17 +23,40 @@ object LoanService {
         return (loan.principalAmount - totalPaid).coerceAtLeast(BigDecimal.ZERO)
     }
 
+    /** [Loan.interestRate] is stored as a percentage (3.5 = 3.5%); calculations need the fraction. */
+    private fun annualRateFraction(loan: Loan): BigDecimal? =
+        loan.interestRate?.let { BigDecimal(it.toString()).divide(BigDecimal(100)) }
+
     fun calculateInterestAccrued(loan: Loan, now: Long): BigDecimal {
-        val rate = loan.interestRate ?: return BigDecimal.ZERO
+        val annualRate = annualRateFraction(loan) ?: return BigDecimal.ZERO
         val zone = ZoneId.systemDefault()
         val startDay = Instant.ofEpochMilli(loan.startDate).atZone(zone).toLocalDate()
         val nowDay = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
         val days = java.time.temporal.ChronoUnit.DAYS.between(startDay, nowDay).coerceAtLeast(0)
-        val annualRate = BigDecimal(rate.toDouble())
         return loan.principalAmount
             .multiply(annualRate)
             .multiply(BigDecimal(days))
             .divide(BigDecimal(365), 10, RoundingMode.HALF_UP)
+    }
+
+    /** Loans with an expected settlement date first, earliest first; the rest keep their relative order. */
+    fun sortByDueDate(loans: List<Loan>): List<Loan> =
+        loans.sortedWith(compareBy<Loan>({ it.expectedSettlementDate == null }, { it.expectedSettlementDate }))
+
+    fun sortByName(loans: List<Loan>): List<Loan> = loans.sortedBy { it.name.lowercase() }
+
+    /** Largest amount still owed first (balance plus interest), compared in [targetCurrency]. */
+    fun sortByOwed(
+        summaries: List<LoanSummary>,
+        targetCurrency: String,
+        exchangeRates: ExchangeRateSnapshot
+    ): List<LoanSummary> = summaries.sortedByDescending {
+        CurrencyService.convertAmount(
+            amount = it.remainingBalance + it.interestAccrued,
+            fromCurrency = it.loan.currency,
+            toCurrency = targetCurrency,
+            exchangeRates = exchangeRates
+        )
     }
 
     fun getAmortizationSchedule(
@@ -41,8 +64,7 @@ object LoanService {
         monthlyPayment: BigDecimal,
         startDate: Long
     ): List<AmortizationEntry> {
-        val rate = loan.interestRate ?: return emptyList()
-        val monthlyRate = BigDecimal(rate.toDouble())
+        val monthlyRate = (annualRateFraction(loan) ?: return emptyList())
             .divide(BigDecimal(12), 10, RoundingMode.HALF_UP)
         val zone = ZoneId.systemDefault()
         var date = Instant.ofEpochMilli(startDate).atZone(zone).toLocalDate()
@@ -147,7 +169,7 @@ object LoanService {
             transactionTypes = loan.trackTypes,
             linkedTransactionIds = loan.linkedTransactionIds,
             timelineRange = loan.timelineRange
-        )
+        ).let { loan.advanced.applyTo(it) }
     }
 
     /**

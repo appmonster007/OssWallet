@@ -1,0 +1,140 @@
+package com.osscabinet.ossWallet.widget
+
+import android.content.Context
+import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.osscabinet.ossWallet.di.WidgetDataLoaderEntryPoint
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.computers.BudgetsCardComputer
+import com.osscabinet.ossWallet.domain.model.BudgetPaceStatus
+import com.osscabinet.ossWallet.domain.model.BudgetProgress
+import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.domain.service.management.BudgetService
+import com.osscabinet.ossWallet.ui.util.formatCurrency
+import com.osscabinet.ossWallet.widget.WidgetDataLoader.CommonData
+import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.flow.first
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.math.BigDecimal
+
+object BudgetsWidgetKeys {
+    val IS_LOADED = stringPreferencesKey("budgets_is_loaded")
+    val ROWS_JSON = stringPreferencesKey("budgets_rows_json")
+    /** Budgets over their limit / at or ahead of their alert pace, across all budgets, not just the visible rows. */
+    val OVER_COUNT = stringPreferencesKey("budgets_over_count")
+    val NEAR_COUNT = stringPreferencesKey("budgets_near_count")
+    /** Name of a [WidgetTheme] constant — see NetWorthWidgetKeys.THEME. */
+    val THEME = stringPreferencesKey("budgets_theme")
+}
+
+@Serializable
+data class BudgetWidgetRow(
+    val budgetId: Long,
+    val name: String,
+    val spentFormatted: String,
+    val limitFormatted: String,
+    val remainingFormatted: String,
+    /** spent - limit when over; BudgetProgress.remaining is clamped at zero. */
+    val overByFormatted: String,
+    /** Percent of the limit spent (0..100+); BudgetProgress.percentage is a 0..1+ ratio. */
+    val percentage: Float,
+    /** [BudgetPaceStatus] name. */
+    val pace: String,
+    /** Share (0..100) of the budget's period that has passed; null for All Time budgets. */
+    val elapsedPercent: Int?,
+    val periodLabel: String,
+    val rolloverAmountFormatted: String,
+    val hasRollover: Boolean
+)
+
+/** Drives the widget off the same [BudgetsCardComputer] the dashboard card uses. */
+class BudgetsWidgetFetcher : WidgetDataFetcher {
+    override suspend fun updateState(
+        context: Context,
+        widgetId: Int,
+        common: CommonData,
+        prefs: MutablePreferences
+    ) {
+        val config = BudgetsWidgetPrefsStore(context).loadSafe(widgetId)
+        val ep = EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            WidgetDataLoaderEntryPoint::class.java
+        )
+        val accounts = ep.accountRepository().getAllAccounts(common.profileId).first()
+        val budgets = ep.budgetRepository().getAllBudgets(common.profileId).first()
+
+        val effectiveFilter = config.filter.copy(
+            timelineRange = config.filter.timelineRange.withExcludeFuture(true)
+        )
+        val input = CardInput(
+            profileId = common.profileId,
+            targetCurrency = common.baseCurrency,
+            exchangeRates = ExchangeRateSnapshot(anchor = common.baseCurrency, rates = common.exchangeRates),
+            filter = effectiveFilter,
+            accounts = accounts,
+            categories = emptyList(),
+            budgets = budgets
+        )
+        // Every budget is computed, not just the visible rows: the header chip counts them all,
+        // and the rows are picked by urgency after sorting.
+        val cardConfig = BudgetsCardConfig(
+            cardId = "budgets_widget_$widgetId",
+            filter = effectiveFilter,
+            showArchived = config.showArchived,
+            maxItems = Int.MAX_VALUE
+        )
+        val items = runCatching { BudgetsCardComputer(common.databaseQueryService).compute(input, cardConfig) }
+            .getOrNull()?.items.orEmpty()
+
+        val withPace = items.map { it to BudgetService.paceStatus(it) }
+        // Over first, then budgets spending faster than their period, then near their alert
+        // threshold, then the rest. sortedBy is stable, so saved order holds inside each group.
+        val rows = withPace.sortedBy { (_, pace) -> pace.urgency() }
+            .take(BudgetsWidgetConfig.MAX_ROWS)
+            .map { (progress, pace) -> progress.toRow(pace) }
+
+        prefs[BudgetsWidgetKeys.IS_LOADED] = "true"
+        prefs[BudgetsWidgetKeys.THEME] = config.theme.name
+        prefs[BudgetsWidgetKeys.OVER_COUNT] = withPace.count { it.second == BudgetPaceStatus.OVER }.toString()
+        prefs[BudgetsWidgetKeys.NEAR_COUNT] = withPace.count {
+            it.second == BudgetPaceStatus.AHEAD_OF_PACE || it.second == BudgetPaceStatus.NEAR_LIMIT
+        }.toString()
+        prefs[BudgetsWidgetKeys.ROWS_JSON] = Json.encodeToString(rows)
+    }
+
+    private fun BudgetPaceStatus.urgency() = when (this) {
+        BudgetPaceStatus.OVER -> 0
+        BudgetPaceStatus.AHEAD_OF_PACE -> 1
+        BudgetPaceStatus.NEAR_LIMIT -> 2
+        BudgetPaceStatus.ON_TRACK -> 3
+    }
+
+    private fun BudgetProgress.toRow(pace: BudgetPaceStatus): BudgetWidgetRow {
+        val currency = budget.currency
+        return BudgetWidgetRow(
+            budgetId = budget.id,
+            name = budget.name,
+            spentFormatted = formatCurrency(spent, currency),
+            limitFormatted = formatCurrency(limit, currency),
+            remainingFormatted = formatCurrency(remaining, currency),
+            overByFormatted = formatCurrency((spent - limit).max(BigDecimal.ZERO), currency),
+            percentage = percentage * 100f,
+            pace = pace.name,
+            elapsedPercent = elapsedFraction?.let { (it * 100f).toInt().coerceIn(0, 100) },
+            periodLabel = budget.timelineRange.budgetPeriodLabel(),
+            rolloverAmountFormatted = formatCurrency(rolloverAmount, currency),
+            hasRollover = rolloverAmount.signum() != 0
+        )
+    }
+
+    private fun TimelineRange.budgetPeriodLabel(): String = when (this) {
+        is TimelineRange.AllTime -> "All time"
+        is TimelineRange.ThisPeriod -> period.label
+        is TimelineRange.LastPeriod -> "Last ${period.label}"
+        is TimelineRange.CustomRange -> "Custom range"
+    }
+}

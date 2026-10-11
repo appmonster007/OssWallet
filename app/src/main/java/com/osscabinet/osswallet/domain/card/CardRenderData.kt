@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentSummary
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.analytics.*
+import com.osscabinet.ossWallet.domain.model.settings.BarChartGranularity
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.util.BigDecimalSerializer
 import com.osscabinet.ossWallet.domain.service.*
@@ -47,6 +48,15 @@ data class NetWorthMetrics(
     }
 }
 
+/** One point of the Net Worth trend line: the balance at the end of a bucket. */
+@Serializable
+data class NetWorthTrendPoint(
+    val label: String,
+    val epochMillis: Long,
+    @Serializable(with = BigDecimalSerializer::class)
+    val value: BigDecimal
+)
+
 /**
  * Sealed class hierarchy for unified card rendering data.
  * Every card computation returns a subtype of this class.
@@ -60,7 +70,9 @@ sealed class CardRenderData {
         val config: NetWorthCardConfig,
         val currentPeriodMetrics: NetWorthMetrics,
         val currency: String,
-        val previousPeriodMetrics: NetWorthMetrics? = null
+        val previousPeriodMetrics: NetWorthMetrics? = null,
+        // Running balance per bucket across the card's period; empty when the trend line is off.
+        val trend: List<NetWorthTrendPoint> = emptyList()
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.NET_WORTH
     }
@@ -136,7 +148,9 @@ sealed class CardRenderData {
         val items: List<PlannedPaymentSummary>,
         val currency: String,
         val previousItems: List<PlannedPaymentSummary>? = null,
-        val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
+        val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap()),
+        // Cash due in the next few days; null when the summary is off.
+        val summary: PlannedPaymentsSummary? = null
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.PLANNED_PAYMENTS
     }
@@ -196,7 +210,9 @@ sealed class CardRenderData {
         // Used to draw "End of Period" markers when lengths differ.
         val currentTotalBuckets: Int = 0,
         val previousTotalBuckets: Int = 0,
-        val lastYearTotalBuckets: Int = 0
+        val lastYearTotalBuckets: Int = 0,
+        // Bucket size actually used (never AUTO). `granularity` above maps QUARTER / YEAR to MONTH.
+        val chartGranularity: BarChartGranularity = BarChartGranularity.MONTH
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.CASHFLOW_COMPARISON
     }
@@ -209,7 +225,9 @@ sealed class CardRenderData {
         val currency: String,
         // Index of the last bucket whose start time is ≤ today.
         // -1 means all buckets are in the future. Used to terminate the net line at today.
-        val todayBucketIndex: Int = -1
+        val todayBucketIndex: Int = -1,
+        // Bucket size actually used (never AUTO). `granularity` above maps QUARTER / YEAR to MONTH.
+        val chartGranularity: BarChartGranularity = BarChartGranularity.MONTH
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.INCOME_EXPENSE_BAR
     }
@@ -220,7 +238,9 @@ sealed class CardRenderData {
         val buckets: List<CategorySpendingBucket>,
         val granularity: CashFlowComparisonGranularity,
         val activeCategories: List<CategorySummary>,
-        val currency: String
+        val currency: String,
+        // Bucket size actually used (never AUTO). `granularity` above maps QUARTER / YEAR to MONTH.
+        val chartGranularity: BarChartGranularity = BarChartGranularity.MONTH
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.CATEGORY_SPENDING_TREND
     }

@@ -587,6 +587,21 @@ class DatabaseSeeder @Inject constructor(
         )
 
         companion object {
+            /**
+             * [TransactionStatus.fromString] silently maps anything unknown to CLEARED, which hides
+             * seed rows written with a status the app doesn't have (e.g. "pending"). Warn instead.
+             */
+            private fun parseStatus(raw: String?, title: String?): TransactionStatus {
+                val value = raw?.takeIf { it.isNotBlank() } ?: return TransactionStatus.CLEARED
+                if (TransactionStatus.entries.none { it.name.equals(value, ignoreCase = true) }) {
+                    android.util.Log.w(
+                        "DatabaseSeeder",
+                        "Unknown status '$value' on seed transaction '$title'; importing as CLEARED"
+                    )
+                }
+                return TransactionStatus.fromString(value)
+            }
+
             fun fromRecord(record: Record) = TransactionSeedRow(
                 seedId = record.getString("seedId")?.toLongOrNull(),
                 title = record.getString("title") ?: "",
@@ -618,7 +633,7 @@ class DatabaseSeeder @Inject constructor(
                     if (lat != null && lon != null) "$lat,$lon" else null
                 },
                 warrantyExpiration = record.getString("warrantyExpiration")?.toLongOrNull(),
-                status = TransactionStatus.fromString(record.getString("status") ?: "cleared"),
+                status = parseStatus(record.getString("status"), record.getString("title")),
                 daysAgo = record.getString("daysAgo")?.toLongOrNull(),
                 targetAccountId = record.getString("targetAccountId")?.takeIf { it.isNotBlank() },
                 targetCurrency = record.getString("targetCurrency")?.takeIf { it.isNotBlank() },

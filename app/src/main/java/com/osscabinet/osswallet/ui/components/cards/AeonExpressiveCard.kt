@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
@@ -81,6 +82,7 @@ import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
+import com.osscabinet.ossWallet.ui.components.transactions.inheritingScopeFrom
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -278,6 +280,7 @@ private fun AeonCardSideShell(
         LocalGlassmorphismEnabled provides true, LocalParentGlassHaze provides surfaceHazeState
     ) {
         GlassSurface(
+            glassToggle = GlassVariant.Card,
             modifier = modifier.fillMaxWidth(),
             shape = cardShape,
             hazeState = surfaceHazeState,
@@ -412,7 +415,7 @@ fun AeonExpressiveCard(
                         state.flip(true)
                     }
                 },
-                showFilterIndicator = filter != null && filter != baseFilter,
+                showFilterIndicator = filter != null && filter.inheritingScopeFrom(baseFilter) != baseFilter,
                 accentColor = accentColor ?: AppColors.primary,
                 modifier = headerModifier
             )
@@ -540,7 +543,7 @@ fun AeonExpressiveCard(
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                 state.flip(true)
                             },
-                            showFilterIndicator = filter != null && filter != baseFilter,
+                            showFilterIndicator = filter != null && filter.inheritingScopeFrom(baseFilter) != baseFilter,
                             accentColor = accentColor ?: AppColors.primary,
                             modifier = headerModifier
                         )
@@ -730,7 +733,7 @@ private fun FilterPillOverlay(
                     currentOnFilterChange.value.invoke(current.copy(timelineRange = event.range))
                 }
 
-                is FilterEvent.Reset -> currentOnFilterChange.value.invoke(TransactionFilter())
+                is FilterEvent.Reset -> currentOnFilterChange.value.invoke(baseFilter)
                 else -> Unit
             }
         }

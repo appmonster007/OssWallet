@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dashed horizontal rule — mirrors NetWorthCard's aeonDashedTopRule(). A
+     plain <shape> stroke renders as a dashed line when used as the
+     background of a 1dp-tall container (top/bottom borders overlap). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+        android:shape="rectangle">
+    <solid android:color="@android:color/transparent" />
+    <stroke
+            android:width="1dp"
+            android:color="@color/widget_outline"
+            android:dashWidth="4dp"
+            android:dashGap="4dp" />
+</shape>

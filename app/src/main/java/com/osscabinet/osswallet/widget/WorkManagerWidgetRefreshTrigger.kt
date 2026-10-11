@@ -1,36 +1,58 @@
 package com.osscabinet.ossWallet.widget
 
 import android.content.Context
+import android.util.Log
 import com.osscabinet.ossWallet.data.local.query.QueryCache
 import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
 
 /**
- * Triggers a widget refresh by enqueueing a one-shot expedited [WidgetRefreshWorker] via
- * WorkManager using [ExistingWorkPolicy.REPLACE].
+ * Bridges domain-level refresh triggers to [WidgetRefreshCoordinator].
  *
- * The [QueryCache] is invalidated synchronously before the worker is enqueued so that when
- * [provideGlance] executes inside the worker it always reads from the database rather than a
- * stale cached result. This matters because TransactionManager calls [trigger] immediately after
- * a write completes at the Kotlin-suspend level, which races ahead of Room's asynchronous
- * InvalidationTracker notification path.
+ * The [QueryCache] is cleared synchronously before the request is recorded so the worker always
+ * reads from the database. TransactionManager calls [trigger] right after a write completes,
+ * which races ahead of Room's asynchronous InvalidationTracker notification.
  *
- * Coalescing guarantee: if [trigger] is called N times in rapid succession (e.g. a bulk import),
- * WorkManager deduplicate them to a single queued entry because they all share the unique work
- * name [WidgetRefreshWorker.WORK_NAME] and use [ExistingWorkPolicy.REPLACE]. Only one refresh
- * runs for the entire batch.
+ * Coalescing: requests only mark state, and one worker drains it, so a bulk import produces a
+ * handful of passes at most, and a request during a pass never cancels it.
  *
- * Deadlock guarantee: [trigger] is a plain (non-suspend) function that only writes to a
- * ConcurrentHashMap and calls WorkManager.enqueueUniqueWork() — both are non-blocking. No lock
- * is acquired, so there is no risk of deadlock regardless of which thread calls [trigger].
+ * Echo suppression: a write through [trigger] is followed by Room's invalidation for the same
+ * commit via [onDatabaseChanged]. The pass for [trigger] already reads after that commit, so the
+ * first invalidation within [ECHO_WINDOW_MS] is dropped. Invalidations with no preceding
+ * [trigger] (imports, restores, the seeder) still refresh. Both methods are non-blocking and
+ * lock-free apart from the short state lock, so any thread may call them.
  */
 class WorkManagerWidgetRefreshTrigger(
     private val context: Context,
-    private val queryCache: QueryCache
+    private val queryCache: QueryCache,
+    private val clock: () -> Long = System::currentTimeMillis
 ) : WidgetRefreshTrigger {
 
+    @Volatile
+    private var echoDeadline = 0L
+
     override fun trigger() {
-        // Synchronously clear the cache before enqueuing so the worker always reads fresh data.
         queryCache.clear()
-        WidgetRefreshWorker.enqueueNow(context)
+        echoDeadline = clock() + ECHO_WINDOW_MS
+        Log.d(TAG, "trigger() from app write")
+        WidgetRefreshCoordinator.requestAll(context)
+    }
+
+    override fun onDatabaseChanged() {
+        queryCache.clear()
+        if (echoDeadline != 0L) {
+            val expected = echoDeadline
+            echoDeadline = 0L
+            if (clock() <= expected) {
+                Log.d(TAG, "onDatabaseChanged(): echo dropped")
+                return
+            }
+        }
+        Log.d(TAG, "onDatabaseChanged(): external change, refreshing")
+        WidgetRefreshCoordinator.requestAll(context)
+    }
+
+    private companion object {
+        const val ECHO_WINDOW_MS = 1_500L
+        const val TAG = "WidgetRefreshTrigger"
     }
 }

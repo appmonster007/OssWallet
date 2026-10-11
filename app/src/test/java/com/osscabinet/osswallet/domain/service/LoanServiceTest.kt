@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.service
 
+import com.osscabinet.ossWallet.domain.model.AdvancedFilterCriteria
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanPayment
 import com.osscabinet.ossWallet.domain.model.LoanStatus
@@ -126,5 +127,45 @@ class LoanServiceTest {
         assertTrue(schedule.isNotEmpty())
         val totalPrincipal = schedule.fold(BigDecimal.ZERO) { acc, e -> acc + e.principal }
         assertEquals(0, BigDecimal("1200").compareTo(totalPrincipal.setScale(0, java.math.RoundingMode.HALF_UP)))
+    }
+
+    @Test
+    fun `interest rate is a percentage - 3_5 is 3_5 percent a year`() {
+        val loan = makeLoan(
+            principal = BigDecimal("25000"),
+            interestRate = 3.5f,
+            startDate = epochOf(2026, 7, 3)
+        )
+        // 100 days: 25,000 x 3.5% x 100 / 365
+        val interest = LoanService.calculateInterestAccrued(loan, epochOf(2026, 10, 11))
+        assertTrue("was $interest", interest.subtract(BigDecimal("239.73")).abs() < BigDecimal("0.01"))
+    }
+
+    @Test
+    fun `amortization uses a monthly rate of percent over twelve`() {
+        val loan = makeLoan(principal = BigDecimal("1200"), interestRate = 12f)
+        val schedule = LoanService.getAmortizationSchedule(loan, BigDecimal("200"), epochOf(2024, 1, 1))
+        // 12% a year = 1% a month, so the first month's interest on 1,200 is 12.00
+        assertEquals(0, BigDecimal("12.00").compareTo(schedule.first().interest))
+        // and the loan amortizes to zero well within the cap
+        assertEquals(0, BigDecimal.ZERO.compareTo(schedule.last().balance))
+        assertTrue(schedule.size < 12)
+    }
+
+    @Test
+    fun `loan filter applies payee note and amount criteria`() {
+        val loan = makeLoan().copy(
+            advanced = AdvancedFilterCriteria(
+                queryPayee = "John Doe",
+                queryNote = "repay",
+                minAmount = BigDecimal("10"),
+                matchAllTags = false
+            )
+        )
+        val filter = LoanService.buildTransactionFilter(loan)
+        assertEquals("John Doe", filter.queryPayee)
+        assertEquals("repay", filter.queryNote)
+        assertEquals(0, BigDecimal("10").compareTo(filter.minAmount))
+        assertEquals(false, filter.matchAllTags)
     }
 }

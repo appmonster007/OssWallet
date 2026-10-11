@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * Mirrors every setting [NetWorthCardConfig][com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig]
- * exposes on the real dashboard card — font size, comparison toggle, perspective, exclude
+ * exposes on the real dashboard card — comparison toggle, perspective, exclude
  * internal transfers, split transfers, and the filter (including "Advanced Filters", shown via
  * [WidgetConfigFiltersSection]) — so the widget can be configured identically to the card and
  * [NetWorthWidgetFetcher] can build a real `NetWorthCardConfig` straight from this.
@@ -18,7 +18,6 @@ data class NetWorthWidgetConfig(
     val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
     ),
-    val fontSize: String = "Medium",
     val showComparison: Boolean = false,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,

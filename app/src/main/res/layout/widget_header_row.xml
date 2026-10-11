@@ -17,7 +17,9 @@
      horizontally too (see widget_net_worth_strip/card.xml's cell rows, or
      widget_recent_activities_item.xml's own 12dp side padding) — the root no longer provides it.
 
-     tv_widget_header_title: label — @font/jetbrains_mono, 8sp bold, muted
+     iv_widget_header_icon: the card type's own icon (CardType.toIcon), drawn to a bitmap by
+     WidgetHeader.bindIcon; empty in the static picker previews, which can't host a Compose icon.
+     tv_widget_header_title: label — @font/jetbrains_mono, 10sp bold, muted
      (widget_on_surface_variant), matching NetWorthCard.kt's sectionOverline/AppTextStyles usage.
      ll_widget_header_extra: empty slot a renderer can RemoteViews.addView() into for a
      widget-specific action (e.g. Recent Activities' "VIEW ALL" pill) — zero-sized and invisible
@@ -35,8 +37,16 @@
             android:gravity="center_vertical"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="4dp">
+            android:paddingTop="8dp"
+            android:paddingBottom="6dp">
+
+        <ImageView
+                android:id="@+id/iv_widget_header_icon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="6dp"
+                android:tint="@color/widget_on_surface_variant"
+                android:contentDescription="@null" />
 
         <TextView
                 android:id="@+id/tv_widget_header_title"
@@ -45,7 +55,7 @@
                 android:layout_weight="1"
                 android:fontFamily="@font/jetbrains_mono"
                 android:textColor="@color/widget_on_surface_variant"
-                android:textSize="8sp"
+                android:textSize="10sp"
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end"
@@ -60,9 +70,9 @@
 
         <ImageView
                 android:id="@+id/iv_widget_header_settings"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:layout_marginStart="6dp"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="8dp"
                 android:src="@drawable/widget_ic_more_horiz"
                 android:contentDescription="@string/widget_net_worth_settings_description" />
 

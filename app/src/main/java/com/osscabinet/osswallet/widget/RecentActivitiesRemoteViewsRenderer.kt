@@ -8,6 +8,7 @@ import android.widget.RemoteViews
 import androidx.datastore.preferences.core.Preferences
 import com.osscabinet.ossWallet.MainActivity
 import com.osscabinet.ossWallet.R
+import com.osscabinet.ossWallet.domain.card.CardType
 
 /**
  * Builds and pushes the Recent Activities widget's [RemoteViews]. Unlike NetWorthRemoteViewsRenderer,
@@ -40,6 +41,7 @@ object RecentActivitiesRemoteViewsRenderer {
 
         val views = RemoteViews(context.packageName, R.layout.widget_recent_activities_main)
         views.setTextViewText(R.id.tv_widget_header_title, prefs[RecentActivitiesWidgetKeys.TITLE] ?: "RECENT ACTIVITIES")
+        WidgetHeader.bindIcon(context, views, CardType.RECENT_ACTIVITIES, palette)
         if (palette != null) {
             views.setInt(R.id.ll_widget_root, "setBackgroundColor", palette.surface)
             views.setTextColor(R.id.tv_widget_header_title, palette.onSurfaceVariant)

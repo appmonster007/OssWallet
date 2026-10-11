@@ -191,6 +191,9 @@ data class CurrencyBalancesCardConfig(
     val layout: String = "scroll",
     val gridColumns: Int = 3,
     val showBaseConversion: Boolean = true,
+    // Currencies once used but now holding nothing are noise on the card.
+    val hideZeroBalances: Boolean = true,
+    val sortBy: CurrencySortMode = CurrencySortMode.BIGGEST,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,
@@ -363,6 +366,14 @@ data class AccountHeroCardConfig(
 /** Three-stage visibility mode for the planned-payments dashboard card. */
 @Serializable
 enum class PlannedPaymentsViewMode { OVERDUE_ONLY, BOTH, FUTURE_ONLY }
+
+/** Order of the currencies on the Currency Balances card. */
+@Serializable
+enum class CurrencySortMode(val displayName: String) {
+    BIGGEST("Biggest"),
+    SMALLEST("Smallest"),
+    NAME("A to Z")
+}
 
 /** Order of the rows on the Loans card, applied before the "max items" cut. */
 @Serializable

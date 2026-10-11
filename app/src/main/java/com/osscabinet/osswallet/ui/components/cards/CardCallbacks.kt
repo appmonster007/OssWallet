@@ -53,6 +53,7 @@ sealed class CardCallbacks {
         val onGridColumnsChange: (String, Int) -> Unit = { _, _ -> },
         val onLayoutChange: (String, String) -> Unit = { _, _ -> },
         val onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
+        val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) -> Unit = {},
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onCurrencyClick: ((String, TimelineRange) -> Unit)? = null,
         val onSeeAll: () -> Unit = {},

@@ -1,5 +1,8 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSegmentedRow
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.domain.model.settings.CurrencySortMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -53,8 +56,6 @@ import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 
-// TODO(card-upgrade): add a 'hide zero balances' toggle and sort options (balance / name / recent activity).
-// See docs/guides/card-upgrade-roadmap.md
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CurrencyBalancesCard(
@@ -168,6 +169,7 @@ private fun CurrencyBalancesSettingsContent(
     val currentOnLayoutChange = rememberUpdatedState(callbacks.onLayoutChange)
     val currentOnGridColumnsChange = rememberUpdatedState(callbacks.onGridColumnsChange)
     val currentOnShowBaseConversionChange = rememberUpdatedState(callbacks.onShowBaseConversionChange)
+    val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
 
     CardSettingsSection("Display") {
         AeonLayoutToggle(
@@ -192,6 +194,21 @@ private fun CurrencyBalancesSettingsContent(
                 )
             },
             showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Hide Zero Balances",
+            description = "Skip currencies you no longer hold",
+            checked = config.hideZeroBalances,
+            onCheckedChange = { currentOnUpdate.value(config.copy(hideZeroBalances = it)) },
+            showBackground = false
+        )
+    }
+    CardSettingsSection("Order") {
+        CardSettingsSegmentedRow(
+            options = CurrencySortMode.entries,
+            selected = config.sortBy,
+            onSelected = { currentOnUpdate.value(config.copy(sortBy = it)) },
+            labelProvider = { it.displayName }
         )
     }
 }
@@ -296,6 +313,7 @@ fun mapCurrencyBalances(
         onGridColumnsChange = updateHandler::updateCardCurrencyBalancesGridColumns,
         onLayoutChange = updateHandler::updateCardCurrencyBalancesLayout,
         onShowBaseConversionChange = updateHandler::updateCardCurrencyBalancesShowBaseConversion,
+        onUpdate = { newConfig -> updateHandler.updateCardCurrencyBalancesConfig(config.cardId, newConfig) },
         onFilterChange = updateHandler::updateCardCurrencyBalancesFilter,
         onCurrencyClick = { currency, range ->
             val drillDown = TransactionFilter(currencies = setOf(currency), timelineRange = range)

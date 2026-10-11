@@ -36,7 +36,7 @@ Settings UI should reuse what the bar chart cards already use in `ui/components/
 | 3 | Budgets | Pace marker and over-budget styling (done) | Medium |
 | 4 | Planned Payments | Cash needed in the next 7 or 30 days (done) | Small |
 | 5 | Loans | Settled filter, sort, segmented type (done; projected payoff left out) | Medium |
-| 6 | Currency Balances and Accounts | Sort and hide-zero options | Small |
+| 6 | Currency Balances (done) and Accounts | Sort and hide-zero options | Small |
 | 7 | TagUpSet Plot | "How to read this" hint | Small |
 
 Effort for items 2 to 7 is a rough guess. Only the pie and treemap code has been read in detail.
@@ -128,13 +128,25 @@ Files: `LoansCard.kt`, `LoanService` (`sortByDueDate`, `sortByName`, `sortByOwed
 - The paid progress bar and principal already existed.
 - Tests: `LoanOrderingTest` and a Loans case in `CardAggregationServiceTest`.
 
-## 6. Currency Balances and Accounts
+## 6. Currency Balances (done) and Accounts (not started)
 
-Files: `CurrencyBalancesCard.kt`, `AccountsCard.kt`, and their configs.
+### Currency Balances (done)
 
-- Sort options (by balance, name, or recent activity) on both.
-- Hide zero balances on Currency Balances. This is the cheapest item on the list.
-- Currency Balances config today: `layout`, `gridColumns`, `showBaseConversion`.
+Files: `CurrencyBalancesCard.kt`, `CardAggregationService.computeCurrencyBalancesCard`,
+`CurrencyBalancesCardConfig` (`hideZeroBalances`, `sortBy`: `CurrencySortMode`).
+
+- Currencies holding nothing are hidden by default (toggle to show them).
+- Order: Biggest (default, same as before: by value in the base currency), Smallest, A to Z.
+- Test: a Currency Balances case in `CardAggregationServiceTest`.
+
+### Accounts (not started)
+
+Files: `AccountsCard.kt`, `AccountsCardConfig`.
+
+- Order (As saved / Biggest / A to Z) and a "hide zero balances" option. "As saved" is today's behavior (the Accounts
+  screen's `displayOrder`). Default hide off, so no account disappears by surprise.
+- A "most recent activity" order was considered and dropped: the card has no last-transaction time, so it would need
+  an extra query per account.
 
 ---
 

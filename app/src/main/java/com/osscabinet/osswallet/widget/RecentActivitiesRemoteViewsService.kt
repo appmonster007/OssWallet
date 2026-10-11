@@ -8,6 +8,7 @@ import android.widget.RemoteViewsService
 import androidx.core.content.ContextCompat
 import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.util.TimeUtils
 import kotlinx.coroutines.flow.first
@@ -40,10 +41,15 @@ private class RecentActivitiesRemoteViewsFactory(
     private var rows: List<RowData> = emptyList()
     private var palette: WidgetPalette? = null
 
+    // Rendered category icons, keyed by icon name + tint + size. Rows repeat the same few categories,
+    // so the cache stays small, and the key fully determines the bitmap so it can never go stale.
+    private val iconCache = HashMap<String, android.graphics.Bitmap>()
+
     private data class RowData(
         val transactionId: Long,
         val title: String,
         val initial: String,
+        val iconName: String?,
         val subtitle: String,
         val timeText: String,
         val amountText: String,
@@ -92,6 +98,7 @@ private class RecentActivitiesRemoteViewsFactory(
                         transactionId = tx.id,
                         title = title,
                         initial = title.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                        iconName = categoriesById[tx.categoryId]?.iconName,
                         subtitle = subtitleParts.joinToString(" · "),
                         timeText = if (config.showTimestamp) TimeUtils.formatRelativeDate(tx.timestamp, now) else "",
                         amountText = formatter.format(tx.amount, tx.currency),
@@ -142,9 +149,18 @@ private class RecentActivitiesRemoteViewsFactory(
 
         // TextView has no setColorFilter (ImageView/Drawable only), so swap the pre-tinted
         // drawable by sign instead — same pattern as cell3's highlight toggle in NetWorthRenderer.
-        views.setTextViewText(R.id.tv_ra_item_indicator, row.initial)
         val iconColor = row.categoryColor ?: color
-        views.setTextColor(R.id.tv_ra_item_indicator, iconColor)
+        if (row.iconName != null) {
+            // Category icon, as on the dashboard cards; the initial is only the fallback below.
+            views.setImageViewBitmap(R.id.iv_ra_item_icon, categoryIcon(row.iconName, iconColor))
+            views.setViewVisibility(R.id.iv_ra_item_icon, android.view.View.VISIBLE)
+            views.setViewVisibility(R.id.tv_ra_item_indicator, android.view.View.GONE)
+        } else {
+            views.setViewVisibility(R.id.iv_ra_item_icon, android.view.View.GONE)
+            views.setViewVisibility(R.id.tv_ra_item_indicator, android.view.View.VISIBLE)
+            views.setTextViewText(R.id.tv_ra_item_indicator, row.initial)
+            views.setTextColor(R.id.tv_ra_item_indicator, iconColor)
+        }
         if (row.categoryColor != null) {
             views.setInt(R.id.iv_ra_item_badge_bg, "setImageResource", R.drawable.widget_oval_bg)
             val containerColor = (row.categoryColor and 0x00FFFFFF) or 0x28000000
@@ -171,8 +187,20 @@ private class RecentActivitiesRemoteViewsFactory(
         return views
     }
 
+    private fun categoryIcon(iconName: String, tint: Int): android.graphics.Bitmap {
+        val sizePx = (ICON_SIZE_DP * context.resources.displayMetrics.density).toInt()
+        return iconCache.getOrPut("$iconName:$tint:$sizePx") {
+            WidgetIconRenderer.render(getIconByName(iconName), sizePx, tint)
+        }
+    }
+
     override fun getLoadingView(): RemoteViews? = null
     override fun getViewTypeCount(): Int = 1
     override fun getItemId(position: Int): Long = rows[position].transactionId
     override fun hasStableIds(): Boolean = true
+
+    private companion object {
+        // Matches iv_ra_item_icon's layout size.
+        const val ICON_SIZE_DP = 18f
+    }
 }

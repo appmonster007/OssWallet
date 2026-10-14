@@ -6,7 +6,7 @@
     <item>
         <shape android:shape="rectangle">
             <corners android:radius="@dimen/widget_glass_radius" />
-            <solid android:color="#8C131312" />
+            <solid android:color="#C7131312" />
         </shape>
     </item>
     <item>

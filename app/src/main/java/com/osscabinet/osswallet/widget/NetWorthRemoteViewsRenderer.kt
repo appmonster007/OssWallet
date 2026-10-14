@@ -124,7 +124,7 @@ object NetWorthRemoteViewsRenderer {
 
         val theme = prefs[NetWorthWidgetKeys.THEME]?.let { runCatching { WidgetTheme.valueOf(it) }.getOrNull() }
             ?: WidgetTheme.SYSTEM
-        val palette = WidgetColors.resolve(theme)
+        val palette = WidgetColors.resolve(theme, prefs[NetWorthWidgetKeys.GLASS] == "true")
 
         val views = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             buildResponsiveViews(context, prefs, widgetId, palette)

@@ -37,13 +37,14 @@ object AccountsRemoteViewsRenderer {
 
         val theme = prefs[AccountsWidgetKeys.THEME]?.let { runCatching { WidgetTheme.valueOf(it) }.getOrNull() }
             ?: WidgetTheme.SYSTEM
-        val palette = WidgetColors.resolve(theme)
+        val glass = prefs[AccountsWidgetKeys.GLASS] == "true"
+        val palette = WidgetColors.resolve(theme, glass)
         val total = prefs[AccountsWidgetKeys.TOTAL_FORMATTED].orEmpty()
 
         val views = RemoteViews(context.packageName, WidgetColors.layoutFor(palette, R.layout.widget_accounts_main_t0, R.layout.widget_accounts_main_t1, R.layout.widget_accounts_main_t2))
         views.setTextViewText(R.id.tv_widget_header_title, "ACCOUNTS")
         WidgetHeader.bindIcon(context, views, CardType.ACCOUNTS, palette)
-        WidgetHeader.applyTheme(views, palette, prefs[AccountsWidgetKeys.GLASS] == "true")
+        WidgetHeader.applyTheme(views, palette, glass)
         views.setThemedTextColor(R.id.tv_accounts_empty_text, palette) { it.onSurfaceVariant }
 
         WidgetHeader.clearExtras(views)
@@ -87,7 +88,7 @@ object AccountsRemoteViewsRenderer {
 
         val adapterIntent = Intent(context, AccountsRemoteViewsService::class.java)
             .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-            .apply { data = Uri.parse("remoteviews://accounts/$widgetId?theme=${WidgetColors.themeKey(theme)}") }
+            .apply { data = Uri.parse("remoteviews://accounts/$widgetId?theme=${WidgetColors.themeKey(theme, glass)}") }
         views.setRemoteAdapter(R.id.lv_accounts_list, adapterIntent)
         views.setEmptyView(R.id.lv_accounts_list, R.id.tv_accounts_empty_text)
 

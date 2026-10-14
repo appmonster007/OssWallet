@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- One budget: name + the amount that matters, bar with pace tick, spent-of-limit line.
      Exactly one of the three bars is visible (BudgetsRemoteViewsRenderer) — a ProgressBar's colour
-     comes from its drawable. The secondary progress of each bar is the pace tick. -->
+     comes from its drawable. The secondary progress of each bar is the pace tick.
+     Each state has three bars: the system one (follows the device's night mode) and fixed light and
+     dark ones for a widget forced to a theme, which a drawable cannot be switched to at runtime. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/ll_budget_row"
         android:layout_width="match_parent"
@@ -79,6 +81,54 @@
                 android:max="100"
                 android:visibility="gone"
                 android:progressDrawable="@drawable/widget_budget_progress_over" />
+        <ProgressBar
+                android:id="@+id/pb_budget_ok_light"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:max="100"
+                android:visibility="gone"
+                android:progressDrawable="@drawable/widget_budget_progress_ok_light" />
+        <ProgressBar
+                android:id="@+id/pb_budget_ok_dark"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:max="100"
+                android:visibility="gone"
+                android:progressDrawable="@drawable/widget_budget_progress_ok_dark" />
+        <ProgressBar
+                android:id="@+id/pb_budget_warn_light"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:max="100"
+                android:visibility="gone"
+                android:progressDrawable="@drawable/widget_budget_progress_warn_light" />
+        <ProgressBar
+                android:id="@+id/pb_budget_warn_dark"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:max="100"
+                android:visibility="gone"
+                android:progressDrawable="@drawable/widget_budget_progress_warn_dark" />
+        <ProgressBar
+                android:id="@+id/pb_budget_over_light"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:max="100"
+                android:visibility="gone"
+                android:progressDrawable="@drawable/widget_budget_progress_over_light" />
+        <ProgressBar
+                android:id="@+id/pb_budget_over_dark"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:max="100"
+                android:visibility="gone"
+                android:progressDrawable="@drawable/widget_budget_progress_over_dark" />
     </FrameLayout>
 
     <LinearLayout

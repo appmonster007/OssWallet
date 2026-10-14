@@ -59,6 +59,7 @@ fun OssWalletNavGraph(
     pendingWidgetRoute: String? = null,
     pendingWidgetFilter: String? = null,
     pendingWidgetTransactionId: Long? = null,
+    pendingWidgetEntityId: String? = null,
     onWidgetRouteHandled: () -> Unit = {},
 ) {
     val vms = SharedNavViewModels(
@@ -117,7 +118,7 @@ fun OssWalletNavGraph(
     // divergence from the drawer's save/restore semantics may be intentional (a widget tap
     // landing on a fresh, un-restored screen rather than resuming prior scroll/filter state)
     // and isn't this change's call to silently alter.
-    LaunchedEffect(pendingWidgetRoute, pendingWidgetFilter, pendingWidgetTransactionId) {
+    LaunchedEffect(pendingWidgetRoute, pendingWidgetFilter, pendingWidgetTransactionId, pendingWidgetEntityId) {
         pendingWidgetRoute?.let { route ->
             val widgetNavOptions: androidx.navigation.NavOptionsBuilder.() -> Unit = {
                 popUpTo<DashboardRoute> { inclusive = false; saveState = false }
@@ -151,6 +152,14 @@ fun OssWalletNavGraph(
                 "exchange_rates" -> appNavigator.navigateTo(ExchangeRatesRoute, widgetNavOptions)
                 "budgets"        -> appNavigator.navigateTo(BudgetListRoute, widgetNavOptions)
                 "accounts"       -> appNavigator.navigateTo(AccountListRoute, widgetNavOptions)
+                // The Budgets / Accounts widgets' per-row taps; the id comes from the list row's
+                // fill-in Intent, not from this route string.
+                "budget_detail"  -> pendingWidgetEntityId?.toLongOrNull()?.let { id ->
+                    appNavigator.navigateTo(BudgetDetailRoute(budgetId = id), widgetNavOptions)
+                }
+                "account_detail" -> pendingWidgetEntityId?.let { id ->
+                    appNavigator.navigateTo(AccountDetailRoute(accountId = id), widgetNavOptions)
+                }
                 // Opens a transaction for editing — the Recent Activities widget's per-row tap
                 // target, same as RecentActivitiesCard's own onTransactionClick. id comes from
                 // the ListView's fill-in Intent (see RecentActivitiesRemoteViewsService), not

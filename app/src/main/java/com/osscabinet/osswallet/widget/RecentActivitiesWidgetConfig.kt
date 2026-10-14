@@ -19,5 +19,7 @@ data class RecentActivitiesWidgetConfig(
     val showAccount: Boolean = true,
     val showCategory: Boolean = true,
     val showTimestamp: Boolean = true,
-    val theme: WidgetTheme = WidgetTheme.SYSTEM
+    val theme: WidgetTheme = WidgetTheme.SYSTEM,
+    /** Frosted-glass background instead of the solid surface. */
+    val glass: Boolean = false
 )

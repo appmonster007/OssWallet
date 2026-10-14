@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Budgets widget content. Header is the shared widget_header_row.xml shell; rows are
-     widget_budgets_row.xml instances added into ll_budgets_rows by BudgetsRemoteViewsRenderer
-     (how many depends on the widget's height). tv_budgets_empty_text shows when there are no budgets. -->
+<!-- Budgets widget content. Header is the shared widget_header_row.xml shell; the budgets are a
+     ListView (BudgetsRemoteViewsService) so every one is reachable by scrolling.
+     tv_budgets_empty_text is its empty view (RemoteViews.setEmptyView) and must stay a sibling. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/ll_widget_root"
         android:layout_width="match_parent"
@@ -12,16 +12,20 @@
     <include layout="@layout/widget_header_row" />
 
     <FrameLayout
-            android:id="@+id/ll_budgets_body"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1">
 
-        <LinearLayout
-                android:id="@+id/ll_budgets_rows"
+        <ListView
+                android:id="@+id/lv_budgets_list"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
+                android:layout_height="match_parent"
+                android:clipToPadding="true"
+                android:divider="@null"
+                android:dividerHeight="0dp"
+                android:listSelector="@android:color/transparent"
+                android:paddingBottom="8dp"
+                android:scrollbars="none" />
 
         <TextView
                 android:id="@+id/tv_budgets_empty_text"
@@ -31,10 +35,9 @@
                 android:padding="16dp"
                 android:fontFamily="@font/jetbrains_mono"
                 android:gravity="center"
-                android:text="No budgets yet — create one in the app."
+                android:text="No budgets yet. Create one in the app."
                 android:textColor="@color/widget_on_surface_variant"
-                android:textSize="11sp"
-                android:visibility="gone" />
+                android:textSize="11sp" />
 
     </FrameLayout>
 

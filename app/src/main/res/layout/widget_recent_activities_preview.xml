@@ -18,6 +18,13 @@
             android:paddingTop="8dp"
             android:paddingBottom="6dp">
 
+        <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="6dp"
+                android:src="@drawable/widget_pv_ic_history"
+                android:contentDescription="@null" />
+
         <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -31,12 +38,16 @@
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/widget_netflow_pill_bg"
                 android:fontFamily="@font/jetbrains_mono"
                 android:textColor="@color/widget_accent"
-                android:textSize="9sp"
+                android:textSize="8sp"
                 android:textStyle="bold"
-                android:letterSpacing="0.05"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:paddingTop="1dp"
+                android:paddingBottom="1dp"
                 android:text="VIEW ALL" />
 
         <ImageView
@@ -66,18 +77,22 @@
         <FrameLayout
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                android:layout_marginEnd="10dp"
-                android:background="@drawable/widget_oval_negative_bg">
+                android:layout_marginEnd="10dp">
 
-            <TextView
+            <ImageView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:fontFamily="@font/jetbrains_mono"
-                    android:textColor="@color/widget_negative"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:text="G" />
+                    android:alpha="0.16"
+                    android:src="@drawable/widget_oval_bg"
+                    android:tint="#FFC8463F"
+                    android:contentDescription="@null" />
+
+            <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_pv_ic_ra_cart"
+                    android:contentDescription="@null" />
 
         </FrameLayout>
 
@@ -121,7 +136,7 @@
                     android:textColor="@color/widget_negative"
                     android:textSize="13sp"
                     android:textStyle="bold"
-                    android:text="-24.50 $" />
+                    android:text="-$24.50" />
 
             <TextView
                     android:layout_width="wrap_content"
@@ -156,18 +171,22 @@
         <FrameLayout
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                android:layout_marginEnd="10dp"
-                android:background="@drawable/widget_oval_positive_bg">
+                android:layout_marginEnd="10dp">
 
-            <TextView
+            <ImageView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:fontFamily="@font/jetbrains_mono"
-                    android:textColor="@color/widget_positive"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:text="S" />
+                    android:alpha="0.16"
+                    android:src="@drawable/widget_oval_bg"
+                    android:tint="#FF1E9B4F"
+                    android:contentDescription="@null" />
+
+            <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_pv_ic_ra_payments"
+                    android:contentDescription="@null" />
 
         </FrameLayout>
 
@@ -211,7 +230,7 @@
                     android:textColor="@color/widget_positive"
                     android:textSize="13sp"
                     android:textStyle="bold"
-                    android:text="+2,500.00 $" />
+                    android:text="+$2,500.00" />
 
             <TextView
                     android:layout_width="wrap_content"
@@ -221,6 +240,100 @@
                     android:textColor="@color/widget_on_surface_variant"
                     android:textSize="8sp"
                     android:text="Yesterday" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:background="@color/widget_outline" />
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+        <FrameLayout
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginEnd="10dp">
+
+            <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.16"
+                    android:src="@drawable/widget_oval_bg"
+                    android:tint="#FFC8463F"
+                    android:contentDescription="@null" />
+
+            <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_pv_ic_ra_coffee"
+                    android:contentDescription="@null" />
+
+        </FrameLayout>
+
+        <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/manrope"
+                    android:textColor="@color/widget_on_surface"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:text="Coffee Shop" />
+
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:textColor="@color/widget_on_surface_variant"
+                    android:textSize="9sp"
+                    android:text="Cash · Dining" />
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:orientation="vertical"
+                android:gravity="end">
+
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/manrope"
+                    android:textColor="@color/widget_negative"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:text="-$4.80" />
+
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:textColor="@color/widget_on_surface_variant"
+                    android:textSize="8sp"
+                    android:text="Mon" />
 
         </LinearLayout>
 

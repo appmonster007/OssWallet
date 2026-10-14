@@ -58,7 +58,9 @@ internal fun RecentActivitiesWidgetConfigScreen(
 
         WidgetThemeOptions(
             selected = config.theme,
-            onSelect = { onConfigChange(config.copy(theme = it)) }
+            onSelect = { onConfigChange(config.copy(theme = it)) },
+            glass = config.glass,
+            onGlassChange = { onConfigChange(config.copy(glass = it)) }
         )
 
         WidgetConfigDivider()

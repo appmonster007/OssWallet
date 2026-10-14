@@ -197,6 +197,18 @@
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
 
+        <!-- Back the Budgets and Accounts widgets' ListViews; BIND_REMOTEVIEWS is required and exported
+             must stay false (the system binds to them on the widget host's behalf). -->
+        <service
+            android:name=".widget.BudgetsRemoteViewsService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
+        <service
+            android:name=".widget.AccountsRemoteViewsService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
         <service
             android:name=".service.WebServerService"
             android:enabled="true"

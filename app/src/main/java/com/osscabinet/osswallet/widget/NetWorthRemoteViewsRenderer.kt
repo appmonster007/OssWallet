@@ -9,7 +9,6 @@ import android.util.SizeF
 import android.view.View
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
-import androidx.core.content.ContextCompat
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.osscabinet.ossWallet.MainActivity
@@ -34,6 +33,7 @@ object NetWorthWidgetKeys {
     val PERSPECTIVE_LABEL = stringPreferencesKey("nw_perspective_label")
     /** Name of a [WidgetTheme] constant — forces LIGHT/DARK regardless of the device's current night mode, or SYSTEM to leave every color/drawable as XML already declares it. */
     val THEME = stringPreferencesKey("nw_theme")
+    val GLASS = stringPreferencesKey("nw_glass")
 
     val CELL1_LABEL = stringPreferencesKey("nw_cell1_label")
     val CELL1_VALUE = stringPreferencesKey("nw_cell1_value")
@@ -124,7 +124,7 @@ object NetWorthRemoteViewsRenderer {
 
         val theme = prefs[NetWorthWidgetKeys.THEME]?.let { runCatching { WidgetTheme.valueOf(it) }.getOrNull() }
             ?: WidgetTheme.SYSTEM
-        val palette = WidgetColors.resolve(theme)
+        val palette = WidgetColors.resolve(theme, prefs[NetWorthWidgetKeys.GLASS] == "true")
 
         val views = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             buildResponsiveViews(context, prefs, widgetId, palette)
@@ -134,9 +134,9 @@ object NetWorthRemoteViewsRenderer {
             when {
                 minHeight in 1 until MICRO_HEIGHT_DP -> renderMicro(context, prefs, widgetId, palette)
                 minHeight in MICRO_HEIGHT_DP until STRIP_HEIGHT_DP ->
-                    renderCellTier(context, prefs, widgetId, R.layout.widget_net_worth_strip, palette)
+                    renderCellTier(context, prefs, widgetId, WidgetColors.layoutFor(palette, R.layout.widget_net_worth_strip_t0, R.layout.widget_net_worth_strip_t1, R.layout.widget_net_worth_strip_t2), palette)
                 else ->
-                    renderCellTier(context, prefs, widgetId, R.layout.widget_net_worth_card, palette)
+                    renderCellTier(context, prefs, widgetId, WidgetColors.layoutFor(palette, R.layout.widget_net_worth_card_t0, R.layout.widget_net_worth_card_t1, R.layout.widget_net_worth_card_t2), palette)
             }
         }
         appWidgetManager.updateAppWidget(widgetId, views)
@@ -152,8 +152,8 @@ object NetWorthRemoteViewsRenderer {
     @RequiresApi(Build.VERSION_CODES.S)
     private fun buildResponsiveViews(context: Context, prefs: Preferences, widgetId: Int, palette: WidgetPalette?): RemoteViews {
         val micro = renderMicro(context, prefs, widgetId, palette)
-        val strip = renderCellTier(context, prefs, widgetId, R.layout.widget_net_worth_strip, palette)
-        val card = renderCellTier(context, prefs, widgetId, R.layout.widget_net_worth_card, palette)
+        val strip = renderCellTier(context, prefs, widgetId, WidgetColors.layoutFor(palette, R.layout.widget_net_worth_strip_t0, R.layout.widget_net_worth_strip_t1, R.layout.widget_net_worth_strip_t2), palette)
+        val card = renderCellTier(context, prefs, widgetId, WidgetColors.layoutFor(palette, R.layout.widget_net_worth_card_t0, R.layout.widget_net_worth_card_t1, R.layout.widget_net_worth_card_t2), palette)
         return RemoteViews(
             mapOf(
                 SizeF(0f, 0f) to micro,
@@ -170,15 +170,10 @@ object NetWorthRemoteViewsRenderer {
      * semantic color here. [palette] overrides the positive/negative pair when a theme is
      * forced; null (SYSTEM) falls back to the XML-resolved @color values.
      */
-    private fun formatTrend(context: Context, changeText: String, palette: WidgetPalette?): Pair<String, Int> {
+    private fun formatTrend(changeText: String): Pair<String, (WidgetPalette) -> Int> {
         val isUp = changeText.startsWith("+")
         val arrow = if (isUp) "▲" else "▼"
-        val color = if (palette != null) {
-            if (isUp) palette.positive else palette.negative
-        } else {
-            ContextCompat.getColor(context, if (isUp) R.color.widget_positive else R.color.widget_negative)
-        }
-        return "$arrow $changeText" to color
+        return "$arrow $changeText" to { palette -> if (isUp) palette.positive else palette.negative }
     }
 
     /**
@@ -220,11 +215,7 @@ object NetWorthRemoteViewsRenderer {
         val perspectiveLabel = prefs[NetWorthWidgetKeys.PERSPECTIVE_LABEL] ?: "Cash Flow"
         views.setTextViewText(R.id.tv_widget_header_title, "NET WORTH · ${perspectiveLabel.uppercase()}")
         WidgetHeader.bindIcon(context, views, CardType.NET_WORTH, palette)
-        if (palette != null) {
-            views.setTextColor(R.id.tv_widget_header_title, palette.onSurfaceVariant)
-            views.setInt(R.id.iv_widget_header_settings, "setColorFilter", palette.onSurfaceVariant)
-            views.setInt(R.id.v_widget_header_divider, "setBackgroundColor", palette.outline)
-        }
+        WidgetHeader.applyTheme(views, palette, prefs[NetWorthWidgetKeys.GLASS] == "true")
 
         // NEW_TASK + MULTIPLE_TASK: launched from the widget host (home screen), not from
         // inside our app, so without an explicit new task this activity can attach itself to
@@ -249,28 +240,21 @@ object NetWorthRemoteViewsRenderer {
         )
 
         views.setTextViewText(R.id.tv_nw_row1_amount, prefs[NetWorthWidgetKeys.NET_WORTH] ?: "")
-        if (palette != null) {
-            views.setTextColor(R.id.tv_nw_row1_amount, palette.onSurface)
-        }
+        views.setThemedTextColor(R.id.tv_nw_row1_amount, palette) { it.onSurface }
 
         val changeText = prefs[NetWorthWidgetKeys.NET_WORTH_COMPARISON]?.takeIf { it.isNotEmpty() }
         views.setViewVisibility(R.id.tv_nw_row1_change, if (changeText != null) View.VISIBLE else View.GONE)
         if (changeText != null) {
-            val (text, color) = formatTrend(context, changeText, palette)
+            val (text, color) = formatTrend(changeText)
             views.setTextViewText(R.id.tv_nw_row1_change, text)
-            views.setTextColor(R.id.tv_nw_row1_change, color)
+            views.setThemedTextColor(R.id.tv_nw_row1_change, palette, color)
         }
-        if (palette != null) {
-            views.setInt(R.id.tv_nw_row1_change, "setBackgroundResource", palette.pillBg)
-        }
+        views.setThemedBackgroundResource(R.id.tv_nw_row1_change, palette, { it.pillBg }, R.drawable.widget_netflow_pill_bg)
     }
 
     private fun renderMicro(context: Context, prefs: Preferences, widgetId: Int, palette: WidgetPalette?): RemoteViews {
-        val views = RemoteViews(context.packageName, R.layout.widget_net_worth_micro)
+        val views = RemoteViews(context.packageName, WidgetColors.layoutFor(palette, R.layout.widget_net_worth_micro_t0, R.layout.widget_net_worth_micro_t1, R.layout.widget_net_worth_micro_t2))
         bindRow1(views, prefs, context, widgetId, palette)
-        if (palette != null) {
-            views.setInt(R.id.ll_widget_root, "setBackgroundColor", palette.surface)
-        }
         return views
     }
 
@@ -288,9 +272,6 @@ object NetWorthRemoteViewsRenderer {
     ): RemoteViews {
         val views = RemoteViews(context.packageName, layoutResId)
         bindRow1(views, prefs, context, widgetId, palette)
-        if (palette != null) {
-            views.setInt(R.id.ll_widget_root, "setBackgroundColor", palette.surface)
-        }
 
         bindCell(
             views, prefs, context,
@@ -349,18 +330,12 @@ object NetWorthRemoteViewsRenderer {
             if (highlighted) R.drawable.widget_netflow_pill_bg else R.drawable.widget_metric_tile_bg
         }
         views.setInt(R.id.ll_nw_cell3, "setBackgroundResource", cell3Bg)
-        val cell3LabelColor = if (palette != null) {
-            if (highlighted) palette.accent else palette.onSurfaceVariant
-        } else {
-            ContextCompat.getColor(context, if (highlighted) R.color.widget_accent else R.color.widget_on_surface_variant)
+        views.setThemedTextColor(R.id.tv_nw_cell3_label, palette) {
+            if (highlighted) it.accent else it.onSurfaceVariant
         }
-        val cell3ValueColor = if (palette != null) {
-            if (highlighted) palette.accent else palette.onSurface
-        } else {
-            ContextCompat.getColor(context, if (highlighted) R.color.widget_accent else R.color.widget_on_surface)
+        views.setThemedTextColor(R.id.tv_nw_cell3_value, palette) {
+            if (highlighted) it.accent else it.onSurface
         }
-        views.setTextColor(R.id.tv_nw_cell3_label, cell3LabelColor)
-        views.setTextColor(R.id.tv_nw_cell3_value, cell3ValueColor)
 
         return views
     }
@@ -390,18 +365,16 @@ object NetWorthRemoteViewsRenderer {
     ) {
         views.setTextViewText(labelId, prefs[labelKey] ?: "")
         views.setTextViewText(valueId, prefs[valueKey] ?: "")
-        if (palette != null) {
-            views.setTextColor(labelId, palette.onSurfaceVariant)
-            views.setTextColor(valueId, palette.onSurface)
-            views.setInt(containerId, "setBackgroundResource", palette.tileBg)
-        }
+        views.setThemedTextColor(labelId, palette) { it.onSurfaceVariant }
+        views.setThemedTextColor(valueId, palette) { it.onSurface }
+        views.setThemedBackgroundResource(containerId, palette, { it.tileBg }, R.drawable.widget_metric_tile_bg)
 
         val cmp = prefs[cmpKey]?.takeIf { it.isNotEmpty() }
         views.setViewVisibility(cmpId, if (cmp != null) View.VISIBLE else View.GONE)
         if (cmp != null) {
-            val (text, color) = formatTrend(context, cmp, palette)
+            val (text, color) = formatTrend(cmp)
             views.setTextViewText(cmpId, text)
-            views.setTextColor(cmpId, color)
+            views.setThemedTextColor(cmpId, palette, color)
         }
 
         views.setViewVisibility(containerId, if (prefs[visibleKey] != "false") View.VISIBLE else View.GONE)

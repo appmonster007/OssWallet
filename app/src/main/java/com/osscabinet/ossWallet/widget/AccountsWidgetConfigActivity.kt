@@ -36,8 +36,8 @@ internal fun AccountsWidgetConfigScreen(
         WidgetThemeOptions(
             selected = config.theme,
             onSelect = { onConfigChange(config.copy(theme = it)) },
-            backgroundOpacity = config.backgroundOpacity,
-            onBackgroundOpacityChange = { onConfigChange(config.copy(backgroundOpacity = it)) }
+            glass = config.glass,
+            onGlassChange = { onConfigChange(config.copy(glass = it)) }
         )
 
         WidgetConfigDivider()

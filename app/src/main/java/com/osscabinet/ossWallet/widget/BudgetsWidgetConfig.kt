@@ -16,6 +16,6 @@ data class BudgetsWidgetConfig(
     ),
     val showArchived: Boolean = false,
     val theme: WidgetTheme = WidgetTheme.SYSTEM,
-    /** Opacity (0..100 %) of the widget's background; 100 is fully opaque. */
-    val backgroundOpacity: Int = 100
+    /** Frosted-glass background instead of the solid surface. */
+    val glass: Boolean = false
 )

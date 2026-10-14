@@ -22,7 +22,7 @@ object AccountsWidgetKeys {
     val TOTAL_FORMATTED = stringPreferencesKey("accounts_total_formatted")
     /** Name of a [WidgetTheme] constant — see NetWorthWidgetKeys.THEME. */
     val THEME = stringPreferencesKey("accounts_theme")
-    val BG_OPACITY = stringPreferencesKey("accounts_bg_opacity")
+    val GLASS = stringPreferencesKey("accounts_glass")
 }
 
 @Serializable
@@ -44,7 +44,7 @@ data class AccountsSnapshot(
     val rows: List<AccountWidgetRow>,
     val totalFormatted: String,
     val theme: WidgetTheme,
-    val backgroundOpacity: Int
+    val glass: Boolean
 )
 
 /** Drives the widget off the same [AccountsCardComputer] the dashboard card uses. */
@@ -59,7 +59,7 @@ class AccountsWidgetFetcher : WidgetDataFetcher {
         prefs[AccountsWidgetKeys.IS_LOADED] = "true"
         prefs[AccountsWidgetKeys.COUNT] = snapshot.rows.size.toString()
         prefs[AccountsWidgetKeys.THEME] = snapshot.theme.name
-        prefs[AccountsWidgetKeys.BG_OPACITY] = snapshot.backgroundOpacity.toString()
+        prefs[AccountsWidgetKeys.GLASS] = snapshot.glass.toString()
         prefs[AccountsWidgetKeys.TOTAL_FORMATTED] = snapshot.totalFormatted
     }
 
@@ -122,7 +122,7 @@ class AccountsWidgetFetcher : WidgetDataFetcher {
                 rows = rows,
                 totalFormatted = formatCurrency(total, common.baseCurrency),
                 theme = config.theme,
-                backgroundOpacity = config.backgroundOpacity
+                glass = config.glass
             )
         }
     }

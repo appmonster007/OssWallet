@@ -33,7 +33,8 @@ data class WidgetPalette(
     @DrawableRes val chipNegativeBg: Int,
     @DrawableRes val chipWarningBg: Int,
     @ColorInt val track: Int,
-    @ColorInt val tick: Int
+    @ColorInt val tick: Int,
+    @DrawableRes val glassBg: Int
 )
 
 object WidgetColors {
@@ -54,7 +55,8 @@ object WidgetColors {
         chipNegativeBg = R.drawable.widget_chip_negative_light,
         chipWarningBg = R.drawable.widget_chip_warning_light,
         track = 0xFFEDE8DA.toInt(),
-        tick = 0xB31B1914.toInt()
+        tick = 0xB31B1914.toInt(),
+        glassBg = R.drawable.widget_glass_bg_light
     )
 
     internal val DARK = WidgetPalette(
@@ -74,7 +76,8 @@ object WidgetColors {
         chipNegativeBg = R.drawable.widget_chip_negative_dark,
         chipWarningBg = R.drawable.widget_chip_warning_dark,
         track = 0xFF2A2A27.toInt(),
-        tick = 0xB3ECE8DD.toInt()
+        tick = 0xB3ECE8DD.toInt(),
+        glassBg = R.drawable.widget_glass_bg_dark
     )
 
     /**
@@ -161,22 +164,13 @@ fun RemoteViews.setThemedTextColor(viewId: Int, palette: WidgetPalette?, pick: (
     }
 }
 
-/** Same as [setThemedTextColor] for a view's background colour, at [opacityPercent] of its own alpha. */
-fun RemoteViews.setThemedBackgroundColor(
-    viewId: Int,
-    palette: WidgetPalette?,
-    opacityPercent: Int = 100,
-    pick: (WidgetPalette) -> Int
-) {
-    fun withOpacity(color: Int): Int {
-        val alpha = (android.graphics.Color.alpha(color) * opacityPercent.coerceIn(0, 100) / 100f).toInt()
-        return (alpha shl 24) or (color and 0x00FFFFFF)
-    }
+/** Same as [setThemedTextColor] for a view's background colour. */
+fun RemoteViews.setThemedBackgroundColor(viewId: Int, palette: WidgetPalette?, pick: (WidgetPalette) -> Int) {
     when {
-        palette != null -> setInt(viewId, "setBackgroundColor", withOpacity(pick(palette)))
+        palette != null -> setInt(viewId, "setBackgroundColor", pick(palette))
         Build.VERSION.SDK_INT >= 34 ->
-            setColorInt(viewId, "setBackgroundColor", withOpacity(pick(WidgetColors.LIGHT)), withOpacity(pick(WidgetColors.DARK)))
-        else -> setInt(viewId, "setBackgroundColor", withOpacity(pick(WidgetColors.systemPalette())))
+            setColorInt(viewId, "setBackgroundColor", pick(WidgetColors.LIGHT), pick(WidgetColors.DARK))
+        else -> setInt(viewId, "setBackgroundColor", pick(WidgetColors.systemPalette()))
     }
 }
 

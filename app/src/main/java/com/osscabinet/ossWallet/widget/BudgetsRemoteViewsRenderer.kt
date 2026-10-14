@@ -45,7 +45,7 @@ object BudgetsRemoteViewsRenderer {
         val views = RemoteViews(context.packageName, WidgetColors.layoutFor(palette, R.layout.widget_budgets_main_t0, R.layout.widget_budgets_main_t1, R.layout.widget_budgets_main_t2))
         views.setTextViewText(R.id.tv_widget_header_title, "BUDGETS")
         WidgetHeader.bindIcon(context, views, CardType.BUDGETS, palette)
-        WidgetHeader.applyTheme(views, palette, prefs[BudgetsWidgetKeys.BG_OPACITY]?.toIntOrNull() ?: 100)
+        WidgetHeader.applyTheme(views, palette, prefs[BudgetsWidgetKeys.GLASS] == "true")
         views.setThemedTextColor(R.id.tv_budgets_empty_text, palette) { it.onSurfaceVariant }
 
         WidgetHeader.clearExtras(views)

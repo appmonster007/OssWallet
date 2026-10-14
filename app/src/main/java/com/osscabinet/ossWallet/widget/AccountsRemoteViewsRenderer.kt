@@ -43,7 +43,7 @@ object AccountsRemoteViewsRenderer {
         val views = RemoteViews(context.packageName, WidgetColors.layoutFor(palette, R.layout.widget_accounts_main_t0, R.layout.widget_accounts_main_t1, R.layout.widget_accounts_main_t2))
         views.setTextViewText(R.id.tv_widget_header_title, "ACCOUNTS")
         WidgetHeader.bindIcon(context, views, CardType.ACCOUNTS, palette)
-        WidgetHeader.applyTheme(views, palette)
+        WidgetHeader.applyTheme(views, palette, prefs[AccountsWidgetKeys.BG_OPACITY]?.toIntOrNull() ?: 100)
         views.setThemedTextColor(R.id.tv_accounts_empty_text, palette) { it.onSurfaceVariant }
 
         WidgetHeader.clearExtras(views)

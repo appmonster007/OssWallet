@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.widget
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,8 +15,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
@@ -34,6 +37,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import kotlinx.coroutines.flow.flowOf
+import kotlin.math.roundToInt
 
 // Shared building blocks for the widget config screens (the
 // APPWIDGET_CONFIGURE activities shown before a widget is placed).
@@ -102,14 +106,16 @@ internal fun WidgetConfigDivider() {
 
 /**
  * "Theme" section, shared by every widget config screen — forces the widget's own appearance
- * independent of the device's current system setting (System/Light/Dark). SYSTEM is the default
+ * independent of the device's current system setting (System/Light/Dark) and sets how opaque its background is. SYSTEM is the default
  * and needs no runtime color overrides (see WidgetColors/WidgetTheme for why LIGHT/DARK do).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun WidgetThemeOptions(
     selected: WidgetTheme,
-    onSelect: (WidgetTheme) -> Unit
+    onSelect: (WidgetTheme) -> Unit,
+    backgroundOpacity: Int,
+    onBackgroundOpacityChange: (Int) -> Unit
 ) {
     WidgetConfigSectionHeader("Theme")
     SingleChoiceSegmentedButtonRow(
@@ -134,6 +140,22 @@ internal fun WidgetThemeOptions(
             )
         }
     }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text("Background opacity", style = MaterialTheme.typography.bodyMedium, color = AppColors.onSurface)
+        Text("$backgroundOpacity%", style = MaterialTheme.typography.bodyMedium, color = AppColors.onSurfaceVariant)
+    }
+    Slider(
+        value = backgroundOpacity.toFloat(),
+        onValueChange = { onBackgroundOpacityChange(it.roundToInt()) },
+        valueRange = 0f..100f,
+        steps = 19
+    )
 }
 
 /**

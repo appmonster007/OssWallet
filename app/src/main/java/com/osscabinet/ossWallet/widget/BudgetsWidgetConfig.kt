@@ -15,5 +15,7 @@ data class BudgetsWidgetConfig(
         timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH, excludeFuture = true)
     ),
     val showArchived: Boolean = false,
-    val theme: WidgetTheme = WidgetTheme.SYSTEM
+    val theme: WidgetTheme = WidgetTheme.SYSTEM,
+    /** Opacity (0..100 %) of the widget's background; 100 is fully opaque. */
+    val backgroundOpacity: Int = 100
 )

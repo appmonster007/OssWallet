@@ -29,8 +29,8 @@ object WidgetHeader {
     }
 
     /** Themes the widget root and the shared header row: always sets every one, see [setThemedTextColor]. */
-    fun applyTheme(views: RemoteViews, palette: WidgetPalette?) {
-        views.setThemedBackgroundColor(R.id.ll_widget_root, palette) { it.surface }
+    fun applyTheme(views: RemoteViews, palette: WidgetPalette?, backgroundOpacity: Int = 100) {
+        views.setThemedBackgroundColor(R.id.ll_widget_root, palette, backgroundOpacity) { it.surface }
         views.setThemedTextColor(R.id.tv_widget_header_title, palette) { it.onSurfaceVariant }
         views.setThemedColorFilter(R.id.iv_widget_header_icon, palette) { it.onSurfaceVariant }
         views.setThemedColorFilter(R.id.iv_widget_header_settings, palette) { it.onSurfaceVariant }

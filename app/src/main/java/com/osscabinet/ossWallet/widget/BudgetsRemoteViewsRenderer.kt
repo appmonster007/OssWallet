@@ -42,16 +42,11 @@ object BudgetsRemoteViewsRenderer {
         val overCount = prefs[BudgetsWidgetKeys.OVER_COUNT]?.toIntOrNull() ?: 0
         val nearCount = prefs[BudgetsWidgetKeys.NEAR_COUNT]?.toIntOrNull() ?: 0
 
-        val views = RemoteViews(context.packageName, R.layout.widget_budgets_main)
+        val views = RemoteViews(context.packageName, WidgetColors.layoutFor(palette, R.layout.widget_budgets_main_t0, R.layout.widget_budgets_main_t1, R.layout.widget_budgets_main_t2))
         views.setTextViewText(R.id.tv_widget_header_title, "BUDGETS")
         WidgetHeader.bindIcon(context, views, CardType.BUDGETS, palette)
-        if (palette != null) {
-            views.setInt(R.id.ll_widget_root, "setBackgroundColor", palette.surface)
-            views.setTextColor(R.id.tv_widget_header_title, palette.onSurfaceVariant)
-            views.setInt(R.id.iv_widget_header_settings, "setColorFilter", palette.onSurfaceVariant)
-            views.setInt(R.id.v_widget_header_divider, "setBackgroundColor", palette.outline)
-            views.setTextColor(R.id.tv_budgets_empty_text, palette.onSurfaceVariant)
-        }
+        WidgetHeader.applyTheme(views, palette)
+        views.setThemedTextColor(R.id.tv_budgets_empty_text, palette) { it.onSurfaceVariant }
 
         WidgetHeader.clearExtras(views)
         // The chip describes the budgets, so it waits for them: an empty list shows only the empty text.
@@ -99,7 +94,7 @@ object BudgetsRemoteViewsRenderer {
 
         val adapterIntent = Intent(context, BudgetsRemoteViewsService::class.java)
             .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-            .apply { data = Uri.parse("remoteviews://budgets/$widgetId") }
+            .apply { data = Uri.parse("remoteviews://budgets/$widgetId?theme=${WidgetColors.themeKey(theme)}") }
         views.setRemoteAdapter(R.id.lv_budgets_list, adapterIntent)
         views.setEmptyView(R.id.lv_budgets_list, R.id.tv_budgets_empty_text)
 
@@ -119,24 +114,38 @@ object BudgetsRemoteViewsRenderer {
         // The amount you act on: what is left, or by how much you are over.
         views.setTextViewText(R.id.tv_budget_amount, if (over) row.overByFormatted else row.remainingFormatted)
         views.setTextViewText(R.id.tv_budget_unit, if (over) "OVER" else "LEFT")
-        views.setTextColor(
-            R.id.tv_budget_amount,
+        views.setThemedTextColor(R.id.tv_budget_amount, palette) {
             when {
-                over -> palette?.negative ?: context.getColor(R.color.widget_negative)
-                warn -> palette?.warning ?: context.getColor(R.color.widget_warning)
-                else -> palette?.onSurface ?: context.getColor(R.color.widget_on_surface)
+                over -> it.negative
+                warn -> it.warning
+                else -> it.onSurface
             }
-        )
+        }
 
+        // Exactly one bar shows: this row's state, in the variant that matches the theme.
+        val variant = when (palette) {
+            null -> 0
+            WidgetColors.LIGHT -> 1
+            else -> 2
+        }
+        val bars = arrayOf(
+            intArrayOf(R.id.pb_budget_ok, R.id.pb_budget_ok_light, R.id.pb_budget_ok_dark),
+            intArrayOf(R.id.pb_budget_warn, R.id.pb_budget_warn_light, R.id.pb_budget_warn_dark),
+            intArrayOf(R.id.pb_budget_over, R.id.pb_budget_over_light, R.id.pb_budget_over_dark)
+        )
+        val shownState = if (over) 2 else if (warn) 1 else 0
         val progress = row.percentage.toInt().coerceIn(0, 100)
         val pacePercent = row.elapsedPercent ?: 0
-        views.setViewVisibility(R.id.pb_budget_ok, if (!over && !warn) View.VISIBLE else View.GONE)
-        views.setViewVisibility(R.id.pb_budget_warn, if (warn) View.VISIBLE else View.GONE)
-        views.setViewVisibility(R.id.pb_budget_over, if (over) View.VISIBLE else View.GONE)
-        listOf(R.id.pb_budget_ok, R.id.pb_budget_warn, R.id.pb_budget_over).forEach { bar ->
-            views.setProgressBar(bar, 100, progress, false)
-            // The pace tick. 0 draws nothing, which is what an All Time budget wants.
-            views.setInt(bar, "setSecondaryProgress", pacePercent)
+        bars.forEachIndexed { state, ids ->
+            ids.forEachIndexed { v, bar ->
+                val shown = state == shownState && v == variant
+                views.setViewVisibility(bar, if (shown) View.VISIBLE else View.GONE)
+                if (shown) {
+                    views.setProgressBar(bar, 100, progress, false)
+                    // The pace tick. 0 draws nothing, which is what an All Time budget wants.
+                    views.setInt(bar, "setSecondaryProgress", pacePercent)
+                }
+            }
         }
 
         val rollover = if (row.hasRollover) " +${row.rolloverAmountFormatted}" else ""
@@ -144,12 +153,10 @@ object BudgetsRemoteViewsRenderer {
         val meta = if (pace == BudgetPaceStatus.AHEAD_OF_PACE) "ahead of pace" else row.periodLabel
         views.setTextViewText(R.id.tv_budget_meta, "${row.percentage.toInt().coerceAtLeast(0)}% · $meta")
 
-        palette?.let {
-            views.setTextColor(R.id.tv_budget_name, it.onSurface)
-            views.setTextColor(R.id.tv_budget_unit, it.onSurfaceVariant)
-            views.setTextColor(R.id.tv_budget_sub, it.onSurfaceVariant)
-            views.setTextColor(R.id.tv_budget_meta, it.onSurfaceVariant)
-        }
+        views.setThemedTextColor(R.id.tv_budget_name, palette) { it.onSurface }
+        views.setThemedTextColor(R.id.tv_budget_unit, palette) { it.onSurfaceVariant }
+        views.setThemedTextColor(R.id.tv_budget_sub, palette) { it.onSurfaceVariant }
+        views.setThemedTextColor(R.id.tv_budget_meta, palette) { it.onSurfaceVariant }
         return views
     }
 }

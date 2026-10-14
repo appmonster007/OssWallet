@@ -3,6 +3,8 @@ package com.osscabinet.ossWallet.widget
 import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
@@ -64,6 +66,14 @@ abstract class BaseWidgetConfigActivity<T> : ComponentActivity() {
                         scope.launch {
                             prefsStore.save(widgetId, config)
                             WidgetRefreshCoordinator.requestWidgets(applicationContext, listOf(widgetId))
+                            // The launcher is mid-transition back to the home screen while this
+                            // activity closes, and an update that lands in that window can be dropped
+                            // (the host keeps showing the old widget). Send it once more after it has
+                            // settled; a repeat is a harmless no-op for the host.
+                            val appContext = applicationContext
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                WidgetRefreshCoordinator.requestWidgets(appContext, listOf(widgetId))
+                            }, HOST_SETTLE_DELAY_MS)
                             val resultValue = Intent().putExtra(
                                 AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId
                             )
@@ -75,5 +85,9 @@ abstract class BaseWidgetConfigActivity<T> : ComponentActivity() {
                 )
             }
         }
+    }
+
+    private companion object {
+        const val HOST_SETTLE_DELAY_MS = 1200L
     }
 }

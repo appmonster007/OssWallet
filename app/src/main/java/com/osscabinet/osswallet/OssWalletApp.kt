@@ -18,6 +18,7 @@ import com.osscabinet.ossWallet.domain.service.BackupScheduler
 import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
 import com.osscabinet.ossWallet.service.WebServerService
 import com.osscabinet.ossWallet.util.PlannedPaymentWorker
+import com.osscabinet.ossWallet.widget.WidgetColors
 import dagger.hilt.android.HiltAndroidApp
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -128,6 +129,17 @@ class OssWalletApp : Application(), Configuration.Provider {
             .distinctUntilChanged()
             .drop(1)
             .onEach { widgetRefreshTrigger.trigger() }
+            .launchIn(applicationScope)
+
+        // Widgets on the default "App" theme take the app's own theme (Light/Dark/Amoled). Set it
+        // before the first widget render, and re-render them when the user changes it.
+        settingsRepository.theme
+            .distinctUntilChanged()
+            .onEach { theme ->
+                val changed = WidgetColors.appTheme != null && WidgetColors.appTheme != theme
+                WidgetColors.appTheme = theme
+                if (changed) widgetRefreshTrigger.trigger()
+            }
             .launchIn(applicationScope)
 
         // Auto-stop WebServer if it shouldn't stay alive in background

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fixed-colour copy of widget_chip_neutral for a widget forced to dark (WidgetPalette), which must not follow the device's night mode. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="8dp" />
+    <solid android:color="#FF2A2A27" />
+</shape>

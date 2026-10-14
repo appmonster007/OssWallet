@@ -75,8 +75,8 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:text="Inflow"
-                    tools:text="Inflow" />
+                    android:text="Income"
+                    tools:text="Income" />
             <TextView
                     android:id="@+id/tv_nw_cell1_value"
                     android:layout_width="match_parent"
@@ -89,19 +89,20 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:text="5,000.00 $"
-                    tools:text="5,000.00 $" />
+                    android:text="$5,000.00"
+                    tools:text="$5,000.00" />
             <TextView
                     android:id="@+id/tv_nw_cell1_cmp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/jetbrains_mono"
+                    android:textColor="@color/widget_positive"
                     android:textSize="7sp"
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:text="▲6.0%"
-                    tools:text="▲6.0%" />
+                    android:text="▲ +6.0%"
+                    tools:text="▲ +6.0%" />
         </LinearLayout>
 
         <LinearLayout
@@ -126,8 +127,8 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:text="Outflow"
-                    tools:text="Outflow" />
+                    android:text="Expense"
+                    tools:text="Expense" />
             <TextView
                     android:id="@+id/tv_nw_cell2_value"
                     android:layout_width="match_parent"
@@ -140,19 +141,20 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:text="-3,200.00 $"
-                    tools:text="-3,200.00 $" />
+                    android:text="$3,200.00"
+                    tools:text="$3,200.00" />
             <TextView
                     android:id="@+id/tv_nw_cell2_cmp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/jetbrains_mono"
+                    android:textColor="@color/widget_negative"
                     android:textSize="7sp"
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:text="▼1.4%"
-                    tools:text="▼1.4%" />
+                    android:text="▼ -1.4%"
+                    tools:text="▼ -1.4%" />
         </LinearLayout>
 
         <LinearLayout
@@ -160,7 +162,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@drawable/widget_netflow_pill_bg"
+                android:background="@drawable/widget_metric_tile_bg"
                 android:orientation="vertical"
                 android:paddingStart="6dp"
                 android:paddingEnd="6dp"
@@ -171,13 +173,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/jetbrains_mono"
-                    android:textColor="@color/widget_accent"
+                    android:textColor="@color/widget_on_surface_variant"
                     android:textSize="8sp"
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:text="Net flow"
-                    tools:text="Net flow" />
+                    android:text="Transfer"
+                    tools:text="Transfer" />
             <TextView
                     android:id="@+id/tv_nw_cell3_value"
                     android:layout_width="match_parent"
@@ -185,25 +187,25 @@
                     android:layout_weight="1"
                     android:gravity="center_vertical|end"
                     android:fontFamily="@font/manrope"
-                    android:textColor="@color/widget_accent"
+                    android:textColor="@color/widget_on_surface"
                     android:textSize="11sp"
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:text="1,800.00 $"
-                    tools:text="1,800.00 $" />
+                    android:text="$1,800.00"
+                    tools:text="$1,800.00" />
             <TextView
                     android:id="@+id/tv_nw_cell3_cmp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/jetbrains_mono"
-                    android:textColor="@color/widget_accent"
+                    android:textColor="@color/widget_positive"
                     android:textSize="7sp"
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:text="▲12.3%"
-                    tools:text="▲12.3%" />
+                    android:text="▲ +12.3%"
+                    tools:text="▲ +12.3%" />
         </LinearLayout>
 
         <LinearLayout
@@ -243,19 +245,20 @@
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:text="-1,100.00 $"
-                    tools:text="-1,100.00 $" />
+                    android:text="$1,100.00"
+                    tools:text="$1,100.00" />
             <TextView
                     android:id="@+id/tv_nw_cell4_cmp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/jetbrains_mono"
+                    android:textColor="@color/widget_negative"
                     android:textSize="7sp"
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:text="▼1.4%"
-                    tools:text="▼1.4%" />
+                    android:text="▼ -1.4%"
+                    tools:text="▼ -1.4%" />
         </LinearLayout>
 
     </LinearLayout>

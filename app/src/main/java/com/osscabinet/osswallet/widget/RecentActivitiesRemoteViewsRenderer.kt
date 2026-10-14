@@ -39,17 +39,12 @@ object RecentActivitiesRemoteViewsRenderer {
             ?: WidgetTheme.SYSTEM
         val palette = WidgetColors.resolve(theme)
 
-        val views = RemoteViews(context.packageName, R.layout.widget_recent_activities_main)
+        val views = RemoteViews(context.packageName, WidgetColors.layoutFor(palette, R.layout.widget_recent_activities_main_t0, R.layout.widget_recent_activities_main_t1, R.layout.widget_recent_activities_main_t2))
         views.setTextViewText(R.id.tv_widget_header_title, prefs[RecentActivitiesWidgetKeys.TITLE] ?: "RECENT ACTIVITIES")
         WidgetHeader.bindIcon(context, views, CardType.RECENT_ACTIVITIES, palette)
-        if (palette != null) {
-            views.setInt(R.id.ll_widget_root, "setBackgroundColor", palette.surface)
-            views.setTextColor(R.id.tv_widget_header_title, palette.onSurfaceVariant)
-            views.setInt(R.id.iv_widget_header_settings, "setColorFilter", palette.onSurfaceVariant)
-            views.setInt(R.id.v_widget_header_divider, "setBackgroundColor", palette.outline)
-            views.setInt(R.id.iv_ra_empty_icon, "setColorFilter", palette.outline)
-            views.setTextColor(R.id.tv_ra_empty_text, palette.onSurfaceVariant)
-        }
+        WidgetHeader.applyTheme(views, palette)
+        views.setThemedColorFilter(R.id.iv_ra_empty_icon, palette) { it.outline }
+        views.setThemedTextColor(R.id.tv_ra_empty_text, palette) { it.onSurfaceVariant }
 
         val settingsIntent = Intent(context, RecentActivitiesWidgetConfigActivity::class.java)
             .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
@@ -68,10 +63,8 @@ object RecentActivitiesRemoteViewsRenderer {
         // itself (see that file's ll_widget_header_extra slot).
         val viewAllPill = RemoteViews(context.packageName, R.layout.widget_header_action_pill)
         viewAllPill.setTextViewText(R.id.tv_header_action_pill, "VIEW ALL")
-        if (palette != null) {
-            viewAllPill.setTextColor(R.id.tv_header_action_pill, palette.accent)
-            viewAllPill.setInt(R.id.tv_header_action_pill, "setBackgroundResource", palette.pillBg)
-        }
+        viewAllPill.setThemedTextColor(R.id.tv_header_action_pill, palette) { it.accent }
+        viewAllPill.setThemedBackgroundResource(R.id.tv_header_action_pill, palette, { it.pillBg }, R.drawable.widget_netflow_pill_bg)
         val viewAllIntent = Intent(context, MainActivity::class.java)
             .putExtra(MainActivity.EXTRA_WIDGET_NAV, "records")
             .putExtra(MainActivity.EXTRA_WIDGET_FILTER, prefs[RecentActivitiesWidgetKeys.VIEW_ALL_FILTER] ?: "")
@@ -102,7 +95,7 @@ object RecentActivitiesRemoteViewsRenderer {
 
         val adapterIntent = Intent(context, RecentActivitiesRemoteViewsService::class.java)
             .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-            .apply { data = android.net.Uri.parse("remoteviews://ra/$widgetId") }
+            .apply { data = android.net.Uri.parse("remoteviews://ra/$widgetId?theme=${WidgetColors.themeKey(theme)}") }
         views.setRemoteAdapter(R.id.lv_ra_list, adapterIntent)
         views.setEmptyView(R.id.lv_ra_list, R.id.ll_ra_empty)
 

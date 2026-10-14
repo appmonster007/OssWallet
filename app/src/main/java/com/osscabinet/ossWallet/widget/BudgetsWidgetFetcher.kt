@@ -28,7 +28,7 @@ object BudgetsWidgetKeys {
     val NEAR_COUNT = stringPreferencesKey("budgets_near_count")
     /** Name of a [WidgetTheme] constant — see NetWorthWidgetKeys.THEME. */
     val THEME = stringPreferencesKey("budgets_theme")
-    val BG_OPACITY = stringPreferencesKey("budgets_bg_opacity")
+    val GLASS = stringPreferencesKey("budgets_glass")
 }
 
 @Serializable
@@ -57,7 +57,7 @@ data class BudgetsSnapshot(
     val overCount: Int,
     val nearCount: Int,
     val theme: WidgetTheme,
-    val backgroundOpacity: Int
+    val glass: Boolean
 )
 
 /** Drives the widget off the same [BudgetsCardComputer] the dashboard card uses. */
@@ -72,7 +72,7 @@ class BudgetsWidgetFetcher : WidgetDataFetcher {
         prefs[BudgetsWidgetKeys.IS_LOADED] = "true"
         prefs[BudgetsWidgetKeys.COUNT] = snapshot.rows.size.toString()
         prefs[BudgetsWidgetKeys.THEME] = snapshot.theme.name
-        prefs[BudgetsWidgetKeys.BG_OPACITY] = snapshot.backgroundOpacity.toString()
+        prefs[BudgetsWidgetKeys.GLASS] = snapshot.glass.toString()
         prefs[BudgetsWidgetKeys.OVER_COUNT] = snapshot.overCount.toString()
         prefs[BudgetsWidgetKeys.NEAR_COUNT] = snapshot.nearCount.toString()
     }
@@ -122,7 +122,7 @@ class BudgetsWidgetFetcher : WidgetDataFetcher {
                     it.second == BudgetPaceStatus.AHEAD_OF_PACE || it.second == BudgetPaceStatus.NEAR_LIMIT
                 },
                 theme = config.theme,
-                backgroundOpacity = config.backgroundOpacity
+                glass = config.glass
             )
         }
 

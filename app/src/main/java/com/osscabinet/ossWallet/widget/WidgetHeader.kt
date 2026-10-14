@@ -29,8 +29,12 @@ object WidgetHeader {
     }
 
     /** Themes the widget root and the shared header row: always sets every one, see [setThemedTextColor]. */
-    fun applyTheme(views: RemoteViews, palette: WidgetPalette?, backgroundOpacity: Int = 100) {
-        views.setThemedBackgroundColor(R.id.ll_widget_root, palette, backgroundOpacity) { it.surface }
+    fun applyTheme(views: RemoteViews, palette: WidgetPalette?, glass: Boolean = false) {
+        if (glass) {
+            views.setInt(R.id.ll_widget_root, "setBackgroundResource", palette?.glassBg ?: R.drawable.widget_glass_bg)
+        } else {
+            views.setThemedBackgroundColor(R.id.ll_widget_root, palette) { it.surface }
+        }
         views.setThemedTextColor(R.id.tv_widget_header_title, palette) { it.onSurfaceVariant }
         views.setThemedColorFilter(R.id.iv_widget_header_icon, palette) { it.onSurfaceVariant }
         views.setThemedColorFilter(R.id.iv_widget_header_settings, palette) { it.onSurfaceVariant }

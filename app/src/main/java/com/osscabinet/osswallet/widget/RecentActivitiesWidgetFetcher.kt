@@ -16,7 +16,7 @@ object RecentActivitiesWidgetKeys {
     val VIEW_ALL_FILTER = stringPreferencesKey("ra_view_all_filter")
     /** Name of a [WidgetTheme] constant — see NetWorthWidgetKeys.THEME. */
     val THEME = stringPreferencesKey("ra_theme")
-    val BG_OPACITY = stringPreferencesKey("ra_bg_opacity")
+    val GLASS = stringPreferencesKey("ra_glass")
 }
 
 /**
@@ -36,7 +36,7 @@ class RecentActivitiesWidgetFetcher : WidgetDataFetcher {
         prefs[RecentActivitiesWidgetKeys.TITLE] = "RECENT ACTIVITIES"
         prefs[RecentActivitiesWidgetKeys.VIEW_ALL_FILTER] = encodeFilter(config.filter)
         prefs[RecentActivitiesWidgetKeys.THEME] = config.theme.name
-        prefs[RecentActivitiesWidgetKeys.BG_OPACITY] = config.backgroundOpacity.toString()
+        prefs[RecentActivitiesWidgetKeys.GLASS] = config.glass.toString()
     }
 }
 

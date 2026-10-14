@@ -20,6 +20,6 @@ data class RecentActivitiesWidgetConfig(
     val showCategory: Boolean = true,
     val showTimestamp: Boolean = true,
     val theme: WidgetTheme = WidgetTheme.SYSTEM,
-    /** Opacity (0..100 %) of the widget's background; 100 is fully opaque. */
-    val backgroundOpacity: Int = 100
+    /** Frosted-glass background instead of the solid surface. */
+    val glass: Boolean = false
 )

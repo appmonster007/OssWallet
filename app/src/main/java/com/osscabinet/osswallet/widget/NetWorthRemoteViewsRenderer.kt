@@ -33,7 +33,7 @@ object NetWorthWidgetKeys {
     val PERSPECTIVE_LABEL = stringPreferencesKey("nw_perspective_label")
     /** Name of a [WidgetTheme] constant — forces LIGHT/DARK regardless of the device's current night mode, or SYSTEM to leave every color/drawable as XML already declares it. */
     val THEME = stringPreferencesKey("nw_theme")
-    val BG_OPACITY = stringPreferencesKey("nw_bg_opacity")
+    val GLASS = stringPreferencesKey("nw_glass")
 
     val CELL1_LABEL = stringPreferencesKey("nw_cell1_label")
     val CELL1_VALUE = stringPreferencesKey("nw_cell1_value")
@@ -215,7 +215,7 @@ object NetWorthRemoteViewsRenderer {
         val perspectiveLabel = prefs[NetWorthWidgetKeys.PERSPECTIVE_LABEL] ?: "Cash Flow"
         views.setTextViewText(R.id.tv_widget_header_title, "NET WORTH · ${perspectiveLabel.uppercase()}")
         WidgetHeader.bindIcon(context, views, CardType.NET_WORTH, palette)
-        WidgetHeader.applyTheme(views, palette, prefs[NetWorthWidgetKeys.BG_OPACITY]?.toIntOrNull() ?: 100)
+        WidgetHeader.applyTheme(views, palette, prefs[NetWorthWidgetKeys.GLASS] == "true")
 
         // NEW_TASK + MULTIPLE_TASK: launched from the widget host (home screen), not from
         // inside our app, so without an explicit new task this activity can attach itself to

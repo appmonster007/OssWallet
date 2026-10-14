@@ -34,7 +34,9 @@ data class WidgetPalette(
     @DrawableRes val chipWarningBg: Int,
     @ColorInt val track: Int,
     @ColorInt val tick: Int,
-    @DrawableRes val glassBg: Int
+    @DrawableRes val glassBg: Int,
+    /** Set on the "follow the device" glass palette: what to use when the device is in night mode. */
+    val nightVariant: WidgetPalette? = null
 )
 
 object WidgetColors {
@@ -90,11 +92,37 @@ object WidgetColors {
     )
 
     /**
+     * Glass variants: the see-through background lets any wallpaper show through, so the muted
+     * text colours (header, captions) are pushed towards the main ink for contrast.
+     */
+    internal val LIGHT_GLASS = LIGHT.copy(onSurfaceVariant = 0xFF2E2B22.toInt(), outline = 0x66000000)
+    internal val DARK_GLASS = DARK.copy(onSurfaceVariant = 0xFFDAD5CA.toInt(), outline = 0x66ECE8DD)
+
+    /**
+     * Glass that follows the device's night mode: light glass colours, with [DARK_GLASS] as the
+     * night counterpart (resolved by the host on API 34+, see [setThemedTextColor]) and the
+     * night-aware XML drawables for the shapes.
+     */
+    internal val SYSTEM_GLASS = LIGHT_GLASS.copy(
+        tileBg = R.drawable.widget_metric_tile_bg,
+        pillBg = R.drawable.widget_netflow_pill_bg,
+        ovalPositiveBg = R.drawable.widget_oval_positive_bg,
+        ovalNegativeBg = R.drawable.widget_oval_negative_bg,
+        chipNeutralBg = R.drawable.widget_chip_neutral,
+        chipNegativeBg = R.drawable.widget_chip_negative,
+        chipWarningBg = R.drawable.widget_chip_warning,
+        glassBg = R.drawable.widget_glass_bg,
+        nightVariant = DARK_GLASS
+    )
+
+    /**
      * The app's own theme setting ("System"/"Light"/"Dark"/"Amoled"), kept current by
      * OssWalletApp so [WidgetTheme.SYSTEM] widgets look like the app instead of the device.
      */
     @Volatile
     var appTheme: String? = null
+
+    internal fun isNight(): Boolean = isSystemNight()
 
     private fun isSystemNight(): Boolean =
         Resources.getSystem().configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
@@ -108,17 +136,21 @@ object WidgetColors {
      * change of palette is a different intent: the host then rebinds the adapter and drops its
      * cached rows instead of leaving old-theme rows under a new-theme header.
      */
-    fun themeKey(theme: WidgetTheme): String = when (resolve(theme)) {
+    fun themeKey(theme: WidgetTheme, glass: Boolean = false): String = when (resolve(theme, glass)) {
         LIGHT -> "light"
         DARK -> "dark"
         AMOLED -> "amoled"
+        LIGHT_GLASS -> "light_glass"
+        SYSTEM_GLASS -> "system_glass"
+        DARK_GLASS -> "dark_glass"
         else -> "system"
     }
 
     /** The theme variant of a widget layout (see the widget_*_t0/t1/t2 wrappers): a different id per theme. */
     fun layoutFor(palette: WidgetPalette?, system: Int, light: Int, dark: Int): Int = when (palette) {
         null -> system
-        LIGHT -> light
+        SYSTEM_GLASS -> system
+        LIGHT, LIGHT_GLASS -> light
         else -> dark
     }
 
@@ -126,19 +158,29 @@ object WidgetColors {
         "light" -> LIGHT
         "dark" -> DARK
         "amoled" -> AMOLED
+        "light_glass" -> LIGHT_GLASS
+        "system_glass" -> SYSTEM_GLASS
+        "dark_glass" -> DARK_GLASS
         else -> null
     }
 
-    /** null means "forced neither way" — leave every XML-declared color/drawable alone. */
-    fun resolve(theme: WidgetTheme): WidgetPalette? = when (theme) {
-        WidgetTheme.SYSTEM -> when (appTheme) {
-            "Light" -> LIGHT
-            "Dark" -> DARK
-            "Amoled" -> AMOLED
-            else -> null
+    /**
+     * null means "forced neither way" — leave every XML-declared color/drawable alone. Glass always
+     * resolves to a palette (the app's or the device's current one) since its text colours differ.
+     */
+    fun resolve(theme: WidgetTheme, glass: Boolean = false): WidgetPalette? {
+        val base = when (theme) {
+            WidgetTheme.SYSTEM -> when (appTheme) {
+                "Light" -> LIGHT
+                "Dark" -> DARK
+                "Amoled" -> AMOLED
+                else -> if (glass) SYSTEM_GLASS else null
+            }
+            WidgetTheme.LIGHT -> LIGHT
+            WidgetTheme.DARK -> DARK
         }
-        WidgetTheme.LIGHT -> LIGHT
-        WidgetTheme.DARK -> DARK
+        if (!glass || base == null || base == SYSTEM_GLASS) return base
+        return if (base == LIGHT) LIGHT_GLASS else DARK_GLASS
     }
 }
 
@@ -157,6 +199,10 @@ object WidgetColors {
  */
 fun RemoteViews.setThemedTextColor(viewId: Int, palette: WidgetPalette?, pick: (WidgetPalette) -> Int) {
     when {
+        palette?.nightVariant != null && Build.VERSION.SDK_INT >= 34 ->
+            setColorInt(viewId, "setTextColor", pick(palette), pick(palette.nightVariant))
+        palette?.nightVariant != null ->
+            setTextColor(viewId, pick(if (WidgetColors.isNight()) palette.nightVariant else palette))
         palette != null -> setTextColor(viewId, pick(palette))
         Build.VERSION.SDK_INT >= 34 ->
             setColorInt(viewId, "setTextColor", pick(WidgetColors.LIGHT), pick(WidgetColors.DARK))
@@ -167,6 +213,10 @@ fun RemoteViews.setThemedTextColor(viewId: Int, palette: WidgetPalette?, pick: (
 /** Same as [setThemedTextColor] for a view's background colour. */
 fun RemoteViews.setThemedBackgroundColor(viewId: Int, palette: WidgetPalette?, pick: (WidgetPalette) -> Int) {
     when {
+        palette?.nightVariant != null && Build.VERSION.SDK_INT >= 34 ->
+            setColorInt(viewId, "setBackgroundColor", pick(palette), pick(palette.nightVariant))
+        palette?.nightVariant != null ->
+            setInt(viewId, "setBackgroundColor", pick(if (WidgetColors.isNight()) palette.nightVariant else palette))
         palette != null -> setInt(viewId, "setBackgroundColor", pick(palette))
         Build.VERSION.SDK_INT >= 34 ->
             setColorInt(viewId, "setBackgroundColor", pick(WidgetColors.LIGHT), pick(WidgetColors.DARK))
@@ -177,6 +227,10 @@ fun RemoteViews.setThemedBackgroundColor(viewId: Int, palette: WidgetPalette?, p
 /** Same as [setThemedTextColor] for an ImageView's colour filter. */
 fun RemoteViews.setThemedColorFilter(viewId: Int, palette: WidgetPalette?, pick: (WidgetPalette) -> Int) {
     when {
+        palette?.nightVariant != null && Build.VERSION.SDK_INT >= 34 ->
+            setColorInt(viewId, "setColorFilter", pick(palette), pick(palette.nightVariant))
+        palette?.nightVariant != null ->
+            setInt(viewId, "setColorFilter", pick(if (WidgetColors.isNight()) palette.nightVariant else palette))
         palette != null -> setInt(viewId, "setColorFilter", pick(palette))
         Build.VERSION.SDK_INT >= 34 ->
             setColorInt(viewId, "setColorFilter", pick(WidgetColors.LIGHT), pick(WidgetColors.DARK))

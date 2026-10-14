@@ -37,12 +37,13 @@ object RecentActivitiesRemoteViewsRenderer {
 
         val theme = prefs[RecentActivitiesWidgetKeys.THEME]?.let { runCatching { WidgetTheme.valueOf(it) }.getOrNull() }
             ?: WidgetTheme.SYSTEM
-        val palette = WidgetColors.resolve(theme)
+        val glass = prefs[RecentActivitiesWidgetKeys.GLASS] == "true"
+        val palette = WidgetColors.resolve(theme, glass)
 
         val views = RemoteViews(context.packageName, WidgetColors.layoutFor(palette, R.layout.widget_recent_activities_main_t0, R.layout.widget_recent_activities_main_t1, R.layout.widget_recent_activities_main_t2))
         views.setTextViewText(R.id.tv_widget_header_title, prefs[RecentActivitiesWidgetKeys.TITLE] ?: "RECENT ACTIVITIES")
         WidgetHeader.bindIcon(context, views, CardType.RECENT_ACTIVITIES, palette)
-        WidgetHeader.applyTheme(views, palette, prefs[RecentActivitiesWidgetKeys.GLASS] == "true")
+        WidgetHeader.applyTheme(views, palette, glass)
         views.setThemedColorFilter(R.id.iv_ra_empty_icon, palette) { it.outline }
         views.setThemedTextColor(R.id.tv_ra_empty_text, palette) { it.onSurfaceVariant }
 
@@ -95,7 +96,7 @@ object RecentActivitiesRemoteViewsRenderer {
 
         val adapterIntent = Intent(context, RecentActivitiesRemoteViewsService::class.java)
             .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-            .apply { data = android.net.Uri.parse("remoteviews://ra/$widgetId?theme=${WidgetColors.themeKey(theme)}") }
+            .apply { data = android.net.Uri.parse("remoteviews://ra/$widgetId?theme=${WidgetColors.themeKey(theme, glass)}") }
         views.setRemoteAdapter(R.id.lv_ra_list, adapterIntent)
         views.setEmptyView(R.id.lv_ra_list, R.id.ll_ra_empty)
 

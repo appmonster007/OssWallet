@@ -38,14 +38,15 @@ object BudgetsRemoteViewsRenderer {
 
         val theme = prefs[BudgetsWidgetKeys.THEME]?.let { runCatching { WidgetTheme.valueOf(it) }.getOrNull() }
             ?: WidgetTheme.SYSTEM
-        val palette = WidgetColors.resolve(theme)
+        val glass = prefs[BudgetsWidgetKeys.GLASS] == "true"
+        val palette = WidgetColors.resolve(theme, glass)
         val overCount = prefs[BudgetsWidgetKeys.OVER_COUNT]?.toIntOrNull() ?: 0
         val nearCount = prefs[BudgetsWidgetKeys.NEAR_COUNT]?.toIntOrNull() ?: 0
 
         val views = RemoteViews(context.packageName, WidgetColors.layoutFor(palette, R.layout.widget_budgets_main_t0, R.layout.widget_budgets_main_t1, R.layout.widget_budgets_main_t2))
         views.setTextViewText(R.id.tv_widget_header_title, "BUDGETS")
         WidgetHeader.bindIcon(context, views, CardType.BUDGETS, palette)
-        WidgetHeader.applyTheme(views, palette, prefs[BudgetsWidgetKeys.GLASS] == "true")
+        WidgetHeader.applyTheme(views, palette, glass)
         views.setThemedTextColor(R.id.tv_budgets_empty_text, palette) { it.onSurfaceVariant }
 
         WidgetHeader.clearExtras(views)
@@ -94,7 +95,7 @@ object BudgetsRemoteViewsRenderer {
 
         val adapterIntent = Intent(context, BudgetsRemoteViewsService::class.java)
             .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-            .apply { data = Uri.parse("remoteviews://budgets/$widgetId?theme=${WidgetColors.themeKey(theme)}") }
+            .apply { data = Uri.parse("remoteviews://budgets/$widgetId?theme=${WidgetColors.themeKey(theme, glass)}") }
         views.setRemoteAdapter(R.id.lv_budgets_list, adapterIntent)
         views.setEmptyView(R.id.lv_budgets_list, R.id.tv_budgets_empty_text)
 
@@ -124,7 +125,7 @@ object BudgetsRemoteViewsRenderer {
 
         // Exactly one bar shows: this row's state, in the variant that matches the theme.
         val variant = when (palette) {
-            null -> 0
+            null, WidgetColors.SYSTEM_GLASS -> 0
             WidgetColors.LIGHT -> 1
             else -> 2
         }

@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 object AccountsRemoteViewsRenderer {
 
     private const val BADGE_ICON_DP = 18
+    private const val BADGE_ALPHA = 0x28
 
     fun render(
         context: Context,
@@ -39,16 +40,11 @@ object AccountsRemoteViewsRenderer {
         val palette = WidgetColors.resolve(theme)
         val total = prefs[AccountsWidgetKeys.TOTAL_FORMATTED].orEmpty()
 
-        val views = RemoteViews(context.packageName, R.layout.widget_accounts_main)
+        val views = RemoteViews(context.packageName, WidgetColors.layoutFor(palette, R.layout.widget_accounts_main_t0, R.layout.widget_accounts_main_t1, R.layout.widget_accounts_main_t2))
         views.setTextViewText(R.id.tv_widget_header_title, "ACCOUNTS")
         WidgetHeader.bindIcon(context, views, CardType.ACCOUNTS, palette)
-        if (palette != null) {
-            views.setInt(R.id.ll_widget_root, "setBackgroundColor", palette.surface)
-            views.setTextColor(R.id.tv_widget_header_title, palette.onSurfaceVariant)
-            views.setInt(R.id.iv_widget_header_settings, "setColorFilter", palette.onSurfaceVariant)
-            views.setInt(R.id.v_widget_header_divider, "setBackgroundColor", palette.outline)
-            views.setTextColor(R.id.tv_accounts_empty_text, palette.onSurfaceVariant)
-        }
+        WidgetHeader.applyTheme(views, palette)
+        views.setThemedTextColor(R.id.tv_accounts_empty_text, palette) { it.onSurfaceVariant }
 
         WidgetHeader.clearExtras(views)
         val hasAccounts = (prefs[AccountsWidgetKeys.COUNT]?.toIntOrNull() ?: 0) > 0
@@ -91,7 +87,7 @@ object AccountsRemoteViewsRenderer {
 
         val adapterIntent = Intent(context, AccountsRemoteViewsService::class.java)
             .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-            .apply { data = Uri.parse("remoteviews://accounts/$widgetId") }
+            .apply { data = Uri.parse("remoteviews://accounts/$widgetId?theme=${WidgetColors.themeKey(theme)}") }
         views.setRemoteAdapter(R.id.lv_accounts_list, adapterIntent)
         views.setEmptyView(R.id.lv_accounts_list, R.id.tv_accounts_empty_text)
 
@@ -106,7 +102,10 @@ object AccountsRemoteViewsRenderer {
         val accountColor = runCatching { Color.parseColor(row.colorHex) }.getOrDefault(Color.GRAY)
 
         // The account's own icon in a soft badge of its colour, as on the Accounts card.
-        views.setInt(R.id.iv_account_badge_bg, "setColorFilter", (accountColor and 0x00FFFFFF) or 0x28000000)
+        // Opaque colour at low alpha, not a pre-faded colour over the white oval: that left the
+        // badge pale on a dark surface instead of tinting whatever is behind it.
+        views.setInt(R.id.iv_account_badge_bg, "setColorFilter", accountColor or 0xFF000000.toInt())
+        views.setInt(R.id.iv_account_badge_bg, "setImageAlpha", BADGE_ALPHA)
         views.setImageViewBitmap(
             R.id.iv_account_icon,
             WidgetIconRenderer.render(getAccountIconByName(row.iconName), (BADGE_ICON_DP * density).toInt(), accountColor)
@@ -116,19 +115,15 @@ object AccountsRemoteViewsRenderer {
         views.setTextViewText(R.id.tv_account_balance, row.balanceFormatted)
         views.setTextViewText(R.id.tv_account_net, row.netCaption)
 
-        val negative = palette?.negative ?: context.getColor(R.color.widget_negative)
-        val positive = palette?.positive ?: context.getColor(R.color.widget_positive)
-        val muted = palette?.onSurfaceVariant ?: context.getColor(R.color.widget_on_surface_variant)
-        views.setTextColor(R.id.tv_account_balance, if (row.balanceNegative) negative else palette?.onSurface ?: context.getColor(R.color.widget_on_surface))
-        views.setTextColor(
-            R.id.tv_account_net,
+        views.setThemedTextColor(R.id.tv_account_balance, palette) { if (row.balanceNegative) it.negative else it.onSurface }
+        views.setThemedTextColor(R.id.tv_account_net, palette) {
             when {
-                row.netNegative -> negative
-                row.netCaption.startsWith("+") -> positive
-                else -> muted
+                row.netNegative -> it.negative
+                row.netCaption.startsWith("+") -> it.positive
+                else -> it.onSurfaceVariant
             }
-        )
-        palette?.let { views.setTextColor(R.id.tv_account_name, it.onSurface) }
+        }
+        views.setThemedTextColor(R.id.tv_account_name, palette) { it.onSurface }
 
         return views
     }

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fixed-colour copy of widget_budget_progress_over for a widget forced to dark: a ProgressBar's
+     colours live in its drawable and so follow the device's night mode, not the forced theme. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <corners android:radius="4dp" />
+            <solid android:color="#FF2A2A27" />
+        </shape>
+    </item>
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape android:shape="rectangle">
+                <corners android:radius="4dp" />
+                <solid android:color="#FFE27974" />
+            </shape>
+        </clip>
+    </item>
+    <item android:id="@android:id/secondaryProgress">
+        <scale
+                android:drawable="@drawable/widget_budget_pace_tick_dark"
+                android:scaleWidth="100%"
+                android:scaleGravity="left" />
+    </item>
+</layer-list>

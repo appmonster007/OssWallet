@@ -21,17 +21,18 @@ class AccountsRemoteViewsService : RemoteViewsService() {
             AppWidgetManager.EXTRA_APPWIDGET_ID,
             AppWidgetManager.INVALID_APPWIDGET_ID
         )
-        return AccountsRemoteViewsFactory(applicationContext, widgetId)
+        return AccountsRemoteViewsFactory(applicationContext, widgetId, WidgetColors.paletteForKey(intent.data?.getQueryParameter("theme")))
     }
 }
 
 private class AccountsRemoteViewsFactory(
     private val context: Context,
-    private val widgetId: Int
+    private val widgetId: Int,
+    /** The palette the header was rendered with, fixed when the host binds the adapter. */
+    private val palette: WidgetPalette?
 ) : RemoteViewsService.RemoteViewsFactory {
 
     private var rows: List<AccountWidgetRow> = emptyList()
-    private var palette: WidgetPalette? = null
 
     override fun onCreate() = Unit
 
@@ -43,7 +44,6 @@ private class AccountsRemoteViewsFactory(
             }.getOrNull()
         }
         rows = snapshot?.rows.orEmpty()
-        palette = snapshot?.let { WidgetColors.resolve(it.theme) }
     }
 
     override fun onDestroy() {

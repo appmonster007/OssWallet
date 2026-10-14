@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Theme variant "system" of widget_accounts_main: identical content, but a different layout id, which is the point.
+     A host that already shows this widget re-applies a new RemoteViews onto its existing view when the
+     layout id is unchanged, and then only the properties that update sets change. Giving each theme its
+     own layout id makes a theme switch a full re-inflate instead. See WidgetColors.layoutFor. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    <include
+            layout="@layout/widget_accounts_main"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+</FrameLayout>

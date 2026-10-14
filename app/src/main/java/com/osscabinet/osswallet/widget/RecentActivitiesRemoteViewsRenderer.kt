@@ -42,7 +42,7 @@ object RecentActivitiesRemoteViewsRenderer {
         val views = RemoteViews(context.packageName, WidgetColors.layoutFor(palette, R.layout.widget_recent_activities_main_t0, R.layout.widget_recent_activities_main_t1, R.layout.widget_recent_activities_main_t2))
         views.setTextViewText(R.id.tv_widget_header_title, prefs[RecentActivitiesWidgetKeys.TITLE] ?: "RECENT ACTIVITIES")
         WidgetHeader.bindIcon(context, views, CardType.RECENT_ACTIVITIES, palette)
-        WidgetHeader.applyTheme(views, palette)
+        WidgetHeader.applyTheme(views, palette, prefs[RecentActivitiesWidgetKeys.BG_OPACITY]?.toIntOrNull() ?: 100)
         views.setThemedColorFilter(R.id.iv_ra_empty_icon, palette) { it.outline }
         views.setThemedTextColor(R.id.tv_ra_empty_text, palette) { it.onSurfaceVariant }
 

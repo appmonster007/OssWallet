@@ -14,7 +14,9 @@ data class AccountsWidgetConfig(
     val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH, excludeFuture = true)
     ),
-    val theme: WidgetTheme = WidgetTheme.SYSTEM
+    val theme: WidgetTheme = WidgetTheme.SYSTEM,
+    /** Opacity (0..100 %) of the widget's background; 100 is fully opaque. */
+    val backgroundOpacity: Int = 100
 ) {
     val periodLabel: String get() = when (val tr = filter.timelineRange) {
         is TimelineRange.AllTime -> "All Time"

@@ -22,7 +22,9 @@ data class NetWorthWidgetConfig(
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
     val splitTransfers: Boolean = false,
-    val theme: WidgetTheme = WidgetTheme.SYSTEM
+    val theme: WidgetTheme = WidgetTheme.SYSTEM,
+    /** Opacity (0..100 %) of the widget's background; 100 is fully opaque. */
+    val backgroundOpacity: Int = 100
 ) {
     val timelineRange: TimelineRange get() = filter.timelineRange
 

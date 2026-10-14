@@ -161,13 +161,22 @@ fun RemoteViews.setThemedTextColor(viewId: Int, palette: WidgetPalette?, pick: (
     }
 }
 
-/** Same as [setThemedTextColor] for a view's background colour. */
-fun RemoteViews.setThemedBackgroundColor(viewId: Int, palette: WidgetPalette?, pick: (WidgetPalette) -> Int) {
+/** Same as [setThemedTextColor] for a view's background colour, at [opacityPercent] of its own alpha. */
+fun RemoteViews.setThemedBackgroundColor(
+    viewId: Int,
+    palette: WidgetPalette?,
+    opacityPercent: Int = 100,
+    pick: (WidgetPalette) -> Int
+) {
+    fun withOpacity(color: Int): Int {
+        val alpha = (android.graphics.Color.alpha(color) * opacityPercent.coerceIn(0, 100) / 100f).toInt()
+        return (alpha shl 24) or (color and 0x00FFFFFF)
+    }
     when {
-        palette != null -> setInt(viewId, "setBackgroundColor", pick(palette))
+        palette != null -> setInt(viewId, "setBackgroundColor", withOpacity(pick(palette)))
         Build.VERSION.SDK_INT >= 34 ->
-            setColorInt(viewId, "setBackgroundColor", pick(WidgetColors.LIGHT), pick(WidgetColors.DARK))
-        else -> setInt(viewId, "setBackgroundColor", pick(WidgetColors.systemPalette()))
+            setColorInt(viewId, "setBackgroundColor", withOpacity(pick(WidgetColors.LIGHT)), withOpacity(pick(WidgetColors.DARK)))
+        else -> setInt(viewId, "setBackgroundColor", withOpacity(pick(WidgetColors.systemPalette())))
     }
 }
 

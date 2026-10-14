@@ -11,4 +11,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
+    <include layout="@layout/widget_net_worth_preview_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
 </FrameLayout>

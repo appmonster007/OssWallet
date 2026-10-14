@@ -27,6 +27,7 @@ object WidgetDataLoader {
             WidgetDataLoaderEntryPoint::class.java
         )
         val settings = ep.settingsDataStore()
+        WidgetColors.appTheme = settings.theme.first()
         val profileId = settings.currentProfileId.first()
         val baseCurrency = settings.currency.first()
         val precision = settings.decimalPrecision.first()

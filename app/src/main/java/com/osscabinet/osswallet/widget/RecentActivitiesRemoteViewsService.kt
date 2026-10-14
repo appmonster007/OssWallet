@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
-import androidx.core.content.ContextCompat
 import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.getIconByName
@@ -29,17 +28,18 @@ class RecentActivitiesRemoteViewsService : RemoteViewsService() {
             AppWidgetManager.EXTRA_APPWIDGET_ID,
             AppWidgetManager.INVALID_APPWIDGET_ID
         )
-        return RecentActivitiesRemoteViewsFactory(applicationContext, widgetId)
+        return RecentActivitiesRemoteViewsFactory(applicationContext, widgetId, WidgetColors.paletteForKey(intent.data?.getQueryParameter("theme")))
     }
 }
 
 private class RecentActivitiesRemoteViewsFactory(
     private val context: Context,
-    private val widgetId: Int
+    private val widgetId: Int,
+    /** The palette the header was rendered with, fixed when the host binds the adapter. */
+    private val palette: WidgetPalette?
 ) : RemoteViewsService.RemoteViewsFactory {
 
     private var rows: List<RowData> = emptyList()
-    private var palette: WidgetPalette? = null
 
     // Rendered category icons, keyed by icon name + tint + size. Rows repeat the same few categories,
     // so the cache stays small, and the key fully determines the bitmap so it can never go stale.
@@ -68,7 +68,6 @@ private class RecentActivitiesRemoteViewsFactory(
         rows = runBlocking {
             runCatching {
                 val config = RecentActivitiesWidgetPrefsStore(context).loadSafe(widgetId)
-                palette = WidgetColors.resolve(config.theme)
                 val common = WidgetDataLoader.loadCommon(context)
                 val transactions = common.databaseQueryService.observeFilteredTransactions(
                     profileId = common.profileId,
@@ -134,21 +133,16 @@ private class RecentActivitiesRemoteViewsFactory(
         )
 
         val palette = this.palette
-        val color = if (palette != null) {
-            if (row.isPositive) palette.positive else palette.negative
-        } else {
-            ContextCompat.getColor(context, if (row.isPositive) R.color.widget_positive else R.color.widget_negative)
-        }
-        views.setTextColor(R.id.tv_ra_item_amount, color)
-        if (palette != null) {
-            views.setTextColor(R.id.tv_ra_item_title, palette.onSurface)
-            views.setTextColor(R.id.tv_ra_item_subtitle, palette.onSurfaceVariant)
-            views.setTextColor(R.id.tv_ra_item_time, palette.onSurfaceVariant)
-            views.setInt(R.id.v_ra_item_divider, "setBackgroundColor", palette.outline)
-        }
+        views.setThemedTextColor(R.id.tv_ra_item_amount, palette) { if (row.isPositive) it.positive else it.negative }
+        views.setThemedTextColor(R.id.tv_ra_item_title, palette) { it.onSurface }
+        views.setThemedTextColor(R.id.tv_ra_item_subtitle, palette) { it.onSurfaceVariant }
+        views.setThemedTextColor(R.id.tv_ra_item_time, palette) { it.onSurfaceVariant }
+        views.setThemedBackgroundColor(R.id.v_ra_item_divider, palette) { it.outline }
 
         // TextView has no setColorFilter (ImageView/Drawable only), so swap the pre-tinted
         // drawable by sign instead — same pattern as cell3's highlight toggle in NetWorthRenderer.
+        // Baked into a bitmap, so it can't follow a later night-mode change on its own.
+        val color = (palette ?: WidgetColors.systemPalette()).let { if (row.isPositive) it.positive else it.negative }
         val iconColor = row.categoryColor ?: color
         if (row.iconName != null) {
             // Category icon, as on the dashboard cards; the initial is only the fallback below.
@@ -163,8 +157,9 @@ private class RecentActivitiesRemoteViewsFactory(
         }
         if (row.categoryColor != null) {
             views.setInt(R.id.iv_ra_item_badge_bg, "setImageResource", R.drawable.widget_oval_bg)
-            val containerColor = (row.categoryColor and 0x00FFFFFF) or 0x28000000
-            views.setInt(R.id.iv_ra_item_badge_bg, "setColorFilter", containerColor)
+            // Opaque colour at low alpha so it tints the surface behind it in light and dark.
+            views.setInt(R.id.iv_ra_item_badge_bg, "setColorFilter", row.categoryColor or 0xFF000000.toInt())
+            views.setInt(R.id.iv_ra_item_badge_bg, "setImageAlpha", 0x28)
         } else {
             val ovalBg = if (palette != null) {
                 if (row.isPositive) palette.ovalPositiveBg else palette.ovalNegativeBg
@@ -173,6 +168,7 @@ private class RecentActivitiesRemoteViewsFactory(
             }
             views.setInt(R.id.iv_ra_item_badge_bg, "setImageResource", ovalBg)
             views.setInt(R.id.iv_ra_item_badge_bg, "setColorFilter", 0)
+            views.setInt(R.id.iv_ra_item_badge_bg, "setImageAlpha", 0xFF)
         }
 
         // Completes the ListView's setPendingIntentTemplate (see

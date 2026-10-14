@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetContent
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -102,14 +103,16 @@ internal fun WidgetConfigDivider() {
 
 /**
  * "Theme" section, shared by every widget config screen — forces the widget's own appearance
- * independent of the device's current system setting (System/Light/Dark). SYSTEM is the default
+ * independent of the device's current system setting (System/Light/Dark) and can switch its background to glass. SYSTEM is the default
  * and needs no runtime color overrides (see WidgetColors/WidgetTheme for why LIGHT/DARK do).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun WidgetThemeOptions(
     selected: WidgetTheme,
-    onSelect: (WidgetTheme) -> Unit
+    onSelect: (WidgetTheme) -> Unit,
+    glass: Boolean,
+    onGlassChange: (Boolean) -> Unit
 ) {
     WidgetConfigSectionHeader("Theme")
     SingleChoiceSegmentedButtonRow(
@@ -134,6 +137,14 @@ internal fun WidgetThemeOptions(
             )
         }
     }
+
+    EntrySwitchRow(
+        label = "Glass",
+        subtitle = "Frosted, see-through background",
+        checked = glass,
+        onCheckedChange = onGlassChange,
+        isFlush = true
+    )
 }
 
 /**

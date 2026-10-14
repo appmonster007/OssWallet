@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Row count follows the widget's height (see BudgetsRemoteViewsRenderer): 2 rows at the 4x2
-     floor, up to 4 when stretched taller. -->
+<!-- A scrolling list (BudgetsRemoteViewsService): a taller widget shows more budgets at once. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
         android:description="@string/widget_budgets_description"
         android:initialLayout="@layout/widget_budgets_loading"

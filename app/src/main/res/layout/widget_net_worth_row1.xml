@@ -53,8 +53,8 @@
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end"
-                android:text="12,340.55 $"
-                tools:text="12,340.55 $" />
+                android:text="$12,340.55"
+                tools:text="$12,340.55" />
 
     </LinearLayout>
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Accounts widget content. Header is the shared widget_header_row.xml shell; rows are
-     widget_accounts_row.xml instances added into ll_accounts_rows by AccountsRemoteViewsRenderer
-     (how many depends on the widget's height). tv_accounts_empty_text shows when there are none. -->
+<!-- Accounts widget content. Header is the shared widget_header_row.xml shell; the accounts are a
+     ListView (AccountsRemoteViewsService) so every one is reachable by scrolling.
+     tv_accounts_empty_text is its empty view (RemoteViews.setEmptyView) and must stay a sibling. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/ll_widget_root"
         android:layout_width="match_parent"
@@ -12,16 +12,20 @@
     <include layout="@layout/widget_header_row" />
 
     <FrameLayout
-            android:id="@+id/ll_accounts_body"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1">
 
-        <LinearLayout
-                android:id="@+id/ll_accounts_rows"
+        <ListView
+                android:id="@+id/lv_accounts_list"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
+                android:layout_height="match_parent"
+                android:clipToPadding="true"
+                android:divider="@null"
+                android:dividerHeight="0dp"
+                android:listSelector="@android:color/transparent"
+                android:paddingBottom="8dp"
+                android:scrollbars="none" />
 
         <TextView
                 android:id="@+id/tv_accounts_empty_text"
@@ -31,10 +35,9 @@
                 android:padding="16dp"
                 android:fontFamily="@font/jetbrains_mono"
                 android:gravity="center"
-                android:text="No accounts yet — add one in the app."
+                android:text="No accounts yet. Add one in the app."
                 android:textColor="@color/widget_on_surface_variant"
-                android:textSize="11sp"
-                android:visibility="gone" />
+                android:textSize="11sp" />
 
     </FrameLayout>
 

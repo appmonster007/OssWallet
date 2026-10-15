@@ -186,6 +186,8 @@ internal fun CardRenderData.toPayloadDto(
     categoryMap: Map<Long, Category>,
     accountMap: Map<String, Account>
 ): CardPayloadDto? = when (this) {
+    // Goals have no web payload yet; the web client simply omits the card.
+    is CardRenderData.Goals -> null
     is CardRenderData.NetWorth -> CardPayloadDto.NetWorth(
         netWorth = currentPeriodMetrics.netWorth.toDouble(),
         current = currentPeriodMetrics.cashFlow.metricsInBase.toDto(),
@@ -627,6 +629,7 @@ internal fun CardConfig.withOrder(newOrder: Int): CardConfig = when (this) {
     is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig -> copy(order = newOrder)
     is com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig -> copy(order = newOrder)
     is com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig -> copy(order = newOrder)
+    is com.osscabinet.ossWallet.domain.model.settings.GoalsCardConfig -> copy(order = newOrder)
     is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig -> copy(order = newOrder)
     is com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig -> copy(order = newOrder)
     is com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig -> copy(order = newOrder)
@@ -648,6 +651,7 @@ internal fun CardConfig.withFilter(newFilter: TransactionFilter): CardConfig = w
     is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig -> copy(filter = newFilter)
     is com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig -> copy(filter = newFilter)
     is com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig -> copy(filter = newFilter)
+    is com.osscabinet.ossWallet.domain.model.settings.GoalsCardConfig -> copy(filter = newFilter)
     is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig -> copy(filter = newFilter)
     is com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig -> copy(filter = newFilter)
     is com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig -> copy(filter = newFilter)

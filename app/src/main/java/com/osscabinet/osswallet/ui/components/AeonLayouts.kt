@@ -317,6 +317,7 @@ fun ShimmerByType(type: CardType, brush: Brush) {
         CardType.BUDGETS -> BudgetsShimmer(brush)
         CardType.PLANNED_PAYMENTS -> PlannedPaymentsShimmer(brush)
         CardType.LOANS -> BudgetsShimmer(brush) // Reuse budget shape for now
+        CardType.GOALS -> BudgetsShimmer(brush) // Progress rows, same shape as budgets
         CardType.RECENT_ACTIVITIES -> CashFlowShimmer(brush) // Reuse table shape
         CardType.CASHFLOW_COMPARISON -> CashFlowShimmer(brush)
         CardType.CATEGORY_PIE_CHART -> ChartShimmer(brush)

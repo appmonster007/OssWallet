@@ -118,6 +118,7 @@ sealed class CardConfig : BaseCardConfig {
 
             CardType.BUDGETS -> BudgetsCardConfig(cardId = cardId, screenContext = context)
             CardType.LOANS -> LoansCardConfig(cardId = cardId, screenContext = context)
+            CardType.GOALS -> GoalsCardConfig(cardId = cardId, screenContext = context)
             CardType.ACCOUNT_HERO -> AccountHeroCardConfig(cardId = cardId, screenContext = context)
             CardType.RECENT_ACTIVITIES -> RecentActivitiesCardConfig(
                 cardId = cardId,
@@ -486,6 +487,27 @@ data class LoansCardConfig(
 }
 
 /**
+ * Configuration for Goals card instances
+ */
+@Serializable
+@SerialName("goals")
+data class GoalsCardConfig(
+    override val cardId: String,
+    override val title: String = "Goals",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 0,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
+    val maxItems: Int = 3,
+    // Reached goals are done with; hide them unless asked.
+    val showCompleted: Boolean = false,
+    // Goals are not transaction-derived, so the filter is inert; CardConfig requires one.
+    override val filter: TransactionFilter = TransactionFilter()
+) : CardConfig() {
+    override val cardType: CardType get() = CardType.GOALS
+    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+}
+
+/**
  * Configuration for Recent Activities card instances
  */
 @Serializable
@@ -792,6 +814,8 @@ fun CardConfig.withClearedFilter(): CardConfig = when (this) {
         )
     )
 
+    is GoalsCardConfig -> this
+
     is LoansCardConfig -> copy(
         filter = TransactionFilter(
             timelineRange = TimelineRange.ThisPeriod(
@@ -861,6 +885,7 @@ fun CardConfig.withOrder(newOrder: Int): CardConfig = when (this) {
     is PlannedPaymentsCardConfig -> copy(order = newOrder)
     is BudgetsCardConfig -> copy(order = newOrder)
     is LoansCardConfig -> copy(order = newOrder)
+    is GoalsCardConfig -> copy(order = newOrder)
     is RecentActivitiesCardConfig -> copy(order = newOrder)
     is CashFlowComparisonCardConfig -> copy(order = newOrder)
     is IncomeExpenseBarCardConfig -> copy(order = newOrder)

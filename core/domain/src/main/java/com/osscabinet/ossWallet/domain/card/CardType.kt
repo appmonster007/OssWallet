@@ -83,6 +83,13 @@ enum class CardType(
         availableOnScreens = setOf(ScreenContext.DASHBOARD, ScreenContext.ANALYTICS),
         category = CardCategory.TRACKING
     ),
+    GOALS(
+        "goals",
+        "Goals",
+        "Progress toward your savings targets.",
+        availableOnScreens = setOf(ScreenContext.DASHBOARD),
+        category = CardCategory.TRACKING
+    ),
     RECENT_ACTIVITIES(
         "recent_activities",
         "Recent Activities",
@@ -136,7 +143,7 @@ enum class AtelierTab(val displayName: String) {
 fun CardType.getAtelierTab(): AtelierTab = when (this) {
     CardType.NET_WORTH, CardType.CASH_FLOW, CardType.RECENT_ACTIVITIES -> AtelierTab.STATUS
     CardType.ACCOUNTS, CardType.CURRENCY_BALANCES, CardType.ACCOUNT_HERO -> AtelierTab.WALLET
-    CardType.BUDGETS, CardType.PLANNED_PAYMENTS, CardType.LOANS -> AtelierTab.TRACK
+    CardType.BUDGETS, CardType.PLANNED_PAYMENTS, CardType.LOANS, CardType.GOALS -> AtelierTab.TRACK
     CardType.CATEGORY_PIE_CHART, CardType.CATEGORY_TREEMAP, CardType.TAG_UPSET_PLOT -> AtelierTab.CHARTS
     CardType.CASHFLOW_COMPARISON, CardType.INCOME_EXPENSE_BAR, CardType.CATEGORY_SPENDING_TREND -> AtelierTab.GRAPHS
 }

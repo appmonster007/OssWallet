@@ -12,6 +12,7 @@ import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
 import com.osscabinet.ossWallet.domain.repository.BackupMeta
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
+import com.osscabinet.ossWallet.domain.repository.BackupVerification
 import com.osscabinet.ossWallet.domain.repository.BackupScope
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
@@ -518,20 +519,86 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun exportBackup(uri: Uri, type: BackupType, scope: BackupScope = BackupScope.ALL_PROFILES) {
+    fun exportBackup(
+        uri: Uri,
+        type: BackupType,
+        scope: BackupScope = BackupScope.ALL_PROFILES,
+        passphrase: CharArray? = null
+    ) {
         viewModelScope.launch {
-            val result = backupRepository.exportData(uri.toString(), type, scope)
-            _backupMessage.send(if (result.isSuccess) "Backup exported successfully" else "Export failed: ${result.exceptionOrNull()?.message}")
+            val result = backupRepository.exportData(uri.toString(), type, scope, passphrase)
+            passphrase?.fill('0')
+            _backupMessage.send(
+                if (result.isSuccess) {
+                    if (passphrase != null) "Encrypted backup exported successfully" else "Backup exported successfully"
+                } else "Export failed: ${result.exceptionOrNull()?.message}"
+            )
         }
     }
 
-    fun importBackup(uri: Uri, type: BackupType, entities: Set<RestorableEntity>? = null) {
+    suspend fun isEncryptedBackup(uri: Uri): Boolean = backupRepository.isEncryptedBackup(uri.toString())
+
+    /** Checks a backup (decrypting it if needed) without touching live data. */
+    suspend fun verifyBackup(uri: Uri, type: BackupType, passphrase: CharArray?): Result<BackupVerification> =
+        backupRepository.verifyBackup(uri.toString(), type, passphrase)
+
+    fun reportBackupMessage(message: String) {
+        viewModelScope.launch { _backupMessage.send(message) }
+    }
+
+    private val _backupKeyAvailable = MutableStateFlow(true)
+    val backupKeyAvailable: StateFlow<Boolean> = _backupKeyAvailable
+
+    init {
+        viewModelScope.launch { _backupKeyAvailable.value = backupRepository.hasBackupEncryptionKey() }
+    }
+
+    fun enableBackupEncryption(passphrase: CharArray) {
         viewModelScope.launch {
-            val result = if (entities != null && entities.size < RestorableEntity.entries.size) {
-                backupRepository.importDataSelective(uri.toString(), type, entities)
+            val result = backupRepository.enableBackupEncryption(passphrase)
+            passphrase.fill('0')
+            if (result.isSuccess) {
+                _backupKeyAvailable.value = true
+                updateAutoBackupConfig(autoBackupConfig.value.copy(encrypt = true))
+                _backupMessage.send("Scheduled backups are now encrypted")
             } else {
-                backupRepository.importData(uri.toString(), type)
+                _backupMessage.send("Could not enable encryption: ${result.exceptionOrNull()?.message}")
             }
+        }
+    }
+
+    fun disableBackupEncryption() {
+        viewModelScope.launch {
+            backupRepository.disableBackupEncryption()
+            _backupKeyAvailable.value = false
+            updateAutoBackupConfig(autoBackupConfig.value.copy(encrypt = false))
+            _backupMessage.send("Scheduled backups are no longer encrypted")
+        }
+    }
+
+    /**
+     * Verifies first, so a wrong passphrase or damaged file is rejected before any live data
+     * is cleared, then restores.
+     */
+    fun importBackup(
+        uri: Uri,
+        type: BackupType,
+        entities: Set<RestorableEntity>? = null,
+        passphrase: CharArray? = null
+    ) {
+        viewModelScope.launch {
+            val check = backupRepository.verifyBackup(uri.toString(), type, passphrase)
+            if (check.isFailure) {
+                passphrase?.fill('0')
+                _backupMessage.send("Import failed: ${check.exceptionOrNull()?.message}. Nothing was changed.")
+                return@launch
+            }
+            val result = if (entities != null && entities.size < RestorableEntity.entries.size) {
+                backupRepository.importDataSelective(uri.toString(), type, entities, passphrase)
+            } else {
+                backupRepository.importData(uri.toString(), type, passphrase)
+            }
+            passphrase?.fill('0')
 
             if (result.isSuccess) {
                 if (type == BackupType.SQLITE) {

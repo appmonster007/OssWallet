@@ -20,6 +20,11 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.security.AppLockManager
+import com.osscabinet.ossWallet.ui.security.LockState
+import com.osscabinet.ossWallet.ui.security.setSecure
+import com.osscabinet.ossWallet.MainActivity
+import android.content.Intent
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
 
@@ -32,8 +37,16 @@ class QuickAddActivity : ComponentActivity() {
     @Inject
     lateinit var templateRepository: TemplateRepository
 
+    @Inject
+    lateinit var appLockManager: AppLockManager
+
     companion object {
         const val EXTRA_TEMPLATE_ID = "extra_template_id"
+    }
+
+    override fun onStart() {
+        super.onStart()
+        appLockManager.onAppForegrounded()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +67,17 @@ class QuickAddActivity : ComponentActivity() {
         val templateId = intent.getLongExtra(EXTRA_TEMPLATE_ID, -1L).takeIf { it != -1L }
 
         setContent {
+            val lockState by appLockManager.state.collectAsStateWithLifecycle()
+            val lockConfig by appLockManager.config.collectAsStateWithLifecycle()
+            LaunchedEffect(lockConfig) { window.setSecure(lockConfig?.privacyScreenEnabled ?: true) }
+            // Quick Add writes data, so it honours App Lock: bounce to the main lock screen.
+            LaunchedEffect(lockState) {
+                if (lockState == LockState.Locked) {
+                    startActivity(Intent(this@QuickAddActivity, MainActivity::class.java))
+                    finish()
+                }
+            }
+
             val theme by settingsRepository.theme
                 .collectAsStateWithLifecycle(initialValue = "System")
             val selectedFont by settingsRepository.selectedFont
@@ -84,7 +108,7 @@ class QuickAddActivity : ComponentActivity() {
                 setWindowBackground = false
             ) {
                 CompositionLocalProvider(LocalGlassmorphismEnabled provides glassmorphismEnabled) {
-                    if (templateResolved) {
+                    if (templateResolved && lockState == LockState.Unlocked) {
                         QuickAddSheet(
                             onDismiss = ::finish,
                             initialTemplate = initialTemplate

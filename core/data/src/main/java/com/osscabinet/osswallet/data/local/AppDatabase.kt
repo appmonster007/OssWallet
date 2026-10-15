@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.BudgetDao
@@ -12,6 +13,7 @@ import com.osscabinet.ossWallet.data.local.dao.CardCacheDao
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.data.local.dao.CurrencyDao
 import com.osscabinet.ossWallet.data.local.dao.FilterDao
+import com.osscabinet.ossWallet.data.local.dao.GoalDao
 import com.osscabinet.ossWallet.data.local.dao.LoanDao
 import com.osscabinet.ossWallet.data.local.dao.LoanPaymentDao
 import com.osscabinet.ossWallet.data.local.dao.PlannedPaymentDao
@@ -27,6 +29,7 @@ import com.osscabinet.ossWallet.data.local.entity.CardCacheEntity
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.data.local.entity.GoalEntity
 import com.osscabinet.ossWallet.data.local.entity.LoanEntity
 import com.osscabinet.ossWallet.data.local.entity.LoanPaymentEntity
 import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentEntity
@@ -59,9 +62,10 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         BudgetEntity::class,
         LoanEntity::class,
         LoanPaymentEntity::class,
-        CardCacheEntity::class
+        CardCacheEntity::class,
+        GoalEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -81,6 +85,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun loanDao(): LoanDao
     abstract fun loanPaymentDao(): LoanPaymentDao
     abstract fun cardCacheDao(): CardCacheDao
+    abstract fun goalDao(): GoalDao
 
     companion object {
         init {
@@ -135,6 +140,26 @@ abstract class AppDatabase : RoomDatabase() {
             db.execSQL("INSERT INTO transactions_fts(docid, note, payee, name) SELECT id, note, payee, name FROM `transactions`")
         }
 
+        /** v1 -> v2: savings goals. */
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `goals` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`name` TEXT NOT NULL, " +
+                        "`targetAmount` TEXT NOT NULL, " +
+                        "`savedAmount` TEXT NOT NULL, " +
+                        "`currency` TEXT NOT NULL, " +
+                        "`deadline` INTEGER, " +
+                        "`note` TEXT NOT NULL, " +
+                        "`profileId` INTEGER NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, " +
+                        "`completedAt` INTEGER)"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_goals_profileId` ON `goals` (`profileId`)")
+            }
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -148,6 +173,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
                     .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
+                    .addMigrations(MIGRATION_1_2)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.data.repository.CategoryRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.ComputationRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.CurrencyRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.FilterRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.GoalRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.LoanRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.PlannedPaymentRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.ProfileRepositoryImpl
@@ -29,6 +30,7 @@ import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
+import com.osscabinet.ossWallet.domain.repository.GoalRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
@@ -86,6 +88,9 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindReminderRepository(impl: ReminderRepositoryImpl): ReminderRepository
+    @Binds
+    @Singleton
+    abstract fun bindGoalRepository(impl: GoalRepositoryImpl): GoalRepository
     @Binds
     @Singleton
     abstract fun bindAppLockRepository(impl: AppLockRepositoryImpl): AppLockRepository

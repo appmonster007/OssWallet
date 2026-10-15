@@ -120,6 +120,7 @@ import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterPillController
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.cards.GoalActions
 import com.osscabinet.ossWallet.ui.components.cards.LoanActions
 import com.osscabinet.ossWallet.ui.components.cards.LocalEditingCardId
 import com.osscabinet.ossWallet.ui.components.cards.LocalFilterPillController
@@ -183,6 +184,7 @@ data class DashboardActions(
     val onNavigateToPlannedPaymentList: () -> Unit = {},
     val onNavigateToBudgetList: () -> Unit = {},
     val onNavigateToLoanList: () -> Unit = {},
+    val onNavigateToGoalList: () -> Unit = {},
     val onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
     val onNavigateToBudgetDetail: (Long) -> Unit = {},
     val onNavigateToLoanDetail: (Long) -> Unit = {},
@@ -640,6 +642,7 @@ fun DashboardScreenLayout(
                                 onNavigateToPlannedPaymentList = { navigate(actions.onNavigateToPlannedPaymentList) },
                                 onNavigateToBudgetList = { navigate(actions.onNavigateToBudgetList) },
                                 onNavigateToLoanList = { navigate(actions.onNavigateToLoanList) },
+                                onNavigateToGoalList = { navigate(actions.onNavigateToGoalList) },
                                 onNavigateToPlannedPaymentDetail = { id ->
                                     navigate {
                                         actions.onNavigateToPlannedPaymentDetail(
@@ -884,6 +887,7 @@ fun DashboardContent(
     onNavigateToPlannedPaymentList: () -> Unit = {},
     onNavigateToBudgetList: () -> Unit = {},
     onNavigateToLoanList: () -> Unit = {},
+    onNavigateToGoalList: () -> Unit = {},
     onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
     onNavigateToBudgetDetail: (Long) -> Unit = {},
     onNavigateToLoanDetail: (Long) -> Unit = {},
@@ -946,6 +950,7 @@ fun DashboardContent(
                         onNavigateToPlannedPaymentList = onNavigateToPlannedPaymentList,
                         onNavigateToBudgetList = onNavigateToBudgetList,
                         onNavigateToLoanList = onNavigateToLoanList,
+                        onNavigateToGoalList = onNavigateToGoalList,
                         onNavigateToPlannedPaymentDetail = onNavigateToPlannedPaymentDetail,
                         onNavigateToBudgetDetail = onNavigateToBudgetDetail,
                         onNavigateToLoanDetail = onNavigateToLoanDetail,
@@ -1058,6 +1063,7 @@ fun DashboardGlanceTab(
     onNavigateToPlannedPaymentList: () -> Unit = {},
     onNavigateToBudgetList: () -> Unit = {},
     onNavigateToLoanList: () -> Unit = {},
+    onNavigateToGoalList: () -> Unit = {},
     onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
     onNavigateToBudgetDetail: (Long) -> Unit = {},
     onNavigateToLoanDetail: (Long) -> Unit = {},
@@ -1097,6 +1103,7 @@ fun DashboardGlanceTab(
         val onBudgetListRef by rememberUpdatedState(onNavigateToBudgetList)
         val onLoanDetailRef by rememberUpdatedState(onNavigateToLoanDetail)
         val onLoanListRef by rememberUpdatedState(onNavigateToLoanList)
+        val onGoalListRef by rememberUpdatedState(onNavigateToGoalList)
         val onEditTxRef by rememberUpdatedState(onEditTransactionClick)
         val onJumpTxRef by rememberUpdatedState(onJumpTransaction)
         val onPerformJumpRef by rememberUpdatedState(onPerformJump)
@@ -1128,6 +1135,10 @@ fun DashboardGlanceTab(
                 loanActions = LoanActions(
                     onClick = { id -> onLoanDetailRef(id) },
                     onSeeAll = { onLoanListRef() }
+                ),
+                goalActions = GoalActions(
+                    onClick = { onGoalListRef() },
+                    onSeeAll = { onGoalListRef() }
                 ),
                 transactionActions = TransactionActions(
                     onClick = { id -> onEditTxRef(id) },

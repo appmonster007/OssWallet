@@ -118,6 +118,9 @@ data class BudgetEntryRoute(val budgetId: Long = -1L)
 data object LoanListRoute
 
 @Serializable
+data object GoalListRoute
+
+@Serializable
 data class LoanDetailRoute(val loanId: Long)
 
 @Serializable

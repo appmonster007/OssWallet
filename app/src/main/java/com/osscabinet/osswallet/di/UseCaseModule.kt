@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.domain.card.computers.CategorySpendingTrendCardC
 import com.osscabinet.ossWallet.domain.card.computers.CategoryTreemapCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.CurrencyBalancesCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.IncomeExpenseBarCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.GoalsCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.LoansCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.NetWorthCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.PlannedPaymentsCardComputer
@@ -87,6 +88,7 @@ object UseCaseModule {
                 RecentActivitiesCardComputer(databaseQueryService),
                 BudgetsCardComputer(databaseQueryService),
                 LoansCardComputer(databaseQueryService),
+                GoalsCardComputer(),
                 PlannedPaymentsCardComputer(),
                 CategoryPieChartCardComputer(databaseQueryService),
                 CategoryTreemapCardComputer(databaseQueryService),

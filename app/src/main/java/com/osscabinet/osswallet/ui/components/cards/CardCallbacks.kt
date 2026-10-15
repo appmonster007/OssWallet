@@ -189,6 +189,16 @@ sealed class CardCallbacks {
     ) : CardCallbacks()
 
     /**
+     * Callbacks for goals card
+     */
+    data class Goals(
+        val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.GoalsCardConfig) -> Unit = {},
+        val onGoalClick: (Long) -> Unit = {},
+        val onSeeAll: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null
+    ) : CardCallbacks()
+
+    /**
      * Callbacks for recent activities card
      */
     data class RecentActivities(

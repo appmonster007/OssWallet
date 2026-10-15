@@ -49,6 +49,8 @@ class BackupRepositoryPruneTest {
             plannedPaymentOccurrenceDao = db.plannedPaymentOccurrenceDao(),
             filterDao = db.filterDao(),
             currencyDao = db.currencyDao(),
+            goalDao = db.goalDao(),
+            backupKeyVault = com.osscabinet.ossWallet.data.local.BackupKeyVault(context),
             database = db,
             settingsDataStore = settingsDataStore,
             dispatcherProvider = com.osscabinet.ossWallet.core.util.RealDispatcherProvider(),

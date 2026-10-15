@@ -25,6 +25,8 @@ import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.FileDownload
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -43,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,6 +58,7 @@ import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
 import com.osscabinet.ossWallet.domain.repository.BackupScope
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.RestorableEntity
+import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonDashedButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
@@ -88,7 +92,26 @@ fun DataManagementScreen(
     val autoBackupConfig by viewModel.autoBackupConfig.collectAsStateWithLifecycle()
     val recentBackups by viewModel.recentBackups.collectAsStateWithLifecycle()
 
+    val backupKeyAvailable by viewModel.backupKeyAvailable.collectAsStateWithLifecycle()
+    val uiScope = rememberCoroutineScope()
+
     var showExportDialog by remember { mutableStateOf(false) }
+
+    // Optional passphrase protection for a manual export.
+    var pendingExport by remember { mutableStateOf<PendingExport?>(null) }
+    var showExportEncryptChoice by remember { mutableStateOf(false) }
+    var showExportPassphrase by remember { mutableStateOf(false) }
+    var exportPassphrase by remember { mutableStateOf<CharArray?>(null) }
+
+    // Scheduled-backup encryption setup/teardown.
+    var showEnableEncryption by remember { mutableStateOf(false) }
+    var showDisableEncryption by remember { mutableStateOf(false) }
+
+    // Restore/verify of an encrypted file.
+    var showImportPassphrase by remember { mutableStateOf(false) }
+    var importPassphraseError by remember { mutableStateOf<String?>(null) }
+    var importPassphrase by remember { mutableStateOf<CharArray?>(null) }
+    var verifyOnly by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
@@ -130,12 +153,60 @@ fun DataManagementScreen(
         contract = ActivityResultContracts.CreateDocument("application/x-sqlite3")
     ) { uri -> uri?.let { viewModel.exportBackup(it, BackupType.SQLITE) } }
 
+    val exportEncryptedLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        val export = pendingExport
+        val passphrase = exportPassphrase
+        exportPassphrase = null
+        pendingExport = null
+        if (uri != null && export != null && passphrase != null) {
+            viewModel.exportBackup(uri, export.type, export.scope, passphrase)
+        } else passphrase?.fill('0')
+    }
+
+    fun resetImportFlow() {
+        pendingImportUri = null
+        pendingImportType = null
+        importPassphrase?.fill('0')
+        importPassphrase = null
+        importPassphraseError = null
+        showImportPassphrase = false
+        verifyOnly = false
+    }
+
+    fun verifyAndReport(uri: android.net.Uri, passphrase: CharArray?) {
+        uiScope.launch {
+            val result = viewModel.verifyBackup(uri, BackupType.CSV_ZIP, passphrase)
+            passphrase?.fill('0')
+            viewModel.reportBackupMessage(
+                result.fold(
+                    onSuccess = { "Backup is valid: ${it.entryCount} files, ${it.sizeBytes / 1024} KB" +
+                        if (it.encrypted) " (encrypted)" else "" },
+                    onFailure = { "Verification failed: ${it.message}" }
+                )
+            )
+            resetImportFlow()
+        }
+    }
+
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        if (uri != null) {
+        if (uri == null) {
+            resetImportFlow()
+        } else {
             pendingImportUri = uri
-            showEntitySelector = true
+            uiScope.launch {
+                if (viewModel.isEncryptedBackup(uri)) {
+                    importPassphraseError = null
+                    showImportPassphrase = true
+                } else if (verifyOnly) {
+                    verifyAndReport(uri, null)
+                } else {
+                    showEntitySelector = true
+                }
+            }
         }
     }
 
@@ -172,11 +243,19 @@ fun DataManagementScreen(
             onDismiss = { showExportDialog = false },
             onExportZipAll = {
                 showExportDialog = false
-                exportZipAllLauncher.launch("osswallet_backup_${System.currentTimeMillis()}.zip")
+                pendingExport = PendingExport(
+                    BackupType.CSV_ZIP, BackupScope.ALL_PROFILES,
+                    "osswallet_backup_${System.currentTimeMillis()}.zip"
+                ) { exportZipAllLauncher.launch(it) }
+                showExportEncryptChoice = true
             },
             onExportZipProfile = {
                 showExportDialog = false
-                exportZipProfileLauncher.launch("osswallet_profile_${System.currentTimeMillis()}.zip")
+                pendingExport = PendingExport(
+                    BackupType.CSV_ZIP, BackupScope.SINGLE_PROFILE,
+                    "osswallet_profile_${System.currentTimeMillis()}.zip"
+                ) { exportZipProfileLauncher.launch(it) }
+                showExportEncryptChoice = true
             },
             onExportCsv = {
                 showExportDialog = false
@@ -184,7 +263,11 @@ fun DataManagementScreen(
             },
             onExportSqlite = {
                 showExportDialog = false
-                exportSqliteLauncher.launch("osswallet_db_${System.currentTimeMillis()}.sqlite")
+                pendingExport = PendingExport(
+                    BackupType.SQLITE, BackupScope.ALL_PROFILES,
+                    "osswallet_db_${System.currentTimeMillis()}.sqlite"
+                ) { exportSqliteLauncher.launch(it) }
+                showExportEncryptChoice = true
             }
         )
     }
@@ -209,6 +292,82 @@ fun DataManagementScreen(
         )
     }
 
+    if (showExportEncryptChoice) {
+        AlertDialog(
+            onDismissRequest = { showExportEncryptChoice = false; pendingExport = null },
+            title = { Text("Protect this export?") },
+            text = { Text("Encrypt it with a passphrase so only you can open it. Plain exports can be read by anyone who gets the file.") },
+            confirmButton = {
+                TextButton(onClick = { showExportEncryptChoice = false; showExportPassphrase = true }) { Text("Encrypt") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showExportEncryptChoice = false
+                    pendingExport?.let { it.launchPlain(it.fileName) }
+                    pendingExport = null
+                }) { Text("Export plain") }
+            }
+        )
+    }
+
+    if (showExportPassphrase) {
+        PassphraseSetupDialog(
+            title = "Export passphrase",
+            onConfirm = { chars ->
+                showExportPassphrase = false
+                exportPassphrase = chars
+                pendingExport?.let { exportEncryptedLauncher.launch(it.fileName + ".enc") }
+            },
+            onDismiss = { showExportPassphrase = false; pendingExport = null }
+        )
+    }
+
+    if (showEnableEncryption) {
+        PassphraseSetupDialog(
+            title = "Encrypt scheduled backups",
+            onConfirm = { chars -> showEnableEncryption = false; viewModel.enableBackupEncryption(chars) },
+            onDismiss = { showEnableEncryption = false }
+        )
+    }
+
+    if (showDisableEncryption) {
+        AlertDialog(
+            onDismissRequest = { showDisableEncryption = false },
+            title = { Text("Stop encrypting backups?") },
+            text = { Text("New scheduled backups will be plain files. Existing encrypted backups stay encrypted and still need the passphrase.") },
+            confirmButton = {
+                TextButton(onClick = { showDisableEncryption = false; viewModel.disableBackupEncryption() }) { Text("Turn off") }
+            },
+            dismissButton = { TextButton(onClick = { showDisableEncryption = false }) { Text("Cancel") } }
+        )
+    }
+
+    if (showImportPassphrase && pendingImportUri != null) {
+        PassphraseEntryDialog(
+            title = if (verifyOnly) "Verify encrypted backup" else "Encrypted backup",
+            errorText = importPassphraseError,
+            onConfirm = { chars ->
+                val uri = pendingImportUri ?: return@PassphraseEntryDialog
+                uiScope.launch {
+                    val check = viewModel.verifyBackup(uri, pendingImportType ?: BackupType.CSV_ZIP, chars)
+                    if (check.isFailure) {
+                        chars.fill('0')
+                        importPassphraseError = "Wrong passphrase, or the backup is damaged"
+                    } else if (verifyOnly) {
+                        showImportPassphrase = false
+                        verifyAndReport(uri, chars)
+                    } else {
+                        importPassphrase = chars
+                        importPassphraseError = null
+                        showImportPassphrase = false
+                        showEntitySelector = true
+                    }
+                }
+            },
+            onDismiss = { resetImportFlow() }
+        )
+    }
+
     if (showEntitySelector && pendingImportUri != null) {
         RestorableEntitySelectorDialog(
             selectedEntities = selectedEntities,
@@ -217,16 +376,16 @@ fun DataManagementScreen(
                 showEntitySelector = false
                 pendingImportUri?.let { uri ->
                     pendingImportType?.let { type ->
-                        viewModel.importBackup(uri, type, selectedEntities)
+                        viewModel.importBackup(uri, type, selectedEntities, importPassphrase)
                     }
                 }
-                pendingImportUri = null
-                pendingImportType = null
+                // The view model owns (and wipes) the passphrase from here.
+                importPassphrase = null
+                resetImportFlow()
             },
             onDismiss = {
                 showEntitySelector = false
-                pendingImportUri = null
-                pendingImportType = null
+                resetImportFlow()
             }
         )
     }
@@ -513,7 +672,7 @@ fun DataManagementScreen(
                                             Spacer(Modifier.width(AeonTheme.dimensions.spacingMd))
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text(
-                                                    text = backup.id,
+                                                    text = (if (backup.encrypted) "🔒 " else "") + backup.id,
                                                     style = AppTextStyles.caption,
                                                     color = AppColors.contentPrimary
                                                 )
@@ -543,6 +702,39 @@ fun DataManagementScreen(
                             }
                         }
 
+                        // Section 1b: Backup encryption
+                        AeonSettingsSection("BACKUP ENCRYPTION") {
+                            AeonSettingsItem(
+                                title = "Encrypt scheduled backups",
+                                subtitle = if (autoBackupConfig.encrypt && !backupKeyAvailable)
+                                    "Key unavailable on this device — set the passphrase again"
+                                else "AES-256 with a passphrase only you know",
+                                icon = Icons.Rounded.Lock,
+                                trailingContent = {
+                                    Switch(
+                                        checked = autoBackupConfig.encrypt,
+                                        onCheckedChange = { on ->
+                                            if (on) showEnableEncryption = true else showDisableEncryption = true
+                                        }
+                                    )
+                                }
+                            )
+                            if (autoBackupConfig.encrypt && !backupKeyAvailable) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                    thickness = 0.5.dp,
+                                    color = AppColors.divider.copy(alpha = 0.5f)
+                                )
+                                AeonSettingsItem(
+                                    title = "Re-enter passphrase",
+                                    subtitle = "Scheduled backups fail until the key is restored",
+                                    icon = Icons.Rounded.Lock,
+                                    color = AppColors.error,
+                                    onClick = { showEnableEncryption = true }
+                                )
+                            }
+                        }
+
                         // Section 2: Manual Backup
                         AeonSettingsSection("MANUAL BACKUP") {
                             AeonSettingsItem(
@@ -561,6 +753,21 @@ fun DataManagementScreen(
                                 subtitle = "Download all records and database",
                                 icon = Icons.Rounded.FileDownload,
                                 onClick = { showExportDialog = true }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.5f)
+                            )
+                            AeonSettingsItem(
+                                title = "Verify a Backup File",
+                                subtitle = "Check a backup is intact without restoring it",
+                                icon = Icons.Rounded.VerifiedUser,
+                                onClick = {
+                                    verifyOnly = true
+                                    pendingImportType = BackupType.CSV_ZIP
+                                    importLauncher.launch("*/*")
+                                }
                             )
                         }
 
@@ -731,6 +938,7 @@ internal fun RestorableEntitySelectorDialog(
             "Financial Planning" to listOf(
                 RestorableEntity.BUDGETS to "Monthly budgets and alerts",
                 RestorableEntity.LOANS to "Debts, loans, and loan payments",
+                RestorableEntity.GOALS to "Savings goals and progress",
                 RestorableEntity.PLANNED_PAYMENTS to "Scheduled recurring transactions",
                 RestorableEntity.TEMPLATES to "Transaction quick-entry templates",
                 RestorableEntity.FILTERS to "Saved search and report filters"
@@ -871,3 +1079,11 @@ private fun RestorableEntitySelectorDialogPreview() {
         )
     }
 }
+
+/** A manual export waiting on the "encrypt it?" choice. */
+private class PendingExport(
+    val type: BackupType,
+    val scope: BackupScope,
+    val fileName: String,
+    val launchPlain: (String) -> Unit
+)

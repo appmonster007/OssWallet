@@ -57,8 +57,12 @@ class AutoBackupWorker @AssistedInject constructor(
                         )
                         val timestamp = java.time.LocalDateTime.now()
                             .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
-                        val fileName = "osswallet_backup_${timestamp}_all.zip"
-                        val newFile = docFolder?.createFile("application/zip", fileName)
+                        val encrypted = result.getOrNull()?.endsWith(".enc") == true
+                        val fileName = "osswallet_backup_${timestamp}_all.zip" + if (encrypted) ".enc" else ""
+                        val newFile = docFolder?.createFile(
+                            if (encrypted) "application/octet-stream" else "application/zip",
+                            fileName
+                        )
                         newFile?.uri?.let { fileUri ->
                             appContext.contentResolver.openOutputStream(fileUri)?.use { os ->
                                 val privatePath = result.getOrNull()

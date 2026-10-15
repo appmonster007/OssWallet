@@ -17,6 +17,7 @@ import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.repository.WebServerRepository
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.service.security.AppLockGate
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -69,7 +70,8 @@ class WebServerManager @Inject constructor(
     private val templateRepository: TemplateRepository,
     private val transactionManager: TransactionManager,
     private val transactionUseCases: TransactionUseCases,
-    private val accountUseCases: AccountUseCases
+    private val accountUseCases: AccountUseCases,
+    private val appLockGate: AppLockGate
 ) : WebServerRepository {
 
     private val _serverState = MutableStateFlow<WebServerState>(WebServerState.Stopped)
@@ -133,7 +135,8 @@ class WebServerManager @Inject constructor(
             templateRepository = templateRepository,
             transactionManager = transactionManager,
             transactionUseCases = transactionUseCases,
-            accountUseCases = accountUseCases
+            accountUseCases = accountUseCases,
+            appLockGate = appLockGate
         )
 
         try {

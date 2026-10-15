@@ -13,6 +13,10 @@ import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.rememberNavController
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.ui.navigation.OssWalletNavGraph
+import com.osscabinet.ossWallet.ui.security.AppLockManager
+import com.osscabinet.ossWallet.ui.security.LockScreen
+import com.osscabinet.ossWallet.ui.security.LockState
+import com.osscabinet.ossWallet.ui.security.setSecure
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -26,6 +30,7 @@ class MainActivity : FragmentActivity() {
     private var keepSplashOnScreen = true
 
     @Inject lateinit var settingsRepository: SettingsRepository
+    @Inject lateinit var appLockManager: AppLockManager
 
     companion object {
         const val EXTRA_WIDGET_NAV = "WIDGET_NAV"
@@ -41,6 +46,17 @@ class MainActivity : FragmentActivity() {
     private var pendingWidgetFilter by mutableStateOf<String?>(null)
     private var pendingWidgetTransactionId by mutableStateOf<Long?>(null)
     private var pendingWidgetEntityId by mutableStateOf<String?>(null)
+
+    override fun onStart() {
+        super.onStart()
+        appLockManager.onAppForegrounded()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // A rotation/theme recreate also stops the activity; it must not count as leaving the app.
+        if (!isChangingConfigurations) appLockManager.onAppBackgrounded()
+    }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -82,6 +98,12 @@ class MainActivity : FragmentActivity() {
             )
             val cardOpenAnimation = com.osscabinet.ossWallet.domain.model.settings.CardOpenAnimation.fromName(cardOpenAnimationName)
 
+            val lockState by appLockManager.state.collectAsStateWithLifecycle()
+            val lockConfig by appLockManager.config.collectAsStateWithLifecycle()
+            // Secure until the stored config proves otherwise, so a cold start never leaks a frame.
+            val secure = lockConfig?.privacyScreenEnabled ?: true
+            LaunchedEffect(secure) { window.setSecure(secure) }
+
             LaunchedEffect(precision, numberingSystem) {
                 // ARC-05: atomic paired update — readers can never observe a half-applied
                 // (new precision, old system) combination.
@@ -116,8 +138,13 @@ class MainActivity : FragmentActivity() {
                     color = AppColors.screenBackground
                 ) {
                     val navController = rememberNavController()
+                    val unlocked = lockState == LockState.Unlocked
+                    // The nav graph normally dismisses the splash; it is not composed while locked.
+                    LaunchedEffect(unlocked) { if (!unlocked) keepSplashOnScreen = false }
 
-                    OssWalletNavGraph(
+                    // Keep the graph out of composition while locked: no data is read or drawn
+                    // behind the gate, and nothing underneath can receive touches or a11y focus.
+                    if (unlocked) OssWalletNavGraph(
                         navController = navController,
                         onSplashConditionChanged = { keepSplashOnScreen = it },
                         pendingWidgetRoute = pendingWidgetRoute,
@@ -131,6 +158,12 @@ class MainActivity : FragmentActivity() {
                             pendingWidgetEntityId = null
                         }
                     )
+                    if (!unlocked) {
+                        LockScreen(
+                            manager = appLockManager,
+                            biometricEnabled = lockConfig?.biometricEnabled == true
+                        )
+                    }
                 }
                 } // CompositionLocalProvider
             }

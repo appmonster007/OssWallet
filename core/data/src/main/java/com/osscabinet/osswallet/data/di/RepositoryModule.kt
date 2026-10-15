@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.data.di
 
 import com.osscabinet.ossWallet.data.repository.AccountRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.AppLockRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.BackupRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.BudgetRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.CardRepositoryImpl
@@ -19,6 +20,7 @@ import com.osscabinet.ossWallet.data.repository.TransactionRepositoryImpl
 import com.osscabinet.ossWallet.data.service.BackupSchedulerImpl
 import com.osscabinet.ossWallet.data.service.CsvImportServiceImpl
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.AppLockRepository
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
@@ -79,6 +81,9 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindProfileRepository(impl: ProfileRepositoryImpl): ProfileRepository
+    @Binds
+    @Singleton
+    abstract fun bindAppLockRepository(impl: AppLockRepositoryImpl): AppLockRepository
     @Binds
     @Singleton
     abstract fun bindSettingsRepository(impl: SettingsRepositoryImpl): SettingsRepository

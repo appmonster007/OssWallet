@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.data.web.routes.*
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.service.security.AppLockGate
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import io.ktor.http.ContentType
@@ -20,6 +21,7 @@ import io.ktor.server.routing.*
 class WebApiRoutes(
     private val context: Context,
     private val authSessionManager: AuthSessionManager,
+    private val appLockGate: AppLockGate,
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
@@ -70,6 +72,15 @@ class WebApiRoutes(
             }
 
             post("/api/auth") {
+                // The access code is only visible in the unlocked app; a locked app means nobody
+                // has proven they hold the phone, so no new web session may start.
+                if (appLockGate.isLockedNow()) {
+                    call.respond(
+                        HttpStatusCode.Locked,
+                        ApiResponse<Unit>(success = false, error = "OssWallet is locked. Unlock the app on your phone, then try again.")
+                    )
+                    return@post
+                }
                 val remoteIp = call.request.local.remoteHost
                 val request = runCatching { call.receive<AuthRequest>() }.getOrNull()
                     ?: run {

@@ -12,6 +12,7 @@ import com.osscabinet.ossWallet.data.repository.FilterRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.LoanRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.PlannedPaymentRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.ProfileRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.ReminderRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.SettingsRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.SharedWalletRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.TagRepositoryImpl
@@ -31,6 +32,7 @@ import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
+import com.osscabinet.ossWallet.domain.repository.ReminderRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
@@ -81,6 +83,9 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindProfileRepository(impl: ProfileRepositoryImpl): ProfileRepository
+    @Binds
+    @Singleton
+    abstract fun bindReminderRepository(impl: ReminderRepositoryImpl): ReminderRepository
     @Binds
     @Singleton
     abstract fun bindAppLockRepository(impl: AppLockRepositoryImpl): AppLockRepository

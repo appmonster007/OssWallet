@@ -146,6 +146,9 @@ data object SettingsCurrencyRoute
 data object SettingsSecurityRoute
 
 @Serializable
+data object SettingsNotificationsRoute
+
+@Serializable
 data object SettingsDataManagementRoute
 
 @Serializable

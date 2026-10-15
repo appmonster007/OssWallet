@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.CurrencyExchange
@@ -178,6 +179,14 @@ fun SettingsScreen(
                             accentBar = AppColors.negative
                         ) {
                             SettingsNavigationItem(
+                                title = "Notifications",
+                                subtitle = "DUE DATES • BUDGET ALERTS",
+                                icon = Icons.Rounded.Notifications,
+                                iconTint = AppColors.negative,
+                                onClick = actions.onNotificationsClick
+                            )
+                            SettingsDivider()
+                            SettingsNavigationItem(
                                 title = "Security & Privacy",
                                 subtitle = "APP LOCK • LOCATION • WEB ACCESS",
                                 icon = Icons.Rounded.Lock,
@@ -269,6 +278,7 @@ data class SettingsActions(
     val onTemplatesClick: () -> Unit,
     val onSmartSuggestionsClick: () -> Unit,
     val onFiltersClick: () -> Unit,
+    val onNotificationsClick: () -> Unit,
     val onSecurityClick: () -> Unit,
     val onDataManagementClick: () -> Unit,
     val onBackClick: () -> Unit

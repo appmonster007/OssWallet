@@ -24,7 +24,9 @@ import com.osscabinet.ossWallet.ui.navigation.SettingsCurrencyRoute
 import com.osscabinet.ossWallet.ui.navigation.SettingsDataManagementRoute
 import com.osscabinet.ossWallet.ui.navigation.SettingsDisplayRoute
 import com.osscabinet.ossWallet.ui.navigation.SettingsRoute
+import com.osscabinet.ossWallet.ui.navigation.SettingsNotificationsRoute
 import com.osscabinet.ossWallet.ui.navigation.SettingsSecurityRoute
+import com.osscabinet.ossWallet.ui.screens.settings.notifications.NotificationSettingsScreen
 import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 import com.osscabinet.ossWallet.ui.navigation.ShortlistedCurrenciesRoute
 import com.osscabinet.ossWallet.ui.navigation.SmartSuggestionsRoute
@@ -73,6 +75,7 @@ fun NavGraphBuilder.settingsGraph(
                 onTemplatesClick = { navController.navigate(TemplateListRoute) },
                 onSmartSuggestionsClick = { navController.navigate(SmartSuggestionsRoute) },
                 onFiltersClick = { navController.navigate(FilterListRoute) },
+                onNotificationsClick = { navController.navigate(SettingsNotificationsRoute) },
                 onSecurityClick = { navController.navigate(SettingsSecurityRoute) },
                 onDataManagementClick = { navController.navigate(SettingsDataManagementRoute) },
                 onBackClick = { navController.popBackStack() }
@@ -107,6 +110,15 @@ fun NavGraphBuilder.settingsGraph(
                 onBackClick = { navController.popBackStack() }
             )
         )
+    }
+
+    composable<SettingsNotificationsRoute>(
+        enterTransition = { EnterTransitionSpec },
+        exitTransition = { ExitTransitionSpec },
+        popEnterTransition = { PopEnterTransitionSpec },
+        popExitTransition = { PopExitTransitionSpec }
+    ) {
+        NotificationSettingsScreen(onBackClick = { navController.popBackStack() })
     }
 
     composable<SettingsSecurityRoute>(

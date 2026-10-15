@@ -121,7 +121,9 @@
 
     <!-- Notification channels -->
     <string name="notification_channel_planned_payments_name">Planned Payments</string>
-    <string name="notification_channel_planned_payments_description">Reminders for upcoming planned payments</string>
+    <string name="notification_channel_planned_payments_description">Reminders for upcoming planned payments and loan due dates</string>
+    <string name="notification_channel_budget_alerts_name">Budget alerts</string>
+    <string name="notification_channel_budget_alerts_description">Alerts when a budget is nearly used up or exceeded</string>
 
     <!-- App shortcuts -->
     <string name="shortcut_quick_add_short">Quick Add</string>

@@ -95,6 +95,7 @@ class OssWalletApp : Application(), Configuration.Provider {
 
         createNotificationChannels()
         PlannedPaymentWorker.schedule(this)
+        com.osscabinet.ossWallet.reminder.ReminderWorker.schedule(this)
 
         // Reschedule auto-backup on app startup so it survives device reboots and reinstalls
         applicationScope.launch {
@@ -178,6 +179,13 @@ class OssWalletApp : Application(), Configuration.Provider {
                     getString(R.string.notification_channel_planned_payments_name),
                     NotificationManager.IMPORTANCE_DEFAULT
                 ).apply { description = getString(R.string.notification_channel_planned_payments_description) }
+            )
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    "budget_alerts",
+                    getString(R.string.notification_channel_budget_alerts_name),
+                    NotificationManager.IMPORTANCE_DEFAULT
+                ).apply { description = getString(R.string.notification_channel_budget_alerts_description) }
             )
         }
     }

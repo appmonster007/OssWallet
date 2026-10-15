@@ -50,6 +50,7 @@ class DashboardViewModelTest {
     private lateinit var plannedPaymentRepository: PlannedPaymentRepository
     private lateinit var budgetRepository: BudgetRepository
     private lateinit var loanRepository: LoanRepository
+    private lateinit var goalRepository: com.osscabinet.ossWallet.domain.repository.GoalRepository
     private lateinit var tagRepository: TagRepository
     private lateinit var templateRepository: TemplateRepository
     private lateinit var filterRepository: FilterRepository
@@ -97,6 +98,8 @@ class DashboardViewModelTest {
         loanRepository = mockk(relaxed = true)
         every { loanRepository.getAllLoans(any()) } returns flowOf(emptyList())
         every { loanRepository.getAllPayments(any()) } returns flowOf(emptyList())
+        goalRepository = mockk(relaxed = true)
+        every { goalRepository.getAllGoals(any()) } returns flowOf(emptyList())
 
         tagRepository = mockk(relaxed = true)
         every { tagRepository.getAllTags() } returns flowOf(emptyList())
@@ -124,6 +127,7 @@ class DashboardViewModelTest {
             plannedPaymentRepository = plannedPaymentRepository,
             budgetRepository = budgetRepository,
             loanRepository = loanRepository,
+            goalRepository = goalRepository,
             tagRepository = tagRepository,
             templateRepository = templateRepository,
             filterRepository = filterRepository,

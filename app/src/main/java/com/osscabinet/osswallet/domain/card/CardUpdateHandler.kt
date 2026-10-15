@@ -359,6 +359,12 @@ interface CardUpdateHandler {
         }
     }
 
+    fun updateCardGoalsConfig(cardId: String, config: GoalsCardConfig) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config }
+        }
+    }
+
     fun updateCardRecentActivitiesConfig(cardId: String, config: RecentActivitiesCardConfig) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config }

@@ -17,6 +17,7 @@ import com.osscabinet.ossWallet.ui.components.cards.types.CategorySpendingTrendC
 import com.osscabinet.ossWallet.ui.components.cards.types.CategoryTreemapCard
 import com.osscabinet.ossWallet.ui.components.cards.types.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.components.cards.types.IncomeExpenseBarCard
+import com.osscabinet.ossWallet.ui.components.cards.types.GoalsCard
 import com.osscabinet.ossWallet.ui.components.cards.types.LoansCard
 import com.osscabinet.ossWallet.ui.components.cards.types.NetWorthCard
 import com.osscabinet.ossWallet.ui.components.cards.types.PlannedPaymentsCard
@@ -161,6 +162,16 @@ fun UnifiedCardRenderer(
                     items = renderData.items,
                     config = renderData.config,
                     previousItems = renderData.previousItems,
+                    callbacks = cardWithCallbacks.callbacks,
+                    layoutProps = effectiveProps
+                )
+            }
+
+            is CardWithCallbacks.Goals -> {
+                val renderData = cardWithCallbacks.renderData
+                GoalsCard(
+                    items = renderData.items,
+                    config = renderData.config,
                     callbacks = cardWithCallbacks.callbacks,
                     layoutProps = effectiveProps
                 )

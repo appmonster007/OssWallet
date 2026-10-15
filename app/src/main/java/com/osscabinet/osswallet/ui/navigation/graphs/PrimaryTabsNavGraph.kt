@@ -19,6 +19,7 @@ import com.osscabinet.ossWallet.ui.navigation.FadeEnterTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.FadeExitTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.FilterEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.LoanDetailRoute
+import com.osscabinet.ossWallet.ui.navigation.GoalListRoute
 import com.osscabinet.ossWallet.ui.navigation.LoanListRoute
 import com.osscabinet.ossWallet.ui.navigation.PlannedPaymentDetailRoute
 import com.osscabinet.ossWallet.ui.navigation.PlannedPaymentListRoute
@@ -90,6 +91,7 @@ fun NavGraphBuilder.primaryTabsGraph(
                 onNavigateToPlannedPaymentList = { navController.navigate(PlannedPaymentListRoute) },
                 onNavigateToBudgetList = { navController.navigate(BudgetListRoute) },
                 onNavigateToLoanList = { navController.navigate(LoanListRoute) },
+                onNavigateToGoalList = { navController.navigate(GoalListRoute) },
                 onNavigateToPlannedPaymentDetail = { id ->
                     navController.navigate(
                         PlannedPaymentDetailRoute(id)

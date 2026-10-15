@@ -34,6 +34,7 @@ import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
+import com.osscabinet.ossWallet.domain.repository.GoalRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
@@ -110,6 +111,7 @@ class DashboardViewModel @Inject constructor(
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val budgetRepository: BudgetRepository,
     private val loanRepository: LoanRepository,
+    private val goalRepository: GoalRepository,
     private val tagRepository: TagRepository,
     private val templateRepository: TemplateRepository,
     private val filterRepository: FilterRepository,
@@ -335,7 +337,8 @@ class DashboardViewModel @Inject constructor(
         val budgets: List<Budget>,
         val loans: List<Loan>,
         val loanPayments: Map<Long, List<LoanPayment>>,
-        val tags: List<Tag>
+        val tags: List<Tag>,
+        val goals: List<com.osscabinet.ossWallet.domain.model.Goal> = emptyList()
     )
 
     /**
@@ -419,6 +422,8 @@ class DashboardViewModel @Inject constructor(
                 tagRepository.getAllTags(profileId)
             ) { pp, b, l, lp, t ->
                 MetadataSnapshot(pp, b, l, lp.groupBy { it.loanId }, t)
+            }.combine(goalRepository.getAllGoals(profileId)) { snapshot, goals ->
+                snapshot.copy(goals = goals)
             }.distinctUntilChanged()
 
             // 3. Stable App State — excludes ephemeral UI state to prevent card computation restarts
@@ -476,6 +481,7 @@ class DashboardViewModel @Inject constructor(
                     plannedPayments = m.plannedPayments,
                     budgets = m.budgets,
                     loans = m.loans,
+                    goals = m.goals,
                     loanPayments = m.loanPayments,
                     filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true)),
                     screenContext = ScreenContext.DASHBOARD,

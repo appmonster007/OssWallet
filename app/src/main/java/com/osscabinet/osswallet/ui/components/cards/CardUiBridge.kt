@@ -18,6 +18,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardC
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.GoalsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
@@ -33,6 +34,7 @@ import com.osscabinet.ossWallet.ui.components.cards.types.mapCategorySpendingTre
 import com.osscabinet.ossWallet.ui.components.cards.types.mapCategoryTreemap
 import com.osscabinet.ossWallet.ui.components.cards.types.mapCurrencyBalances
 import com.osscabinet.ossWallet.ui.components.cards.types.mapIncomeExpenseBar
+import com.osscabinet.ossWallet.ui.components.cards.types.mapGoals
 import com.osscabinet.ossWallet.ui.components.cards.types.mapLoans
 import com.osscabinet.ossWallet.ui.components.cards.types.mapNetWorth
 import com.osscabinet.ossWallet.ui.components.cards.types.mapPlannedPayments
@@ -219,6 +221,16 @@ private fun mapSuccessState(
                 onRecordsClick,
                 callbacks,
                 filterSheetEnabled
+            )
+
+        is CardRenderData.Goals ->
+            mapGoals(
+                config as GoalsCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                callbacks
             )
 
         is CardRenderData.Loans ->

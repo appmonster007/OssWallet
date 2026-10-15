@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.CloudSync
@@ -140,6 +141,14 @@ fun SettingsScreen(
                                 icon = Icons.AutoMirrored.Rounded.Label,
                                 iconTint = AppColors.positive,
                                 onClick = actions.onTagsClick
+                            )
+                            SettingsDivider()
+                            SettingsNavigationItem(
+                                title = "Goals",
+                                subtitle = "SAVINGS TARGETS • PROGRESS",
+                                icon = Icons.Rounded.Flag,
+                                iconTint = AppColors.positive,
+                                onClick = actions.onGoalsClick
                             )
                         }
 
@@ -275,6 +284,7 @@ data class SettingsActions(
     val onAccountsClick: () -> Unit,
     val onCategoriesClick: () -> Unit,
     val onTagsClick: () -> Unit,
+    val onGoalsClick: () -> Unit,
     val onTemplatesClick: () -> Unit,
     val onSmartSuggestionsClick: () -> Unit,
     val onFiltersClick: () -> Unit,

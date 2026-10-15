@@ -204,6 +204,25 @@ sealed class CardWithCallbacks {
             )
     }
 
+    data class Goals(
+        val renderData: CardRenderData.Goals,
+        val callbacks: CardCallbacks.Goals,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+        override val baseFilter: TransactionFilter = TransactionFilter(),
+        override val filterSheetEnabled: Boolean = false
+    ) : CardWithCallbacks() {
+        override val cardId: String get() = renderData.config.cardId
+        override fun copyWithRules(
+            rules: CardFilterRules,
+            baseFilter: TransactionFilter,
+            filterSheetEnabled: Boolean
+        ): CardWithCallbacks = copy(
+            filterRules = rules,
+            baseFilter = baseFilter,
+            filterSheetEnabled = filterSheetEnabled
+        )
+    }
+
     data class Loans(
         val renderData: CardRenderData.Loans,
         val callbacks: CardCallbacks.Loans,

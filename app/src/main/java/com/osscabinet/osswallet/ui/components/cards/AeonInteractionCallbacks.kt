@@ -12,6 +12,7 @@ data class AeonInteractionCallbacks(
     val accountActions: AccountActions = AccountActions(),
     val budgetActions: BudgetActions = BudgetActions(),
     val loanActions: LoanActions = LoanActions(),
+    val goalActions: GoalActions = GoalActions(),
     val paymentActions: PaymentActions = PaymentActions(),
     val filterActions: FilterActions = FilterActions(),
     val tagActions: TagActions = TagActions()
@@ -42,6 +43,11 @@ data class BudgetActions(
 )
 
 data class LoanActions(
+    val onClick: (Long) -> Unit = {},
+    val onSeeAll: () -> Unit = {}
+)
+
+data class GoalActions(
     val onClick: (Long) -> Unit = {},
     val onSeeAll: () -> Unit = {}
 )

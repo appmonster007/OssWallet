@@ -176,6 +176,15 @@ sealed class CardRenderData {
     }
 
     @Serializable
+    data class Goals(
+        val config: GoalsCardConfig,
+        val items: List<com.osscabinet.ossWallet.domain.model.GoalProgress>,
+        val currency: String
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.GOALS
+    }
+
+    @Serializable
     data class AccountHero(
         val config: AccountHeroCardConfig,
         val summary: AccountSummaryItem,

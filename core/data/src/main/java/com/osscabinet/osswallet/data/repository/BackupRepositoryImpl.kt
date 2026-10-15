@@ -72,6 +72,13 @@ import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.math.BigDecimal
 import java.util.zip.ZipInputStream
+import com.osscabinet.ossWallet.data.local.BackupKeyVault
+import com.osscabinet.ossWallet.data.local.dao.GoalDao
+import com.osscabinet.ossWallet.data.local.entity.GoalEntity
+import com.osscabinet.ossWallet.domain.repository.BackupPassphraseRequiredException
+import com.osscabinet.ossWallet.domain.repository.BackupVerification
+import com.osscabinet.ossWallet.domain.service.security.BackupCrypto
+import java.io.BufferedInputStream
 import java.util.zip.ZipOutputStream
 
 @Singleton
@@ -90,6 +97,8 @@ class BackupRepositoryImpl @Inject constructor(
     private val plannedPaymentOccurrenceDao: PlannedPaymentOccurrenceDao,
     private val filterDao: FilterDao,
     private val currencyDao: CurrencyDao,
+    private val goalDao: GoalDao,
+    private val backupKeyVault: BackupKeyVault,
     private val database: AppDatabase,
     private val settingsDataStore: SettingsDataStore,
     private val dispatcherProvider: DispatcherProvider,
@@ -99,22 +108,34 @@ class BackupRepositoryImpl @Inject constructor(
 
     companion object {
         private const val MAX_RESTORE_BYTES = 512L * 1024 * 1024 // 512 MB
+        const val ENCRYPTED_SUFFIX = ".enc"
+
+        /** Sink for verification reads (OutputStream.nullOutputStream() needs API 33). */
+        private val DiscardOutputStream = object : OutputStream() {
+            override fun write(b: Int) {}
+            override fun write(b: ByteArray, off: Int, len: Int) {}
+        }
     }
 
     override suspend fun exportData(
         uriString: String,
         type: BackupType,
-        scope: BackupScope
+        scope: BackupScope,
+        passphrase: CharArray?
     ): Result<Unit> =
         withContext(dispatcherProvider.io) {
             try {
                 val uri = uriString.toUri()
                 val currentProfileId = settingsDataStore.currentProfileId.first()
-                context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                    when (type) {
-                        BackupType.CSV_ZIP -> createZipBackup(outputStream, scope, currentProfileId)
-                        BackupType.SQLITE -> exportSqlite(outputStream)
-                        BackupType.FLAT_CSV -> exportFlatCsv(outputStream, scope)
+                context.contentResolver.openOutputStream(uri)?.use { raw ->
+                    val outputStream = if (passphrase != null) BackupCrypto.encrypt(raw, passphrase) else raw
+                    // Closing the encrypting stream writes the final authenticated chunk.
+                    outputStream.use {
+                        when (type) {
+                            BackupType.CSV_ZIP -> createZipBackup(it, scope, currentProfileId)
+                            BackupType.SQLITE -> exportSqlite(it)
+                            BackupType.FLAT_CSV -> exportFlatCsv(it, scope)
+                        }
                     }
                 }
                 Result.success(Unit)
@@ -578,6 +599,22 @@ class BackupRepositoryImpl @Inject constructor(
                 )
             })
 
+        val allGoals = goalDao.getAllGoalsForBackup()
+        val goals = if (scope == BackupScope.SINGLE_PROFILE)
+            allGoals.filter { it.profileId == currentProfileId } else allGoals
+        writeCsvToZip(
+            zos, "goals.csv",
+            arrayOf(
+                "id", "name", "targetAmount", "savedAmount", "currency", "deadline",
+                "note", "profileId", "createdAt", "completedAt"
+            ),
+            goals.map {
+                arrayOf(
+                    it.id, it.name, it.targetAmount, it.savedAmount, it.currency, it.deadline,
+                    it.note, it.profileId, it.createdAt, it.completedAt
+                )
+            })
+
         writeCsvToZip(
             zos,
             "currency_rates.csv",
@@ -619,11 +656,14 @@ class BackupRepositoryImpl @Inject constructor(
         if (dbFile.exists()) FileInputStream(dbFile).use { it.copyTo(outputStream) }
     }
 
-    override suspend fun importData(uriString: String, type: BackupType): Result<Unit> =
+    override suspend fun importData(
+        uriString: String,
+        type: BackupType,
+        passphrase: CharArray?
+    ): Result<Unit> =
         withContext(dispatcherProvider.io) {
             try {
-                val uri = uriString.toUri()
-                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                withPlainInput(uriString, passphrase) { inputStream ->
                     when (type) {
                         BackupType.CSV_ZIP -> restoreZipBackup(inputStream)
                         BackupType.SQLITE -> restoreSqliteBackup(inputStream)
@@ -644,6 +684,7 @@ class BackupRepositoryImpl @Inject constructor(
                 loanPaymentDao.clearAll(); plannedPaymentOccurrenceDao.clearAll()
                 transactionDao.clearAll(); templateDao.clearAll(); budgetDao.clearAll()
                 loanDao.clearAll(); plannedPaymentDao.clearAll(); accountDao.clearAll(); filterDao.clearAll()
+                goalDao.clearAll()
                 tagDao.clearAll(); categoryDao.clearAll(); currencyDao.clearAll()
                 profileDao.clearAll()
 
@@ -715,6 +756,7 @@ class BackupRepositoryImpl @Inject constructor(
                 loanPaymentDao.clearAll(); plannedPaymentOccurrenceDao.clearAll()
                 transactionDao.clearAll(); templateDao.clearAll(); budgetDao.clearAll()
                 loanDao.clearAll(); plannedPaymentDao.clearAll(); accountDao.clearAll(); filterDao.clearAll()
+                goalDao.clearAll()
                 tagDao.clearAll(); categoryDao.clearAll(); profileDao.clearAll()
 
                 restoreProfiles(File(tempDir, "profiles.csv"))
@@ -728,6 +770,7 @@ class BackupRepositoryImpl @Inject constructor(
                 restoreBudgets(File(tempDir, "budgets.csv"))
                 restoreLoans(File(tempDir, "loans.csv"))
                 restoreLoanPayments(File(tempDir, "loan_payments.csv"))
+                restoreGoals(File(tempDir, "goals.csv"))
                 restorePlannedPayments(File(tempDir, "planned_payments.csv"))
                 restorePlannedPaymentOccurrences(File(tempDir, "planned_payment_occurrences.csv"))
                 restoreCurrencyRates(File(tempDir, "currency_rates.csv"))
@@ -948,6 +991,23 @@ class BackupRepositoryImpl @Inject constructor(
         if (batch.isNotEmpty()) plannedPaymentOccurrenceDao.insertOccurrences(batch)
     }
 
+    private suspend fun restoreGoals(file: File) = parseCsv(file) { p ->
+        goalDao.insert(
+            GoalEntity(
+                id = p["id"]?.toLongOrNull() ?: 0,
+                name = p["name"] ?: "",
+                targetAmount = p["targetAmount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                savedAmount = p["savedAmount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                currency = p["currency"] ?: "USD",
+                deadline = p["deadline"]?.toLongOrNull(),
+                note = p["note"] ?: "",
+                profileId = p["profileId"]?.toIntOrNull() ?: 1,
+                createdAt = p["createdAt"]?.toLongOrNull() ?: System.currentTimeMillis(),
+                completedAt = p["completedAt"]?.toLongOrNull()
+            )
+        )
+    }
+
     private suspend fun restoreTags(file: File) = parseCsv(file) { p ->
         tagDao.insertTag(
             TagEntity(
@@ -1118,11 +1178,11 @@ class BackupRepositoryImpl @Inject constructor(
     override suspend fun importDataSelective(
         uriString: String,
         type: BackupType,
-        entities: Set<RestorableEntity>
+        entities: Set<RestorableEntity>,
+        passphrase: CharArray?
     ): Result<Unit> = withContext(dispatcherProvider.io) {
         try {
-            val uri = uriString.toUri()
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            withPlainInput(uriString, passphrase) { inputStream ->
                 if (type == BackupType.CSV_ZIP) restoreZipBackupSelective(inputStream, entities)
                 else throw UnsupportedOperationException("Selective restore only for CSV_ZIP")
             }
@@ -1169,6 +1229,7 @@ class BackupRepositoryImpl @Inject constructor(
                         RestorableEntity.FILTERS -> entry.name == "filters.csv"
                         RestorableEntity.TAGS -> entry.name == "tags.csv"
                         RestorableEntity.CURRENCY_RATES -> entry.name == "currency_rates.csv"
+                        RestorableEntity.GOALS -> entry.name == "goals.csv"
                     }
                 }
                 if (should && !entry.isDirectory) {
@@ -1266,6 +1327,14 @@ class BackupRepositoryImpl @Inject constructor(
                         )
                     }
                 }
+                if (RestorableEntity.GOALS in safe) File(
+                    tempDir,
+                    "goals.csv"
+                ).let {
+                    if (it.exists()) {
+                        goalDao.clearAll(); restoreGoals(it)
+                    }
+                }
                 if (RestorableEntity.CURRENCY_RATES in safe) File(
                     tempDir,
                     "currency_rates.csv"
@@ -1281,11 +1350,30 @@ class BackupRepositoryImpl @Inject constructor(
             try {
                 val profileId = settingsDataStore.currentProfileId.first()
                 val dir = File(context.filesDir, "backups").apply { mkdirs() }
+                val encrypt = settingsDataStore.autoBackupConfig.first().encrypt
+                // Never fall back to a plaintext file when encryption was asked for.
+                val vaultKey = if (encrypt) {
+                    backupKeyVault.load() ?: throw IllegalStateException(
+                        "Backup encryption is on but its key is unavailable. " +
+                            "Re-enter the backup passphrase in Data Management."
+                    )
+                } else null
                 val file = File(
                     dir,
-                    "osswallet_backup_${System.currentTimeMillis()}${if (scope == BackupScope.SINGLE_PROFILE) "_profile" else "_all"}.zip"
+                    "osswallet_backup_${System.currentTimeMillis()}${if (scope == BackupScope.SINGLE_PROFILE) "_profile" else "_all"}.zip" +
+                        if (encrypt) ENCRYPTED_SUFFIX else ""
                 )
-                FileOutputStream(file).use { createZipBackup(it, scope, profileId) }
+                try {
+                    FileOutputStream(file).use { raw ->
+                        val out = if (vaultKey != null)
+                            BackupCrypto.encrypt(raw, vaultKey.key, vaultKey.salt, vaultKey.iterations)
+                        else raw
+                        out.use { createZipBackup(it, scope, profileId) }
+                    }
+                } catch (e: Exception) {
+                    file.delete() // no half-written backup left in the retention list
+                    throw e
+                }
                 Result.success(file.absolutePath)
             } catch (e: Exception) {
                 Result.failure(e)
@@ -1295,7 +1383,7 @@ class BackupRepositoryImpl @Inject constructor(
     override suspend fun listPrivateBackups(): List<BackupMeta> =
         withContext(dispatcherProvider.io) {
             File(context.filesDir, "backups").takeIf { it.exists() }
-                ?.listFiles { f -> f.name.endsWith(".zip") || f.name.endsWith(".sqlite") }
+                ?.listFiles { f -> f.name.endsWith(".zip") || f.name.endsWith(".sqlite") || f.name.endsWith(ENCRYPTED_SUFFIX) }
                 ?.sortedByDescending { it.lastModified() }
                 ?.map { f ->
                     BackupMeta(
@@ -1303,7 +1391,8 @@ class BackupRepositoryImpl @Inject constructor(
                         f.absolutePath,
                         f.lastModified(),
                         f.length(),
-                        if (f.name.contains("_profile")) BackupScope.SINGLE_PROFILE else BackupScope.ALL_PROFILES
+                        if (f.name.contains("_profile")) BackupScope.SINGLE_PROFILE else BackupScope.ALL_PROFILES,
+                        encrypted = f.name.endsWith(ENCRYPTED_SUFFIX)
                     )
                 } ?: emptyList()
         }
@@ -1319,6 +1408,114 @@ class BackupRepositoryImpl @Inject constructor(
                 Result.failure(e)
             }
         }
+
+    override suspend fun isEncryptedBackup(uriString: String): Boolean =
+        withContext(dispatcherProvider.io) {
+            runCatching {
+                context.contentResolver.openInputStream(uriString.toUri())?.use { input ->
+                    val head = ByteArray(BackupCrypto.MAGIC_LENGTH)
+                    var n = 0
+                    while (n < head.size) {
+                        val r = input.read(head, n, head.size - n)
+                        if (r < 0) break
+                        n += r
+                    }
+                    n == head.size && BackupCrypto.isEncrypted(head)
+                } ?: false
+            }.getOrDefault(false)
+        }
+
+    override suspend fun verifyBackup(
+        uriString: String,
+        type: BackupType,
+        passphrase: CharArray?
+    ): Result<BackupVerification> = withContext(dispatcherProvider.io) {
+        try {
+            val encrypted = isEncryptedBackup(uriString)
+            val result = withPlainInput(uriString, passphrase) { input ->
+                var entries = 0
+                var bytes = 0L
+                when (type) {
+                    BackupType.CSV_ZIP -> {
+                        var sawProfiles = false
+                        val counter = longArrayOf(0L)
+                        ZipInputStream(input).use { zis ->
+                            var e = zis.nextEntry
+                            while (e != null) {
+                                entries++
+                                if (e.name == "profiles.csv") sawProfiles = true
+                                // Reading each entry through also surfaces zip-level corruption.
+                                zis.copyToLimited(DiscardOutputStream, counter)
+                                e = zis.nextEntry
+                            }
+                        }
+                        bytes = counter[0]
+                        if (entries == 0 || !sawProfiles) throw IOException("Not a valid OssWallet backup")
+                    }
+                    else -> {
+                        val counter = longArrayOf(0L)
+                        input.copyToLimited(DiscardOutputStream, counter)
+                        bytes = counter[0]
+                        entries = 1
+                        if (bytes == 0L) throw IOException("Backup is empty")
+                    }
+                }
+                BackupVerification(encrypted = encrypted, entryCount = entries, sizeBytes = bytes)
+            }
+            Result.success(result)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun enableBackupEncryption(passphrase: CharArray): Result<Unit> =
+        withContext(dispatcherProvider.io) {
+            try {
+                val salt = BackupCrypto.newSalt()
+                val iterations = BackupCrypto.DEFAULT_ITERATIONS
+                backupKeyVault.store(BackupCrypto.deriveKey(passphrase, salt, iterations), salt, iterations)
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    override suspend fun disableBackupEncryption() = backupKeyVault.clear()
+
+    override suspend fun hasBackupEncryptionKey(): Boolean = backupKeyVault.load() != null
+
+    /**
+     * Hands [block] a plaintext stream of the backup at [uriString]. Encrypted files are fully
+     * decrypted and authenticated into a temp file first, so a wrong passphrase or tampering fails
+     * before any restore starts and never leaves a half-applied import.
+     */
+    private suspend fun <T> withPlainInput(
+        uriString: String,
+        passphrase: CharArray?,
+        block: suspend (InputStream) -> T
+    ): T {
+        val raw = context.contentResolver.openInputStream(uriString.toUri())
+            ?: throw IOException("Cannot open backup")
+        return raw.use { rawStream ->
+            val input = BufferedInputStream(rawStream)
+            input.mark(BackupCrypto.MAGIC_LENGTH)
+            val head = ByteArray(BackupCrypto.MAGIC_LENGTH)
+            val read = input.read(head)
+            input.reset()
+            if (read == head.size && BackupCrypto.isEncrypted(head)) {
+                if (passphrase == null) throw BackupPassphraseRequiredException()
+                val temp = File.createTempFile("restore_dec_", ".tmp", context.cacheDir)
+                try {
+                    FileOutputStream(temp).use { BackupCrypto.decrypt(input, it, passphrase) }
+                    FileInputStream(temp).use { block(it) }
+                } finally {
+                    temp.delete()
+                }
+            } else {
+                block(input)
+            }
+        }
+    }
 
     // P4: shared counter so cumulative extraction across all zip entries is bounded, not per-entry.
     private fun InputStream.copyToLimited(out: OutputStream, totalBytesWritten: LongArray) {

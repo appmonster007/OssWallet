@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Assessment
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Category
@@ -180,6 +181,14 @@ fun SettingsScreen(
                                 iconTint = AppColors.accent.copy(alpha = 0.7f),
                                 onClick = actions.onFiltersClick
                             )
+                            SettingsDivider()
+                            SettingsNavigationItem(
+                                title = "Reports",
+                                subtitle = "PDF • CSV • TAXES & SHARING",
+                                icon = Icons.Rounded.Assessment,
+                                iconTint = AppColors.accent.copy(alpha = 0.7f),
+                                onClick = actions.onReportsClick
+                            )
                         }
 
                         // ── PRIVACY & SAFETY ────────────────────────────────
@@ -285,6 +294,7 @@ data class SettingsActions(
     val onCategoriesClick: () -> Unit,
     val onTagsClick: () -> Unit,
     val onGoalsClick: () -> Unit,
+    val onReportsClick: () -> Unit,
     val onTemplatesClick: () -> Unit,
     val onSmartSuggestionsClick: () -> Unit,
     val onFiltersClick: () -> Unit,

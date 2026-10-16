@@ -103,9 +103,11 @@ object ReportPdfWriter {
             newPage()
             canvas.drawText(data.scope.title, MARGIN, y + 20f, title); y += 30f
             val lines = listOf(
-                "Period: ${data.scope.periodLabel}",
+                "Period: ${data.scope.periodLabel}${data.scope.periodRangeText.takeIf { it.isNotEmpty() }?.let { " ($it)" }.orEmpty()}",
                 "Accounts: ${data.scope.accountsLabel}",
+                "Categories: ${data.scope.categoriesLabel}",
                 "Tags: ${data.scope.tagsLabel}",
+                "Showing: ${data.scope.typesLabel}",
                 "Transfers: ${if (data.scope.includesTransfers) "included" else "excluded"}",
                 "Generated ${STAMP.format(Instant.ofEpochMilli(data.generatedAt).atZone(zone))}"
             )

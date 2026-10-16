@@ -102,12 +102,13 @@ object ReportPdfWriter {
         fun render(data: ReportData, zone: ZoneId) {
             newPage()
             canvas.drawText(data.scope.title, MARGIN, y + 20f, title); y += 30f
-            val lines = listOf(
+            val lines = listOfNotNull(
                 "Period: ${data.scope.periodLabel}${data.scope.periodRangeText.takeIf { it.isNotEmpty() }?.let { " ($it)" }.orEmpty()}",
                 "Accounts: ${data.scope.accountsLabel}",
                 "Categories: ${data.scope.categoriesLabel}",
                 "Tags: ${data.scope.tagsLabel}",
                 "Showing: ${data.scope.typesLabel}",
+                data.scope.otherFiltersLabel.takeIf { it.isNotBlank() }?.let { "Other filters: $it" },
                 "Transfers: ${if (data.scope.includesTransfers) "included" else "excluded"}",
                 "Generated ${STAMP.format(Instant.ofEpochMilli(data.generatedAt).atZone(zone))}"
             )
@@ -210,7 +211,7 @@ object ReportPdfWriter {
     }
 
     /** "-1,234.50 USD", using the currency's own number of decimal places (JPY has none). */
-    internal fun money(amount: BigDecimal, currency: String, signed: Boolean = false): String {
+    internal fun money(amount: BigDecimal, currency: String, signed: Boolean = false, showCode: Boolean = true): String {
         val digits = runCatching { Currency.getInstance(currency).defaultFractionDigits }.getOrDefault(2).coerceAtLeast(0)
         val fmt = NumberFormat.getNumberInstance(Locale.getDefault()).apply {
             minimumFractionDigits = digits
@@ -222,6 +223,6 @@ object ReportPdfWriter {
             signed && amount.signum() > 0 -> "+"
             else -> ""
         }
-        return "$sign$text $currency"
+        return if (showCode) "$sign$text $currency" else "$sign$text"
     }
 }

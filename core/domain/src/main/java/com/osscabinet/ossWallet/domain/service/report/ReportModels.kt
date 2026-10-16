@@ -14,7 +14,9 @@ data class ReportScope(
     val categoriesLabel: String = "All categories",
     /** The concrete dates the period resolved to; empty when unknown. */
     val periodRangeText: String = "",
-    val typesLabel: String = "Income and expenses"
+    val typesLabel: String = "Income and expenses",
+    /** Extra narrowing (search text, amount range, ...), empty when none. */
+    val otherFiltersLabel: String = ""
 )
 
 /** One transaction line. [amount] is signed: expenses negative, income positive. */

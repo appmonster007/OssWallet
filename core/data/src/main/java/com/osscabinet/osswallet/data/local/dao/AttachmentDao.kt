@@ -26,6 +26,18 @@ interface AttachmentDao {
     @Query("SELECT * FROM attachments WHERE id = :id AND profileId = :profileId")
     suspend fun getById(id: Long, profileId: Int): AttachmentEntity?
 
+    @Query("SELECT * FROM attachments WHERE fileName = :fileName AND profileId = :profileId")
+    suspend fun getByFileName(fileName: String, profileId: Int): List<AttachmentEntity>
+
+    @Query("SELECT COUNT(*) FROM attachments WHERE fileName = :fileName")
+    suspend fun countByFileName(fileName: String): Int
+
+    @Query("SELECT COUNT(*) FROM attachments WHERE transactionId = :transactionId AND fileName = :fileName AND profileId = :profileId")
+    suspend fun countForTransactionFile(transactionId: Long, fileName: String, profileId: Int): Int
+
+    @Query("DELETE FROM attachments WHERE fileName = :fileName AND profileId = :profileId")
+    suspend fun deleteByFileName(fileName: String, profileId: Int)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(attachment: AttachmentEntity): Long
 

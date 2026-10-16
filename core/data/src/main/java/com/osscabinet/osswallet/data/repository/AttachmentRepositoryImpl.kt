@@ -35,26 +35,50 @@ class AttachmentRepositoryImpl @Inject constructor(
         bytes: ByteArray,
         mimeType: String,
         displayName: String
-    ): Attachment =
-        withContext(Dispatchers.IO) {
-            check(dao.countForTransaction(transactionId, profileId) < AttachmentLimits.MAX_PER_TRANSACTION) {
+    ): Attachment = addShared(listOf(transactionId), profileId, bytes, mimeType, displayName).single()
+
+    override suspend fun addShared(
+        transactionIds: List<Long>,
+        profileId: Int,
+        bytes: ByteArray,
+        mimeType: String,
+        displayName: String
+    ): List<Attachment> = withContext(Dispatchers.IO) {
+        val ids = transactionIds.distinct()
+        require(ids.isNotEmpty()) { "No transaction to attach to" }
+        ids.forEach { id ->
+            check(dao.countForTransaction(id, profileId) < AttachmentLimits.MAX_PER_TRANSACTION) {
                 "A transaction can have at most ${AttachmentLimits.MAX_PER_TRANSACTION} attachments"
             }
-            val name = store.write(bytes)
-            val draft = Attachment(
-                transactionId = transactionId,
-                profileId = profileId,
-                fileName = name,
-                mimeType = mimeType,
-                sizeBytes = bytes.size.toLong(),
-                createdAt = System.currentTimeMillis(),
-                displayName = displayName
-            )
-            // A failed insert must not leave an unreferenced file behind.
-            val id = runCatching { dao.insert(draft.toEntity()) }
-                .onFailure { store.delete(name) }
-                .getOrThrow()
-            draft.copy(id = id)
+        }
+        val name = store.write(bytes)
+        val now = System.currentTimeMillis()
+        // A failed insert must not leave an unreferenced file (or half the rows) behind.
+        runCatching {
+            ids.map { id ->
+                val draft = Attachment(
+                    transactionId = id, profileId = profileId, fileName = name, mimeType = mimeType,
+                    sizeBytes = bytes.size.toLong(), createdAt = now, displayName = displayName
+                )
+                draft.copy(id = dao.insert(draft.toEntity()))
+            }
+        }.onFailure {
+            dao.deleteByFileName(name, profileId)
+            store.delete(name)
+        }.getOrThrow()
+    }
+
+    override suspend fun shareWith(attachments: List<Attachment>, transactionIds: List<Long>, profileId: Int) =
+        withContext(Dispatchers.IO) {
+            attachments.forEach { a ->
+                transactionIds.distinct().filter { it != a.transactionId }.forEach { target ->
+                    if (dao.countForTransactionFile(target, a.fileName, profileId) == 0 &&
+                        dao.countForTransaction(target, profileId) < AttachmentLimits.MAX_PER_TRANSACTION
+                    ) {
+                        dao.insert(a.copy(id = 0, transactionId = target).toEntity())
+                    }
+                }
+            }
         }
 
     override suspend fun readBytes(attachment: Attachment): ByteArray? =
@@ -62,7 +86,8 @@ class AttachmentRepositoryImpl @Inject constructor(
 
     override suspend fun delete(id: Long, profileId: Int) = withContext(Dispatchers.IO) {
         dao.getById(id, profileId)?.let {
-            dao.deleteById(id, profileId)
+            // Copies on the other leg of a transfer point at the same file; they go with it.
+            dao.deleteByFileName(it.fileName, profileId)
             store.delete(it.fileName)
         } ?: Unit
     }
@@ -71,7 +96,7 @@ class AttachmentRepositoryImpl @Inject constructor(
         withContext(Dispatchers.IO) {
             val rows = dao.getForTransaction(transactionId, profileId)
             dao.deleteForTransaction(transactionId, profileId)
-            rows.forEach { store.delete(it.fileName) }
+            rows.map { it.fileName }.distinct().filter { dao.countByFileName(it) == 0 }.forEach { store.delete(it) }
         }
 
     override suspend fun removeOrphans() = withContext(Dispatchers.IO) {

@@ -22,11 +22,29 @@ interface AttachmentRepository {
         displayName: String = ""
     ): Attachment
 
+    /**
+     * Stores one encrypted copy and records it on every id in [transactionIds]: both legs of a
+     * transfer show the same attachments, yet the file exists once. Throws, storing nothing, if any
+     * of them is already at the cap.
+     */
+    suspend fun addShared(
+        transactionIds: List<Long>,
+        profileId: Int,
+        bytes: ByteArray,
+        mimeType: String,
+        displayName: String
+    ): List<Attachment>
+
+    /** Makes sure each of [attachments] also exists on every id in [transactionIds] (older one-sided ones). */
+    suspend fun shareWith(attachments: List<Attachment>, transactionIds: List<Long>, profileId: Int)
+
     /** Decrypted file bytes, or null if the file is missing or can no longer be decrypted. */
     suspend fun readBytes(attachment: Attachment): ByteArray?
 
+    /** Removes the attachment, including its copies on the other leg of a transfer. */
     suspend fun delete(id: Long, profileId: Int)
 
+    /** Removes this transaction's attachments only; a file still shown on a transfer's other leg is kept. */
     suspend fun deleteForTransaction(transactionId: Long, profileId: Int)
 
     /** Drops rows whose transaction is gone and files with no row. Safe to call any time. */

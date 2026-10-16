@@ -122,4 +122,37 @@ class AttachmentStagingTest {
         assertEquals("tax-invoice.pdf", stored.displayName)
         assertTrue(!stored.isImage)
     }
+
+    @Test
+    fun `a transfer commit puts the same attachments on both legs`() = runTest(UnconfinedTestDispatcher()) {
+        val s = staging()
+        s.add("receipt.pdf"); advanceUntilIdle()
+
+        s.commit(listOf(9L, 10L), 1)
+        assertEquals("receipt.pdf", repo.getForTransaction(9, 1).single().displayName)
+        assertEquals("receipt.pdf", repo.getForTransaction(10, 1).single().displayName)
+    }
+
+    @Test
+    fun `saving a transfer copies one-sided older attachments to the other leg`() = runTest(UnconfinedTestDispatcher()) {
+        repo.add(9, 1, "old".toByteArray(), "image/jpeg", "old.jpg")
+        val s = staging()
+        s.load(9, 1); advanceUntilIdle()
+
+        s.commit(listOf(9L, 10L), 1)
+        assertEquals(1, repo.getForTransaction(10, 1).size)
+        assertEquals(1, repo.getForTransaction(9, 1).size)
+    }
+
+    @Test
+    fun `removing an attachment on a transfer removes it from both legs`() = runTest(UnconfinedTestDispatcher()) {
+        repo.addShared(listOf(9L, 10L), 1, "x".toByteArray(), "image/jpeg", "a.jpg")
+        val s = staging()
+        s.load(9, 1); advanceUntilIdle()
+
+        s.remove(s.state.value.items.single()); advanceUntilIdle()
+        s.commit(listOf(9L, 10L), 1)
+        assertTrue(repo.getForTransaction(9, 1).isEmpty())
+        assertTrue(repo.getForTransaction(10, 1).isEmpty())
+    }
 }

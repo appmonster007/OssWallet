@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.data.local.SecurePassphraseManager
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.BudgetDao
 import com.osscabinet.ossWallet.data.local.dao.CardCacheDao
+import com.osscabinet.ossWallet.data.local.dao.AttachmentDao
 import com.osscabinet.ossWallet.data.local.dao.GoalDao
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.data.local.dao.CurrencyDao
@@ -109,4 +110,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideGoalDao(db: AppDatabase): GoalDao = db.goalDao()
+
+    @Provides
+    @Singleton
+    fun provideAttachmentDao(db: AppDatabase): AttachmentDao = db.attachmentDao()
 }

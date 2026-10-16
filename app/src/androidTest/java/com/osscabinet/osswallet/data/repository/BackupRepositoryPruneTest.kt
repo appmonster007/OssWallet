@@ -50,6 +50,8 @@ class BackupRepositoryPruneTest {
             filterDao = db.filterDao(),
             currencyDao = db.currencyDao(),
             goalDao = db.goalDao(),
+            attachmentDao = db.attachmentDao(),
+            attachmentStore = com.osscabinet.ossWallet.data.local.AttachmentStore(context),
             backupKeyVault = com.osscabinet.ossWallet.data.local.BackupKeyVault(context),
             database = db,
             settingsDataStore = settingsDataStore,

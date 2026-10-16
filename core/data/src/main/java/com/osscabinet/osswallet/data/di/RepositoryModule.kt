@@ -9,6 +9,8 @@ import com.osscabinet.ossWallet.data.repository.CategoryRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.ComputationRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.CurrencyRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.FilterRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.AttachmentRepositoryImpl
+import com.osscabinet.ossWallet.data.media.ReceiptImageProcessorImpl
 import com.osscabinet.ossWallet.data.repository.GoalRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.LoanRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.PlannedPaymentRepositoryImpl
@@ -30,6 +32,8 @@ import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
+import com.osscabinet.ossWallet.domain.repository.AttachmentRepository
+import com.osscabinet.ossWallet.domain.repository.ReceiptImageProcessor
 import com.osscabinet.ossWallet.domain.repository.GoalRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
@@ -91,6 +95,12 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindGoalRepository(impl: GoalRepositoryImpl): GoalRepository
+
+    @Binds
+    abstract fun bindAttachmentRepository(impl: AttachmentRepositoryImpl): AttachmentRepository
+
+    @Binds
+    abstract fun bindReceiptImageProcessor(impl: ReceiptImageProcessorImpl): ReceiptImageProcessor
     @Binds
     @Singleton
     abstract fun bindAppLockRepository(impl: AppLockRepositoryImpl): AppLockRepository

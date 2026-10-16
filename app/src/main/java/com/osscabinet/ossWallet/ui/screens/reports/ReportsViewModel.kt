@@ -1,11 +1,15 @@
 package com.osscabinet.ossWallet.ui.screens.reports
 
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.ToggleRule
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.isTransfer
+import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
@@ -15,24 +19,25 @@ import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.report.ReportCategoryTotal
 import com.osscabinet.ossWallet.domain.service.report.ReportCurrencyTotals
 import com.osscabinet.ossWallet.domain.service.report.ReportData
-import com.osscabinet.ossWallet.domain.service.report.ReportPeriod
 import com.osscabinet.ossWallet.domain.service.report.ReportScope
 import com.osscabinet.ossWallet.domain.service.report.ReportService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
@@ -48,13 +53,6 @@ data class ReportResult(
     val totals: List<ReportCurrencyTotals>
 )
 
-/** Which kinds of transactions the report lists. */
-enum class ReportKind(val label: String, val types: Set<TransactionType>) {
-    ALL("All", emptySet()),
-    EXPENSES("Expenses", setOf(TransactionType.EXPENSE)),
-    INCOME("Income", setOf(TransactionType.INCOME))
-}
-
 /** What the current filters would produce, shown before anything is generated. */
 data class ReportPreview(
     val rowCount: Int,
@@ -68,21 +66,18 @@ data class ReportsUiState(
     val accounts: List<Account> = emptyList(),
     val tags: List<Tag> = emptyList(),
     val categories: List<Category> = emptyList(),
-    val selectedCategoryIds: Set<Long> = emptySet(),
-    val kind: ReportKind = ReportKind.ALL,
-    val preview: ReportPreview? = null,
-    val previewLoading: Boolean = true,
-    val period: ReportPeriod = ReportPeriod.ThisMonth,
-    /** Empty means "all accounts". */
-    val selectedAccountIds: Set<String> = emptySet(),
-    /** Empty means "all tags"; otherwise a transaction matches if it has any of them. */
-    val selectedTags: Set<String> = emptySet(),
+    /** The same filter model the Records screen uses, so every filter there works for reports too. */
+    val filter: TransactionFilter = ReportsViewModel.DEFAULT_FILTER,
     val includeTransfers: Boolean = false,
     val format: ReportFormat = ReportFormat.PDF,
+    val preview: ReportPreview? = null,
+    val previewLoading: Boolean = true,
     val generating: Boolean = false,
     val result: ReportResult? = null,
     val message: String? = null
-)
+) {
+    val isFiltered: Boolean get() = filter != ReportsViewModel.DEFAULT_FILTER || includeTransfers
+}
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
@@ -101,12 +96,7 @@ class ReportsViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             settingsRepository.currentProfileId.flatMapLatest { accountRepository.getAllAccounts(it) }
-                .collect { list ->
-                    _state.update { s ->
-                        val live = list.filter { !it.isArchived || it.id in s.selectedAccountIds }
-                        s.copy(accounts = live, selectedAccountIds = s.selectedAccountIds.filter { id -> list.any { it.id == id } }.toSet())
-                    }
-                }
+                .collect { list -> _state.update { it.copy(accounts = list) } }
         }
         viewModelScope.launch {
             settingsRepository.currentProfileId.flatMapLatest { tagRepository.getAllTags(it) }
@@ -114,17 +104,11 @@ class ReportsViewModel @Inject constructor(
         }
         viewModelScope.launch {
             settingsRepository.currentProfileId.flatMapLatest { categoryRepository.getAllCategories(it) }
-                .collect { list ->
-                    // Transfers and opening balances aren't spending categories; they're governed by "Include transfers".
-                    val usable = list.filter { !Category.isTransfer(it.id) }.sortedBy { it.name.lowercase() }
-                    _state.update { s ->
-                        s.copy(categories = usable, selectedCategoryIds = s.selectedCategoryIds.filter { id -> usable.any { it.id == id } }.toSet())
-                    }
-                }
+                .collect { list -> _state.update { it.copy(categories = list) } }
         }
-        // Live preview: re-run the query whenever a filter changes, after a short pause so rapid chip taps coalesce.
+        // Live preview: re-run the query whenever a filter changes, after a short pause so rapid taps coalesce.
         viewModelScope.launch {
-            _state.map { Criteria(it.period, it.selectedAccountIds, it.selectedCategoryIds, it.selectedTags, it.kind, it.includeTransfers) }
+            _state.map { it.filter to it.includeTransfers }
                 .distinctUntilChanged()
                 .onEach { _state.update { s -> s.copy(previewLoading = true) } }
                 .debounce(250)
@@ -133,95 +117,27 @@ class ReportsViewModel @Inject constructor(
                     _state.update { s ->
                         s.copy(
                             previewLoading = false,
-                            preview = data?.let { ReportPreview(it.rows.size, it.totals, it.topExpenseCategories, rangeText(s.period)) }
+                            preview = data?.let {
+                                ReportPreview(it.rows.size, it.totals, it.topExpenseCategories, rangeText(s.filter.timelineRange))
+                            }
                         )
                     }
                 }
         }
     }
 
-    private data class Criteria(
-        val period: ReportPeriod,
-        val accounts: Set<String>,
-        val categories: Set<Long>,
-        val tags: Set<String>,
-        val kind: ReportKind,
-        val transfers: Boolean
-    )
-
-    private fun rangeText(period: ReportPeriod): String {
-        val zone = ZoneId.systemDefault()
-        val range = period.range(System.currentTimeMillis(), zone)
-        val sameYear = Instant.ofEpochMilli(range.first).atZone(zone).year == Instant.ofEpochMilli(range.last).atZone(zone).year
-        val start = DateTimeFormatter.ofPattern(if (sameYear) "MMM d" else "MMM d, yyyy").withZone(zone)
-        val end = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(zone)
-        return "${start.format(Instant.ofEpochMilli(range.first))} – ${end.format(Instant.ofEpochMilli(range.last))}"
-    }
-
-    private suspend fun buildData(snapshot: ReportsUiState, now: Long): ReportData {
-        val profileId = settingsRepository.currentProfileId.first()
-        val range = snapshot.period.range(now, ZoneId.systemDefault())
-        val filter = TransactionFilter(
-            timelineRange = TimelineRange.CustomRange(start = range.first, end = range.last),
-            accountIds = snapshot.selectedAccountIds,
-            categoryIds = snapshot.selectedCategoryIds,
-            transactionTypes = snapshot.kind.types,
-            tags = snapshot.selectedTags,
-            matchAllTags = false
-        )
-        val transactions = transactionRepository.getFilteredTransactionsSync(profileId, filter)
-        return ReportService.build(
-            transactions = transactions,
-            categories = categoryRepository.getAllCategories(profileId).first(),
-            accounts = accountRepository.getAllAccountsSync(profileId),
-            scope = ReportScope(
-                title = "Transaction report",
-                periodLabel = snapshot.period.label,
-                periodRangeText = rangeText(snapshot.period),
-                accountsLabel = snapshot.accounts.filter { it.id in snapshot.selectedAccountIds }
-                    .joinToString { it.name }.ifEmpty { "All accounts" },
-                tagsLabel = snapshot.selectedTags.sorted().joinToString().ifEmpty { "All tags" },
-                includesTransfers = snapshot.includeTransfers,
-                categoriesLabel = snapshot.categories.filter { it.id in snapshot.selectedCategoryIds }
-                    .joinToString { it.name }.ifEmpty { "All categories" },
-                typesLabel = when (snapshot.kind) {
-                    ReportKind.ALL -> "Income and expenses"
-                    ReportKind.EXPENSES -> "Expenses only"
-                    ReportKind.INCOME -> "Income only"
-                }
-            ),
-            generatedAt = now
-        )
-    }
-
     // Any change to the options makes a previously generated file stale.
     private fun edit(transform: (ReportsUiState) -> ReportsUiState) =
         _state.update { transform(it).copy(result = null, message = null) }
 
-    fun setPeriod(period: ReportPeriod) = edit { it.copy(period = period) }
+    fun setFilter(filter: TransactionFilter) = edit { it.copy(filter = RULES.normalize(filter)) }
+    fun resetFilters() = edit { it.copy(filter = DEFAULT_FILTER, includeTransfers = false) }
     fun setFormat(format: ReportFormat) = edit { it.copy(format = format) }
     fun setIncludeTransfers(include: Boolean) = edit { it.copy(includeTransfers = include) }
-    fun clearAccounts() = edit { it.copy(selectedAccountIds = emptySet()) }
-    fun clearTags() = edit { it.copy(selectedTags = emptySet()) }
-    fun clearCategories() = edit { it.copy(selectedCategoryIds = emptySet()) }
-    fun setKind(kind: ReportKind) = edit { it.copy(kind = kind) }
-    fun toggleCategory(id: Long) = edit {
-        it.copy(selectedCategoryIds = if (id in it.selectedCategoryIds) it.selectedCategoryIds - id else it.selectedCategoryIds + id)
-    }
 
-    fun resetFilters() = edit {
-        it.copy(
-            period = ReportPeriod.ThisMonth, selectedAccountIds = emptySet(), selectedCategoryIds = emptySet(),
-            selectedTags = emptySet(), kind = ReportKind.ALL, includeTransfers = false
-        )
-    }
-    fun toggleAccount(id: String) = edit {
-        it.copy(selectedAccountIds = if (id in it.selectedAccountIds) it.selectedAccountIds - id else it.selectedAccountIds + id)
-    }
-
-    fun toggleTag(name: String) = edit {
-        it.copy(selectedTags = if (name in it.selectedTags) it.selectedTags - name else it.selectedTags + name)
-    }
+    /** Backs the note/payee search suggestions in the shared filter fields. */
+    fun searchTransactions(query: String): Flow<List<Transaction>> =
+        settingsRepository.currentProfileId.flatMapLatest { transactionRepository.searchTransactions(it, query) }
 
     fun saveTo(destinationUri: String) {
         val file = _state.value.result?.file ?: return
@@ -254,5 +170,70 @@ class ReportsViewModel @Inject constructor(
                 _state.update { it.copy(generating = false) }
             }
         }
+    }
+
+    private suspend fun buildData(snapshot: ReportsUiState, now: Long): ReportData {
+        val profileId = settingsRepository.currentProfileId.first()
+        val filter = snapshot.filter
+        val transactions = transactionRepository.getFilteredTransactionsSync(profileId, filter)
+        return ReportService.build(
+            transactions = transactions,
+            categories = snapshot.categories.ifEmpty { categoryRepository.getAllCategories(profileId).first() },
+            accounts = accountRepository.getAllAccountsSync(profileId),
+            scope = scopeFor(snapshot),
+            generatedAt = now
+        )
+    }
+
+    private fun scopeFor(s: ReportsUiState): ReportScope {
+        val f = s.filter
+        val types = f.transactionTypes
+        return ReportScope(
+            title = "Transaction report",
+            periodLabel = f.timelineRange.toDisplayString(),
+            periodRangeText = rangeText(f.timelineRange),
+            accountsLabel = s.accounts.filter { it.id in f.accountIds }.joinToString { it.name }.ifEmpty { "All accounts" },
+            categoriesLabel = s.categories.filter { it.id in f.categoryIds }.joinToString { it.name }.ifEmpty { "All categories" },
+            tagsLabel = f.tags.sorted().joinToString().ifEmpty { "All tags" },
+            typesLabel = types.joinToString { it.displayName }.ifEmpty { "Income and expenses" },
+            includesTransfers = s.includeTransfers || types.any { it.isTransfer },
+            otherFiltersLabel = otherFilters(f)
+        )
+    }
+
+    /** Filters beyond the main ones, spelled out so a saved report says how it was narrowed. */
+    private fun otherFilters(f: TransactionFilter): String = buildList {
+        f.queryNote?.takeIf { it.isNotBlank() }?.let { add("note contains \"$it\"") }
+        f.queryPayee?.takeIf { it.isNotBlank() }?.let { add("payee contains \"$it\"") }
+        if (f.minAmount != null || f.maxAmount != null) {
+            add("amount ${f.minAmount?.toPlainString() ?: "any"} to ${f.maxAmount?.toPlainString() ?: "any"}")
+        }
+        if (f.currencies.isNotEmpty()) add("currency ${f.currencies.sorted().joinToString()}")
+        if (f.statuses.isNotEmpty()) add("status ${f.statuses.joinToString { it.displayName }}")
+        if (f.paymentMethods.isNotEmpty()) add("paid by ${f.paymentMethods.joinToString { it.displayName }}")
+        if (f.tags.size > 1) add(if (f.matchAllTags) "all selected tags" else "any selected tag")
+    }.joinToString("; ")
+
+    private fun rangeText(range: TimelineRange): String {
+        val (start, end) = TimelineService.getDateRange(range)
+        if (start == null && end == null) return "All time"
+        val zone = ZoneId.systemDefault()
+        val endMs = end ?: System.currentTimeMillis()
+        val endText = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(zone).format(Instant.ofEpochMilli(endMs))
+        if (start == null) return "Up to $endText"
+        val sameYear = Instant.ofEpochMilli(start).atZone(zone).year == Instant.ofEpochMilli(endMs).atZone(zone).year
+        val startText = DateTimeFormatter.ofPattern(if (sameYear) "MMM d" else "MMM d, yyyy").withZone(zone)
+            .format(Instant.ofEpochMilli(start))
+        return "$startText – $endText"
+    }
+
+    companion object {
+        val DEFAULT_FILTER = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH))
+
+        /** Warranty and linked-record filters don't mean anything in a statement-style report. */
+        val RULES = CardFilterRules(
+            warrantyRule = ToggleRule.Disabled,
+            linkedRecordsRule = ToggleRule.Disabled
+        )
     }
 }

@@ -114,8 +114,8 @@ fun AeonAccountCardSmall(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .size(28.dp)
-                .graphicsLayer { alpha = 0.12f },
-            tint = dotColor
+                .graphicsLayer { alpha = 0.10f },
+            tint = AppColors.contentPrimary // Account color accent: dotColor
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -177,8 +177,8 @@ fun AeonAccountCardMedium(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .size(40.dp)
-                .graphicsLayer { alpha = 0.12f },
-            tint = dotColor
+                .graphicsLayer { alpha = 0.10f },
+            tint = AppColors.contentPrimary // Account color accent: dotColor
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -266,8 +266,8 @@ fun AeonAccountCardLarge(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .size(56.dp)
-                .graphicsLayer { alpha = 0.12f },
-            tint = dotColor
+                .graphicsLayer { alpha = 0.10f },
+            tint = AppColors.contentPrimary // Account color accent: dotColor
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

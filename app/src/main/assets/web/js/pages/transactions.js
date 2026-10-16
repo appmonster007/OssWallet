@@ -833,6 +833,7 @@ window.openTxDetail = async function (id) {
     <div class="tx-detail-rows">
       ${rows.map(([k,v]) => `<div class="tx-detail-row"><span class="tx-detail-key">${k}</span><span class="tx-detail-val">${v}</span></div>`).join('')}
     </div>
+    <div id="tx-attachments" class="tx-att"></div>
     <div class="tx-detail-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal();openEditTransaction(${tx.id})">Edit</button>
       <button class="btn btn-ghost btn-sm" onclick="closeModal();cloneTransaction(${tx.id})">Clone</button>
@@ -840,6 +841,92 @@ window.openTxDetail = async function (id) {
     </div>
   </div>`;
   openModal('Transaction Detail', body, null, null);
+  loadTxAttachments(tx.id);
+};
+
+/* ── Attachments ─────────────────────────────────────────────────────────── */
+
+function fmtBytes(n) {
+  if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
+  if (n >= 1024) return Math.round(n / 1024) + ' KB';
+  return n + ' B';
+}
+
+const txAttachmentCache = {};
+
+window.loadTxAttachments = async function (txId) {
+  const box = document.getElementById('tx-attachments');
+  if (!box) return;
+  let list = [];
+  try {
+    const r = await apiFetch(`/api/transactions/${txId}/attachments`);
+    list = r.success ? r.data : [];
+  } catch (e) { return; }
+  list.forEach(a => { txAttachmentCache[a.id] = a; });
+  box.innerHTML = `
+    <div class="tx-att-head">
+      <span class="tx-detail-key">Attachments</span>
+      <label class="btn btn-ghost btn-sm tx-att-add">Attach file
+        <input type="file" hidden onchange="uploadTxAttachment(${txId}, this)">
+      </label>
+    </div>` + (list.length
+      ? list.map(a => `
+        <div class="tx-att-row">
+          <span class="tx-att-name" title="${esc(a.name)}">${esc(a.name)}</span>
+          <span class="tx-att-size">${fmtBytes(a.sizeBytes)}</span>
+          <button class="btn btn-ghost btn-sm" onclick="openTxAttachment(${txId}, ${a.id})">${a.previewable ? 'View' : 'Download'}</button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteTxAttachment(${txId}, ${a.id})">Remove</button>
+        </div>`).join('')
+      : '<div class="tx-att-empty">No attachments yet.</div>');
+};
+
+window.uploadTxAttachment = async function (txId, input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  try {
+    const res = await apiUpload(`/api/transactions/${txId}/attachments`, file);
+    if (res.success) { showToast('Attached.'); } else { showToast(res.error || 'Could not attach that file.', 'error'); }
+  } catch (e) { if (e.message !== 'Session expired') showToast('Could not attach that file.', 'error'); }
+  loadTxAttachments(txId);
+};
+
+window.openTxAttachment = async function (txId, attId) {
+  const a = txAttachmentCache[attId];
+  let blob = null;
+  try { blob = await apiBlob(`/api/transactions/${txId}/attachments/${attId}`); }
+  catch (e) { return; }
+  if (!blob) { showToast('Could not open that attachment.', 'error'); return; }
+  if (a && a.previewable) {
+    // Only formats the server marks previewable are drawn, and only inside an <img>, which cannot run script.
+    const url = URL.createObjectURL(new Blob([blob], { type: a.mimeType }));
+    const overlay = document.createElement('div');
+    overlay.className = 'tx-att-lightbox';
+    overlay.innerHTML = '<img alt=""><button class="btn btn-ghost btn-sm" aria-label="Close">Close</button>';
+    overlay.querySelector('img').src = url;
+    const close = () => { URL.revokeObjectURL(url); overlay.remove(); };
+    overlay.querySelector('button').onclick = close;
+    overlay.onclick = e => { if (e.target === overlay) close(); };
+    document.body.appendChild(overlay);
+  } else {
+    // Everything else is saved, never rendered, so an uploaded page or script can't run in this origin.
+    const url = URL.createObjectURL(new Blob([blob], { type: 'application/octet-stream' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = a ? a.name : 'attachment';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+};
+
+window.deleteTxAttachment = async function (txId, attId) {
+  try {
+    const res = await apiWrite('DELETE', `/api/transactions/${txId}/attachments/${attId}`);
+    if (!res.success) showToast('Could not remove that attachment.', 'error');
+  } catch (e) { if (e.message !== 'Session expired') showToast('Could not remove that attachment.', 'error'); }
+  loadTxAttachments(txId);
 };
 
 window.deleteTransaction = function (id, name) {

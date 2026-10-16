@@ -25,6 +25,7 @@ Legend: ✅ Done · 🔲 Missing · ⚠️ Partial
 | Warranty toggle + expiration date | ✅ | ✅ toggle + date picker on create/edit form |
 | GPS Location + location name | ✅ | 🔲 |
 | Linked transactions | ✅ | 🔲 |
+| Attachments (photos, PDFs, any file) | ✅ | ✅ in the transaction detail: upload, view images, download others, remove |
 | Template application (prefill) | ✅ | ✅ via Templates page → Use button |
 | Calculator numpad for amount | ✅ | ⚠️ standard `<input>` only |
 | Note / Payee autocomplete | ✅ | 🔲 |

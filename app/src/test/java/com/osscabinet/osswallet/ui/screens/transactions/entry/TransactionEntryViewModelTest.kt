@@ -105,7 +105,7 @@ class TransactionEntryViewModelTest {
             computationRepository = fakeComputation,
             tagRepository = fakeTags,
             attachmentRepository = com.osscabinet.ossWallet.test.FakeAttachmentRepository(),
-            receiptImageProcessor = com.osscabinet.ossWallet.test.FakeReceiptImageProcessor()
+            attachmentProcessor = com.osscabinet.ossWallet.test.FakeAttachmentProcessor()
         )
     }
 

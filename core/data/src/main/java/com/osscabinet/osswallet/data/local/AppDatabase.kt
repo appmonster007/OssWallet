@@ -68,7 +68,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         GoalEntity::class,
         AttachmentEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -182,6 +182,13 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** v3 -> v4: original file name, so non-image attachments can be told apart. */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `attachments` ADD COLUMN `displayName` TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -195,7 +202,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
                     .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

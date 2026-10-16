@@ -1,6 +1,8 @@
 package com.osscabinet.ossWallet.domain.repository
 
 import com.osscabinet.ossWallet.domain.model.Attachment
+import com.osscabinet.ossWallet.domain.model.AttachmentLimits
+import com.osscabinet.ossWallet.domain.model.PreparedAttachment
 import kotlinx.coroutines.flow.Flow
 
 interface AttachmentRepository {
@@ -11,10 +13,16 @@ interface AttachmentRepository {
 
     suspend fun getForTransaction(transactionId: Long, profileId: Int): List<Attachment>
 
-    /** Encrypts [jpeg] into private storage and records it. Throws when the per-transaction cap is hit. */
-    suspend fun add(transactionId: Long, profileId: Int, jpeg: ByteArray): Attachment
+    /** Encrypts [bytes] into private storage and records it. Throws when the per-transaction cap is hit. */
+    suspend fun add(
+        transactionId: Long,
+        profileId: Int,
+        bytes: ByteArray,
+        mimeType: String = AttachmentLimits.MIME_JPEG,
+        displayName: String = ""
+    ): Attachment
 
-    /** Decrypted image bytes, or null if the file is missing or can no longer be decrypted. */
+    /** Decrypted file bytes, or null if the file is missing or can no longer be decrypted. */
     suspend fun readBytes(attachment: Attachment): ByteArray?
 
     suspend fun delete(id: Long, profileId: Int)
@@ -28,8 +36,8 @@ interface AttachmentRepository {
     suspend fun clearAll()
 }
 
-/** Turns a picked/captured image into a downscaled, EXIF-rotated JPEG ready to store. */
-interface ReceiptImageProcessor {
-    /** [source] is a content URI string. */
-    suspend fun prepare(source: String): ByteArray
+/** Turns a picked/captured file into something storable: images are downscaled and EXIF-stripped, other files pass through. */
+interface AttachmentProcessor {
+    /** [source] is a content URI string. Throws with a user-readable message when the file can't be used. */
+    suspend fun prepare(source: String): PreparedAttachment
 }

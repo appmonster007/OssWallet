@@ -271,12 +271,14 @@ class FakeAttachmentRepository : com.osscabinet.ossWallet.domain.repository.Atta
     override suspend fun getForTransaction(transactionId: Long, profileId: Int) =
         rows.value.filter { it.transactionId == transactionId && it.profileId == profileId }
 
-    override suspend fun add(transactionId: Long, profileId: Int, jpeg: ByteArray): com.osscabinet.ossWallet.domain.model.Attachment {
+    override suspend fun add(
+        transactionId: Long, profileId: Int, bytes: ByteArray, mimeType: String, displayName: String
+    ): com.osscabinet.ossWallet.domain.model.Attachment {
         val a = com.osscabinet.ossWallet.domain.model.Attachment(
             id = nextId++, transactionId = transactionId, profileId = profileId, fileName = "f$nextId",
-            mimeType = "image/jpeg", sizeBytes = jpeg.size.toLong(), createdAt = 0
+            mimeType = mimeType, sizeBytes = bytes.size.toLong(), createdAt = 0, displayName = displayName
         )
-        bytes[a.id] = jpeg
+        this.bytes[a.id] = bytes
         rows.value = rows.value + a
         return a
     }
@@ -295,11 +297,14 @@ class FakeAttachmentRepository : com.osscabinet.ossWallet.domain.repository.Atta
     override suspend fun clearAll() { rows.value = emptyList() }
 }
 
-/** Returns the source string's bytes, or throws for sources starting with "bad". */
-class FakeReceiptImageProcessor : com.osscabinet.ossWallet.domain.repository.ReceiptImageProcessor {
-    override suspend fun prepare(source: String): ByteArray {
-        require(!source.startsWith("bad")) { "That file isn't an image" }
-        return source.toByteArray()
+/** Returns the source string as a file's bytes (".pdf" sources become PDFs), or throws for sources starting with "bad". */
+class FakeAttachmentProcessor : com.osscabinet.ossWallet.domain.repository.AttachmentProcessor {
+    override suspend fun prepare(source: String): com.osscabinet.ossWallet.domain.model.PreparedAttachment {
+        require(!source.startsWith("bad")) { "That file is larger than 20 MB" }
+        val pdf = source.endsWith(".pdf")
+        return com.osscabinet.ossWallet.domain.model.PreparedAttachment(
+            source.toByteArray(), if (pdf) "application/pdf" else "image/jpeg", source
+        )
     }
 }
 

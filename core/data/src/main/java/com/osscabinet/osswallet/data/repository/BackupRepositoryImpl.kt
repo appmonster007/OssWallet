@@ -1007,30 +1007,31 @@ class BackupRepositoryImpl @Inject constructor(
         if (batch.isNotEmpty()) plannedPaymentOccurrenceDao.insertOccurrences(batch)
     }
 
-    /** Receipts travel inside the zip as decrypted JPEGs; the zip itself is what gets encrypted. */
+    /** Attachments travel inside the zip as decrypted files (`attachments/<id>.bin`); the zip itself is what gets encrypted. */
     private suspend fun writeAttachmentsToZip(zos: ZipOutputStream, scope: BackupScope, currentProfileId: Int) {
         val all = attachmentDao.getAllForBackup()
         val rows = if (scope == BackupScope.SINGLE_PROFILE) all.filter { it.profileId == currentProfileId } else all
         val written = mutableListOf<AttachmentEntity>()
         rows.forEach { row ->
             val bytes = attachmentStore.read(row.fileName) ?: return@forEach // unreadable: skip, don't fail the backup
-            zos.putNextEntry(java.util.zip.ZipEntry("attachments/${row.id}.jpg"))
+            zos.putNextEntry(java.util.zip.ZipEntry("attachments/${row.id}.bin"))
             zos.write(bytes)
             zos.closeEntry()
             written += row
         }
         writeCsvToZip(
             zos, "attachments.csv",
-            arrayOf("id", "transactionId", "profileId", "mimeType", "sizeBytes", "createdAt"),
-            written.map { arrayOf(it.id, it.transactionId, it.profileId, it.mimeType, it.sizeBytes, it.createdAt) }
+            arrayOf("id", "transactionId", "profileId", "mimeType", "sizeBytes", "createdAt", "displayName"),
+            written.map { arrayOf(it.id, it.transactionId, it.profileId, it.mimeType, it.sizeBytes, it.createdAt, it.displayName) }
         )
     }
 
-    /** Stores each receipt image under a fresh random name; [created] collects them for rollback. */
+    /** Stores each attachment under a fresh random name; [created] collects them for rollback. */
     private suspend fun restoreAttachments(csv: File, imagesDir: File, created: MutableList<String>) {
         parseCsv(csv) { p ->
             val id = p["id"]?.toLongOrNull() ?: return@parseCsv
-            val image = File(imagesDir, "$id.jpg")
+            // Backups made before attachments supported other file types stored images as ".jpg".
+            val image = File(imagesDir, "$id.bin").takeIf { it.isFile } ?: File(imagesDir, "$id.jpg")
             if (!image.isFile) return@parseCsv
             val bytes = image.readBytes()
             val name = attachmentStore.write(bytes)
@@ -1043,7 +1044,8 @@ class BackupRepositoryImpl @Inject constructor(
                     fileName = name,
                     mimeType = p["mimeType"] ?: "image/jpeg",
                     sizeBytes = bytes.size.toLong(),
-                    createdAt = p["createdAt"]?.toLongOrNull() ?: System.currentTimeMillis()
+                    createdAt = p["createdAt"]?.toLongOrNull() ?: System.currentTimeMillis(),
+                    displayName = p["displayName"].orEmpty()
                 )
             )
         }

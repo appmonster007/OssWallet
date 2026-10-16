@@ -79,4 +79,20 @@ class BudgetPaceTest {
         val p: BudgetProgress = progress("10", 0.4f)
         assertEquals(0.4f, p.elapsedFraction!!, 0.0001f)
     }
+
+    @Test
+    fun `period identity is stable across runs for an open-ended range`() {
+        val b = budget(TimelineRange.AllTime())
+        assertEquals(
+            BudgetService.periodIdentity(b, start),
+            BudgetService.periodIdentity(b, start + 3 * day)
+        )
+    }
+
+    @Test
+    fun `period identity is the period start for a fixed range`() {
+        val b = budget()
+        assertEquals(start, BudgetService.periodIdentity(b, start + day))
+        assertEquals(start, BudgetService.periodIdentity(b, start + 4 * day))
+    }
 }

@@ -94,7 +94,7 @@ class ReminderWorker @AssistedInject constructor(
                 name = p.budget.name,
                 percentUsed = (p.percentage * 100).toInt(),
                 level = p.alertLevel,
-                periodStart = BudgetService.getCurrentPeriodRange(p.budget, now).first
+                periodStart = BudgetService.periodIdentity(p.budget, now)
             )
         }
     }

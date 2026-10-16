@@ -2,19 +2,16 @@ package com.osscabinet.ossWallet.ui.screens.reports
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
@@ -23,42 +20,38 @@ import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.service.report.ReportCategoryTotal
 import com.osscabinet.ossWallet.domain.service.report.ReportCurrencyTotals
-import com.osscabinet.ossWallet.domain.service.report.ReportPeriod
-import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.entry.EntrySection
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
-private const val COLLAPSED_CHIP_COUNT = 12
+// Column weights shared by the header and every currency row, so the numbers line up.
+private const val CURRENCY_COL = 0.7f
+private const val VALUE_COL = 1.1f
 
 /** What the report would contain right now, so the filters can be tuned before anything is generated. */
 @Composable
 fun ReportSummaryCard(state: ReportsUiState, onReset: () -> Unit) {
     val preview = state.preview
-    val filtered = state.period != ReportPeriod.ThisMonth || state.selectedAccountIds.isNotEmpty() ||
-        state.selectedCategoryIds.isNotEmpty() || state.selectedTags.isNotEmpty() ||
-        state.kind != ReportKind.ALL || state.includeTransfers
 
     EntrySection(title = "PREVIEW", icon = Icons.Rounded.Insights, modifier = Modifier.animateContentSize()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -74,12 +67,10 @@ fun ReportSummaryCard(state: ReportsUiState, onReset: () -> Unit) {
                     style = MaterialTheme.typography.headlineSmall,
                     color = AppColors.contentPrimary
                 )
-                preview?.let {
-                    Text(it.rangeText, style = AppTextStyles.caption, color = AppColors.contentSecondary)
-                }
+                preview?.let { Text(it.rangeText, style = AppTextStyles.caption, color = AppColors.contentSecondary) }
             }
             if (state.previewLoading) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-            else if (filtered) TextButton(onClick = onReset) { Text("Reset") }
+            else if (state.isFiltered) TextButton(onClick = onReset) { Text("Reset") }
         }
 
         if (preview != null && preview.rowCount == 0) {
@@ -90,16 +81,17 @@ fun ReportSummaryCard(state: ReportsUiState, onReset: () -> Unit) {
         }
 
         if (preview != null && preview.totals.isNotEmpty()) {
-            HorizontalDivider(color = AppColors.outlineVariant.copy(alpha = 0.4f))
-            preview.totals.forEach { t ->
-                CurrencyTotalsRow(t, showCurrency = preview.totals.size > 1)
-            }
+            Rule()
+            TotalsTable(preview.totals)
             val top = preview.topCategories.groupBy { it.currency }
             if (top.isNotEmpty()) {
-                HorizontalDivider(color = AppColors.outlineVariant.copy(alpha = 0.4f))
+                Rule()
                 Text("TOP SPENDING", style = AppTextStyles.caption, color = AppColors.contentSecondary)
                 top.forEach { (currency, list) ->
-                    list.take(2).forEach { CategoryBar(it, currency) }
+                    if (top.size > 1) {
+                        Text(currency, style = AppTextStyles.caption, color = AppColors.contentSecondary, fontWeight = FontWeight.SemiBold)
+                    }
+                    list.take(3).forEach { CategoryRow(it, currency) }
                 }
             }
         }
@@ -107,39 +99,73 @@ fun ReportSummaryCard(state: ReportsUiState, onReset: () -> Unit) {
 }
 
 @Composable
-private fun CurrencyTotalsRow(t: ReportCurrencyTotals, showCurrency: Boolean) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        if (showCurrency) Text(t.currency, style = AppTextStyles.caption, color = AppColors.contentSecondary)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Stat("Income", ReportPdfWriter.money(t.income, t.currency, signed = true), AppColors.positive)
-            Stat("Expenses", ReportPdfWriter.money(t.expense, t.currency, signed = true), AppColors.negative)
-            Stat(
-                "Net", ReportPdfWriter.money(t.net, t.currency, signed = true),
-                if (t.net.signum() < 0) AppColors.negative else AppColors.contentPrimary
-            )
+private fun Rule() = HorizontalDivider(color = AppColors.outlineVariant.copy(alpha = 0.4f))
+
+/** One header row, then one row per currency; every numeric column is right-aligned to the same edge. */
+@Composable
+private fun TotalsTable(totals: List<ReportCurrencyTotals>) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth()) {
+            androidx.compose.foundation.layout.Spacer(Modifier.weight(CURRENCY_COL))
+            HeaderCell("Income")
+            HeaderCell("Expenses")
+            HeaderCell("Net")
+        }
+        totals.forEach { t ->
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    t.currency,
+                    style = AppTextStyles.transactionTitle, color = AppColors.contentPrimary,
+                    modifier = Modifier.weight(CURRENCY_COL)
+                )
+                ValueCell(ReportPdfWriter.money(t.income, t.currency, signed = true, showCode = false), AppColors.positive)
+                ValueCell(ReportPdfWriter.money(t.expense, t.currency, signed = true, showCode = false), AppColors.negative)
+                ValueCell(
+                    ReportPdfWriter.money(t.net, t.currency, signed = true, showCode = false),
+                    if (t.net.signum() < 0) AppColors.negative else AppColors.contentPrimary,
+                    bold = true
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun Stat(label: String, value: String, color: androidx.compose.ui.graphics.Color) {
-    Column {
-        Text(label, style = AppTextStyles.caption, color = AppColors.contentSecondary)
-        Text(value, style = AppTextStyles.transactionTitle, color = color, maxLines = 1)
-    }
+private fun RowScope.HeaderCell(text: String) {
+    Text(
+        text, style = AppTextStyles.caption, color = AppColors.contentSecondary,
+        textAlign = TextAlign.End, maxLines = 1, modifier = Modifier.weight(VALUE_COL)
+    )
 }
 
 @Composable
-private fun CategoryBar(item: ReportCategoryTotal, currency: String) {
+private fun RowScope.ValueCell(text: String, color: Color, bold: Boolean = false) {
+    Text(
+        text,
+        style = AppTextStyles.transactionTitle.copy(fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal),
+        color = color, textAlign = TextAlign.End, maxLines = 1, softWrap = false,
+        modifier = Modifier.weight(VALUE_COL)
+    )
+}
+
+@Composable
+private fun CategoryRow(item: ReportCategoryTotal, currency: String) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                item.category, style = AppTextStyles.caption, color = AppColors.contentPrimary,
+                item.category, style = AppTextStyles.transactionTitle, color = AppColors.contentPrimary,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f)
             )
             Text(
-                ReportPdfWriter.money(item.amount, currency) + "  ${(item.share * 100).toInt()}%",
-                style = AppTextStyles.caption, color = AppColors.contentSecondary, maxLines = 1
+                ReportPdfWriter.money(item.amount, currency, showCode = false),
+                style = AppTextStyles.transactionTitle, color = AppColors.contentPrimary,
+                textAlign = TextAlign.End, maxLines = 1, softWrap = false
+            )
+            // Fixed width so the amounts above stay aligned however many digits the percentage has.
+            Text(
+                "${(item.share * 100).toInt()}%",
+                style = AppTextStyles.caption, color = AppColors.contentSecondary,
+                textAlign = TextAlign.End, maxLines = 1, modifier = Modifier.width(44.dp)
             )
         }
         LinearProgressIndicator(
@@ -150,55 +176,6 @@ private fun CategoryBar(item: ReportCategoryTotal, currency: String) {
             gapSize = 0.dp,
             drawStopIndicator = {}
         )
-    }
-}
-
-/**
- * Multi-select chips with an "all" chip, plus search and show-more once the list is long.
- * Selecting nothing means everything, so the "all" chip is the selected state of an empty selection.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun <T> ChipPicker(
-    items: List<T>,
-    itemKey: (T) -> Any,
-    itemLabel: (T) -> String,
-    selected: (T) -> Boolean,
-    onToggle: (T) -> Unit,
-    allLabel: String,
-    noneSelected: Boolean,
-    onClear: () -> Unit
-) {
-    var query by remember { mutableStateOf("") }
-    var expanded by remember { mutableStateOf(false) }
-    val searchable = items.size > COLLAPSED_CHIP_COUNT
-    val matches = if (query.isBlank()) items else items.filter { itemLabel(it).contains(query.trim(), ignoreCase = true) }
-    // Selected chips stay visible when collapsed, otherwise a choice could hide itself.
-    val visible = when {
-        query.isNotBlank() || expanded || !searchable -> matches
-        else -> matches.filterIndexed { i, item -> i < COLLAPSED_CHIP_COUNT || selected(item) }
-    }
-
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        if (searchable) {
-            AeonSearchField(query = query, onQueryChange = { query = it }, placeholder = "Search…")
-        }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = noneSelected, onClick = onClear, label = { Text(allLabel) })
-            visible.forEach { item ->
-                androidx.compose.runtime.key(itemKey(item)) {
-                    FilterChip(selected = selected(item), onClick = { onToggle(item) }, label = { Text(itemLabel(item)) })
-                }
-            }
-        }
-        if (query.isNotBlank() && matches.isEmpty()) {
-            Text("Nothing matches “${query.trim()}”.", style = AppTextStyles.caption, color = AppColors.contentSecondary)
-        }
-        if (searchable && query.isBlank() && matches.size > visible.size) {
-            TextButton(onClick = { expanded = true }) { Text("Show all ${matches.size}") }
-        } else if (searchable && query.isBlank() && expanded) {
-            TextButton(onClick = { expanded = false }) { Text("Show fewer") }
-        }
     }
 }
 
@@ -229,7 +206,7 @@ fun FormatCard(
     }
 }
 
-/** Pinned to the bottom: create, then share / open / save once the file exists. */
+/** Pinned to the bottom: create, then share / open / save (icon buttons) once the file exists. */
 @Composable
 fun ReportActionBar(
     state: ReportsUiState,
@@ -247,23 +224,22 @@ fun ReportActionBar(
         ) {
             state.message?.let { Text(it, style = AppTextStyles.caption, color = AppColors.contentSecondary) }
             if (result != null) {
-                Text(
-                    "${result.format.label} ready · ${result.rowCount} transactions · ${fileSize(result.file.length())}",
-                    style = AppTextStyles.caption, color = AppColors.contentSecondary,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Button(onClick = { onShare(result) }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp)) {
-                        Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(18.dp))
-                        Text("Share", maxLines = 1)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text("${result.format.label} ready", style = AppTextStyles.transactionTitle, color = AppColors.contentPrimary)
+                        Text(
+                            "${result.rowCount} transactions · ${fileSize(result.file.length())}",
+                            style = AppTextStyles.caption, color = AppColors.contentSecondary, maxLines = 1
+                        )
                     }
-                    OutlinedButton(onClick = { onOpen(result) }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp)) {
-                        Icon(Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(18.dp))
-                        Text("Open", maxLines = 1)
+                    FilledIconButton(onClick = { onShare(result) }, modifier = Modifier.size(48.dp)) {
+                        Icon(Icons.Rounded.Share, contentDescription = "Share report")
                     }
-                    OutlinedButton(onClick = { onSave(result) }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp)) {
-                        Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(18.dp))
-                        Text("Save", maxLines = 1)
+                    FilledTonalIconButton(onClick = { onOpen(result) }, modifier = Modifier.size(48.dp)) {
+                        Icon(Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = "Open report")
+                    }
+                    FilledTonalIconButton(onClick = { onSave(result) }, modifier = Modifier.size(48.dp)) {
+                        Icon(Icons.Rounded.Download, contentDescription = "Save report to a folder")
                     }
                 }
             } else {

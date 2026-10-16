@@ -9,8 +9,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,32 +17,17 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccountBalanceWallet
-import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Description
-import androidx.compose.material.icons.rounded.LocalOffer
 import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.TableChart
 import androidx.compose.material.icons.rounded.Tune
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DateRangePicker
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,23 +36,20 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.service.report.ReportPeriod
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.entry.EntrySection
+import com.osscabinet.ossWallet.ui.components.transactions.FilterFields
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen(
     onBackClick: () -> Unit,
@@ -77,11 +57,14 @@ fun ReportsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var pickingRange by remember { mutableStateOf(false) }
 
     val saveLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument(state.format.mimeType)
     ) { uri -> if (uri != null) viewModel.saveTo(uri.toString()) }
+
+    val currencies = remember(state.accounts) {
+        state.accounts.flatMap { it.allowedCurrencies.ifEmpty { listOf(it.currencyCode) } }.distinct().sorted()
+    }
 
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -115,38 +98,32 @@ fun ReportsScreen(
                         ),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    ReportSummaryCard(
-                        state = state,
-                        onReset = viewModel::resetFilters
-                    )
+                    ReportSummaryCard(state = state, onReset = viewModel::resetFilters)
 
                     EntrySection(title = "PERIOD", icon = Icons.Rounded.DateRange) {
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            ReportPeriod.presets.forEach { p ->
-                                FilterChip(
-                                    selected = state.period == p,
-                                    onClick = { viewModel.setPeriod(p) },
-                                    label = { Text(p.label) }
-                                )
-                            }
-                            FilterChip(
-                                selected = state.period is ReportPeriod.Custom,
-                                onClick = { pickingRange = true },
-                                label = { Text((state.period as? ReportPeriod.Custom)?.label ?: "Custom range") }
-                            )
-                        }
+                        // The same period control the Records filter uses (presets, rolling windows, custom range).
+                        AeonTimelinePeriodSelector(
+                            currentRange = state.filter.timelineRange,
+                            onRangeSelected = { viewModel.setFilter(state.filter.copy(timelineRange = it)) },
+                            swipeEntireComponent = true,
+                            isFlush = true
+                        )
                     }
 
-                    EntrySection(title = "SHOW", icon = Icons.Rounded.Tune) {
-                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                            ReportKind.entries.forEachIndexed { index, kind ->
-                                SegmentedButton(
-                                    selected = state.kind == kind,
-                                    onClick = { viewModel.setKind(kind) },
-                                    shape = SegmentedButtonDefaults.itemShape(index, ReportKind.entries.size)
-                                ) { Text(kind.label) }
-                            }
-                        }
+                    // Same filter fields as the Records filter, minus warranty and linked records.
+                    // They bring their own section cards, so they sit directly in the page.
+                    FilterFields(
+                        filter = state.filter,
+                        onFilterChange = viewModel::setFilter,
+                        accounts = state.accounts,
+                        allCategories = state.categories,
+                        allTags = state.tags,
+                        onSearchTransactions = viewModel::searchTransactions,
+                        allAvailableCurrencies = currencies,
+                        filterRules = ReportsViewModel.RULES
+                    )
+
+                    EntrySection(title = "OPTIONS", icon = Icons.Rounded.Tune) {
                         Row(
                             Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -160,64 +137,6 @@ fun ReportsScreen(
                                 )
                             }
                             Switch(checked = state.includeTransfers, onCheckedChange = viewModel::setIncludeTransfers)
-                        }
-                    }
-
-                    EntrySection(
-                        title = "ACCOUNTS" + countSuffix(state.selectedAccountIds.size),
-                        icon = Icons.Rounded.AccountBalanceWallet
-                    ) {
-                        ChipPicker(
-                            items = state.accounts,
-                            itemKey = { it.id },
-                            itemLabel = { it.name },
-                            selected = { it.id in state.selectedAccountIds },
-                            onToggle = { viewModel.toggleAccount(it.id) },
-                            allLabel = "All accounts",
-                            noneSelected = state.selectedAccountIds.isEmpty(),
-                            onClear = viewModel::clearAccounts
-                        )
-                    }
-
-                    if (state.categories.isNotEmpty()) {
-                        EntrySection(
-                            title = "CATEGORIES" + countSuffix(state.selectedCategoryIds.size),
-                            icon = Icons.Rounded.Category
-                        ) {
-                            ChipPicker(
-                                items = state.categories,
-                                itemKey = { it.id },
-                                itemLabel = { it.name },
-                                selected = { it.id in state.selectedCategoryIds },
-                                onToggle = { viewModel.toggleCategory(it.id) },
-                                allLabel = "All categories",
-                                noneSelected = state.selectedCategoryIds.isEmpty(),
-                                onClear = viewModel::clearCategories
-                            )
-                        }
-                    }
-
-                    if (state.tags.isNotEmpty()) {
-                        EntrySection(
-                            title = "TAGS" + countSuffix(state.selectedTags.size),
-                            icon = Icons.Rounded.LocalOffer
-                        ) {
-                            ChipPicker(
-                                items = state.tags,
-                                itemKey = { it.name },
-                                itemLabel = { it.name },
-                                selected = { it.name in state.selectedTags },
-                                onToggle = { viewModel.toggleTag(it.name) },
-                                allLabel = "All tags",
-                                noneSelected = state.selectedTags.isEmpty(),
-                                onClear = viewModel::clearTags
-                            )
-                            if (state.selectedTags.size > 1) {
-                                Text(
-                                    "Includes transactions with any of the selected tags.",
-                                    style = AppTextStyles.caption, color = AppColors.contentSecondary
-                                )
-                            }
                         }
                     }
 
@@ -238,32 +157,6 @@ fun ReportsScreen(
                 }
             }
 
-            if (pickingRange) {
-                val pickerState = rememberDateRangePickerState()
-                DatePickerDialog(
-                    onDismissRequest = { pickingRange = false },
-                    confirmButton = {
-                        TextButton(
-                            enabled = pickerState.selectedStartDateMillis != null,
-                            onClick = {
-                                val start = pickerState.selectedStartDateMillis
-                                if (start != null) {
-                                    // The picker reports UTC midnight of the chosen days.
-                                    val a = Instant.ofEpochMilli(start).atZone(ZoneOffset.UTC).toLocalDate()
-                                    val b = pickerState.selectedEndDateMillis
-                                        ?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() } ?: a
-                                    viewModel.setPeriod(ReportPeriod.Custom(a, maxOf(a, b)))
-                                }
-                                pickingRange = false
-                            }
-                        ) { Text("OK") }
-                    },
-                    dismissButton = { TextButton(onClick = { pickingRange = false }) { Text("Cancel") } }
-                ) {
-                    DateRangePicker(state = pickerState, modifier = Modifier.weight(1f, fill = false))
-                }
-            }
-
             AeonTopAppBar(
                 left = AeonTopBarSection(
                     content = { AeonTopBarNavTitlePill(title = "Reports", onBackClick = onBackClick) }
@@ -272,10 +165,6 @@ fun ReportsScreen(
         }
     }
 }
-
-private fun countSuffix(n: Int) = if (n > 0) " · $n SELECTED" else ""
-
-private fun maxOf(a: LocalDate, b: LocalDate): LocalDate = if (b.isBefore(a)) a else b
 
 private fun shareFile(context: Context, result: ReportResult): Boolean {
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", result.file)

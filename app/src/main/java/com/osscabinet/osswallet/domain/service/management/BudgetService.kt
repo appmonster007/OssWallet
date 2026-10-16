@@ -24,6 +24,14 @@ object BudgetService {
     }
 
     /**
+     * Start of the budget's current period for use as an identity (e.g. a notification dedupe
+     * key). Unlike [getCurrentPeriodRange] it never falls back to [now] for open-ended ranges,
+     * so it only changes when the period itself rolls over.
+     */
+    fun periodIdentity(budget: Budget, now: Long): Long =
+        TimelineService.getDateRange(budget.timelineRange, referenceTime = now).first ?: 0L
+
+    /**
      * Share (0..1) of the budget's current period that has passed at [now], or null when the budget
      * has no fixed period (All Time) or the period has no length.
      */

@@ -10,7 +10,11 @@ data class ReportScope(
     val periodLabel: String,
     val accountsLabel: String,
     val tagsLabel: String,
-    val includesTransfers: Boolean
+    val includesTransfers: Boolean,
+    val categoriesLabel: String = "All categories",
+    /** The concrete dates the period resolved to; empty when unknown. */
+    val periodRangeText: String = "",
+    val typesLabel: String = "Income and expenses"
 )
 
 /** One transaction line. [amount] is signed: expenses negative, income positive. */

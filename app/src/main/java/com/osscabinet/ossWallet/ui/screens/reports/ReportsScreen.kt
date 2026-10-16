@@ -19,17 +19,22 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Assessment
-import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.LocalOffer
+import androidx.compose.material.icons.rounded.PictureAsPdf
+import androidx.compose.material.icons.rounded.TableChart
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -80,7 +85,22 @@ fun ReportsScreen(
 
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
-            Scaffold(containerColor = Color.Transparent) { innerPadding ->
+            Scaffold(
+                containerColor = Color.Transparent,
+                bottomBar = {
+                    ReportActionBar(
+                        state = state,
+                        onCreate = viewModel::generate,
+                        onShare = { result ->
+                            if (!shareFile(context, result)) viewModel.showMessage("No app available to share with.")
+                        },
+                        onOpen = { result ->
+                            if (!openFile(context, result)) viewModel.showMessage("No app available to open this file.")
+                        },
+                        onSave = { result -> saveLauncher.launch(result.file.name) }
+                    )
+                }
+            ) { innerPadding ->
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -89,13 +109,18 @@ fun ReportsScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(
                             top = AeonSize.D64.value + AeonTheme.dimensions.screenPadding,
-                            bottom = innerPadding.calculateBottomPadding() + 48.dp,
+                            bottom = innerPadding.calculateBottomPadding() + 24.dp,
                             start = AeonTheme.dimensions.screenPadding,
                             end = AeonTheme.dimensions.screenPadding
                         ),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    EntrySection(title = "PERIOD", icon = Icons.Rounded.Assessment) {
+                    ReportSummaryCard(
+                        state = state,
+                        onReset = viewModel::resetFilters
+                    )
+
+                    EntrySection(title = "PERIOD", icon = Icons.Rounded.DateRange) {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             ReportPeriod.presets.forEach { p ->
                                 FilterChip(
@@ -112,49 +137,16 @@ fun ReportsScreen(
                         }
                     }
 
-                    EntrySection(title = "ACCOUNTS", icon = Icons.Rounded.Assessment) {
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(
-                                selected = state.selectedAccountIds.isEmpty(),
-                                onClick = viewModel::clearAccounts,
-                                label = { Text("All accounts") }
-                            )
-                            state.accounts.forEach { a ->
-                                FilterChip(
-                                    selected = a.id in state.selectedAccountIds,
-                                    onClick = { viewModel.toggleAccount(a.id) },
-                                    label = { Text(a.name) }
-                                )
+                    EntrySection(title = "SHOW", icon = Icons.Rounded.Tune) {
+                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                            ReportKind.entries.forEachIndexed { index, kind ->
+                                SegmentedButton(
+                                    selected = state.kind == kind,
+                                    onClick = { viewModel.setKind(kind) },
+                                    shape = SegmentedButtonDefaults.itemShape(index, ReportKind.entries.size)
+                                ) { Text(kind.label) }
                             }
                         }
-                    }
-
-                    if (state.tags.isNotEmpty()) {
-                        EntrySection(title = "TAGS", icon = Icons.Rounded.Assessment) {
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                FilterChip(
-                                    selected = state.selectedTags.isEmpty(),
-                                    onClick = viewModel::clearTags,
-                                    label = { Text("All tags") }
-                                )
-                                state.tags.forEach { t ->
-                                    FilterChip(
-                                        selected = t.name in state.selectedTags,
-                                        onClick = { viewModel.toggleTag(t.name) },
-                                        label = { Text(t.name) }
-                                    )
-                                }
-                            }
-                            if (state.selectedTags.size > 1) {
-                                Text(
-                                    "Includes transactions with any of the selected tags.",
-                                    style = AppTextStyles.caption, color = AppColors.contentSecondary
-                                )
-                            }
-                        }
-                    }
-
-                    EntrySection(title = "OPTIONS", icon = Icons.Rounded.Assessment) {
                         Row(
                             Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -169,56 +161,78 @@ fun ReportsScreen(
                             }
                             Switch(checked = state.includeTransfers, onCheckedChange = viewModel::setIncludeTransfers)
                         }
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            ReportFormat.entries.forEach { f ->
-                                FilterChip(
-                                    selected = state.format == f,
-                                    onClick = { viewModel.setFormat(f) },
-                                    label = { Text(f.label) }
-                                )
-                            }
-                        }
                     }
 
-                    Button(
-                        onClick = viewModel::generate,
-                        enabled = !state.generating,
-                        modifier = Modifier.fillMaxWidth()
+                    EntrySection(
+                        title = "ACCOUNTS" + countSuffix(state.selectedAccountIds.size),
+                        icon = Icons.Rounded.AccountBalanceWallet
                     ) {
-                        if (state.generating) {
-                            CircularProgressIndicator(Modifier.padding(end = 8.dp).then(Modifier), strokeWidth = 2.dp)
-                        }
-                        Text(if (state.generating) "Creating…" else "Create report")
+                        ChipPicker(
+                            items = state.accounts,
+                            itemKey = { it.id },
+                            itemLabel = { it.name },
+                            selected = { it.id in state.selectedAccountIds },
+                            onToggle = { viewModel.toggleAccount(it.id) },
+                            allLabel = "All accounts",
+                            noneSelected = state.selectedAccountIds.isEmpty(),
+                            onClear = viewModel::clearAccounts
+                        )
                     }
 
-                    state.message?.let { Text(it, style = AppTextStyles.caption, color = AppColors.contentSecondary) }
-
-                    state.result?.let { result ->
-                        EntrySection(title = "READY", icon = Icons.Rounded.Assessment) {
-                            Text(
-                                "${result.rowCount} transactions · ${result.format.label}",
-                                style = AppTextStyles.transactionTitle, color = AppColors.contentPrimary
+                    if (state.categories.isNotEmpty()) {
+                        EntrySection(
+                            title = "CATEGORIES" + countSuffix(state.selectedCategoryIds.size),
+                            icon = Icons.Rounded.Category
+                        ) {
+                            ChipPicker(
+                                items = state.categories,
+                                itemKey = { it.id },
+                                itemLabel = { it.name },
+                                selected = { it.id in state.selectedCategoryIds },
+                                onToggle = { viewModel.toggleCategory(it.id) },
+                                allLabel = "All categories",
+                                noneSelected = state.selectedCategoryIds.isEmpty(),
+                                onClear = viewModel::clearCategories
                             )
-                            result.totals.forEach { t ->
+                        }
+                    }
+
+                    if (state.tags.isNotEmpty()) {
+                        EntrySection(
+                            title = "TAGS" + countSuffix(state.selectedTags.size),
+                            icon = Icons.Rounded.LocalOffer
+                        ) {
+                            ChipPicker(
+                                items = state.tags,
+                                itemKey = { it.name },
+                                itemLabel = { it.name },
+                                selected = { it.name in state.selectedTags },
+                                onToggle = { viewModel.toggleTag(it.name) },
+                                allLabel = "All tags",
+                                noneSelected = state.selectedTags.isEmpty(),
+                                onClear = viewModel::clearTags
+                            )
+                            if (state.selectedTags.size > 1) {
                                 Text(
-                                    "${t.currency}: income ${ReportPdfWriter.money(t.income, t.currency)}, " +
-                                        "expenses ${ReportPdfWriter.money(t.expense, t.currency)}, " +
-                                        "net ${ReportPdfWriter.money(t.net, t.currency)}",
+                                    "Includes transactions with any of the selected tags.",
                                     style = AppTextStyles.caption, color = AppColors.contentSecondary
                                 )
                             }
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Button(onClick = {
-                                    if (!shareFile(context, result)) viewModel.showMessage("No app available to share with.")
-                                }) {
-                                    Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                                    Text("Share")
-                                }
-                                OutlinedButton(onClick = { saveLauncher.launch(result.file.name) }) {
-                                    Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                                    Text("Save to…")
-                                }
-                            }
+                        }
+                    }
+
+                    EntrySection(title = "FORMAT", icon = Icons.Rounded.Description) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            FormatCard(
+                                title = "PDF", caption = "Formatted summary with category breakdown. Good for sharing.",
+                                icon = Icons.Rounded.PictureAsPdf, selected = state.format == ReportFormat.PDF,
+                                onClick = { viewModel.setFormat(ReportFormat.PDF) }, modifier = Modifier.weight(1f)
+                            )
+                            FormatCard(
+                                title = "CSV", caption = "Every transaction as a spreadsheet row. Good for taxes.",
+                                icon = Icons.Rounded.TableChart, selected = state.format == ReportFormat.CSV,
+                                onClick = { viewModel.setFormat(ReportFormat.CSV) }, modifier = Modifier.weight(1f)
+                            )
                         }
                     }
                 }
@@ -259,6 +273,8 @@ fun ReportsScreen(
     }
 }
 
+private fun countSuffix(n: Int) = if (n > 0) " · $n SELECTED" else ""
+
 private fun maxOf(a: LocalDate, b: LocalDate): LocalDate = if (b.isBefore(a)) a else b
 
 private fun shareFile(context: Context, result: ReportResult): Boolean {
@@ -271,6 +287,21 @@ private fun shareFile(context: Context, result: ReportResult): Boolean {
     }
     return try {
         context.startActivity(Intent.createChooser(send, "Share report").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
+        true
+    } catch (_: ActivityNotFoundException) {
+        false
+    }
+}
+
+private fun openFile(context: Context, result: ReportResult): Boolean {
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", result.file)
+    val view = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, result.format.mimeType)
+        clipData = ClipData.newRawUri(result.file.name, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    return try {
+        context.startActivity(Intent.createChooser(view, result.file.name).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
         true
     } catch (_: ActivityNotFoundException) {
         false

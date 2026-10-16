@@ -62,7 +62,8 @@ fun TransactionFormBody(
     onEvent: (TransactionEntryEvent) -> Unit,
     onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
     contentPadding: PaddingValues = PaddingValues(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    extraContent: @Composable () -> Unit = {}
 ) {
     val sourceCurrencies = remember(state.selectedAccount, state.shortlistedCurrencies) {
         state.selectedAccount?.allowedCurrencies?.ifEmpty { null }
@@ -299,6 +300,7 @@ fun TransactionFormBody(
                     )
                 }
             )
+            extraContent()
             Spacer(Modifier.height(contentPadding.calculateBottomPadding()))
         }
 

@@ -6,6 +6,8 @@
    See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
+    <!-- Receipts are sealed with a device-bound Keystore key and would be unreadable if restored elsewhere. -->
+    <exclude domain="file" path="attachments/" />
     <!--
    <include domain="sharedpref" path="."/>
    <exclude domain="sharedpref" path="device.xml"/>

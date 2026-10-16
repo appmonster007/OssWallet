@@ -19,7 +19,7 @@ import com.osscabinet.ossWallet.domain.model.toDbTransferSide
 import com.osscabinet.ossWallet.domain.model.toEntryMode
 import com.osscabinet.ossWallet.domain.repository.AttachmentRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
-import com.osscabinet.ossWallet.domain.repository.ReceiptImageProcessor
+import com.osscabinet.ossWallet.domain.repository.AttachmentProcessor
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
@@ -57,28 +57,28 @@ class TransactionEntryViewModel @Inject constructor(
     computationRepository: ComputationRepository,
     private val tagRepository: TagRepository,
     private val attachmentRepository: AttachmentRepository,
-    receiptImageProcessor: ReceiptImageProcessor
+    attachmentProcessor: AttachmentProcessor
 ) : BaseEntryViewModel(entryFormDataUseCase, computationRepository, settingsRepository) {
 
     private val _state = MutableStateFlow(TransactionEntryState())
     val state: StateFlow<TransactionEntryState> = _state.asStateFlow()
 
-    private val receiptStaging = ReceiptStaging(attachmentRepository, receiptImageProcessor, viewModelScope)
-    val receipts: StateFlow<ReceiptsUiState> = receiptStaging.state
+    private val attachmentStaging = AttachmentStaging(attachmentRepository, attachmentProcessor, viewModelScope)
+    val attachments: StateFlow<AttachmentsUiState> = attachmentStaging.state
 
     init {
         viewModelScope.launch {
             _state.map { it.transactionId }.distinctUntilChanged().collect { id ->
-                receiptStaging.load(id, settingsRepository.currentProfileId.first())
+                attachmentStaging.load(id, settingsRepository.currentProfileId.first())
             }
         }
     }
 
-    fun onReceiptPicked(source: String) = receiptStaging.add(source)
-    fun removeReceipt(item: ReceiptItem) = receiptStaging.remove(item)
-    fun clearReceiptError() = receiptStaging.clearError()
-    suspend fun readReceipt(item: ReceiptItem): ByteArray? =
-        item.pendingJpeg ?: item.attachment?.let { attachmentRepository.readBytes(it) }
+    fun onAttachmentPicked(source: String) = attachmentStaging.add(source)
+    fun removeAttachment(item: AttachmentItem) = attachmentStaging.remove(item)
+    fun clearAttachmentError() = attachmentStaging.clearError()
+    suspend fun readAttachment(item: AttachmentItem): ByteArray? =
+        item.pending?.bytes ?: item.attachment?.let { attachmentRepository.readBytes(it) }
 
     private var initialTimestamp: Long = System.currentTimeMillis()
     private var lastInitParams: Any? = null
@@ -906,7 +906,7 @@ class TransactionEntryViewModel @Inject constructor(
                             currentState.categories.find { it.id == catId }?.name ?: "Transaction"
                         }
                     )
-                    receiptStaging.commit(id, profileId)
+                    attachmentStaging.commit(id, profileId)
                     onSuccess(id)
                 } else {
                     val request = buildTransactionRequest() ?: return@launch
@@ -920,7 +920,7 @@ class TransactionEntryViewModel @Inject constructor(
                         scheduledDate = currentState.prefillDto?.plannedScheduledDate
                             ?: currentState.selectedDateMillis
                     )
-                    receiptStaging.commit(id, profileId)
+                    attachmentStaging.commit(id, profileId)
                     onSuccess(id)
                 }
             } finally {

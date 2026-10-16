@@ -15,7 +15,7 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 /**
- * Receipt images at rest. The SQLCipher database does not cover files, so each image is sealed
+ * Attachment files at rest. The SQLCipher database does not cover files, so each file is sealed
  * with AES-256-GCM under a non-exportable Android Keystore key (`iv(12) | ciphertext+tag`).
  * Names are random, so the file system reveals nothing about the transaction.
  */
@@ -31,7 +31,7 @@ class AttachmentStore @Inject constructor(@ApplicationContext private val contex
         val sealed = cipher.iv + cipher.doFinal(bytes)
         val tmp = File(dir, "$name.tmp")
         tmp.writeBytes(sealed)
-        check(tmp.renameTo(File(dir, name))) { "Could not store receipt" }
+        check(tmp.renameTo(File(dir, name))) { "Could not store attachment" }
         return name
     }
 

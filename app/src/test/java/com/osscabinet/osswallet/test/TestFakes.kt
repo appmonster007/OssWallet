@@ -323,6 +323,9 @@ class FakeAttachmentProcessor : com.osscabinet.ossWallet.domain.repository.Attac
             source.toByteArray(), if (pdf) "application/pdf" else "image/jpeg", source
         )
     }
+
+    override suspend fun prepareBytes(bytes: ByteArray, displayName: String) =
+        com.osscabinet.ossWallet.domain.model.PreparedAttachment(bytes, "application/octet-stream", displayName)
 }
 
 // ── FakeCsvImportService ─────────────────────────────────────────────────────

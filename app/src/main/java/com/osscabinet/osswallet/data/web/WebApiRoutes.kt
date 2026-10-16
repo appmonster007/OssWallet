@@ -37,7 +37,9 @@ class WebApiRoutes(
     private val templateRepository: TemplateRepository,
     private val transactionManager: TransactionManager,
     private val transactionUseCases: TransactionUseCases,
-    private val accountUseCases: AccountUseCases
+    private val accountUseCases: AccountUseCases,
+    private val attachmentRepository: AttachmentRepository,
+    private val attachmentProcessor: AttachmentProcessor
 ) {
     fun Application.installRoutes() {
         routing {
@@ -132,6 +134,15 @@ class WebApiRoutes(
                     settingsRepository,
                     plannedPaymentRepository,
                     transactionManager,
+                    transactionUseCases,
+                    attachmentRepository
+                )
+                attachmentRoutes(
+                    authSessionManager,
+                    attachmentRepository,
+                    attachmentProcessor,
+                    transactionRepository,
+                    settingsRepository,
                     transactionUseCases
                 )
                 budgetRoutes(

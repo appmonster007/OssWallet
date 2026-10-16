@@ -29,19 +29,26 @@ class AttachmentRepositoryImpl @Inject constructor(
     override suspend fun getForTransaction(transactionId: Long, profileId: Int): List<Attachment> =
         dao.getForTransaction(transactionId, profileId).map { it.toDomain() }
 
-    override suspend fun add(transactionId: Long, profileId: Int, jpeg: ByteArray): Attachment =
+    override suspend fun add(
+        transactionId: Long,
+        profileId: Int,
+        bytes: ByteArray,
+        mimeType: String,
+        displayName: String
+    ): Attachment =
         withContext(Dispatchers.IO) {
             check(dao.countForTransaction(transactionId, profileId) < AttachmentLimits.MAX_PER_TRANSACTION) {
-                "A transaction can have at most ${AttachmentLimits.MAX_PER_TRANSACTION} receipts"
+                "A transaction can have at most ${AttachmentLimits.MAX_PER_TRANSACTION} attachments"
             }
-            val name = store.write(jpeg)
+            val name = store.write(bytes)
             val draft = Attachment(
                 transactionId = transactionId,
                 profileId = profileId,
                 fileName = name,
-                mimeType = AttachmentLimits.MIME_JPEG,
-                sizeBytes = jpeg.size.toLong(),
-                createdAt = System.currentTimeMillis()
+                mimeType = mimeType,
+                sizeBytes = bytes.size.toLong(),
+                createdAt = System.currentTimeMillis(),
+                displayName = displayName
             )
             // A failed insert must not leave an unreferenced file behind.
             val id = runCatching { dao.insert(draft.toEntity()) }

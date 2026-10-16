@@ -53,7 +53,7 @@ class AttachmentRepositoryTest {
     @Test
     fun add_thenRead_roundTrips_andFileIsNotPlaintext() = runBlocking<Unit> {
         val bytes = payload(1)
-        val saved = repo.add(transactionId = 7, profileId = 1, jpeg = bytes)
+        val saved = repo.add(transactionId = 7, profileId = 1, bytes = bytes)
 
         assertArrayEquals(bytes, repo.readBytes(saved))
         val onDisk = File(context.filesDir, "attachments/${saved.fileName}").readBytes()
@@ -134,7 +134,7 @@ class AttachmentRepositoryTest {
     }
 
     @Test
-    fun backup_roundTrip_restoresReceiptImages_andClearAllLeavesNone() = runBlocking<Unit> {
+    fun backup_roundTrip_restoresAttachments_andClearAllLeavesNone() = runBlocking<Unit> {
         val dir = File(context.filesDir, "backups").apply { deleteRecursively(); mkdirs() }
         // The export honours the device's real backup settings; force plaintext for this test, then put them back.
         val settings = SettingsDataStore(context)
@@ -154,7 +154,7 @@ class AttachmentRepositoryTest {
         )
         try {
         val first = payload(11); val second = payload(12)
-        repo.add(55, 1, first); repo.add(55, 1, second)
+        repo.add(55, 1, first); repo.add(55, 1, second, "application/pdf", "Invoice March.pdf")
 
         val export = backup.exportToPrivateStorage()
         assertTrue("export failed: ${export.exceptionOrNull()}", export.isSuccess)
@@ -169,6 +169,9 @@ class AttachmentRepositoryTest {
         val back = repo.getForTransaction(55, 1)
         assertEquals(2, back.size)
         assertEquals(setOf(first.toList(), second.toList()), back.map { repo.readBytes(it)!!.toList() }.toSet())
+        val pdf = back.single { it.mimeType == "application/pdf" }
+        assertEquals("Invoice March.pdf", pdf.displayName)
+        assertFalse(pdf.isImage)
         } finally {
             settings.saveAutoBackupConfig(originalConfig)
             dir.deleteRecursively()

@@ -2,7 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
 import com.osscabinet.ossWallet.domain.model.AttachmentLimits
 import com.osscabinet.ossWallet.test.FakeAttachmentRepository
-import com.osscabinet.ossWallet.test.FakeReceiptImageProcessor
+import com.osscabinet.ossWallet.test.FakeAttachmentProcessor
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
@@ -17,19 +17,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ReceiptStagingTest {
+class AttachmentStagingTest {
 
     private val repo = FakeAttachmentRepository()
 
-    private fun TestScope.staging(): ReceiptStaging {
+    private fun TestScope.staging(): AttachmentStaging {
         // backgroundScope: the staging keeps long-lived collectors that would otherwise stop runTest finishing.
-        val s = ReceiptStaging(repo, FakeReceiptImageProcessor(), backgroundScope)
+        val s = AttachmentStaging(repo, FakeAttachmentProcessor(), backgroundScope)
         s.state.launchIn(backgroundScope) // keep the WhileSubscribed state hot
         return s
     }
 
     @Test
-    fun `picked photos are staged and only stored on commit`() = runTest(UnconfinedTestDispatcher()) {
+    fun `picked files are staged and only stored on commit`() = runTest(UnconfinedTestDispatcher()) {
         val s = staging()
         s.add("one"); s.add("two"); advanceUntilIdle()
 
@@ -50,7 +50,7 @@ class ReceiptStagingTest {
     }
 
     @Test
-    fun `removing a stored receipt is deferred until commit`() = runTest(UnconfinedTestDispatcher()) {
+    fun `removing a stored attachment is deferred until commit`() = runTest(UnconfinedTestDispatcher()) {
         val stored = repo.add(9, 1, "x".toByteArray())
         val s = staging()
         s.load(9, 1); advanceUntilIdle()
@@ -66,7 +66,7 @@ class ReceiptStagingTest {
     }
 
     @Test
-    fun `removing a staged photo drops it without touching storage`() = runTest(UnconfinedTestDispatcher()) {
+    fun `removing a staged file drops it without touching storage`() = runTest(UnconfinedTestDispatcher()) {
         val s = staging()
         s.add("one"); advanceUntilIdle()
         s.remove(s.state.value.items.single()); advanceUntilIdle()
@@ -77,18 +77,18 @@ class ReceiptStagingTest {
     }
 
     @Test
-    fun `an unreadable image surfaces an error and adds nothing`() = runTest(UnconfinedTestDispatcher()) {
+    fun `an unusable file surfaces an error and adds nothing`() = runTest(UnconfinedTestDispatcher()) {
         val s = staging()
         s.add("bad-file"); advanceUntilIdle()
 
         assertTrue(s.state.value.items.isEmpty())
-        assertEquals("That file isn't an image", s.state.value.error)
+        assertEquals("That file is larger than 20 MB", s.state.value.error)
         s.clearError(); advanceUntilIdle()
         assertNull(s.state.value.error)
     }
 
     @Test
-    fun `stored plus staged photos count against the cap`() = runTest(UnconfinedTestDispatcher()) {
+    fun `stored plus staged files count against the cap`() = runTest(UnconfinedTestDispatcher()) {
         repeat(AttachmentLimits.MAX_PER_TRANSACTION - 1) { repo.add(9, 1, byteArrayOf(1)) }
         val s = staging()
         s.load(9, 1); advanceUntilIdle()
@@ -102,9 +102,24 @@ class ReceiptStagingTest {
     }
 
     @Test
-    fun `a new transaction starts with no receipts`() = runTest(UnconfinedTestDispatcher()) {
+    fun `a new transaction starts with no attachments`() = runTest(UnconfinedTestDispatcher()) {
         val s = staging()
         s.load(null, 1); advanceUntilIdle()
         assertTrue(s.state.first().items.isEmpty())
+    }
+
+    @Test
+    fun `non-image files keep their name and type through commit`() = runTest(UnconfinedTestDispatcher()) {
+        val s = staging()
+        s.add("tax-invoice.pdf"); advanceUntilIdle()
+        val item = s.state.value.items.single()
+        assertEquals("tax-invoice.pdf", item.displayName)
+        assertTrue(!item.isImage)
+
+        s.commit(9, 1)
+        val stored = repo.getForTransaction(9, 1).single()
+        assertEquals("application/pdf", stored.mimeType)
+        assertEquals("tax-invoice.pdf", stored.displayName)
+        assertTrue(!stored.isImage)
     }
 }

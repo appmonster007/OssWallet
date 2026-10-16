@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -19,5 +20,6 @@ data class AttachmentEntity(
     val fileName: String,
     val mimeType: String,
     val sizeBytes: Long,
-    val createdAt: Long
+    val createdAt: Long,
+    @ColumnInfo(defaultValue = "") val displayName: String = ""
 )

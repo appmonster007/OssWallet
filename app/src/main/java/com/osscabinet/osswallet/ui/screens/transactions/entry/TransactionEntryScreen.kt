@@ -22,7 +22,7 @@ import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.ReceiptsSection
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.AttachmentsSection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionFormBody
 
 /**
@@ -50,7 +50,7 @@ fun TransactionEntryScreen(
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val receipts by viewModel.receipts.collectAsStateWithLifecycle()
+    val attachments by viewModel.attachments.collectAsStateWithLifecycle()
 
     // Cleanup when leaving the screen
     DisposableEffect(Unit) {
@@ -88,12 +88,12 @@ fun TransactionEntryScreen(
         showDeleteConfirmation = showDeleteConfirmation,
         onShowDeleteConfirmation = { showDeleteConfirmation = it },
         extraContent = {
-            ReceiptsSection(
-                state = receipts,
-                onPicked = viewModel::onReceiptPicked,
-                onRemove = viewModel::removeReceipt,
-                onDismissError = viewModel::clearReceiptError,
-                readBytes = viewModel::readReceipt
+            AttachmentsSection(
+                state = attachments,
+                onPicked = viewModel::onAttachmentPicked,
+                onRemove = viewModel::removeAttachment,
+                onDismissError = viewModel::clearAttachmentError,
+                readBytes = viewModel::readAttachment
             )
         }
     )

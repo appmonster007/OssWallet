@@ -12,6 +12,8 @@ import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
+import com.osscabinet.ossWallet.domain.service.management.ConfirmResult
+import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentConfirmer
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
@@ -57,7 +59,7 @@ sealed class UndoAction {
 class PlannedPaymentViewModel @Inject constructor(
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val templateRepository: TemplateRepository,
-    private val categoryRepository: CategoryRepository,
+    private val plannedPaymentConfirmer: PlannedPaymentConfirmer,
     private val transactionManager: TransactionManager,
     settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {
@@ -143,14 +145,7 @@ class PlannedPaymentViewModel @Inject constructor(
         profileId: Int
     ) {
         viewModelScope.launch {
-            val request = buildTransactionRequest(payment) ?: return@launch
-            transactionManager.handleSaveTransaction(
-                existingTransaction = null,
-                request = request,
-                profileId = profileId,
-                sourcePlannedPaymentId = payment.id,
-                scheduledDate = occurrence.scheduledDate
-            )
+            plannedPaymentConfirmer.confirm(payment, occurrence.scheduledDate, profileId)
         }
     }
 
@@ -171,14 +166,9 @@ class PlannedPaymentViewModel @Inject constructor(
     /** Confirm a payment for a specific scheduledDate (used when the occurrence date differs from nextDueDate). */
     fun quickConfirmDate(payment: PlannedPayment, scheduledDate: Long, profileId: Int) {
         viewModelScope.launch {
-            val request = buildTransactionRequest(payment) ?: return@launch
-            val transactionId = transactionManager.handleSaveTransaction(
-                existingTransaction = null,
-                request = request,
-                profileId = profileId,
-                sourcePlannedPaymentId = payment.id,
-                scheduledDate = scheduledDate
-            )
+            val confirmed = plannedPaymentConfirmer.confirm(payment, scheduledDate, profileId)
+                as? ConfirmResult.Confirmed ?: return@launch
+            val transactionId = confirmed.transactionId
             _lastUndoAction.value = UndoAction.ConfirmUndo(
                 paymentId = payment.id,
                 scheduledDate = scheduledDate,
@@ -186,50 +176,6 @@ class PlannedPaymentViewModel @Inject constructor(
                 prevLastTriggeredDate = payment.schedule.lastTriggeredDate
             )
         }
-    }
-
-    private suspend fun buildTransactionRequest(payment: PlannedPayment): TransactionRequest? {
-        val template = payment.templateId?.let { templateRepository.getTemplateById(it) }
-
-        val amount = template?.amount ?: payment.amount
-        val entryMode = template?.entryMode ?: payment.entryMode
-        val accountId =
-            (template?.accountId ?: payment.accountId).takeIf { !it.isNullOrBlank() } ?: return null
-        val currency = template?.currency ?: payment.currency
-        val categoryId = template?.categoryId ?: payment.categoryId
-        val tags = template?.tags ?: payment.tags
-        val paymentMethod = template?.paymentMethod ?: payment.paymentMethod ?: PaymentMethod.CASH
-        val payee = template?.payee ?: payment.payee ?: ""
-        val note = template?.note ?: payment.note ?: ""
-        val gpsLocation = template?.gpsLocation ?: payment.gpsLocation
-        val warrantyExp = template?.warrantyExpiration ?: payment.warrantyExpiration
-        val status = template?.transactionStatus ?: payment.transactionStatus
-        val targetAccountId = template?.targetAccountId ?: payment.targetAccountId
-        val targetCurrency = template?.targetCurrency ?: payment.targetCurrency
-        val transferRate = template?.transferRate ?: payment.transferRate
-
-        val categoryName = categoryRepository.getAllCategoriesSync()
-            .find { it.id == categoryId }?.name ?: "Planned Payment"
-
-        return TransactionRequest(
-            name = categoryName,
-            amount = TransactionEntryService.getMagnitude(amount),
-            entryMode = entryMode,
-            accountId = accountId,
-            currency = currency,
-            categoryId = categoryId,
-            tags = tags,
-            paymentMethod = paymentMethod,
-            timestamp = System.currentTimeMillis(),
-            payee = payee,
-            note = note,
-            gpsLocation = gpsLocation,
-            warrantyExpiration = warrantyExp,
-            status = status,
-            targetAccountId = targetAccountId,
-            targetCurrency = targetCurrency,
-            transferRate = transferRate
-        )
     }
 
     /** Skip the current instance of a payment directly from the list view. */

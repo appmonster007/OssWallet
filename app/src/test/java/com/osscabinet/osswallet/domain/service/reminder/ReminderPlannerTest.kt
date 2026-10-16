@@ -12,6 +12,7 @@ import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.settings.ReminderConfig
 import com.osscabinet.ossWallet.domain.service.reminder.BudgetAlertInput
+import com.osscabinet.ossWallet.domain.service.reminder.ReminderEvent
 import com.osscabinet.ossWallet.domain.service.reminder.ReminderKind
 import com.osscabinet.ossWallet.domain.service.reminder.ReminderPlanner
 import org.junit.Assert.assertEquals
@@ -120,5 +121,24 @@ class ReminderPlannerTest {
         assertEquals(2, plan(p, l, a, cfg = config.copy(loans = false)).size)
         assertEquals(2, plan(p, l, a, cfg = config.copy(budgetAlerts = false)).size)
         assertTrue(plan(p, l, a, cfg = config.copy(enabled = false)).isEmpty())
+    }
+
+    @Test fun `a planned payment reminder carries the due date it is for`() {
+        val due = noon + day
+        assertEquals(due, plan(payments = listOf(payment(1, due))).single().dueDate)
+        assertEquals(null, plan(loans = listOf(loan(1, noon + day))).single().dueDate)
+    }
+
+    @Test fun `an event survives the round trip through intent extras and work data`() {
+        val event = plan(payments = listOf(payment(7, noon + day))).single()
+        assertEquals(event, ReminderEvent.fromMap(event.toMap()))
+        val loanEvent = plan(loans = listOf(loan(3, noon + day))).single()
+        assertEquals(loanEvent, ReminderEvent.fromMap(loanEvent.toMap()))
+    }
+
+    @Test fun `a damaged event map is rejected rather than half-read`() {
+        assertEquals(null, ReminderEvent.fromMap(emptyMap()))
+        assertEquals(null, ReminderEvent.fromMap(mapOf("key" to "k", "kind" to "NOPE", "targetId" to "1")))
+        assertEquals(null, ReminderEvent.fromMap(mapOf("key" to "k", "kind" to "LOAN", "targetId" to "x")))
     }
 }

@@ -219,6 +219,11 @@
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
 
+        <!-- Snooze / Mark paid buttons on reminder notifications. Only our own PendingIntents target it. -->
+        <receiver
+            android:name=".reminder.ReminderActionReceiver"
+            android:exported="false" />
+
         <service
             android:name=".service.WebServerService"
             android:enabled="true"

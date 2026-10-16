@@ -19,8 +19,29 @@ data class ReminderEvent(
     val kind: ReminderKind,
     val title: String,
     val body: String,
-    val targetId: Long
-)
+    val targetId: Long,
+    /** The due date this reminder is for (planned payments), needed to confirm that occurrence. */
+    val dueDate: Long? = null
+) {
+    /** Flat form for intents and work data, so a reminder can be re-posted later (snooze). */
+    fun toMap(): Map<String, String> = buildMap {
+        put("key", key); put("kind", kind.name); put("title", title); put("body", body)
+        put("targetId", targetId.toString())
+        dueDate?.let { put("dueDate", it.toString()) }
+    }
+
+    companion object {
+        fun fromMap(map: Map<String, String?>): ReminderEvent? {
+            val key = map["key"] ?: return null
+            val kind = runCatching { ReminderKind.valueOf(map["kind"] ?: return null) }.getOrNull() ?: return null
+            return ReminderEvent(
+                key = key, kind = kind, title = map["title"].orEmpty(), body = map["body"].orEmpty(),
+                targetId = map["targetId"]?.toLongOrNull() ?: return null,
+                dueDate = map["dueDate"]?.toLongOrNull()
+            )
+        }
+    }
+}
 
 /** A budget's current alert state, resolved by the caller (spend math lives with budgets). */
 data class BudgetAlertInput(
@@ -61,7 +82,8 @@ object ReminderPlanner {
                                 kind = ReminderKind.PLANNED_PAYMENT,
                                 title = "${p.name} ${whenText(days)}",
                                 body = "${p.amount.abs().stripTrailingZeros().toPlainString()} ${p.currency}",
-                                targetId = p.id
+                                targetId = p.id,
+                                dueDate = due
                             )
                         )
                     }

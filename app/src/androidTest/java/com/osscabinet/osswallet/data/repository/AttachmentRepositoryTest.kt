@@ -134,6 +134,65 @@ class AttachmentRepositoryTest {
     }
 
     @Test
+    fun addShared_storesOneFile_andBothLegsSeeIt() = runBlocking<Unit> {
+        val bytes = payload(21)
+        val rows = repo.addShared(listOf(30, 31), 1, bytes, "application/pdf", "Invoice.pdf")
+
+        assertEquals(2, rows.size)
+        assertEquals("one file on disk", 1, store.listNames().size)
+        assertArrayEquals(bytes, repo.readBytes(repo.getForTransaction(30, 1).single()))
+        assertArrayEquals(bytes, repo.readBytes(repo.getForTransaction(31, 1).single()))
+        assertEquals("Invoice.pdf", repo.getForTransaction(31, 1).single().displayName)
+    }
+
+    @Test
+    fun delete_removesTheCopyOnTheOtherLegToo_andTheFile() = runBlocking<Unit> {
+        val rows = repo.addShared(listOf(30, 31), 1, payload(22), "image/jpeg", "a.jpg")
+        repo.delete(rows.first().id, 1)
+
+        assertTrue(repo.getForTransaction(30, 1).isEmpty())
+        assertTrue(repo.getForTransaction(31, 1).isEmpty())
+        assertTrue(store.listNames().isEmpty())
+    }
+
+    @Test
+    fun deleteForTransaction_keepsTheFileForTheOtherLeg() = runBlocking<Unit> {
+        val bytes = payload(23)
+        repo.addShared(listOf(30, 31), 1, bytes, "image/jpeg", "a.jpg")
+        repo.deleteForTransaction(30, 1)
+
+        assertTrue(repo.getForTransaction(30, 1).isEmpty())
+        val remaining = repo.getForTransaction(31, 1).single()
+        assertArrayEquals("the surviving leg can still read it", bytes, repo.readBytes(remaining))
+
+        repo.deleteForTransaction(31, 1)
+        assertTrue("last reference gone, file gone", store.listNames().isEmpty())
+    }
+
+    @Test
+    fun shareWith_givesTheOtherLegACopyOfOneSidedAttachments_once() = runBlocking<Unit> {
+        val old = repo.add(30, 1, payload(24), "image/jpeg", "old.jpg")
+        repo.shareWith(listOf(old), listOf(30, 31), 1)
+        repo.shareWith(listOf(old), listOf(30, 31), 1)
+
+        assertEquals(1, repo.getForTransaction(30, 1).size)
+        assertEquals("no duplicates on repeat", 1, repo.getForTransaction(31, 1).size)
+        assertEquals(1, store.listNames().size)
+    }
+
+    @Test
+    fun addShared_respectsTheCapOnEitherLeg_andStoresNothing() = runBlocking<Unit> {
+        repeat(AttachmentLimits.MAX_PER_TRANSACTION) { repo.add(31, 1, payload(it)) }
+        val before = store.listNames().size
+        try {
+            repo.addShared(listOf(30, 31), 1, payload(99), "image/jpeg", "x.jpg"); fail("expected the cap")
+        } catch (_: IllegalStateException) {
+        }
+        assertTrue(repo.getForTransaction(30, 1).isEmpty())
+        assertEquals(before, store.listNames().size)
+    }
+
+    @Test
     fun backup_roundTrip_restoresAttachments_andClearAllLeavesNone() = runBlocking<Unit> {
         val dir = File(context.filesDir, "backups").apply { deleteRecursively(); mkdirs() }
         // The export honours the device's real backup settings; force plaintext for this test, then put them back.

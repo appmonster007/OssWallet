@@ -273,20 +273,37 @@ class FakeAttachmentRepository : com.osscabinet.ossWallet.domain.repository.Atta
 
     override suspend fun add(
         transactionId: Long, profileId: Int, bytes: ByteArray, mimeType: String, displayName: String
-    ): com.osscabinet.ossWallet.domain.model.Attachment {
-        val a = com.osscabinet.ossWallet.domain.model.Attachment(
-            id = nextId++, transactionId = transactionId, profileId = profileId, fileName = "f$nextId",
-            mimeType = mimeType, sizeBytes = bytes.size.toLong(), createdAt = 0, displayName = displayName
-        )
-        this.bytes[a.id] = bytes
-        rows.value = rows.value + a
-        return a
+    ) = addShared(listOf(transactionId), profileId, bytes, mimeType, displayName).single()
+
+    override suspend fun addShared(
+        transactionIds: List<Long>, profileId: Int, bytes: ByteArray, mimeType: String, displayName: String
+    ): List<com.osscabinet.ossWallet.domain.model.Attachment> {
+        val file = "f${nextId}"
+        val created = transactionIds.distinct().map { tx ->
+            com.osscabinet.ossWallet.domain.model.Attachment(
+                id = nextId++, transactionId = tx, profileId = profileId, fileName = file,
+                mimeType = mimeType, sizeBytes = bytes.size.toLong(), createdAt = 0, displayName = displayName
+            ).also { this.bytes[it.id] = bytes }
+        }
+        rows.value = rows.value + created
+        return created
+    }
+
+    override suspend fun shareWith(
+        attachments: List<com.osscabinet.ossWallet.domain.model.Attachment>, transactionIds: List<Long>, profileId: Int
+    ) {
+        val extra = attachments.flatMap { a ->
+            transactionIds.distinct().filter { t -> t != a.transactionId && rows.value.none { it.transactionId == t && it.fileName == a.fileName } }
+                .map { t -> a.copy(id = nextId++, transactionId = t).also { this.bytes[it.id] = this.bytes[a.id] ?: ByteArray(0) } }
+        }
+        rows.value = rows.value + extra
     }
 
     override suspend fun readBytes(attachment: com.osscabinet.ossWallet.domain.model.Attachment) = bytes[attachment.id]
 
     override suspend fun delete(id: Long, profileId: Int) {
-        rows.value = rows.value.filterNot { it.id == id && it.profileId == profileId }
+        val file = rows.value.firstOrNull { it.id == id && it.profileId == profileId }?.fileName ?: return
+        rows.value = rows.value.filterNot { it.fileName == file && it.profileId == profileId }
     }
 
     override suspend fun deleteForTransaction(transactionId: Long, profileId: Int) {

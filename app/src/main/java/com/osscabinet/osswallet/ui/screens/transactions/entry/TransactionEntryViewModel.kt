@@ -74,6 +74,15 @@ class TransactionEntryViewModel @Inject constructor(
         }
     }
 
+    /** The saved transaction, plus the other leg of a transfer so both legs share their attachments. */
+    private suspend fun attachmentTargets(id: Long, profileId: Int): List<Long> {
+        val tx = transactionUseCases.getTransactionById(id, profileId) ?: return listOf(id)
+        if (!Category.isTransfer(tx.categoryId)) return listOf(id)
+        val counterparts = transactionUseCases.getLinkedTransactions(id).first()
+            .filter { Category.isTransfer(it.categoryId) }.map { it.id }
+        return listOf(id) + counterparts
+    }
+
     fun onAttachmentPicked(source: String) = attachmentStaging.add(source)
     fun removeAttachment(item: AttachmentItem) = attachmentStaging.remove(item)
     fun clearAttachmentError() = attachmentStaging.clearError()
@@ -906,7 +915,7 @@ class TransactionEntryViewModel @Inject constructor(
                             currentState.categories.find { it.id == catId }?.name ?: "Transaction"
                         }
                     )
-                    attachmentStaging.commit(id, profileId)
+                    attachmentStaging.commit(attachmentTargets(id, profileId), profileId)
                     onSuccess(id)
                 } else {
                     val request = buildTransactionRequest() ?: return@launch
@@ -920,7 +929,7 @@ class TransactionEntryViewModel @Inject constructor(
                         scheduledDate = currentState.prefillDto?.plannedScheduledDate
                             ?: currentState.selectedDateMillis
                     )
-                    attachmentStaging.commit(id, profileId)
+                    attachmentStaging.commit(attachmentTargets(id, profileId), profileId)
                     onSuccess(id)
                 }
             } finally {

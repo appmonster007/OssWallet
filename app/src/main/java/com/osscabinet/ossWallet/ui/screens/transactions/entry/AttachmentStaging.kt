@@ -87,12 +87,23 @@ class AttachmentStaging(
         error.value = null
     }
 
-    /** Applies the staged edits to [transactionId]. Failures here must not undo the saved transaction. */
-    suspend fun commit(transactionId: Long, profileId: Int) {
-        removed.value.forEach { runCatching { attachments.delete(it, profileId) } }
+    suspend fun commit(transactionId: Long, profileId: Int) = commit(listOf(transactionId), profileId)
+
+    /**
+     * Applies the staged edits to [transactionIds]: the saved transaction, plus the other leg when it
+     * is a transfer, so both legs keep showing the same attachments. Failures here must not undo the
+     * saved transaction.
+     */
+    suspend fun commit(transactionIds: List<Long>, profileId: Int) {
+        val removedIds = removed.value
+        removedIds.forEach { runCatching { attachments.delete(it, profileId) } }
+        if (transactionIds.size > 1) {
+            // Attachments added before transfers shared them exist on one leg only; give the other leg a copy.
+            runCatching { attachments.shareWith(existing.value.filter { it.id !in removedIds }, transactionIds, profileId) }
+        }
         pending.value.forEach { item ->
             val file = item.pending ?: return@forEach
-            runCatching { attachments.add(transactionId, profileId, file.bytes, file.mimeType, file.displayName) }
+            runCatching { attachments.addShared(transactionIds, profileId, file.bytes, file.mimeType, file.displayName) }
         }
         pending.value = emptyList()
         removed.value = emptySet()

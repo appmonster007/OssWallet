@@ -121,6 +121,9 @@ data object LoanListRoute
 data object GoalListRoute
 
 @Serializable
+data object ReportsRoute
+
+@Serializable
 data class LoanDetailRoute(val loanId: Long)
 
 @Serializable

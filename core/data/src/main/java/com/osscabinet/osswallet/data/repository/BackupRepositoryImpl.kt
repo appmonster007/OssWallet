@@ -114,6 +114,8 @@ class BackupRepositoryImpl @Inject constructor(
     companion object {
         private const val MAX_RESTORE_BYTES = 512L * 1024 * 1024 // 512 MB
         const val ENCRYPTED_SUFFIX = ".enc"
+        private const val SQLITE_DB_ENTRY = "database.db"
+        private const val SQLITE_ATTACHMENTS_DIR = "attachments/"
 
         /** Sink for verification reads (OutputStream.nullOutputStream() needs API 33). */
         private val DiscardOutputStream = object : OutputStream() {
@@ -658,9 +660,26 @@ class BackupRepositoryImpl @Inject constructor(
         zos.closeEntry()
     }
 
+    /**
+     * The database file plus the sealed attachment files it refers to, as one zip. Database-file backups
+     * only restore on this install (the file is bound to a device key), and so are the sealed files, which
+     * is why they are copied as they are. Older backups are the bare database file; restore still takes those.
+     */
     private fun exportSqlite(outputStream: OutputStream) {
         val dbFile = context.getDatabasePath("osswallet_manager_db")
-        if (dbFile.exists()) FileInputStream(dbFile).use { it.copyTo(outputStream) }
+        val zos = ZipOutputStream(outputStream)
+        if (dbFile.exists()) {
+            zos.putNextEntry(java.util.zip.ZipEntry(SQLITE_DB_ENTRY))
+            FileInputStream(dbFile).use { it.copyTo(zos) }
+            zos.closeEntry()
+        }
+        attachmentStore.listNames().sorted().forEach { name ->
+            val file = attachmentStore.sealedFile(name) ?: return@forEach
+            zos.putNextEntry(java.util.zip.ZipEntry("$SQLITE_ATTACHMENTS_DIR$name"))
+            FileInputStream(file).use { it.copyTo(zos) }
+            zos.closeEntry()
+        }
+        zos.finish()
     }
 
     override suspend fun importData(
@@ -721,7 +740,13 @@ class BackupRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun restoreSqliteBackup(inputStream: InputStream) {
+    private fun restoreSqliteBackup(rawInput: InputStream) {
+        val inputStream = if (rawInput.markSupported()) rawInput else java.io.BufferedInputStream(rawInput)
+        inputStream.mark(4)
+        val magic = ByteArray(4).also { inputStream.read(it) }
+        inputStream.reset()
+        val isBundle = magic[0] == 'P'.code.toByte() && magic[1] == 'K'.code.toByte() && magic[2] == 3.toByte()
+
         val dbFile = context.getDatabasePath("osswallet_manager_db")
         // P1: Write to a temp file in the same directory so renameTo is atomic (same mountpoint).
         // DB is closed only after the write succeeds, so a write failure leaves the live DB intact.
@@ -729,13 +754,50 @@ class BackupRepositoryImpl @Inject constructor(
             dbFile.parentFile ?: context.cacheDir,
             "osswallet_restore_${System.currentTimeMillis()}.tmp"
         )
+        val stagedAttachments = File(context.cacheDir, "restore_attachments_${System.currentTimeMillis()}")
         try {
-            FileOutputStream(tempDb).use { out -> inputStream.copyToLimited(out, longArrayOf(0L)) }
+            if (isBundle) {
+                stageSqliteBundle(inputStream, tempDb, stagedAttachments)
+            } else {
+                FileOutputStream(tempDb).use { out -> inputStream.copyToLimited(out, longArrayOf(0L)) }
+            }
             database.close()
             if (!tempDb.renameTo(dbFile)) tempDb.copyTo(dbFile, overwrite = true)
+            // The database now matches the backup, so the files it refers to must too. An older, bare
+            // database backup carries none, so it leaves the current files alone.
+            if (isBundle) attachmentStore.replaceAll(stagedAttachments)
         } finally {
             tempDb.delete()
+            stagedAttachments.deleteRecursively()
         }
+    }
+
+    /** Unpacks a database-file bundle without touching live data: the db to [tempDb], sealed files to [stagingDir]. */
+    private fun stageSqliteBundle(input: InputStream, tempDb: File, stagingDir: File) {
+        stagingDir.deleteRecursively(); stagingDir.mkdirs()
+        val counter = longArrayOf(0L)
+        var sawDb = false
+        ZipInputStream(input).use { zis ->
+            var entry = zis.nextEntry
+            while (entry != null) {
+                when {
+                    entry.isDirectory -> Unit
+                    entry.name == SQLITE_DB_ENTRY -> {
+                        FileOutputStream(tempDb).use { zis.copyToLimited(it, counter) }
+                        sawDb = true
+                    }
+                    entry.name.startsWith(SQLITE_ATTACHMENTS_DIR) -> {
+                        // Only names this app generates are taken, and only by their last path segment.
+                        val name = File(entry.name).name
+                        if (AttachmentStore.isStoreFileName(name)) {
+                            FileOutputStream(File(stagingDir, name)).use { zis.copyToLimited(it, counter) }
+                        }
+                    }
+                }
+                entry = zis.nextEntry
+            }
+        }
+        if (!sawDb) throw IOException("Not a valid OssWallet database backup")
     }
 
     private suspend fun restoreZipBackup(inputStream: InputStream) {

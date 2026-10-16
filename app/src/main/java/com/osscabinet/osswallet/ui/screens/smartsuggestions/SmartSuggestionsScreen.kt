@@ -388,6 +388,7 @@ private fun DetailItem(label: String, value: String, modifier: Modifier = Modifi
 private fun SmartSuggestionsScreenPreview() {
     val patterns = listOf(
         DiscoveredPattern(
+            key = "preview",
             name = "Netflix Subscription",
             payee = "Netflix",
             categoryId = 1,
@@ -406,6 +407,7 @@ private fun SmartSuggestionsScreenPreview() {
             representativeTransactionId = 101L
         ),
         DiscoveredPattern(
+            key = "preview",
             name = "Weekly Groceries",
             payee = "Whole Foods",
             categoryId = 2,

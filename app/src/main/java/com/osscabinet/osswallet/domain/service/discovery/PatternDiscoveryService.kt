@@ -1,19 +1,29 @@
 package com.osscabinet.ossWallet.domain.service.discovery
 
 import com.osscabinet.ossWallet.domain.model.EntryMode
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.PaymentSchedule
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.RecurrenceRule
+import com.osscabinet.ossWallet.domain.model.RecurrenceType
+import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.toEntryMode
-
-import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.domain.model.toEntryMode
-
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Instant
+import java.time.ZoneId
 import java.util.Calendar
+import kotlin.math.abs
+import kotlin.math.max
 
 /**
  * Result of the pattern discovery process.
  */
 data class DiscoveredPattern(
+    /** Stable identity (payee/category/type/currency), unchanged when the amount drifts. Dismissals hang off it. */
+    val key: String,
     val name: String,
     val payee: String,
     val categoryId: Long,
@@ -31,106 +41,106 @@ data class DiscoveredPattern(
     val occurrences: Int,
     val lastDate: Long,
     val representativeTransactionId: Long,
+    /** When the next one is expected, from the last occurrence and the detected rhythm. */
+    val nextExpectedDate: Long = lastDate,
+    /** The amount changes from one occurrence to the next (a utility bill), so [averageAmount] is an estimate. */
+    val amountVaries: Boolean = false,
     val existsAsTemplate: Boolean = false,
     val existsAsPlannedPayment: Boolean = false
 )
 
 /**
- * Advanced heuristic engine for discovering repeating transaction patterns.
- * Features: Fuzzy matching, Calendar-aware recurrence, and Time-decay weighting.
+ * Heuristic engine for discovering repeating transaction patterns: fuzzy payee matching, calendar-aware
+ * recurrence (weekly through yearly), and a cut-off for things that have stopped. Pure and deterministic:
+ * the clock and time zone are parameters.
  */
 object PatternDiscoveryService {
 
     private const val MIN_OCCURRENCES = 3
     private const val DAY_IN_MILLIS = 24 * 60 * 60 * 1000L
-    private const val INTERVAL_TOLERANCE_DAYS = 3
-    private const val RECENCY_DECAY_MONTHS = 3L
+
+    /** A share of gaps that must sit near the typical gap, or the history is just irregular spending. */
+    private const val MIN_REGULARITY = 0.6
 
     /**
-     * Scans transactions and returns a list of discovered patterns.
+     * Scans transactions and returns the patterns that look like they repeat. Transfers and transactions
+     * that already came from a planned payment are ignored: neither is something to schedule.
      */
-    fun discoverPatterns(transactions: List<Transaction>): List<DiscoveredPattern> {
-        if (transactions.size < MIN_OCCURRENCES) return emptyList()
+    fun discoverPatterns(
+        transactions: List<Transaction>,
+        now: Long = System.currentTimeMillis(),
+        zone: ZoneId = ZoneId.systemDefault()
+    ): List<DiscoveredPattern> {
+        val candidates = transactions.filter { !it.transactionType.isTransfer && it.sourcePlannedPaymentId == null }
+        if (candidates.size < 2) return emptyList()
 
-        // 1. Group by cleaned features
-        val groups = transactions.groupBy { tx ->
-            val cleanedPayee = normalizePayee(tx.payee)
-            val payeeKey = if (cleanedPayee.isEmpty()) "note:${normalizePayee(tx.note)}" else "payee:$cleanedPayee"
-            "$payeeKey|${tx.categoryId}|${tx.transactionType}|${tx.currency}"
-        }
-
-        return groups.mapNotNull { (_, groupTransactions) ->
-            if (groupTransactions.size < MIN_OCCURRENCES) return@mapNotNull null
-            
-            val sortedTxs = groupTransactions.sortedBy { it.timestamp }
-            analyzeGroup(sortedTxs)
-        }.sortedByDescending { it.confidence }
+        return candidates.groupBy { patternKey(it) }
+            .mapNotNull { (key, group) ->
+                if (group.size < 2) null else analyzeGroup(key, group.sortedBy { it.timestamp }, now, zone)
+            }
+            .sortedByDescending { it.confidence }
     }
 
-    private fun normalizePayee(payee: String): String {
-        return payee.trim()
-            .lowercase()
-            .replace(Regex("[*#]"), " ")           // Remove * and # separators
-            .replace(Regex("\\d{4,}"), "")        // Remove long number sequences (card numbers)
-            .replace(Regex("\\s+"), " ")          // Collapse whitespace
-            .trim()
+    /** The identity used to group repeats: who was paid (or the note when there's no payee), what for, which way. */
+    fun patternKey(tx: Transaction): String {
+        val cleanedPayee = normalize(tx.payee)
+        val who = if (cleanedPayee.isEmpty()) "note:${normalize(tx.note)}" else "payee:$cleanedPayee"
+        return "$who|${tx.categoryId}|${tx.transactionType}|${tx.currency}"
     }
 
-    private fun analyzeGroup(txs: List<Transaction>): DiscoveredPattern? {
+    /** Lower-cases and strips separators and long digit runs (card numbers) so "NETFLIX*1234" matches "Netflix". */
+    fun normalize(text: String): String = text.trim()
+        .lowercase()
+        .replace(Regex("[*#]"), " ")
+        .replace(Regex("\\d{4,}"), "")
+        .replace(Regex("\\s+"), " ")
+        .trim()
+
+    private fun analyzeGroup(key: String, txs: List<Transaction>, now: Long, zone: ZoneId): DiscoveredPattern? {
         val lastTx = txs.last()
 
-        // 1. Calculate Representative Amount
-        // Strategy: Use the most frequent amount (Mode) if it appears in >= 50% of txs.
-        // Otherwise, use the most recent amount (Trend-aware).
-        val amountFrequencies = txs.groupingBy { it.amount }.eachCount()
-        val mostFrequent = amountFrequencies.maxByOrNull { it.value }
-        val representativeAmount = if (mostFrequent != null && mostFrequent.value >= txs.size / 2.0) {
-            mostFrequent.key
-        } else {
-            lastTx.amount
+        val intervals = (1 until txs.size).map { (txs[it].timestamp - txs[it - 1].timestamp).toDouble() / DAY_IN_MILLIS }
+        val median = median(intervals)
+        val rhythm = detectRecurrence(txs, intervals, median, zone) ?: return null
+        // Two data points only make a pattern when they are a year apart (an annual subscription).
+        if (txs.size < MIN_OCCURRENCES && rhythm.rule.type != RecurrenceType.YEARLY) return null
+
+        // Where it should have happened next; far past that, it has stopped and isn't worth suggesting.
+        val nextExpected = calculateNextDueDate(lastTx.timestamp, rhythm.rule, zone)
+        val graceDays = max(14.0, median * 0.5)
+        val lateDays = (now - nextExpected).toDouble() / DAY_IN_MILLIS
+        if (lateDays > graceDays) return null
+        val recencyScore = (1.0 - max(0.0, lateDays) / (2 * graceDays)).coerceIn(0.5, 1.0).toFloat()
+
+        val amounts = txs.map { it.amount }
+        val mean = amounts.reduce { a, b -> a.add(b) }.divide(BigDecimal(txs.size), 2, RoundingMode.HALF_UP)
+        val meanAbsDeviation = amounts.map { it.subtract(mean).abs() }.reduce { a, b -> a.add(b) }
+            .divide(BigDecimal(txs.size), 10, RoundingMode.HALF_UP)
+        val spread = if (mean.signum() == 0) 0.0 else meanAbsDeviation.divide(mean.abs(), 10, RoundingMode.HALF_UP).toDouble()
+        val amountScore = if (mean.signum() == 0) 1f else (1.0 - spread).coerceIn(0.0, 1.0).toFloat()
+        val varies = amounts.distinct().size > 1 && spread > 0.10
+
+        // The usual amount if there is one; for a bill that moves, the recent average rather than a stale or odd figure.
+        val frequencies = amounts.groupingBy { it }.eachCount()
+        val mode = frequencies.maxByOrNull { it.value }
+        val representative = when {
+            mode != null && mode.value >= txs.size / 2.0 -> mode.key
+            varies -> amounts.takeLast(3).reduce { a, b -> a.add(b) }
+                .divide(BigDecimal(minOf(3, amounts.size)), 2, RoundingMode.HALF_UP)
+            else -> lastTx.amount
         }
 
-        // 2. Consistency Score (Calculated against mathematical average)
-        val mathematicalAvg = txs.map { it.amount }.reduce { acc, amt -> acc.add(amt) }
-            .divide(BigDecimal(txs.size), 2, RoundingMode.HALF_UP)
-
-        val amountVariance = txs.map { it.amount.subtract(mathematicalAvg).abs() }
-            .reduce { acc, v -> acc.add(v) }
-            .divide(BigDecimal(txs.size), 10, RoundingMode.HALF_UP)
-
-        val amountScore = if (mathematicalAvg.compareTo(BigDecimal.ZERO) == 0) 1f
-        else (1f - (amountVariance.divide(mathematicalAvg.abs(), 10, RoundingMode.HALF_UP).toFloat())).coerceIn(0f, 1f)
-
-        // 3. Periodicity & Calendar Awareness Score
-        val recurrenceResult = detectRecurrence(txs)
-        val recurrenceScore = recurrenceResult.confidence
-        
-        // 3. Recency Score (Time Decay)
-        val currentTime = System.currentTimeMillis()
-        val daysSinceLast = (currentTime - lastTx.timestamp) / DAY_IN_MILLIS
-        val decayPeriodDays = RECENCY_DECAY_MONTHS * 30
-        
-        // Penalty if the pattern seems to have stopped
-        val recencyScore = if (daysSinceLast < decayPeriodDays) 1f 
-            else (1f - ((daysSinceLast - decayPeriodDays).toFloat() / decayPeriodDays)).coerceIn(0f, 1f)
-
-        // 4. Volume Score
         val volumeScore = (txs.size.toFloat() / 8f).coerceIn(0.4f, 1.0f)
-
-        // Weighted Confidence
-        val totalConfidence = (amountScore * 0.15f) + 
-                            (recurrenceScore * 0.45f) + 
-                            (recencyScore * 0.25f) + 
-                            (volumeScore * 0.15f)
-
-        if (totalConfidence < 0.45f) return null
+        val confidence = (amountScore * 0.15f) + (rhythm.confidence * 0.45f) + (recencyScore * 0.25f) + (volumeScore * 0.15f)
+        if (confidence < 0.45f) return null
 
         return DiscoveredPattern(
+            key = key,
             name = lastTx.payee.ifBlank { lastTx.note.ifBlank { "Discovered Pattern" } },
             payee = lastTx.payee,
             categoryId = lastTx.categoryId,
             accountId = lastTx.accountId,
-            averageAmount = representativeAmount,
+            averageAmount = representative,
             currency = lastTx.currency,
             entryMode = lastTx.transactionType.toEntryMode(),
             paymentMethod = lastTx.paymentMethod,
@@ -138,97 +148,70 @@ object PatternDiscoveryService {
             tags = lastTx.tags,
             gpsLocation = lastTx.gpsLocation,
             warrantyExpiration = lastTx.warrantyExpiration,
-            recurrenceRule = recurrenceResult.rule,
-            confidence = totalConfidence,
+            recurrenceRule = rhythm.rule,
+            confidence = confidence,
             occurrences = txs.size,
             lastDate = lastTx.timestamp,
-            representativeTransactionId = lastTx.id
+            representativeTransactionId = lastTx.id,
+            nextExpectedDate = nextExpected,
+            amountVaries = varies
         )
     }
 
-    private data class RecurrenceDiscoveryResult(
-        val rule: RecurrenceRule?,
-        val confidence: Float
-    )
+    private class Rhythm(val rule: RecurrenceRule, val confidence: Float)
 
-    private fun detectRecurrence(txs: List<Transaction>): RecurrenceDiscoveryResult {
-        val calendar = Calendar.getInstance()
-        val daysOfMonth = txs.map { 
-            calendar.timeInMillis = it.timestamp
-            calendar.get(Calendar.DAY_OF_MONTH)
-        }
-        val daysOfWeek = txs.map {
-            calendar.timeInMillis = it.timestamp
-            calendar.get(Calendar.DAY_OF_WEEK)
-        }
+    /**
+     * The rhythm that fits the typical gap between occurrences, or null when the history is too uneven
+     * or fits none (a gap of 45 days is not a rhythm anyone schedules).
+     */
+    private fun detectRecurrence(txs: List<Transaction>, intervals: List<Double>, median: Double, zone: ZoneId): Rhythm? {
+        val regularity = intervals.count { abs(it - median) <= max(3.0, median * 0.12) }.toDouble() / intervals.size
+        if (regularity < MIN_REGULARITY) return null
+        val regularityFactor = (0.5 + 0.5 * regularity).toFloat()
 
-        // Check for "Same Day of Month" (Monthly Bill)
-        val domFrequency = daysOfMonth.groupingBy { it }.eachCount()
-        val maxDomFreq = domFrequency.values.maxOrNull() ?: 0
-        if (maxDomFreq >= txs.size - 1) { // 1 error allowed
-            val dominantDom = domFrequency.maxBy { it.value }.key
-            return RecurrenceDiscoveryResult(
-                rule = RecurrenceRule(RecurrenceType.MONTHLY, dayOfMonth = dominantDom),
-                confidence = 1.0f
-            )
-        }
+        val zoned = txs.map { Instant.ofEpochMilli(it.timestamp).atZone(zone) }
+        val dayOfMonthCounts = zoned.groupingBy { it.dayOfMonth }.eachCount()
+        val dominantDay = dayOfMonthCounts.maxByOrNull { it.value }
+        // One miss is allowed: a bill that lands on the 1st, the 1st, the 2nd is still "the 1st".
+        val sameDayOfMonth = dominantDay != null && dominantDay.value >= txs.size - 1
 
-        // Check for "Same Day of Week" (Weekly Activity)
-        val dowFrequency = daysOfWeek.groupingBy { it }.eachCount()
-        val maxDowFreq = dowFrequency.values.maxOrNull() ?: 0
-        
-        // Calculate intervals for general check
-        val intervals = mutableListOf<Long>()
-        for (i in 0 until txs.size - 1) {
-            intervals.add(txs[i + 1].timestamp - txs[i].timestamp)
-        }
-        val avgIntervalDays = if (intervals.isEmpty()) 0.0 else intervals.average() / DAY_IN_MILLIS
+        fun near(target: Double, tolerance: Double) = abs(median - target) <= tolerance
+        fun scored(rule: RecurrenceRule, base: Float) = Rhythm(rule, (base * regularityFactor).coerceAtMost(1f))
 
         return when {
-            // Weekly check (with DOW consistency)
-            isCloseTo(avgIntervalDays, 7.0) -> {
-                val dowScore = maxDowFreq.toFloat() / txs.size
-                RecurrenceDiscoveryResult(
-                    rule = RecurrenceRule(RecurrenceType.WEEKLY, dayOfWeek = daysOfWeek.last()),
-                    confidence = (0.7f + (dowScore * 0.3f))
-                )
+            near(1.0, 0.6) -> scored(RecurrenceRule(RecurrenceType.DAILY), 0.9f)
+            near(7.0, 1.5) -> {
+                val weekdays = zoned.groupingBy { it.dayOfWeek }.eachCount()
+                val weekdayShare = (weekdays.values.max().toFloat() / txs.size)
+                // Calendar numbering (Sunday = 1), which is what the recurrence rule uses.
+                val calendarDay = (zoned.last().dayOfWeek.value % 7) + 1
+                scored(RecurrenceRule(RecurrenceType.WEEKLY, dayOfWeek = calendarDay), 0.7f + weekdayShare * 0.3f)
             }
-            // Bi-weekly
-            isCloseTo(avgIntervalDays, 14.0) -> {
-                RecurrenceDiscoveryResult(
-                    rule = RecurrenceRule(RecurrenceType.EVERY_N_WEEKS, interval = 2),
-                    confidence = 0.8f
-                )
-            }
-            // Average Monthly (if DOM consistency failed but interval is ~30 days)
-            isCloseTo(avgIntervalDays, 30.0) -> {
-                RecurrenceDiscoveryResult(
-                    rule = RecurrenceRule(RecurrenceType.MONTHLY),
-                    confidence = 0.7f
-                )
-            }
-            // Daily
-            isCloseTo(avgIntervalDays, 1.0) -> {
-                RecurrenceDiscoveryResult(
-                    rule = RecurrenceRule(RecurrenceType.DAILY),
-                    confidence = 0.9f
-                )
-            }
-            else -> RecurrenceDiscoveryResult(null, 0.2f)
+            near(14.0, 2.0) -> scored(RecurrenceRule(RecurrenceType.EVERY_N_WEEKS, interval = 2), 0.8f)
+            near(30.4, 5.0) ->
+                if (sameDayOfMonth) scored(RecurrenceRule(RecurrenceType.MONTHLY, dayOfMonth = dominantDay!!.key), 1.0f)
+                else scored(RecurrenceRule(RecurrenceType.MONTHLY), 0.7f)
+            near(60.8, 6.0) -> scored(RecurrenceRule(RecurrenceType.EVERY_N_MONTHS, interval = 2), if (sameDayOfMonth) 0.8f else 0.7f)
+            near(91.3, 8.0) -> scored(RecurrenceRule(RecurrenceType.EVERY_N_MONTHS, interval = 3), if (sameDayOfMonth) 0.9f else 0.75f)
+            near(182.6, 10.0) -> scored(RecurrenceRule(RecurrenceType.EVERY_N_MONTHS, interval = 6), if (sameDayOfMonth) 0.85f else 0.75f)
+            near(365.25, 12.0) -> scored(RecurrenceRule(RecurrenceType.YEARLY), 0.8f)
+            else -> null
         }
     }
 
-    private fun isCloseTo(value: Double, target: Double): Boolean {
-        return Math.abs(value - target) <= INTERVAL_TOLERANCE_DAYS
+    private fun median(values: List<Double>): Double {
+        val sorted = values.sorted()
+        val mid = sorted.size / 2
+        return if (sorted.size % 2 == 1) sorted[mid] else (sorted[mid - 1] + sorted[mid]) / 2
     }
 
     /**
      * Logic for calculating the next actual date, handling month-end edge cases.
      */
-    fun calculateNextDueDate(lastDate: Long, rule: RecurrenceRule): Long {
-        val calendar = Calendar.getInstance()
+    fun calculateNextDueDate(lastDate: Long, rule: RecurrenceRule, zone: ZoneId = ZoneId.systemDefault()): Long {
+        val calendar = Calendar.getInstance(java.util.TimeZone.getTimeZone(zone))
         calendar.timeInMillis = lastDate
-        
+
         when (rule.type) {
             RecurrenceType.DAILY -> calendar.add(Calendar.DAY_OF_YEAR, rule.interval)
             RecurrenceType.WEEKLY -> {
@@ -248,7 +231,7 @@ object PatternDiscoveryService {
             RecurrenceType.EVERY_N_MONTHS -> calendar.add(Calendar.MONTH, rule.interval)
             else -> calendar.add(Calendar.MONTH, 1)
         }
-        
+
         return calendar.timeInMillis
     }
 
@@ -275,7 +258,7 @@ object PatternDiscoveryService {
 
     fun toPlannedPayment(pattern: DiscoveredPattern, autoConfirm: Boolean = true): PlannedPayment? {
         val rule = pattern.recurrenceRule ?: return null
-        
+
         return PlannedPayment(
             id = 0,
             name = pattern.name,
@@ -292,7 +275,7 @@ object PatternDiscoveryService {
             schedule = PaymentSchedule(
                 recurrenceRule = rule,
                 startDate = pattern.lastDate,
-                nextDueDate = calculateNextDueDate(pattern.lastDate, rule)
+                nextDueDate = pattern.nextExpectedDate
             ),
             autoConfirm = autoConfirm,
             templateId = null

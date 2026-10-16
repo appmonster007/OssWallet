@@ -236,4 +236,98 @@ class AttachmentRepositoryTest {
             dir.deleteRecursively()
         }
     }
+
+    /**
+     * Database-file backups carry the sealed attachment files. The restore swaps the real database file,
+     * so this round-trips the app's own database (identical bytes) and puts everything back afterwards.
+     */
+    @Test
+    fun sqliteBackup_bundlesAttachmentFiles_andRestoreBringsThemBack() = runBlocking<Unit> {
+        val dbFile = context.getDatabasePath("osswallet_manager_db")
+        val dbCopy = File(context.cacheDir, "db_before_test").also { if (dbFile.exists()) dbFile.copyTo(it, overwrite = true) }
+        val dir = File(context.filesDir, "backups").apply { deleteRecursively(); mkdirs() }
+        val settings = SettingsDataStore(context)
+        val originalConfig = settings.autoBackupConfig.first()
+        settings.saveAutoBackupConfig(originalConfig.copy(encrypt = false))
+        val backup = BackupRepositoryImpl(
+            profileDao = db.profileDao(), accountDao = db.accountDao(), transactionDao = db.transactionDao(),
+            categoryDao = db.categoryDao(), tagDao = db.tagDao(), templateDao = db.templateDao(),
+            transactionLinkDao = db.transactionLinkDao(), budgetDao = db.budgetDao(), loanDao = db.loanDao(),
+            loanPaymentDao = db.loanPaymentDao(), plannedPaymentDao = db.plannedPaymentDao(),
+            plannedPaymentOccurrenceDao = db.plannedPaymentOccurrenceDao(), filterDao = db.filterDao(),
+            currencyDao = db.currencyDao(), goalDao = db.goalDao(), attachmentDao = db.attachmentDao(),
+            attachmentStore = store, backupKeyVault = BackupKeyVault(context), database = db,
+            settingsDataStore = settings,
+            dispatcherProvider = com.osscabinet.ossWallet.core.util.RealDispatcherProvider(),
+            json = Json, context = context
+        )
+        try {
+            val first = payload(41); val second = payload(42)
+            val a = repo.add(60, 1, first); val b = repo.add(61, 1, second, "application/pdf", "x.pdf")
+            val out = File(dir, "bundle.bin")
+            val exported = backup.exportData(Uri.fromFile(out).toString(), com.osscabinet.ossWallet.domain.repository.BackupType.SQLITE,
+                com.osscabinet.ossWallet.domain.repository.BackupScope.ALL_PROFILES, null)
+            assertTrue("export failed: ${exported.exceptionOrNull()}", exported.isSuccess)
+
+            val names = java.util.zip.ZipInputStream(out.inputStream()).use { zis ->
+                generateSequence { zis.nextEntry }.map { it.name }.toList()
+            }
+            assertTrue("has the database", "database.db" in names || !dbFile.exists())
+            assertTrue("has both sealed files", names.contains("attachments/${a.fileName}") && names.contains("attachments/${b.fileName}"))
+
+            store.deleteAll()
+            assertTrue(store.listNames().isEmpty())
+            val restored = backup.importData(Uri.fromFile(out).toString(), com.osscabinet.ossWallet.domain.repository.BackupType.SQLITE, null)
+            assertTrue("restore failed: ${restored.exceptionOrNull()}", restored.isSuccess)
+
+            assertEquals(setOf(a.fileName, b.fileName), store.listNames().toSet())
+            assertArrayEquals(first, repo.readBytes(a))
+            assertArrayEquals(second, repo.readBytes(b))
+        } finally {
+            if (dbCopy.exists()) dbCopy.copyTo(dbFile, overwrite = true)
+            dbCopy.delete()
+            settings.saveAutoBackupConfig(originalConfig)
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun sqliteRestore_ofAnOlderBareDatabaseFile_leavesAttachmentsAlone() = runBlocking<Unit> {
+        val dbFile = context.getDatabasePath("osswallet_manager_db")
+        if (!dbFile.exists()) return@runBlocking
+        val dbCopy = File(context.cacheDir, "db_before_legacy_test").also { dbFile.copyTo(it, overwrite = true) }
+        val dir = File(context.filesDir, "backups").apply { deleteRecursively(); mkdirs() }
+        val settings = SettingsDataStore(context)
+        val backup = BackupRepositoryImpl(
+            profileDao = db.profileDao(), accountDao = db.accountDao(), transactionDao = db.transactionDao(),
+            categoryDao = db.categoryDao(), tagDao = db.tagDao(), templateDao = db.templateDao(),
+            transactionLinkDao = db.transactionLinkDao(), budgetDao = db.budgetDao(), loanDao = db.loanDao(),
+            loanPaymentDao = db.loanPaymentDao(), plannedPaymentDao = db.plannedPaymentDao(),
+            plannedPaymentOccurrenceDao = db.plannedPaymentOccurrenceDao(), filterDao = db.filterDao(),
+            currencyDao = db.currencyDao(), goalDao = db.goalDao(), attachmentDao = db.attachmentDao(),
+            attachmentStore = store, backupKeyVault = BackupKeyVault(context), database = db,
+            settingsDataStore = settings,
+            dispatcherProvider = com.osscabinet.ossWallet.core.util.RealDispatcherProvider(),
+            json = Json, context = context
+        )
+        try {
+            val kept = repo.add(70, 1, payload(51))
+            val bare = File(dir, "old.db").also { dbCopy.copyTo(it, overwrite = true) }
+            val restored = backup.importData(Uri.fromFile(bare).toString(), com.osscabinet.ossWallet.domain.repository.BackupType.SQLITE, null)
+            assertTrue("restore failed: ${restored.exceptionOrNull()}", restored.isSuccess)
+            assertEquals("files untouched by a bare-database restore", listOf(kept.fileName), store.listNames())
+        } finally {
+            dbCopy.copyTo(dbFile, overwrite = true)
+            dbCopy.delete()
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun sqliteRestore_ignoresForeignNamesInTheBundle() = runBlocking<Unit> {
+        // Names that this store didn't generate (path tricks, odd files) must never land in the store.
+        assertTrue(AttachmentStore.isStoreFileName("0f8fad5b-d9cb-469f-a165-70867728950e.bin"))
+        listOf("../evil.bin", "x.bin", "0f8fad5b-d9cb-469f-a165-70867728950e.bin.tmp", "0F8FAD5B-D9CB-469F-A165-70867728950E.bin", "a/b.bin")
+            .forEach { assertFalse(it, AttachmentStore.isStoreFileName(it)) }
+    }
 }

@@ -54,6 +54,21 @@ class AttachmentStore @Inject constructor(@ApplicationContext private val contex
 
     fun listNames(): List<String> = dir.listFiles()?.map { it.name }.orEmpty()
 
+    /**
+     * The stored (still sealed) file, for copying into a database-file backup. Those backups are only
+     * restorable on this install, like the database itself, so the sealed bytes can travel as they are.
+     */
+    fun sealedFile(name: String): File? = File(dir, safe(name)).takeIf { it.isFile && isStoreFileName(it.name) }
+
+    /** Replaces everything stored with the sealed files in [stagingDir] (database-file restore). */
+    fun replaceAll(stagingDir: File) {
+        deleteAll()
+        stagingDir.listFiles()?.filter { it.isFile && isStoreFileName(it.name) }?.forEach { file ->
+            val target = File(dir, file.name)
+            if (!file.renameTo(target)) file.copyTo(target, overwrite = true)
+        }
+    }
+
     /** Names come from our own DB, but never let one escape the directory. */
     private fun safe(name: String): String = File(name).name
 
@@ -71,12 +86,16 @@ class AttachmentStore @Inject constructor(@ApplicationContext private val contex
         }.generateKey()
     }
 
-    private companion object {
-        const val DIR_NAME = "attachments"
-        const val ANDROID_KEYSTORE = "AndroidKeyStore"
-        const val ALIAS = "osswallet_attachment_key"
-        const val TRANSFORM = "AES/GCM/NoPadding"
-        const val IV_BYTES = 12
-        const val TAG_BITS = 128
+    companion object {
+        /** True for names this store generated; anything else coming from a backup is ignored. */
+        fun isStoreFileName(name: String): Boolean = STORE_NAME.matches(name)
+
+        private val STORE_NAME = Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.bin$")
+        private const val DIR_NAME = "attachments"
+        private const val ANDROID_KEYSTORE = "AndroidKeyStore"
+        private const val ALIAS = "osswallet_attachment_key"
+        private const val TRANSFORM = "AES/GCM/NoPadding"
+        private const val IV_BYTES = 12
+        private const val TAG_BITS = 128
     }
 }

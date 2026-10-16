@@ -72,6 +72,9 @@ class OssWalletApp : Application(), Configuration.Provider {
     @Inject
     lateinit var webServerRepository: WebServerRepository
 
+    @Inject
+    lateinit var attachmentRepository: com.osscabinet.ossWallet.domain.repository.AttachmentRepository
+
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private var widgetInvalidationObserver: WidgetInvalidationObserver? = null
@@ -96,6 +99,9 @@ class OssWalletApp : Application(), Configuration.Provider {
         createNotificationChannels()
         PlannedPaymentWorker.schedule(this)
         com.osscabinet.ossWallet.reminder.ReminderWorker.schedule(this)
+
+        // Receipts whose transaction was deleted elsewhere (bulk delete, account delete) are cleaned up here.
+        applicationScope.launch { runCatching { attachmentRepository.removeOrphans() } }
 
         // Reschedule auto-backup on app startup so it survives device reboots and reinstalls
         applicationScope.launch {

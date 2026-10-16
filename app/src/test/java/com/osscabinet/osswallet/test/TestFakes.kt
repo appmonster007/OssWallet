@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import java.io.InputStream
 import java.math.BigDecimal
 
@@ -252,6 +253,54 @@ class FakeTagRepository : TagRepository {
     override suspend fun deleteTagAndRemoveFromTransactions(tag: Tag) {}
     override suspend fun getTransactionCountForTag(tagName: String, profileId: Int): Int = 0
     override suspend fun updateTag(oldName: String, newTag: Tag) {}
+}
+
+// ── FakeAttachmentRepository ─────────────────────────────────────────────────
+
+class FakeAttachmentRepository : com.osscabinet.ossWallet.domain.repository.AttachmentRepository {
+    private val rows = MutableStateFlow<List<com.osscabinet.ossWallet.domain.model.Attachment>>(emptyList())
+    private val bytes = mutableMapOf<Long, ByteArray>()
+    private var nextId = 1L
+
+    override fun observeForTransaction(transactionId: Long, profileId: Int) =
+        rows.map { list -> list.filter { it.transactionId == transactionId && it.profileId == profileId } }
+
+    override fun observeCounts(profileId: Int) =
+        rows.map { list -> list.filter { it.profileId == profileId }.groupingBy { it.transactionId }.eachCount() }
+
+    override suspend fun getForTransaction(transactionId: Long, profileId: Int) =
+        rows.value.filter { it.transactionId == transactionId && it.profileId == profileId }
+
+    override suspend fun add(transactionId: Long, profileId: Int, jpeg: ByteArray): com.osscabinet.ossWallet.domain.model.Attachment {
+        val a = com.osscabinet.ossWallet.domain.model.Attachment(
+            id = nextId++, transactionId = transactionId, profileId = profileId, fileName = "f$nextId",
+            mimeType = "image/jpeg", sizeBytes = jpeg.size.toLong(), createdAt = 0
+        )
+        bytes[a.id] = jpeg
+        rows.value = rows.value + a
+        return a
+    }
+
+    override suspend fun readBytes(attachment: com.osscabinet.ossWallet.domain.model.Attachment) = bytes[attachment.id]
+
+    override suspend fun delete(id: Long, profileId: Int) {
+        rows.value = rows.value.filterNot { it.id == id && it.profileId == profileId }
+    }
+
+    override suspend fun deleteForTransaction(transactionId: Long, profileId: Int) {
+        rows.value = rows.value.filterNot { it.transactionId == transactionId && it.profileId == profileId }
+    }
+
+    override suspend fun removeOrphans() {}
+    override suspend fun clearAll() { rows.value = emptyList() }
+}
+
+/** Returns the source string's bytes, or throws for sources starting with "bad". */
+class FakeReceiptImageProcessor : com.osscabinet.ossWallet.domain.repository.ReceiptImageProcessor {
+    override suspend fun prepare(source: String): ByteArray {
+        require(!source.startsWith("bad")) { "That file isn't an image" }
+        return source.toByteArray()
+    }
 }
 
 // ── FakeCsvImportService ─────────────────────────────────────────────────────

@@ -73,7 +73,10 @@ import java.io.OutputStreamWriter
 import java.math.BigDecimal
 import java.util.zip.ZipInputStream
 import com.osscabinet.ossWallet.data.local.BackupKeyVault
+import com.osscabinet.ossWallet.data.local.AttachmentStore
+import com.osscabinet.ossWallet.data.local.dao.AttachmentDao
 import com.osscabinet.ossWallet.data.local.dao.GoalDao
+import com.osscabinet.ossWallet.data.local.entity.AttachmentEntity
 import com.osscabinet.ossWallet.data.local.entity.GoalEntity
 import com.osscabinet.ossWallet.domain.repository.BackupPassphraseRequiredException
 import com.osscabinet.ossWallet.domain.repository.BackupVerification
@@ -98,6 +101,8 @@ class BackupRepositoryImpl @Inject constructor(
     private val filterDao: FilterDao,
     private val currencyDao: CurrencyDao,
     private val goalDao: GoalDao,
+    private val attachmentDao: AttachmentDao,
+    private val attachmentStore: AttachmentStore,
     private val backupKeyVault: BackupKeyVault,
     private val database: AppDatabase,
     private val settingsDataStore: SettingsDataStore,
@@ -615,6 +620,8 @@ class BackupRepositoryImpl @Inject constructor(
                 )
             })
 
+        writeAttachmentsToZip(zos, scope, currentProfileId)
+
         writeCsvToZip(
             zos,
             "currency_rates.csv",
@@ -684,7 +691,7 @@ class BackupRepositoryImpl @Inject constructor(
                 loanPaymentDao.clearAll(); plannedPaymentOccurrenceDao.clearAll()
                 transactionDao.clearAll(); templateDao.clearAll(); budgetDao.clearAll()
                 loanDao.clearAll(); plannedPaymentDao.clearAll(); accountDao.clearAll(); filterDao.clearAll()
-                goalDao.clearAll()
+                goalDao.clearAll(); attachmentDao.clearAll()
                 tagDao.clearAll(); categoryDao.clearAll(); currencyDao.clearAll()
                 profileDao.clearAll()
 
@@ -705,6 +712,7 @@ class BackupRepositoryImpl @Inject constructor(
                     tagDao.insertTag(TagEntity(st.id, st.tagName, st.colorHex))
                 }
             }
+            attachmentStore.deleteAll()
             settingsDataStore.clearAll()
             Result.success(Unit)
         } catch (e: Exception) {
@@ -749,6 +757,9 @@ class BackupRepositoryImpl @Inject constructor(
             }
         }
 
+        // Old receipt files are only deleted once the restore has committed; new ones are removed if it fails.
+        val oldReceiptFiles = attachmentDao.getAllFileNames()
+        val newReceiptFiles = mutableListOf<String>()
         // P5: tempDir cleanup is in finally so unencrypted CSVs are always removed, even on transaction failure.
         try {
             database.withTransaction {
@@ -756,7 +767,7 @@ class BackupRepositoryImpl @Inject constructor(
                 loanPaymentDao.clearAll(); plannedPaymentOccurrenceDao.clearAll()
                 transactionDao.clearAll(); templateDao.clearAll(); budgetDao.clearAll()
                 loanDao.clearAll(); plannedPaymentDao.clearAll(); accountDao.clearAll(); filterDao.clearAll()
-                goalDao.clearAll()
+                goalDao.clearAll(); attachmentDao.clearAll()
                 tagDao.clearAll(); categoryDao.clearAll(); profileDao.clearAll()
 
                 restoreProfiles(File(tempDir, "profiles.csv"))
@@ -767,6 +778,7 @@ class BackupRepositoryImpl @Inject constructor(
                 restoreTemplates(File(tempDir, "templates.csv"))
                 restoreTransactions(File(tempDir, "transactions.csv"))
                 restoreLinks(File(tempDir, "transaction_links.csv"))
+                restoreAttachments(File(tempDir, "attachments.csv"), File(tempDir, "attachments"), newReceiptFiles)
                 restoreBudgets(File(tempDir, "budgets.csv"))
                 restoreLoans(File(tempDir, "loans.csv"))
                 restoreLoanPayments(File(tempDir, "loan_payments.csv"))
@@ -775,6 +787,10 @@ class BackupRepositoryImpl @Inject constructor(
                 restorePlannedPaymentOccurrences(File(tempDir, "planned_payment_occurrences.csv"))
                 restoreCurrencyRates(File(tempDir, "currency_rates.csv"))
             }
+            oldReceiptFiles.forEach(attachmentStore::delete)
+        } catch (e: Exception) {
+            newReceiptFiles.forEach(attachmentStore::delete)
+            throw e
         } finally {
             tempDir.deleteRecursively()
         }
@@ -989,6 +1005,48 @@ class BackupRepositoryImpl @Inject constructor(
             }
         }
         if (batch.isNotEmpty()) plannedPaymentOccurrenceDao.insertOccurrences(batch)
+    }
+
+    /** Receipts travel inside the zip as decrypted JPEGs; the zip itself is what gets encrypted. */
+    private suspend fun writeAttachmentsToZip(zos: ZipOutputStream, scope: BackupScope, currentProfileId: Int) {
+        val all = attachmentDao.getAllForBackup()
+        val rows = if (scope == BackupScope.SINGLE_PROFILE) all.filter { it.profileId == currentProfileId } else all
+        val written = mutableListOf<AttachmentEntity>()
+        rows.forEach { row ->
+            val bytes = attachmentStore.read(row.fileName) ?: return@forEach // unreadable: skip, don't fail the backup
+            zos.putNextEntry(java.util.zip.ZipEntry("attachments/${row.id}.jpg"))
+            zos.write(bytes)
+            zos.closeEntry()
+            written += row
+        }
+        writeCsvToZip(
+            zos, "attachments.csv",
+            arrayOf("id", "transactionId", "profileId", "mimeType", "sizeBytes", "createdAt"),
+            written.map { arrayOf(it.id, it.transactionId, it.profileId, it.mimeType, it.sizeBytes, it.createdAt) }
+        )
+    }
+
+    /** Stores each receipt image under a fresh random name; [created] collects them for rollback. */
+    private suspend fun restoreAttachments(csv: File, imagesDir: File, created: MutableList<String>) {
+        parseCsv(csv) { p ->
+            val id = p["id"]?.toLongOrNull() ?: return@parseCsv
+            val image = File(imagesDir, "$id.jpg")
+            if (!image.isFile) return@parseCsv
+            val bytes = image.readBytes()
+            val name = attachmentStore.write(bytes)
+            created += name
+            attachmentDao.insert(
+                AttachmentEntity(
+                    id = id,
+                    transactionId = p["transactionId"]?.toLongOrNull() ?: return@parseCsv,
+                    profileId = p["profileId"]?.toIntOrNull() ?: 1,
+                    fileName = name,
+                    mimeType = p["mimeType"] ?: "image/jpeg",
+                    sizeBytes = bytes.size.toLong(),
+                    createdAt = p["createdAt"]?.toLongOrNull() ?: System.currentTimeMillis()
+                )
+            )
+        }
     }
 
     private suspend fun restoreGoals(file: File) = parseCsv(file) { p ->
@@ -1221,7 +1279,8 @@ class BackupRepositoryImpl @Inject constructor(
                         RestorableEntity.PROFILES -> entry.name == "profiles.csv"
                         RestorableEntity.ACCOUNTS -> entry.name == "accounts.csv"
                         RestorableEntity.CATEGORIES -> entry.name == "categories.csv"
-                        RestorableEntity.TRANSACTIONS -> entry.name == "transactions.csv" || entry.name == "transaction_links.csv"
+                        RestorableEntity.TRANSACTIONS -> entry.name == "transactions.csv" || entry.name == "transaction_links.csv" ||
+                            entry.name == "attachments.csv" || entry.name.startsWith("attachments/")
                         RestorableEntity.BUDGETS -> entry.name == "budgets.csv"
                         RestorableEntity.LOANS -> entry.name == "loans.csv" || entry.name == "loan_payments.csv"
                         RestorableEntity.PLANNED_PAYMENTS -> entry.name == "planned_payments.csv" || entry.name == "planned_payment_occurrences.csv"
@@ -1244,6 +1303,8 @@ class BackupRepositoryImpl @Inject constructor(
             }
         }
 
+        val oldReceiptFiles = attachmentDao.getAllFileNames()
+        val newReceiptFiles = mutableListOf<String>()
         try {
             database.withTransaction {
                 if (RestorableEntity.PROFILES in safe) File(
@@ -1292,6 +1353,9 @@ class BackupRepositoryImpl @Inject constructor(
                         ); restoreLinks(
                             File(tempDir, "transaction_links.csv")
                         )
+                        // Receipts belong to their transactions, so they are replaced together.
+                        attachmentDao.clearAll()
+                        restoreAttachments(File(tempDir, "attachments.csv"), File(tempDir, "attachments"), newReceiptFiles)
                     }
                 }
                 if (RestorableEntity.BUDGETS in safe) File(
@@ -1340,6 +1404,12 @@ class BackupRepositoryImpl @Inject constructor(
                     "currency_rates.csv"
                 ).let { if (it.exists()) restoreCurrencyRates(it) }
             }
+            if (RestorableEntity.TRANSACTIONS in safe && File(tempDir, "transactions.csv").exists()) {
+                oldReceiptFiles.forEach(attachmentStore::delete)
+            }
+        } catch (e: Exception) {
+            newReceiptFiles.forEach(attachmentStore::delete)
+            throw e
         } finally {
             tempDir.deleteRecursively()
         }

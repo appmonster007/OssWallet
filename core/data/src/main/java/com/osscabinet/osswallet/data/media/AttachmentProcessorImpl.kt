@@ -7,6 +7,7 @@ import android.graphics.Matrix
 import android.media.ExifInterface
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.webkit.MimeTypeMap
 import com.osscabinet.ossWallet.domain.model.AttachmentLimits
 import com.osscabinet.ossWallet.domain.model.PreparedAttachment
 import com.osscabinet.ossWallet.domain.repository.AttachmentProcessor
@@ -15,15 +16,32 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 class AttachmentProcessorImpl @Inject constructor(
     @ApplicationContext private val context: Context
 ) : AttachmentProcessor {
 
-    override suspend fun prepare(source: String): PreparedAttachment = withContext(Dispatchers.Default) {
-        val uri = Uri.parse(source)
+    override suspend fun prepare(source: String): PreparedAttachment = prepareUri(Uri.parse(source), nameHint = null)
+
+    override suspend fun prepareBytes(bytes: ByteArray, displayName: String): PreparedAttachment {
+        require(bytes.size <= AttachmentLimits.MAX_FILE_BYTES) {
+            "That file is larger than ${AttachmentLimits.MAX_FILE_BYTES / (1024 * 1024)} MB"
+        }
+        // The decoding code reads from a URI; give uploaded bytes a short-lived private file to read from.
+        val temp = withContext(Dispatchers.IO) {
+            File.createTempFile("upload", null, context.cacheDir).also { it.writeBytes(bytes) }
+        }
+        return try {
+            prepareUri(Uri.fromFile(temp), nameHint = displayName)
+        } finally {
+            temp.delete()
+        }
+    }
+
+    private suspend fun prepareUri(uri: Uri, nameHint: String?): PreparedAttachment = withContext(Dispatchers.Default) {
         val resolver = context.contentResolver
-        val name = displayNameOf(uri)
+        val name = nameHint?.trim().orEmpty().ifBlank { displayNameOf(uri) }
 
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
@@ -35,7 +53,9 @@ class AttachmentProcessorImpl @Inject constructor(
     }
 
     private fun prepareFile(uri: Uri, name: String): PreparedAttachment {
-        val declared = context.contentResolver.getType(uri)
+        // Some providers (and web uploads) report no type; fall back to what the file extension says.
+        val declared = context.contentResolver.getType(uri)?.takeIf { it != AttachmentLimits.MIME_UNKNOWN }
+            ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(name.substringAfterLast('.', "").lowercase())
         // A type that claims to be an image but didn't decode can't be previewed; don't pretend it can.
         val mime = when {
             declared == null || declared.startsWith("image/") -> AttachmentLimits.MIME_UNKNOWN

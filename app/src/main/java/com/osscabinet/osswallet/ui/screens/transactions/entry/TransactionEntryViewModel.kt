@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.service.management.attachmentTargets
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -74,14 +75,7 @@ class TransactionEntryViewModel @Inject constructor(
         }
     }
 
-    /** The saved transaction, plus the other leg of a transfer so both legs share their attachments. */
-    private suspend fun attachmentTargets(id: Long, profileId: Int): List<Long> {
-        val tx = transactionUseCases.getTransactionById(id, profileId) ?: return listOf(id)
-        if (!Category.isTransfer(tx.categoryId)) return listOf(id)
-        val counterparts = transactionUseCases.getLinkedTransactions(id).first()
-            .filter { Category.isTransfer(it.categoryId) }.map { it.id }
-        return listOf(id) + counterparts
-    }
+    private suspend fun attachmentTargets(id: Long, profileId: Int) = transactionUseCases.attachmentTargets(id, profileId)
 
     fun onAttachmentPicked(source: String) = attachmentStaging.add(source)
     fun removeAttachment(item: AttachmentItem) = attachmentStaging.remove(item)

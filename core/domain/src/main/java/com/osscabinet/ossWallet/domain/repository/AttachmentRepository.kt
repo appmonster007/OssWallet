@@ -58,4 +58,7 @@ interface AttachmentRepository {
 interface AttachmentProcessor {
     /** [source] is a content URI string. Throws with a user-readable message when the file can't be used. */
     suspend fun prepare(source: String): PreparedAttachment
+
+    /** Same as [prepare] for a file that arrived as raw bytes (web upload); [displayName] is its original name. */
+    suspend fun prepareBytes(bytes: ByteArray, displayName: String): PreparedAttachment
 }

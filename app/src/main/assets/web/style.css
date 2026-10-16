@@ -1237,3 +1237,14 @@ input[type=date]::-webkit-calendar-picker-indicator:hover{opacity:1;}
   .pagination{gap:4px;}
   .pagination .btn{padding:4px 8px;font-size:0.78rem;}
 }
+
+/* Transaction attachments */
+.tx-att { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border, rgba(128,128,128,.25)); }
+.tx-att-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.tx-att-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.tx-att-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-att-size { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+.tx-att-empty { color: var(--text-muted); font-size: 13px; }
+.tx-att-lightbox { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.85); }
+.tx-att-lightbox img { max-width: 94vw; max-height: 90vh; object-fit: contain; }
+.tx-att-lightbox button { position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,.5); color: #fff; }

@@ -278,7 +278,8 @@ fun DataManagementScreen(
             onImportZip = {
                 showImportDialog = false
                 pendingImportType = BackupType.CSV_ZIP
-                importLauncher.launch("application/zip")
+                // Encrypted backups (.zip.enc) are octet-stream, so a zip-only filter would grey them out.
+                importLauncher.launch("*/*")
             },
             onImportSqlite = {
                 showImportDialog = false

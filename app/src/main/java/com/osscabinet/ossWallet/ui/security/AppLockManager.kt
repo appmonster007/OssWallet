@@ -36,6 +36,7 @@ class AppLockManager @Inject constructor(
     val config: StateFlow<AppLockConfig?> = _config.asStateFlow()
 
     @Volatile private var backgroundedAtMs = 0L
+    @Volatile private var externalFlowPending = false
     private var failedAttempts = 0
     private var lockedOutUntilMs = 0L
 
@@ -51,6 +52,15 @@ class AppLockManager @Inject constructor(
         }
     }
 
+    /**
+     * Call right before this app launches a system screen it expects to come back from (file
+     * picker, share sheet). Re-locking on that round trip would tear down the screen's state
+     * and drop the result, so the next background gets at least [EXTERNAL_FLOW_GRACE_SECONDS].
+     */
+    fun expectExternalReturn() {
+        externalFlowPending = true
+    }
+
     fun onAppBackgrounded() {
         backgroundedAtMs = SystemClock.elapsedRealtime()
     }
@@ -59,6 +69,7 @@ class AppLockManager @Inject constructor(
     fun onAppForegrounded() {
         applyTimeout()
         backgroundedAtMs = 0L
+        externalFlowPending = false
     }
 
     /**
@@ -75,7 +86,12 @@ class AppLockManager @Inject constructor(
         val cfg = _config.value
         val since = backgroundedAtMs
         if (cfg == null || !cfg.isActive || since == 0L) return
-        if (SystemClock.elapsedRealtime() - since >= cfg.timeoutSeconds * 1000L) {
+        val timeoutSeconds = if (externalFlowPending) {
+            maxOf(cfg.timeoutSeconds, EXTERNAL_FLOW_GRACE_SECONDS)
+        } else {
+            cfg.timeoutSeconds
+        }
+        if (SystemClock.elapsedRealtime() - since >= timeoutSeconds * 1000L) {
             _state.value = LockState.Locked
         }
     }
@@ -115,5 +131,6 @@ class AppLockManager @Inject constructor(
     private companion object {
         const val MAX_FREE_ATTEMPTS = 5
         const val BASE_LOCKOUT_MS = 30_000L
+        const val EXTERNAL_FLOW_GRACE_SECONDS = 120
     }
 }

@@ -58,6 +58,14 @@ class MainActivity : FragmentActivity() {
         if (!isChangingConfigurations) appLockManager.onAppBackgrounded()
     }
 
+    // Every ActivityResultLauncher (file pickers, folder pickers) funnels through here.
+    @Deprecated("Deprecated in Java")
+    override fun startActivityForResult(intent: Intent, requestCode: Int, options: Bundle?) {
+        appLockManager.expectExternalReturn()
+        @Suppress("DEPRECATION")
+        super.startActivityForResult(intent, requestCode, options)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)

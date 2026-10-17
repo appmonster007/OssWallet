@@ -350,6 +350,40 @@ class TransactionRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun searchForGlobal(
+        profileId: Int,
+        query: com.osscabinet.ossWallet.domain.service.search.ParsedSearch,
+        limit: Int
+    ): List<Transaction> {
+        // The full-text engine chokes on punctuation, so keep letters and digits only.
+        val words = query.words.map { it.replace(Regex("[^\\p{L}\\p{N}]"), "") }.filter { it.isNotEmpty() }
+        val spec = query.amount
+        suspend fun byAmount(spec: com.osscabinet.ossWallet.domain.service.search.AmountSpec): List<com.osscabinet.ossWallet.data.local.entity.TransactionEntity> {
+            // A single value gets half a cent of slack for the text-to-number conversion.
+            val tolerance = if (spec.min != null && spec.min == spec.max) 0.005 else 0.0
+            return transactionDao.searchByAmount(
+                profileId,
+                (spec.min?.toDouble() ?: 0.0) - tolerance,
+                (spec.max?.toDouble() ?: Double.MAX_VALUE) + tolerance,
+                limit
+            )
+        }
+        // One source finds the candidates and the caller's post-filter narrows them: words if there are any,
+        // else tags, else amounts. A lone number is both a possible word and a possible amount.
+        val rows = when {
+            words.isNotEmpty() -> {
+                val text = transactionDao.searchText(
+                    profileId, words.joinToString(" ") { "$it*" }, query.words.joinToString(" "), limit
+                )
+                if (query.numberOnly && spec != null) text + byAmount(spec) else text
+            }
+            query.tags.isNotEmpty() -> transactionDao.searchByTag(profileId, query.tags.first(), limit)
+            spec != null -> byAmount(spec)
+            else -> emptyList()
+        }
+        return rows.distinctBy { it.id }.sortedByDescending { it.timestamp }.take(limit).map { it.toDomain() }
+    }
+
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     override fun observeFilteredTransactionsWithBalance(
         profileId: Int,

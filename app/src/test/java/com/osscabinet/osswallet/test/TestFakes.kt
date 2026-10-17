@@ -179,6 +179,11 @@ class FakeTransactionRepository : TransactionRepository {
     override fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>> = flowOf(emptyList())
     override fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>> = flowOf(emptyList())
     override fun searchTransactions(profileId: Int, query: String): Flow<List<Transaction>> = txFlow
+    override suspend fun searchForGlobal(
+        profileId: Int,
+        query: com.osscabinet.ossWallet.domain.service.search.ParsedSearch,
+        limit: Int
+    ): List<Transaction> = emptyList()
     override fun observeFilteredTransactionsWithBalance(
         profileId: Int,
         filter: TransactionFilter,

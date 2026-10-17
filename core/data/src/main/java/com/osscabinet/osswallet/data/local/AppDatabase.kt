@@ -68,7 +68,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         GoalEntity::class,
         AttachmentEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -189,6 +189,27 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v4 -> v5: saved filters belong to a profile. The filters that budgets and loans keep take their
+         * owner's profile; the rest (saved by the user) can't be told apart, so they stay with profile 1.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `transaction_filters` ADD COLUMN `profileId` INTEGER NOT NULL DEFAULT 1")
+                db.execSQL(
+                    "UPDATE `transaction_filters` SET `profileId` = " +
+                        "(SELECT `budgets`.`profileId` FROM `budgets` WHERE `budgets`.`filterId` = `transaction_filters`.`id` LIMIT 1) " +
+                        "WHERE EXISTS (SELECT 1 FROM `budgets` WHERE `budgets`.`filterId` = `transaction_filters`.`id`)"
+                )
+                db.execSQL(
+                    "UPDATE `transaction_filters` SET `profileId` = " +
+                        "(SELECT `loans`.`profileId` FROM `loans` WHERE `loans`.`filterId` = `transaction_filters`.`id` LIMIT 1) " +
+                        "WHERE EXISTS (SELECT 1 FROM `loans` WHERE `loans`.`filterId` = `transaction_filters`.`id`)"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transaction_filters_profileId` ON `transaction_filters` (`profileId`)")
+            }
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -202,7 +223,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
                     .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

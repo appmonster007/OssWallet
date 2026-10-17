@@ -142,7 +142,7 @@ class TransactionViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     val savedFilters: StateFlow<List<com.osscabinet.ossWallet.domain.model.Filter>> =
         settingsRepository.currentProfileId
-            .flatMapLatest { filterRepository.getAllFilters() }
+            .flatMapLatest { profileId -> filterRepository.getAllFilters(profileId) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allTags: StateFlow<List<Tag>> = tagRepository.getAllTags()

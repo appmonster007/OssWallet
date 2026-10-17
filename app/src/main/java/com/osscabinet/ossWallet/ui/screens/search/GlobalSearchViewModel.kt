@@ -180,7 +180,7 @@ class GlobalSearchViewModel @Inject constructor(
                 maxAmount = parsed.amount?.max,
                 queryNote = parsed.words.takeIf { it.isNotEmpty() && !parsed.numberOnly }?.joinToString(" ")
             )
-            filters.insertFilter(Filter(name = name.trim(), filter = filter))
+            filters.insertFilter(Filter(name = name.trim(), filter = filter, profileId = settingsRepository.currentProfileId.first()))
             _state.update { it.copy(message = "Saved filter “${name.trim()}”") }
         }
     }

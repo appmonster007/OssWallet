@@ -16,6 +16,7 @@ fun FilterEntity.toDomain(): Filter {
     return Filter(
         id = id,
         name = name,
+        profileId = profileId,
         filter = TransactionFilter(
             timelineRange = resolvedTimelineRange,
             queryNote = queryNote,
@@ -51,6 +52,7 @@ fun Filter.toEntity(): FilterEntity {
     return FilterEntity(
         id = id,
         name = name,
+        profileId = profileId,
         timelineRange = filter.timelineRange,
         queryNote = filter.queryNote,
         isNoteRegex = filter.isNoteRegex,

@@ -42,10 +42,11 @@ class BudgetRepositoryImpl @Inject constructor(
     }
 
     override suspend fun delete(id: Long) {
-        val filterId = dao.getByIdInternal(id)?.budget?.filterId
+        val owner = dao.getByIdInternal(id)?.budget
         dao.deleteById(id)
-        filterId?.let {
-            filterRepository.getFilterById(it)?.let { f -> filterRepository.deleteFilter(f) }
+        // The budget's own filter goes with it; it lives in the budget's profile.
+        owner?.let { b ->
+            filterRepository.getFilterById(b.filterId, b.profileId)?.let { f -> filterRepository.deleteFilter(f) }
         }
     }
 }

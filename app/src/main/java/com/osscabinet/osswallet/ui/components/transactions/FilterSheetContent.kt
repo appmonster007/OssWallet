@@ -252,6 +252,31 @@ fun FilterSheetContent(
             HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.4f))
         }
 
+        // 2b. Saved filters: one tap applies a whole saved set (kept within this screen's own rules).
+        if (savedFilters.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
+                Text(
+                    "SAVED FILTERS",
+                    style = AppTextStyles.sectionOverline.copy(fontSize = 10.sp),
+                    color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    items(items = savedFilters, key = { it.id }) { saved ->
+                        val applied = filterRules.normalize(saved.filter)
+                        FilterChip(
+                            selected = localFilter == applied,
+                            onClick = {
+                                localFilter = applied
+                                onFilterEvent(FilterEvent.Apply(applied))
+                            },
+                            colors = activeChipColors,
+                            label = { Text(saved.name) }
+                        )
+                    }
+                }
+            }
+        }
+
         // 3. Active Filter Chips + Inline Reset
         val activeFiltersRelative = countActiveFilters(localFilter, baseFilter, filterRules)
         if (activeFiltersRelative > 0 || !hasHeroHeader) {

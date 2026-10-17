@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockClock
 import androidx.compose.material.icons.rounded.LocationOff
@@ -29,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.domain.model.settings.AppLockConfig
 import com.osscabinet.ossWallet.ui.security.AppLockViewModel
 import com.osscabinet.ossWallet.ui.security.BiometricHelper
@@ -57,8 +59,11 @@ import com.osscabinet.ossWallet.ui.theme.HazeLayer
 fun SecuritySettingsScreen(
     viewModel: SettingsViewModel,
     actions: SecuritySettingsActions,
-    lockViewModel: AppLockViewModel = hiltViewModel()
+    lockViewModel: AppLockViewModel = hiltViewModel(),
+    assistantViewModel: AssistantAccessViewModel = hiltViewModel()
 ) {
+    val assistantEnabled by assistantViewModel.enabled.collectAsStateWithLifecycle()
+    val assistantNotice by assistantViewModel.notice.collectAsStateWithLifecycle()
     val mapsAccessEnabled by viewModel.mapsAccessEnabled.collectAsStateWithLifecycle()
     val lock by lockViewModel.config.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -153,6 +158,39 @@ fun SecuritySettingsScreen(
                                 icon = Icons.Rounded.Wifi,
                                 onClick = actions.onOpenInWebClick
                             )
+                        }
+
+                        // AI assistants can only call apps on Android 16+, so older devices never see this.
+                        if (assistantViewModel.isSupported) {
+                            AeonSettingsSection("AI ASSISTANTS") {
+                                EntrySwitchRow(
+                                    label = "Allow AI assistants",
+                                    subtitle = "Let assistants add records, search and analyse your transactions",
+                                    icon = Icons.Rounded.AutoAwesome,
+                                    checked = assistantEnabled,
+                                    onCheckedChange = { assistantViewModel.setEnabled(it) },
+                                    isFlush = false
+                                )
+                                Text(
+                                    "What an assistant asks for is answered on this device, but the answer goes to the assistant, " +
+                                        "which may process it off your device. Assistants can add new records, never edit or delete, " +
+                                        "and see nothing while OssWallet is locked.",
+                                    style = AppTextStyles.caption,
+                                    color = AppColors.contentSecondary,
+                                    modifier = Modifier.padding(
+                                        horizontal = AeonTheme.dimensions.screenPadding,
+                                        vertical = AeonTheme.dimensions.spacingSm
+                                    )
+                                )
+                                assistantNotice?.let {
+                                    Text(
+                                        it,
+                                        style = AppTextStyles.caption,
+                                        color = AppColors.error,
+                                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding)
+                                    )
+                                }
+                            }
                         }
                     }
                 }

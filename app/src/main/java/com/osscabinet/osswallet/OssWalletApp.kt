@@ -75,6 +75,9 @@ class OssWalletApp : Application(), Configuration.Provider {
     @Inject
     lateinit var attachmentRepository: com.osscabinet.ossWallet.domain.repository.AttachmentRepository
 
+    @Inject
+    lateinit var assistantAccess: com.osscabinet.ossWallet.appfunctions.AssistantAccessController
+
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private var widgetInvalidationObserver: WidgetInvalidationObserver? = null
@@ -103,6 +106,9 @@ class OssWalletApp : Application(), Configuration.Provider {
 
         // Receipts whose transaction was deleted elsewhere (bulk delete, account delete) are cleaned up here.
         applicationScope.launch { runCatching { attachmentRepository.removeOrphans() } }
+
+        // Keep the system's idea of which assistant functions are on in line with the user's switch.
+        applicationScope.launch { if (assistantAccess.isSupported) runCatching { assistantAccess.sync() } }
 
         // Reschedule auto-backup on app startup so it survives device reboots and reinstalls
         applicationScope.launch {

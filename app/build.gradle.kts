@@ -140,6 +140,9 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
+    // Lets AI assistants call into the app (Android 16+). Experimental; the API changes between alphas.
+    implementation(libs.androidx.appfunctions)
+    ksp(libs.androidx.appfunctions.compiler)
     ksp(libs.hilt.compiler)
     implementation(libs.oss.hilt.work)
     ksp(libs.oss.hilt.work.compiler)

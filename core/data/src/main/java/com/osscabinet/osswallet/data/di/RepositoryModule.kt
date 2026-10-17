@@ -11,7 +11,9 @@ import com.osscabinet.ossWallet.data.repository.CurrencyRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.FilterRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.AttachmentRepositoryImpl
 import com.osscabinet.ossWallet.data.media.AttachmentProcessorImpl
+import com.osscabinet.ossWallet.data.repository.AssistantAccessRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.SuggestionStateRepositoryImpl
+import com.osscabinet.ossWallet.domain.repository.AssistantAccessRepository
 import com.osscabinet.ossWallet.domain.repository.SuggestionStateRepository
 import com.osscabinet.ossWallet.data.repository.GoalRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.LoanRepositoryImpl
@@ -97,6 +99,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindGoalRepository(impl: GoalRepositoryImpl): GoalRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAssistantAccessRepository(impl: AssistantAccessRepositoryImpl): AssistantAccessRepository
 
     @Binds
     @Singleton

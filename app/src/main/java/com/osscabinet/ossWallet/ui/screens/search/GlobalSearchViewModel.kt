@@ -18,8 +18,7 @@ import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
-import com.osscabinet.ossWallet.domain.repository.TransactionRepository
-import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
+import com.osscabinet.ossWallet.domain.service.search.TransactionSearcher
 import com.osscabinet.ossWallet.domain.service.search.GlobalSearchResults
 import com.osscabinet.ossWallet.domain.service.search.GlobalSearchService
 import com.osscabinet.ossWallet.domain.service.search.SearchData
@@ -84,7 +83,7 @@ data class GlobalSearchUiState(
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
 class GlobalSearchViewModel @Inject constructor(
-    private val transactions: TransactionRepository,
+    private val searcher: TransactionSearcher,
     private val accounts: AccountRepository,
     private val categories: CategoryRepository,
     private val tags: TagRepository,
@@ -147,9 +146,7 @@ class GlobalSearchViewModel @Inject constructor(
             transactionTypes = chips.kind.types,
             accountIds = chips.accountIds
         )
-        val matched = transactions.searchForGlobal(profileId, parsed, CANDIDATE_LIMIT)
-            .filter { GlobalSearchService.matchesTransaction(parsed, it) }
-            .let { if (chips.active) TransactionFilterService.filterTransactions(it, chipFilter) else it }
+        val matched = searcher.search(profileId, parsed, chipFilter.takeIf { chips.active }, CANDIDATE_LIMIT)
 
         val accountNames = data.accounts.associate { it.id to it.name }
         val txHits = GlobalSearchService.transactionHits(

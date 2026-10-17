@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AppFunctionAppMetadata
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:description="OssWallet is a private personal finance tracker. Use these functions to look up the user's accounts and categories, add a new income or expense record, search their transactions, and summarise spending and income for a period or a saved filter."
+    app:displayDescription="Add, search and analyse your transactions" />

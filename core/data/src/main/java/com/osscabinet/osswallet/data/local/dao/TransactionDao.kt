@@ -164,6 +164,42 @@ abstract class TransactionDao {
         categoryQuery: String
     ): Flow<List<TransactionEntity>>
 
+    /** One-shot global search: full-text hits plus category-name hits, newest first. */
+    @Query(
+        """
+        SELECT transactions.* FROM transactions
+        JOIN transactions_fts ON transactions.id = transactions_fts.docid
+        WHERE transactions_fts MATCH :ftsQuery AND transactions.profileId = :profileId
+        UNION
+        SELECT transactions.* FROM transactions
+        JOIN categories ON transactions.categoryId = categories.id
+        WHERE instr(lower(categories.name), lower(:categoryQuery)) > 0 AND transactions.profileId = :profileId
+        ORDER BY timestamp DESC
+        LIMIT :limit
+    """
+    )
+    abstract suspend fun searchText(profileId: Int, ftsQuery: String, categoryQuery: String, limit: Int): List<TransactionEntity>
+
+    /** instr rather than LIKE so a typed % or _ is just a character. */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE profileId = :profileId AND instr(lower(tags), lower(:tag)) > 0
+        ORDER BY timestamp DESC LIMIT :limit
+    """
+    )
+    abstract suspend fun searchByTag(profileId: Int, tag: String, limit: Int): List<TransactionEntity>
+
+    /** Amounts are stored as text; compare by magnitude so expenses and income both match. */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE profileId = :profileId AND abs(CAST(amount AS REAL)) BETWEEN :min AND :max
+        ORDER BY timestamp DESC LIMIT :limit
+    """
+    )
+    abstract suspend fun searchByAmount(profileId: Int, min: Double, max: Double, limit: Int): List<TransactionEntity>
+
     @Query("SELECT MIN(timestamp) FROM transactions WHERE profileId = :profileId")
     abstract suspend fun getMinTransactionTimestamp(profileId: Int): Long?
 

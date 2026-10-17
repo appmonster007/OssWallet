@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.ui.components.cards
 import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 
 /**
  * Bundles shared layout and filter parameters that flow through [UnifiedCardRenderer]
@@ -36,7 +35,7 @@ data class CardLayoutProps(
      * Reconciles the card's saved filter with inherited timeline constraints from the screen.
      */
     fun computeDisplayFilter(configFilter: TransactionFilter): TransactionFilter {
-        return if (screenOwnsTimeline || (inheritedFilter.timelineRange !is TimelineRange.AllTime)) {
+        return if (screenOwnsTimeline) {
             configFilter.copy(timelineRange = inheritedFilter.timelineRange)
         } else {
             configFilter

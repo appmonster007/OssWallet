@@ -547,10 +547,10 @@ class BackupRepositoryImpl @Inject constructor(
             })
 
         val allFilters = filterDao.getAllFiltersSync()
+        // Filters belong to a profile, so a single-profile backup takes that profile's own filters (the ones
+        // its budgets and loans keep, and the ones saved by hand), not everyone's.
         val filters = if (scope == BackupScope.SINGLE_PROFILE) {
-            val scopedFilterIds =
-                (budgets.map { it.budget.filterId } + loans.map { it.loan.filterId }).toSet()
-            allFilters.filter { it.id in scopedFilterIds }
+            allFilters.filter { it.profileId == currentProfileId }
         } else allFilters
         writeCsvToZip(
             zos,
@@ -577,7 +577,9 @@ class BackupRepositoryImpl @Inject constructor(
                 "currencies",
                 "statuses",
                 "linkedTransactionIds",
-                "tags"
+                "tags",
+                "matchAllTags",
+                "profileId"
             ),
             filters.map {
                 arrayOf(
@@ -602,7 +604,9 @@ class BackupRepositoryImpl @Inject constructor(
                     json.encodeToString(it.currencies),
                     json.encodeToString(it.statuses),
                     json.encodeToString(it.linkedTransactionIds),
-                    json.encodeToString(it.tags)
+                    json.encodeToString(it.tags),
+                    it.matchAllTags,
+                    it.profileId
                 )
             })
 
@@ -1273,7 +1277,10 @@ class BackupRepositoryImpl @Inject constructor(
                     runCatching { json.decodeFromString<Set<String>>(it) }.getOrDefault(
                         emptySet()
                     )
-                } ?: emptySet()
+                } ?: emptySet(),
+                // Older backups have neither column: all-tags matching was the default, and filters were profile 1's.
+                matchAllTags = p["matchAllTags"]?.toBoolean() ?: true,
+                profileId = p["profileId"]?.toIntOrNull() ?: 1
             ))
     }
 

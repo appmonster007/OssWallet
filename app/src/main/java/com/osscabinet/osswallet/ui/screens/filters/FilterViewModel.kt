@@ -7,7 +7,9 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -18,7 +20,10 @@ class FilterViewModel @Inject constructor(
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
 
-    val allFilters: StateFlow<List<Filter>> = filterRepository.getAllFilters()
+    /** The current profile's saved filters; switching profile switches the list. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val allFilters: StateFlow<List<Filter>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> filterRepository.getAllFilters(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /** A copy to tweak without touching the original. */

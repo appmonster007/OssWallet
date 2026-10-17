@@ -108,7 +108,7 @@ class DashboardViewModelTest {
         every { templateRepository.getAllTemplates(any()) } returns flowOf(emptyList())
 
         filterRepository = mockk(relaxed = true)
-        every { filterRepository.getAllFilters() } returns flowOf(emptyList())
+        every { filterRepository.getAllFilters(any()) } returns flowOf(emptyList())
 
         profileRepository = mockk(relaxed = true)
         every { profileRepository.getAllProfiles() } returns flowOf(emptyList())

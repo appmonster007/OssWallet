@@ -65,7 +65,7 @@ class BudgetEntryViewModel @Inject constructor(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.getAllCategories(profileId),
                     tagRepository.getAllTags(),
-                    filterRepository.getAllFilters()
+                    filterRepository.getAllFilters(profileId)
                 ) { accounts, categories, tags, filters ->
                     _state.update {
                         it.copy(
@@ -126,10 +126,10 @@ class BudgetEntryViewModel @Inject constructor(
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
             budgetRepository.getById(budgetId, profileId)?.let { budget ->
-                val filter = budget.filterId?.let { id -> filterRepository.getFilterById(id) }
+                val filter = budget.filterId?.let { id -> filterRepository.getFilterById(id, profileId) }
                 val tf = filter?.filter ?: TransactionFilter()
                 val usageCount =
-                    budget.filterId?.let { filterRepository.getFilterUsageCount(it) } ?: 0
+                    budget.filterId?.let { filterRepository.getFilterUsageCount(it, profileId) } ?: 0
                 _state.update {
                     it.copy(
                         budgetId = budgetId,
@@ -324,6 +324,7 @@ class BudgetEntryViewModel @Inject constructor(
             // 1. Create or Update the Filter for this budget
             val filter = Filter(
                 id = if (forceNewFilter) 0L else (s.filterId ?: 0L),
+                profileId = s.currentProfileId,
                 name = "${s.name}-Filter",
                 filter = TransactionFilter(
                     categoryIds = s.selectedCategoryIds,
@@ -422,7 +423,7 @@ class BudgetEntryViewModel @Inject constructor(
         viewModelScope.launch {
             // Always delete the private filter when deleting a budget
             if (filterId != null) {
-                filterRepository.getFilterById(filterId)?.let { filter ->
+                filterRepository.getFilterById(filterId, _state.value.currentProfileId)?.let { filter ->
                     filterRepository.deleteFilter(filter)
                 }
             }

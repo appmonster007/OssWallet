@@ -122,7 +122,7 @@ class FilterEntryViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            filterRepository.getFilterById(filterId)?.let { filter ->
+            filterRepository.getFilterById(filterId, settingsRepository.currentProfileId.first())?.let { filter ->
                 val tf = filter.filter
                 _state.update {
                     it.copy(
@@ -266,7 +266,9 @@ class FilterEntryViewModel @Inject constructor(
             val filter = Filter(
                 id = s.filterId ?: 0L,
                 name = s.name,
-                filter = s.toTransactionFilter()
+                filter = s.toTransactionFilter(),
+                // A filter stays in the profile it was made in; a new one goes into the current profile.
+                profileId = s.existingFilter?.profileId ?: settingsRepository.currentProfileId.first()
             )
             if (s.isEditMode) {
                 filterRepository.updateFilter(filter)

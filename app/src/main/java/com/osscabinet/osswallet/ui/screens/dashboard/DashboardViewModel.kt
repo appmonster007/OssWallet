@@ -451,7 +451,7 @@ class DashboardViewModel @Inject constructor(
                 },
                 combine(
                     templateRepository.getAllTemplates(profileId),
-                    filterRepository.getAllFilters()
+                    filterRepository.getAllFilters(profileId)
                 ) { templates, filters -> Pair(templates, filters) }
             ) { part1, part2 ->
                 StableAppState(

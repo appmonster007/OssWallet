@@ -25,7 +25,7 @@ fun Route.filterRoutes(
         get {
             if (!authenticate(authSessionManager)) return@get
             try {
-                val filters = filterRepository.getAllFilters().first()
+                val filters = filterRepository.getAllFilters(settingsRepository.currentProfileId.first()).first()
                 val dtos = filters.map { it.toDto() }
                 call.respond(ApiResponse(success = true, data = dtos))
             } catch (e: Exception) {
@@ -46,7 +46,8 @@ fun Route.filterRoutes(
                 val filter = Filter(
                     id = 0,
                     name = req.name,
-                    filter = req.toTransactionFilter()
+                    filter = req.toTransactionFilter(),
+                    profileId = settingsRepository.currentProfileId.first()
                 )
                 val newId = filterRepository.insertFilter(filter)
                 call.respond(
@@ -72,7 +73,7 @@ fun Route.filterRoutes(
                         HttpStatusCode.BadRequest,
                         ApiResponse<Unit>(success = false, error = "Invalid id")
                     )
-                val filter = filterRepository.getFilterById(id)
+                val filter = filterRepository.getFilterById(id, settingsRepository.currentProfileId.first())
                     ?: return@get call.respond(
                         HttpStatusCode.NotFound,
                         ApiResponse<Unit>(success = false, error = "Filter not found")
@@ -97,7 +98,7 @@ fun Route.filterRoutes(
                         HttpStatusCode.BadRequest,
                         ApiResponse<Unit>(success = false, error = "Invalid id")
                     )
-                val existing = filterRepository.getFilterById(id)
+                val existing = filterRepository.getFilterById(id, settingsRepository.currentProfileId.first())
                     ?: return@put call.respond(
                         HttpStatusCode.NotFound,
                         ApiResponse<Unit>(success = false, error = "Filter not found")
@@ -128,7 +129,7 @@ fun Route.filterRoutes(
                         HttpStatusCode.BadRequest,
                         ApiResponse<Unit>(success = false, error = "Invalid id")
                     )
-                val filter = filterRepository.getFilterById(id)
+                val filter = filterRepository.getFilterById(id, settingsRepository.currentProfileId.first())
                     ?: return@delete call.respond(
                         HttpStatusCode.NotFound,
                         ApiResponse<Unit>(success = false, error = "Filter not found")

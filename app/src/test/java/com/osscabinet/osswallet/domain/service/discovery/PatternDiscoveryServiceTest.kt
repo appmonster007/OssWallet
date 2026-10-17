@@ -77,7 +77,7 @@ class PatternDiscoveryServiceTest {
     }
 
     @Test fun `two payments a year apart make an annual subscription`() {
-        val txs = listOf(ms(2025, 10, 25), ms(2026, 10, 24)).map { tx(it, "Domain Registrar", "12.00") }
+        val txs = listOf(ms(2025, 10, 20), ms(2026, 10, 19)).map { tx(it, "Domain Registrar", "12.00") }
         val p = discover(txs + emptyList()).single()
         assertEquals(RecurrenceType.YEARLY, p.recurrenceRule!!.type)
         assertEquals(2, p.occurrences)
@@ -129,6 +129,15 @@ class PatternDiscoveryServiceTest {
         val transfers = monthly("Savings", 1, listOf(2026 to 7, 2026 to 8, 2026 to 9)).map { it.copy(transactionType = TransactionType.TRANSFER_OUTFLOW) }
         val generated = listOf(7, 8, 9).map { tx(ms(2026, it, 5), "Rent", "900.00", planned = 4) }
         assertTrue(discover(transfers + generated).isEmpty())
+    }
+
+    @Test fun `future dated transactions are not history`() {
+        val past = monthly("Netflix", 5, listOf(2026 to 8, 2026 to 9, 2026 to 10))
+        val future = monthly("Netflix", 5, listOf(2026 to 11, 2026 to 12, 2027 to 1))
+        val p = discover(past + future).single()
+        assertEquals(3, p.occurrences)
+        assertEquals(ms(2026, 11, 5), p.nextExpectedDate)
+        assertTrue(discover(future).isEmpty())
     }
 
     @Test fun `different currencies are different patterns`() {

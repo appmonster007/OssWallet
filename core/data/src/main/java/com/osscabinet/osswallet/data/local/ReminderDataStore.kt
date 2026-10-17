@@ -28,6 +28,7 @@ class ReminderDataStore @Inject constructor(@ApplicationContext private val cont
         val PLANNED = booleanPreferencesKey("planned_payments")
         val LOANS = booleanPreferencesKey("loans")
         val BUDGETS = booleanPreferencesKey("budget_alerts")
+        val SUGGESTIONS = booleanPreferencesKey("suggestions")
         /** Entries are "<epochMillis>:<key>" so old ones can be pruned by age. */
         val SENT = stringSetPreferencesKey("sent")
         const val RETAIN_MS = 90L * 24 * 60 * 60 * 1000
@@ -40,7 +41,8 @@ class ReminderDataStore @Inject constructor(@ApplicationContext private val cont
             hourOfDay = p[HOUR] ?: ReminderConfig.DEFAULT_HOUR,
             plannedPayments = p[PLANNED] ?: true,
             loans = p[LOANS] ?: true,
-            budgetAlerts = p[BUDGETS] ?: true
+            budgetAlerts = p[BUDGETS] ?: true,
+            suggestions = p[SUGGESTIONS] ?: true
         )
     }
 
@@ -52,6 +54,7 @@ class ReminderDataStore @Inject constructor(@ApplicationContext private val cont
             it[PLANNED] = c.plannedPayments
             it[LOANS] = c.loans
             it[BUDGETS] = c.budgetAlerts
+            it[SUGGESTIONS] = c.suggestions
         }
     }
 

@@ -99,6 +99,7 @@ class OssWalletApp : Application(), Configuration.Provider {
         createNotificationChannels()
         PlannedPaymentWorker.schedule(this)
         com.osscabinet.ossWallet.reminder.ReminderWorker.schedule(this)
+        com.osscabinet.ossWallet.reminder.RecurringScanWorker.schedule(this)
 
         // Receipts whose transaction was deleted elsewhere (bulk delete, account delete) are cleaned up here.
         applicationScope.launch { runCatching { attachmentRepository.removeOrphans() } }
@@ -185,6 +186,13 @@ class OssWalletApp : Application(), Configuration.Provider {
                     getString(R.string.notification_channel_planned_payments_name),
                     NotificationManager.IMPORTANCE_DEFAULT
                 ).apply { description = getString(R.string.notification_channel_planned_payments_description) }
+            )
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    "recurring_suggestions",
+                    "Recurring payment suggestions",
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply { description = "Repeated payments that could become planned payments" }
             )
             manager.createNotificationChannel(
                 NotificationChannel(

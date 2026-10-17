@@ -29,6 +29,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,7 +77,7 @@ fun SmartSuggestionsScreen(
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val plannedPaymentPrefill by viewModel.plannedPaymentPrefill.collectAsStateWithLifecycle()
-    var dismissedPatterns by remember { mutableStateOf(setOf<String>()) }
+    val dismissedCount by viewModel.dismissedSuggestionCount.collectAsStateWithLifecycle()
     var navigationHandled by remember { mutableStateOf(false) }
 
     LaunchedEffect(plannedPaymentPrefill) {
@@ -87,8 +88,12 @@ fun SmartSuggestionsScreen(
             actions.onAcceptAsPlannedPayment()
         }
     }
-    val visiblePatterns =
-        patterns.filter { "${it.payee}|${it.averageAmount}" !in dismissedPatterns }
+    // Dismissals live in the ViewModel (and survive leaving the screen); the list is already filtered.
+    val visiblePatterns = patterns
+    // Looking at them counts as having seen them, so the dashboard only nudges about new ones.
+    LaunchedEffect(visiblePatterns.map { it.key }) {
+        if (visiblePatterns.isNotEmpty()) viewModel.markSuggestionsSeen(visiblePatterns)
+    }
 
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -126,6 +131,11 @@ fun SmartSuggestionsScreen(
                                     style = AppTextStyles.caption,
                                     color = AppColors.border
                                 )
+                                if (dismissedCount > 0) {
+                                    TextButton(onClick = viewModel::restoreDismissedSuggestions) {
+                                        Text("Show $dismissedCount dismissed")
+                                    }
+                                }
                             }
                         }
                     } else {
@@ -139,7 +149,7 @@ fun SmartSuggestionsScreen(
                             ),
                             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
                         ) {
-                            items(visiblePatterns) { pattern ->
+                            items(visiblePatterns, key = { it.key }) { pattern ->
                                 SuggestionListItem(
                                     pattern = pattern,
                                     categories = categories,
@@ -151,11 +161,15 @@ fun SmartSuggestionsScreen(
                                     onAcceptAsPlannedPayment = {
                                         viewModel.setPlannedPaymentPrefillFromPattern(it)
                                     },
-                                    onDismiss = {
-                                        dismissedPatterns =
-                                            dismissedPatterns + "${pattern.payee}|${pattern.averageAmount}"
-                                    }
+                                    onDismiss = { viewModel.dismissPattern(pattern) }
                                 )
+                            }
+                            if (dismissedCount > 0) {
+                                item {
+                                    TextButton(onClick = viewModel::restoreDismissedSuggestions) {
+                                        Text("Show $dismissedCount dismissed")
+                                    }
+                                }
                             }
                         }
                     }
@@ -274,10 +288,8 @@ private fun SuggestionListItem(
 
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
 
-            val recommendation = when {
-                pattern.recurrenceRule != null -> "Recurring ${pattern.recurrenceRule.type.name.lowercase()} payment detected."
-                else -> "This seems to be a common transaction."
-            }
+            val recommendation = pattern.recurrenceRule?.let { "Repeats ${describeRhythm(it)}." }
+                ?: "This seems to be a common transaction."
 
             Text(
                 text = recommendation,
@@ -304,6 +316,15 @@ private fun SuggestionListItem(
                         DetailItem(
                             "Account",
                             accountName,
+                            Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
+                        DetailItem("Next expected", formatDay(pattern.nextExpectedDate), Modifier.weight(1f))
+                        DetailItem(
+                            if (pattern.amountVaries) "Amount (varies)" else "Amount",
+                            (if (pattern.amountVaries) "about " else "") + formatCurrency(pattern.averageAmount.abs(), pattern.currency),
                             Modifier.weight(1f)
                         )
                     }
@@ -452,3 +473,28 @@ private fun SmartSuggestionsScreenPreview() {
         }
     }
 }
+
+/** "every month on the 5th", "every 3 months", "every week on Tuesday". */
+private fun describeRhythm(rule: com.osscabinet.ossWallet.domain.model.RecurrenceRule): String = when (rule.type) {
+    com.osscabinet.ossWallet.domain.model.RecurrenceType.DAILY -> "every day"
+    com.osscabinet.ossWallet.domain.model.RecurrenceType.WEEKLY -> {
+        val day = rule.dayOfWeek?.let { java.time.DayOfWeek.of(((it + 5) % 7) + 1) }
+            ?.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())
+        if (day != null) "every week on $day" else "every week"
+    }
+    com.osscabinet.ossWallet.domain.model.RecurrenceType.EVERY_N_WEEKS -> "every ${rule.interval} weeks"
+    com.osscabinet.ossWallet.domain.model.RecurrenceType.MONTHLY ->
+        rule.dayOfMonth?.let { "every month on the ${ordinal(it)}" } ?: "every month"
+    com.osscabinet.ossWallet.domain.model.RecurrenceType.EVERY_N_MONTHS -> "every ${rule.interval} months"
+    com.osscabinet.ossWallet.domain.model.RecurrenceType.YEARLY -> "every year"
+    else -> "regularly"
+}
+
+private fun ordinal(n: Int): String {
+    val suffix = if (n % 100 in 11..13) "th" else when (n % 10) { 1 -> "st"; 2 -> "nd"; 3 -> "rd"; else -> "th" }
+    return "$n$suffix"
+}
+
+private fun formatDay(millis: Long): String =
+    java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy")
+        .format(java.time.Instant.ofEpochMilli(millis).atZone(java.time.ZoneId.systemDefault()))

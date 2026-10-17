@@ -209,11 +209,27 @@ class GlobalSearchTest {
         assertTrue(GlobalSearchService.matchesTransaction(parse("15"), tx("99.00")))
     }
 
-    @Test fun `transaction hits show the payee and where it was spent`() {
+    @Test fun `transaction hits show the payee, where it was spent, and the category icon`() {
         val hit = GlobalSearchService.transactionHits(
-            listOf(tx("-5")), mapOf("main bank" to "Main Bank"), mapOf(1L to "Electronics")
+            listOf(tx("-5")), mapOf("main bank" to "Main Bank"),
+            mapOf(1L to Category(1, "Electronics", "Devices", 0xFF336699.toInt(), false, null))
         ).single()
         assertEquals("Shop", hit.title)
-        assertEquals("Electronics · Main Bank · n", hit.subtitle)
+        assertEquals("Electronics · Main Bank", hit.subtitle)
+        assertEquals("n", hit.detail)
+        assertEquals("Devices", hit.iconName)
+        assertEquals(0xFF336699.toInt(), hit.colorArgb)
+    }
+
+    @Test fun `account hits carry the account icon and colour`() {
+        val d = SearchData(accounts = listOf(account("Main Bank").copy(icon = "bank", colorHex = "#4CAF50")))
+        val hit = GlobalSearchService.searchRecords(parse("main"), d)[SearchSection.ACCOUNTS]!!.single()
+        assertEquals("bank", hit.iconName)
+        assertEquals(0xFF4CAF50.toInt(), hit.colorArgb)
+    }
+
+    @Test fun `a badly formed account colour is simply no colour`() {
+        val d = SearchData(accounts = listOf(account("Main Bank").copy(colorHex = "nonsense")))
+        assertNull(GlobalSearchService.searchRecords(parse("main"), d)[SearchSection.ACCOUNTS]!!.single().colorArgb)
     }
 }

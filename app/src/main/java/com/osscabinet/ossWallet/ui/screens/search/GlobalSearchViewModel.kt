@@ -152,8 +152,9 @@ class GlobalSearchViewModel @Inject constructor(
             .let { if (chips.active) TransactionFilterService.filterTransactions(it, chipFilter) else it }
 
         val accountNames = data.accounts.associate { it.id to it.name }
-        val categoryNames = data.categories.associate { it.id to it.name }
-        val txHits = GlobalSearchService.transactionHits(matched.take(TRANSACTION_LIMIT), accountNames, categoryNames)
+        val txHits = GlobalSearchService.transactionHits(
+            matched.take(TRANSACTION_LIMIT), accountNames, data.categories.associateBy { it.id }
+        )
 
         val hits = buildMap {
             if (txHits.isNotEmpty()) put(SearchSection.TRANSACTIONS, txHits)

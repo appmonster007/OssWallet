@@ -33,7 +33,12 @@ data class SearchHit(
     val amount: BigDecimal? = null,
     val currency: String? = null,
     val type: TransactionType? = null,
-    val timestamp: Long? = null
+    val timestamp: Long? = null,
+    /** The record's icon name and colour as the rest of the app shows them (category, account, tag). */
+    val iconName: String? = null,
+    val colorArgb: Int? = null,
+    /** A second line of detail, such as a transaction's note. */
+    val detail: String? = null
 )
 
 /** Everything that isn't a transaction, which is small enough to hold in memory and match directly. */
@@ -99,12 +104,17 @@ object GlobalSearchService {
         out[SearchSection.ACCOUNTS] = data.accounts
             .filter { qualifies(parsed, listOf(it.name, it.currencyCode), null, null) }
             .rank { it.name }
-            .map { SearchHit(SearchSection.ACCOUNTS, it.id, it.name, it.currencyCode + if (it.isArchived) " · archived" else "") }
+            .map {
+                SearchHit(
+                    SearchSection.ACCOUNTS, it.id, it.name, it.currencyCode + if (it.isArchived) " · archived" else "",
+                    iconName = it.icon, colorArgb = parseColor(it.colorHex)
+                )
+            }
 
         out[SearchSection.CATEGORIES] = data.categories
             .filter { qualifies(parsed, listOf(it.name), null, null) }
             .rank { it.name }
-            .map { SearchHit(SearchSection.CATEGORIES, it.id.toString(), it.name) }
+            .map { SearchHit(SearchSection.CATEGORIES, it.id.toString(), it.name, iconName = it.iconName, colorArgb = it.colorHex) }
 
         out[SearchSection.TAGS] = data.tags
             .filter { tag ->
@@ -114,7 +124,7 @@ object GlobalSearchService {
                 } else parsed.tags.isEmpty() && qualifies(parsed, listOf(tag.name), null, null)
             }
             .rank { it.name }
-            .map { SearchHit(SearchSection.TAGS, it.name, "#${it.name}") }
+            .map { SearchHit(SearchSection.TAGS, it.name, "#${it.name}", colorArgb = it.colorHex.takeIf { c -> c != -1 }) }
 
         out[SearchSection.LOANS] = data.loans
             .filter { qualifies(parsed, listOf(it.name, it.lenderOrBorrowerName, it.note), it.principalAmount, null) }
@@ -159,18 +169,27 @@ object GlobalSearchService {
     fun transactionHits(
         transactions: List<Transaction>,
         accountNames: Map<String, String>,
-        categoryNames: Map<Long, String>
+        categories: Map<Long, Category>
     ): List<SearchHit> = transactions.map { tx ->
-        val where = listOfNotNull(categoryNames[tx.categoryId], tx.accountId?.let { accountNames[it] })
+        val category = categories[tx.categoryId]
+        val where = listOfNotNull(category?.name, tx.accountId?.let { accountNames[it] })
         SearchHit(
             section = SearchSection.TRANSACTIONS,
             id = tx.id.toString(),
             title = tx.payee.ifBlank { tx.name },
-            subtitle = (where + listOfNotNull(tx.note.takeIf { it.isNotBlank() })).joinToString(" · ").ifBlank { null },
+            subtitle = where.joinToString(" · ").ifBlank { null },
             amount = tx.amount,
             currency = tx.currency,
             type = tx.transactionType,
-            timestamp = tx.timestamp
+            timestamp = tx.timestamp,
+            iconName = category?.iconName,
+            colorArgb = category?.colorHex,
+            detail = tx.note.takeIf { it.isNotBlank() }
         )
     }
+
+    /** "#4CAF50" -> an opaque ARGB int; null if it isn't a colour. */
+    private fun parseColor(hex: String): Int? = runCatching {
+        (hex.removePrefix("#").toLong(16).toInt()) or (0xFF shl 24)
+    }.getOrNull()
 }

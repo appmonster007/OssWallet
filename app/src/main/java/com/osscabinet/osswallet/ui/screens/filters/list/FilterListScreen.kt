@@ -30,7 +30,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.FlowRow
 import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.ui.components.AeonStatusChip
 import com.osscabinet.ossWallet.domain.service.search.FilterSummary
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
@@ -93,6 +97,13 @@ fun FilterListScreen(
                                     style = AppTextStyles.listItemTitle,
                                     color = AppColors.border
                                 )
+                                Text(
+                                    "Save a search, or a set of Records filters, to reuse it in one tap.",
+                                    style = AppTextStyles.caption,
+                                    color = AppColors.border,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding, vertical = AeonTheme.dimensions.spacingXs)
+                                )
                             }
                         }
                     } else {
@@ -143,6 +154,7 @@ data class FilterListActions(
     val onOpenInRecords: (Filter) -> Unit = {}
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FilterItem(
     filter: Filter,
@@ -153,10 +165,20 @@ fun FilterItem(
 ) {
     AeonListItem(
         title = filter.name,
-        subtitle = FilterSummary.describe(filter.filter),
         icon = Icons.Rounded.FilterList,
         iconTint = AppColors.primary,
         onClick = onClick,
+        additionalContent = {
+            // What the filter selects, one small pill each, like the status pills elsewhere.
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                FilterSummary.parts(filter.filter).forEach { part ->
+                    AeonStatusChip(text = part, color = AppColors.primary)
+                }
+            }
+        },
         menuItems = { dismiss ->
             DropdownMenuItem(
                 text = { Text("Show in Records") },

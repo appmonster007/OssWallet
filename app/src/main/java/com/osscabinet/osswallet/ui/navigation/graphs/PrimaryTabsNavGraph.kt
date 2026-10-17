@@ -6,6 +6,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.osscabinet.ossWallet.ui.navigation.SmartSuggestionsRoute
 import com.osscabinet.ossWallet.ui.navigation.AccountDetailRoute
 import com.osscabinet.ossWallet.ui.navigation.AccountListRoute
 import com.osscabinet.ossWallet.ui.navigation.AnalyticsRoute
@@ -76,6 +77,7 @@ fun NavGraphBuilder.primaryTabsGraph(
             ),
             actions = DashboardActions(
                 onMenuClick = { scope.launch { drawerState.open() } },
+                onNavigateToSmartSuggestions = { navController.navigate(SmartSuggestionsRoute) },
                 onBackClick = { navController.popBackStack() },
                 onRecordsClick = { filter ->
                     navController.navigateToRecords(filter, topLevel = false)

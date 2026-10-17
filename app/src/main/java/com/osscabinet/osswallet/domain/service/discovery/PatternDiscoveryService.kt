@@ -63,15 +63,18 @@ object PatternDiscoveryService {
     private const val MIN_REGULARITY = 0.6
 
     /**
-     * Scans transactions and returns the patterns that look like they repeat. Transfers and transactions
-     * that already came from a planned payment are ignored: neither is something to schedule.
+     * Scans transactions and returns the patterns that look like they repeat. Transfers, transactions
+     * that already came from a planned payment, and future-dated ones are ignored.
      */
     fun discoverPatterns(
         transactions: List<Transaction>,
         now: Long = System.currentTimeMillis(),
         zone: ZoneId = ZoneId.systemDefault()
     ): List<DiscoveredPattern> {
-        val candidates = transactions.filter { !it.transactionType.isTransfer && it.sourcePlannedPaymentId == null }
+        // Only what already happened counts: a transaction dated in the future is a plan, not history.
+        val candidates = transactions.filter {
+            !it.transactionType.isTransfer && it.sourcePlannedPaymentId == null && it.timestamp <= now
+        }
         if (candidates.size < 2) return emptyList()
 
         return candidates.groupBy { patternKey(it) }

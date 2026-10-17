@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.Handshake
 import androidx.compose.material.icons.rounded.Notifications
@@ -136,6 +137,15 @@ fun NotificationSettingsScreen(
                                 icon = Icons.Rounded.AccountBalanceWallet,
                                 checked = config.budgetAlerts,
                                 onCheckedChange = { v -> viewModel.update { it.copy(budgetAlerts = v) } },
+                                isFlush = false
+                            )
+                            Divider()
+                            EntrySwitchRow(
+                                label = "Recurring payment suggestions",
+                                subtitle = "A note when repeated payments could become planned payments",
+                                icon = Icons.Rounded.AutoAwesome,
+                                checked = config.suggestions,
+                                onCheckedChange = { v -> viewModel.update { it.copy(suggestions = v) } },
                                 isFlush = false
                             )
                         }

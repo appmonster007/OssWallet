@@ -154,6 +154,7 @@ fun OssWalletNavGraph(
                 "accounts"       -> appNavigator.navigateTo(AccountListRoute, widgetNavOptions)
                 // The Budgets / Accounts widgets' per-row taps; the id comes from the list row's
                 // fill-in Intent, not from this route string.
+                "smart_suggestions" -> appNavigator.navigateTo(SmartSuggestionsRoute, widgetNavOptions)
                 "budget_detail"  -> pendingWidgetEntityId?.toLongOrNull()?.let { id ->
                     appNavigator.navigateTo(BudgetDetailRoute(budgetId = id), widgetNavOptions)
                 }

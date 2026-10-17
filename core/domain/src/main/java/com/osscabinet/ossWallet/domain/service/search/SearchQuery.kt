@@ -3,11 +3,21 @@ package com.osscabinet.ossWallet.domain.service.search
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-/** An amount the user typed: one value (49.99) or a bound/range (>100, <50, 20-50). Signs are ignored. */
-data class AmountSpec(val min: BigDecimal?, val max: BigDecimal?) {
+/**
+ * An amount the user typed: one value (49.99) or a bound/range (>100, <50, 20-50). Signs are ignored.
+ * `>` and `<` leave the bound itself out; `>=`, `<=` and ranges include it.
+ */
+data class AmountSpec(
+    val min: BigDecimal?,
+    val max: BigDecimal?,
+    val minInclusive: Boolean = true,
+    val maxInclusive: Boolean = true
+) {
     fun matches(amount: BigDecimal): Boolean {
         val a = amount.abs()
-        return (min == null || a >= min) && (max == null || a <= max)
+        val aboveMin = min == null || (if (minInclusive) a >= min else a > min)
+        val belowMax = max == null || (if (maxInclusive) a <= max else a < max)
+        return aboveMin && belowMax
     }
 
     companion object {
@@ -50,6 +60,8 @@ object SearchQueryParser {
         val tags = mutableListOf<String>()
         var min: BigDecimal? = null
         var max: BigDecimal? = null
+        var minInclusive = true
+        var maxInclusive = true
         var exact: BigDecimal? = null
         var operatorUsed = false
 
@@ -60,7 +72,7 @@ object SearchQueryParser {
                     val (op, value) = operator.matchEntire(token)!!.destructured
                     val v = value.replace(",", "").toBigDecimalOrNull() ?: continue
                     operatorUsed = true
-                    if (op.startsWith(">")) min = v else max = v
+                    if (op.startsWith(">")) { min = v; minInclusive = op == ">=" } else { max = v; maxInclusive = op == "<=" }
                 }
                 range.matches(token) -> {
                     val (a, b) = range.matchEntire(token)!!.destructured
@@ -68,7 +80,7 @@ object SearchQueryParser {
                     val hi = b.replace(",", "").toBigDecimalOrNull()
                     if (lo != null && hi != null) {
                         operatorUsed = true
-                        min = lo.min(hi); max = lo.max(hi)
+                        min = lo.min(hi); max = lo.max(hi); minInclusive = true; maxInclusive = true
                     }
                 }
                 // "rent 2026" means the year, not a payment of exactly 2026; alone, "2026" could be either.
@@ -84,7 +96,7 @@ object SearchQueryParser {
 
         val amount = when {
             exact != null -> AmountSpec.exact(exact)
-            min != null || max != null -> AmountSpec(min, max)
+            min != null || max != null -> AmountSpec(min, max, minInclusive, maxInclusive)
             else -> null
         }
         return ParsedSearch(words, tags, amount, numberOnly)

@@ -21,6 +21,13 @@ class FilterViewModel @Inject constructor(
     val allFilters: StateFlow<List<Filter>> = filterRepository.getAllFilters()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /** A copy to tweak without touching the original. */
+    fun duplicateFilter(filter: Filter) {
+        viewModelScope.launch {
+            filterRepository.insertFilter(filter.copy(id = 0, name = "${filter.name} copy"))
+        }
+    }
+
     fun deleteFilter(filter: Filter) {
         viewModelScope.launch {
             filterRepository.deleteFilter(filter)

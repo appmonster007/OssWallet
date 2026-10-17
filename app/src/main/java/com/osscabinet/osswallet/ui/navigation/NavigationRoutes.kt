@@ -121,6 +121,9 @@ data object LoanListRoute
 data object GoalListRoute
 
 @Serializable
+data object SearchRoute
+
+@Serializable
 data object ReportsRoute
 
 @Serializable

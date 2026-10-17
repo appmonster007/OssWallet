@@ -27,7 +27,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.ContentCopy
 import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.service.search.FilterSummary
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
@@ -108,6 +112,8 @@ fun FilterListScreen(
                                 FilterItem(
                                     filter = filter,
                                     onClick = { actions.onEditFilterClick(filter) },
+                                    onOpen = { actions.onOpenInRecords(filter) },
+                                    onDuplicate = { viewModel.duplicateFilter(filter) },
                                     onDelete = { viewModel.deleteFilter(filter) }
                                 )
                             }
@@ -133,28 +139,40 @@ fun FilterListScreen(
 data class FilterListActions(
     val onBackClick: () -> Unit,
     val onAddFilterClick: () -> Unit,
-    val onEditFilterClick: (Filter) -> Unit
+    val onEditFilterClick: (Filter) -> Unit,
+    val onOpenInRecords: (Filter) -> Unit = {}
 )
 
 @Composable
 fun FilterItem(
     filter: Filter,
     onClick: () -> Unit,
+    onOpen: () -> Unit,
+    onDuplicate: () -> Unit,
     onDelete: () -> Unit
 ) {
     AeonListItem(
         title = filter.name,
+        subtitle = FilterSummary.describe(filter.filter),
         icon = Icons.Rounded.FilterList,
         iconTint = AppColors.primary,
         onClick = onClick,
-        trailingContent = {
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Rounded.Delete,
-                    contentDescription = "Delete",
-                    tint = AppColors.error.copy(alpha = 0.7f)
-                )
-            }
+        menuItems = { dismiss ->
+            DropdownMenuItem(
+                text = { Text("Show in Records") },
+                leadingIcon = { Icon(Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = null) },
+                onClick = { dismiss(); onOpen() }
+            )
+            DropdownMenuItem(
+                text = { Text("Duplicate") },
+                leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
+                onClick = { dismiss(); onDuplicate() }
+            )
+            DropdownMenuItem(
+                text = { Text("Delete", color = AppColors.error) },
+                leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = AppColors.error) },
+                onClick = { dismiss(); onDelete() }
+            )
         }
     )
 }

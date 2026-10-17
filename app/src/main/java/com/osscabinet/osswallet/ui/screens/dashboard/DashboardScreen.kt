@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,6 +50,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Surface
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonSnackbarHost
@@ -75,6 +78,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.card.CardComputeState
 import com.osscabinet.ossWallet.domain.card.CardInput
@@ -777,6 +781,18 @@ fun DashboardScreenLayout(
                                                 onClick = { cardReorderState.confirm() }
                                             )
                                         }
+                                        val recurringNudgeViewModel: RecurringNudgeViewModel = hiltViewModel()
+                                        val unseenRecurringPatterns by recurringNudgeViewModel.unseen.collectAsStateWithLifecycle()
+                                        if (unseenRecurringPatterns.isNotEmpty()) {
+                                            BadgedBox(
+                                                badge = { Badge() }
+                                            ) {
+                                                AppBarIconButton(
+                                                    icon = Icons.Rounded.AutoAwesome,
+                                                    onClick = { navigate(actions.onNavigateToSmartSuggestions) }
+                                                )
+                                            }
+                                        }
                                         AppBarIconButton(
                                             icon = Icons.Default.Settings,
                                             onClick = { showSettingsDialog = true }
@@ -1199,8 +1215,6 @@ fun DashboardGlanceTab(
                 filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
             )
         }
-
-        RecurringNudgeBanner(onOpen = onNavigateToSmartSuggestions)
 
         AeonCardList(
             cards = cardsConfig.cards,

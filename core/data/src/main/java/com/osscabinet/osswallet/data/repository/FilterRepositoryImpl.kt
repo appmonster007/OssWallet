@@ -14,11 +14,11 @@ import kotlinx.coroutines.flow.map
 class FilterRepositoryImpl @Inject constructor(
     private val filterDao: FilterDao
 ) : FilterRepository {
-    override fun getAllFilters(): Flow<List<Filter>> =
-        filterDao.getAllFilters().map { list -> list.map { it.toDomain() } }
+    override fun getAllFilters(profileId: Int): Flow<List<Filter>> =
+        filterDao.getAllFilters(profileId).map { list -> list.map { it.toDomain() } }
 
-    override suspend fun getFilterById(id: Long): Filter? =
-        filterDao.getFilterById(id)?.toDomain()
+    override suspend fun getFilterById(id: Long, profileId: Int): Filter? =
+        filterDao.getFilterById(id, profileId)?.toDomain()
 
     override suspend fun insertFilter(filter: Filter): Long =
         filterDao.insertFilter(filter.toEntity())
@@ -29,6 +29,6 @@ class FilterRepositoryImpl @Inject constructor(
     override suspend fun deleteFilter(filter: Filter) =
         filterDao.deleteFilter(filter.toEntity())
 
-    override suspend fun getFilterUsageCount(filterId: Long): Int =
-        filterDao.getFilterUsageCount(filterId)
+    override suspend fun getFilterUsageCount(filterId: Long, profileId: Int): Int =
+        filterDao.getFilterUsageCount(filterId, profileId)
 }

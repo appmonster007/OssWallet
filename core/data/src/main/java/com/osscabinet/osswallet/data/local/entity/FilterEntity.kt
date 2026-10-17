@@ -1,6 +1,8 @@
 package com.osscabinet.ossWallet.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
@@ -8,7 +10,10 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import java.math.BigDecimal
 
-@Entity(tableName = "transaction_filters")
+@Entity(
+    tableName = "transaction_filters",
+    indices = [Index(value = ["profileId"])]
+)
 data class FilterEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
@@ -32,5 +37,7 @@ data class FilterEntity(
     val statuses: Set<TransactionStatus> = emptySet(),
     val linkedTransactionIds: Set<Long> = emptySet(),
     val tags: Set<String> = emptySet(),
-    val matchAllTags: Boolean = true
+    val matchAllTags: Boolean = true,
+    @ColumnInfo(defaultValue = "1")
+    val profileId: Int = 1
 )

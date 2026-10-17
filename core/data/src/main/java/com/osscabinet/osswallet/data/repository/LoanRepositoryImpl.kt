@@ -55,10 +55,11 @@ class LoanRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteLoan(loanId: Long) {
-        val filterId = loanDao.getLoanByIdInternal(loanId)?.loan?.filterId
+        val owner = loanDao.getLoanByIdInternal(loanId)?.loan
         loanDao.deleteById(loanId)
-        filterId?.let {
-            filterRepository.getFilterById(it)?.let { f -> filterRepository.deleteFilter(f) }
+        // The loan's own filter goes with it; it lives in the loan's profile.
+        owner?.let { l ->
+            filterRepository.getFilterById(l.filterId, l.profileId)?.let { f -> filterRepository.deleteFilter(f) }
         }
     }
 

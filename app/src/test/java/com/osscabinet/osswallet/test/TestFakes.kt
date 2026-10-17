@@ -384,3 +384,33 @@ class FakeSharedWalletRepository : SharedWalletRepository {
     override suspend fun addTransactionToWallet(walletId: String, transaction: Transaction) {}
     override suspend fun syncTransactions(walletId: String) {}
 }
+
+// ── FakeFilterRepository ─────────────────────────────────────────────────────
+
+/** Saved filters, kept per profile like the real repository. */
+class FakeFilterRepository : com.osscabinet.ossWallet.domain.repository.FilterRepository {
+    private val all = MutableStateFlow<List<com.osscabinet.ossWallet.domain.model.Filter>>(emptyList())
+    private var nextId = 1L
+
+    override fun getAllFilters(profileId: Int) =
+        all.map { list -> list.filter { it.profileId == profileId }.sortedBy { it.name } }
+
+    override suspend fun getFilterById(id: Long, profileId: Int) =
+        all.value.firstOrNull { it.id == id && it.profileId == profileId }
+
+    override suspend fun insertFilter(filter: com.osscabinet.ossWallet.domain.model.Filter): Long {
+        val id = nextId++
+        all.value = all.value + filter.copy(id = id)
+        return id
+    }
+
+    override suspend fun updateFilter(filter: com.osscabinet.ossWallet.domain.model.Filter) {
+        all.value = all.value.map { if (it.id == filter.id) filter else it }
+    }
+
+    override suspend fun deleteFilter(filter: com.osscabinet.ossWallet.domain.model.Filter) {
+        all.value = all.value.filterNot { it.id == filter.id }
+    }
+
+    override suspend fun getFilterUsageCount(filterId: Long, profileId: Int) = 0
+}

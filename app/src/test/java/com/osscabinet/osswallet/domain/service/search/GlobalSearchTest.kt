@@ -55,12 +55,20 @@ class GlobalSearchTest {
     }
 
     @Test fun `greater and less than make bounds`() {
-        assertEquals(AmountSpec(BigDecimal("100"), null), parse(">100").amount)
-        assertEquals(AmountSpec(null, BigDecimal("50")), parse("<50").amount)
+        assertEquals(AmountSpec(BigDecimal("100"), null, minInclusive = false), parse(">100").amount)
+        assertEquals(AmountSpec(null, BigDecimal("50"), maxInclusive = false), parse("<50").amount)
         val both = parse(">20 <50").amount!!
         assertTrue(both.matches(BigDecimal("30")))
         assertFalse(both.matches(BigDecimal("60")))
         assertFalse(both.matches(BigDecimal("10")))
+    }
+
+    @Test fun `greater than leaves the bound out and greater-or-equal keeps it`() {
+        assertFalse(parse(">100").amount!!.matches(BigDecimal("100")))
+        assertTrue(parse(">100").amount!!.matches(BigDecimal("100.01")))
+        assertTrue(parse(">=100").amount!!.matches(BigDecimal("100")))
+        assertFalse(parse("<50").amount!!.matches(BigDecimal("50")))
+        assertTrue(parse("<=50").amount!!.matches(BigDecimal("50")))
     }
 
     @Test fun `a dash range is inclusive and order does not matter`() {

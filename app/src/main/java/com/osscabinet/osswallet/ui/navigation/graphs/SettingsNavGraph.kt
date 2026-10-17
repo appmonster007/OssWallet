@@ -26,6 +26,16 @@ import com.osscabinet.ossWallet.ui.navigation.SettingsDisplayRoute
 import com.osscabinet.ossWallet.ui.navigation.SettingsRoute
 import com.osscabinet.ossWallet.ui.navigation.GoalListRoute
 import com.osscabinet.ossWallet.ui.navigation.ReportsRoute
+import com.osscabinet.ossWallet.ui.navigation.SearchRoute
+import com.osscabinet.ossWallet.ui.navigation.AccountDetailRoute
+import com.osscabinet.ossWallet.ui.navigation.BudgetDetailRoute
+import com.osscabinet.ossWallet.ui.navigation.LoanDetailRoute
+import com.osscabinet.ossWallet.ui.navigation.PlannedPaymentDetailRoute
+import com.osscabinet.ossWallet.ui.navigation.TransactionEntryRoute
+import com.osscabinet.ossWallet.ui.navigation.navigateToRecords
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.ui.screens.search.GlobalSearchActions
+import com.osscabinet.ossWallet.ui.screens.search.GlobalSearchScreen
 import com.osscabinet.ossWallet.ui.screens.reports.ReportsScreen
 import com.osscabinet.ossWallet.ui.navigation.SettingsNotificationsRoute
 import com.osscabinet.ossWallet.ui.screens.goals.GoalsScreen
@@ -125,6 +135,29 @@ fun NavGraphBuilder.settingsGraph(
         popExitTransition = { PopExitTransitionSpec }
     ) {
         GoalsScreen(onBackClick = { navController.popBackStack() })
+    }
+
+    composable<SearchRoute>(
+        enterTransition = { EnterTransitionSpec },
+        exitTransition = { ExitTransitionSpec },
+        popEnterTransition = { PopEnterTransitionSpec },
+        popExitTransition = { PopExitTransitionSpec }
+    ) {
+        GlobalSearchScreen(
+            actions = GlobalSearchActions(
+                onBackClick = { navController.popBackStack() },
+                onTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
+                onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },
+                onCategoryClick = { id -> navController.navigateToRecords(TransactionFilter(categoryIds = setOf(id))) },
+                onTagClick = { name -> navController.navigateToRecords(TransactionFilter(tags = setOf(name))) },
+                onLoanClick = { id -> navController.navigate(LoanDetailRoute(loanId = id)) },
+                onBudgetClick = { id -> navController.navigate(BudgetDetailRoute(budgetId = id)) },
+                onGoalsClick = { navController.navigate(GoalListRoute) },
+                onTemplateClick = { id -> navController.navigate(TemplateEntryRoute(templateId = id)) },
+                onPlannedPaymentClick = { id -> navController.navigate(PlannedPaymentDetailRoute(plannedPaymentId = id)) },
+                onOpenInRecords = { filter -> navController.navigateToRecords(filter) }
+            )
+        )
     }
 
     composable<ReportsRoute>(

@@ -14,6 +14,7 @@ import com.osscabinet.ossWallet.ui.navigation.EnterTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.ExitTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.FilterEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.FilterListRoute
+import com.osscabinet.ossWallet.ui.navigation.navigateToRecords
 import com.osscabinet.ossWallet.ui.navigation.PlannedPaymentEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.PopEnterTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.PopExitTransitionSpec
@@ -164,7 +165,8 @@ fun NavGraphBuilder.transactionsGraph(
                 onAddFilterClick = { navController.navigate(FilterEntryRoute()) },
                 onEditFilterClick = { filter ->
                     navController.navigate(FilterEntryRoute(filterId = filter.id))
-                }
+                },
+                onOpenInRecords = { filter -> navController.navigateToRecords(filter.filter) }
             )
         )
     }

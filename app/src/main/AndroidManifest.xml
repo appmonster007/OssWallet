@@ -229,6 +229,24 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+        <!-- AI assistants call OssWallet through this service (Android 16+). Every function ships disabled and
+             is switched on from Settings → Security & Privacy; each one also refuses to run while the app is locked. -->
+        <service
+            android:name=".appfunctions.OssWalletAppFunctionService"
+            android:permission="android.permission.BIND_APP_FUNCTION_SERVICE"
+            android:exported="true"
+            tools:targetApi="36">
+            <property
+                android:name="android.app.appfunctions.v2"
+                android:value="osswallet_app_functions.xml" />
+            <intent-filter>
+                <action android:name="android.app.appfunctions.AppFunctionService" />
+            </intent-filter>
+        </service>
+
+        <property
+            android:name="android.app.appfunctions.app_metadata"
+            android:resource="@xml/app_function_metadata" />
     </application>
 
 </manifest>

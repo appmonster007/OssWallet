@@ -31,4 +31,10 @@ class FilterSummaryTest {
         val f = TransactionFilter(tags = setOf("b", "a"), matchAllTags = false, minAmount = BigDecimal("20"), maxAmount = BigDecimal("50"))
         assertEquals("All Time · #a or #b · 20–50", FilterSummary.describe(f))
     }
+
+    @Test fun `parts are the same pieces as the one-line description`() {
+        val f = TransactionFilter(tags = setOf("a"), minAmount = BigDecimal("5"))
+        assertEquals(listOf("All Time", "#a", "over 5"), FilterSummary.parts(f))
+        assertEquals(FilterSummary.parts(f).joinToString(" · "), FilterSummary.describe(f))
+    }
 }

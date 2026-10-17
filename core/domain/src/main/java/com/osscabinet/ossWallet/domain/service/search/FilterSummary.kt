@@ -4,7 +4,10 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 
 /** A one-line description of what a saved filter selects, for lists ("This Month · Expenses · #holiday · over 100"). */
 object FilterSummary {
-    fun describe(f: TransactionFilter): String = buildList {
+    fun describe(f: TransactionFilter): String = parts(f).joinToString(" · ")
+
+    /** The same description as separate pieces, for showing as chips. */
+    fun parts(f: TransactionFilter): List<String> = buildList {
         add(f.timelineRange.toDisplayString())
         if (f.transactionTypes.isNotEmpty()) add(f.transactionTypes.joinToString("/") { it.displayName })
         if (f.accountIds.isNotEmpty()) add(count(f.accountIds.size, "account"))
@@ -20,7 +23,7 @@ object FilterSummary {
         if (f.currencies.isNotEmpty()) add(f.currencies.sorted().joinToString("/"))
         if (f.statuses.isNotEmpty()) add(f.statuses.joinToString("/") { it.displayName })
         if (f.paymentMethods.isNotEmpty()) add(count(f.paymentMethods.size, "payment method"))
-    }.joinToString(" · ")
+    }
 
     private fun count(n: Int, one: String, many: String = one + "s") = if (n == 1) "1 $one" else "$n $many"
 }

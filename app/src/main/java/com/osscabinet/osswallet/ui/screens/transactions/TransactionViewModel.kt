@@ -80,7 +80,8 @@ class TransactionViewModel @Inject constructor(
     private val transactionManager: TransactionManager,
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val templateRepository: TemplateRepository,
-    private val tagRepository: TagRepository
+    private val tagRepository: TagRepository,
+    private val recurringSuggestions: com.osscabinet.ossWallet.domain.service.discovery.RecurringSuggestions
 ) : BaseViewModel(settingsRepository) {
 
     enum class RecordNavigationMode {
@@ -376,17 +377,25 @@ class TransactionViewModel @Inject constructor(
         .map { list -> list.map { tx -> tx.transaction } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val discoveredPatterns: StateFlow<List<DiscoveredPattern>> = settingsRepository.currentProfileId
-        .flatMapLatest { profileId ->
-            combine(
-                transactionUseCases.getTransactions(profileId),
-                plannedPaymentRepository.getActivePlannedPayments(profileId),
-                templateRepository.getAllTemplates(profileId)
-            ) { txs, _, _ ->
-                PatternDiscoveryService.discoverPatterns(txs)
-            }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    /** Repeating payments worth scheduling: already-planned and dismissed ones are left out. */
+    val discoveredPatterns: StateFlow<List<DiscoveredPattern>> = recurringSuggestions.observe()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val dismissedSuggestionCount: StateFlow<Int> = recurringSuggestions.observeDismissedCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    fun dismissPattern(pattern: DiscoveredPattern) {
+        viewModelScope.launch { recurringSuggestions.dismiss(pattern) }
+    }
+
+    fun restoreDismissedSuggestions() {
+        viewModelScope.launch { recurringSuggestions.restoreDismissed() }
+    }
+
+    /** Opening the screen counts as seeing them, so the dashboard stops nudging about these. */
+    fun markSuggestionsSeen(patterns: List<DiscoveredPattern>) {
+        viewModelScope.launch { recurringSuggestions.markSeen(patterns) }
+    }
 
     private fun getActiveManager(): FilterManager {
         return if (_navigationMode.value == RecordNavigationMode.PERSISTENT) persistentFilterManager
@@ -846,7 +855,8 @@ class TransactionViewModel @Inject constructor(
                     recurrenceRule = pattern.recurrenceRule
                         ?: RecurrenceRule(RecurrenceType.MONTHLY, 1),
                     startDate = System.currentTimeMillis(),
-                    nextDueDate = pattern.lastDate
+                    // The next one coming up, not the last one that already happened.
+                    nextDueDate = pattern.nextExpectedDate
                 )
             )
         }

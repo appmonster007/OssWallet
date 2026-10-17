@@ -8,7 +8,9 @@ data class ReminderConfig(
     val hourOfDay: Int = DEFAULT_HOUR,
     val plannedPayments: Boolean = true,
     val loans: Boolean = true,
-    val budgetAlerts: Boolean = true
+    val budgetAlerts: Boolean = true,
+    /** A note when repeated payments are found that could become planned payments. */
+    val suggestions: Boolean = true
 ) {
     companion object {
         const val DEFAULT_LEAD_DAYS = 2

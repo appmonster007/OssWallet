@@ -185,6 +185,7 @@ data class DashboardActions(
     val onNavigateToBudgetList: () -> Unit = {},
     val onNavigateToLoanList: () -> Unit = {},
     val onNavigateToGoalList: () -> Unit = {},
+    val onNavigateToSmartSuggestions: () -> Unit = {},
     val onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
     val onNavigateToBudgetDetail: (Long) -> Unit = {},
     val onNavigateToLoanDetail: (Long) -> Unit = {},
@@ -643,6 +644,7 @@ fun DashboardScreenLayout(
                                 onNavigateToBudgetList = { navigate(actions.onNavigateToBudgetList) },
                                 onNavigateToLoanList = { navigate(actions.onNavigateToLoanList) },
                                 onNavigateToGoalList = { navigate(actions.onNavigateToGoalList) },
+                                onNavigateToSmartSuggestions = { navigate(actions.onNavigateToSmartSuggestions) },
                                 onNavigateToPlannedPaymentDetail = { id ->
                                     navigate {
                                         actions.onNavigateToPlannedPaymentDetail(
@@ -888,6 +890,7 @@ fun DashboardContent(
     onNavigateToBudgetList: () -> Unit = {},
     onNavigateToLoanList: () -> Unit = {},
     onNavigateToGoalList: () -> Unit = {},
+    onNavigateToSmartSuggestions: () -> Unit = {},
     onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
     onNavigateToBudgetDetail: (Long) -> Unit = {},
     onNavigateToLoanDetail: (Long) -> Unit = {},
@@ -951,6 +954,7 @@ fun DashboardContent(
                         onNavigateToBudgetList = onNavigateToBudgetList,
                         onNavigateToLoanList = onNavigateToLoanList,
                         onNavigateToGoalList = onNavigateToGoalList,
+                        onNavigateToSmartSuggestions = onNavigateToSmartSuggestions,
                         onNavigateToPlannedPaymentDetail = onNavigateToPlannedPaymentDetail,
                         onNavigateToBudgetDetail = onNavigateToBudgetDetail,
                         onNavigateToLoanDetail = onNavigateToLoanDetail,
@@ -1064,6 +1068,7 @@ fun DashboardGlanceTab(
     onNavigateToBudgetList: () -> Unit = {},
     onNavigateToLoanList: () -> Unit = {},
     onNavigateToGoalList: () -> Unit = {},
+    onNavigateToSmartSuggestions: () -> Unit = {},
     onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
     onNavigateToBudgetDetail: (Long) -> Unit = {},
     onNavigateToLoanDetail: (Long) -> Unit = {},
@@ -1194,6 +1199,8 @@ fun DashboardGlanceTab(
                 filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
             )
         }
+
+        RecurringNudgeBanner(onOpen = onNavigateToSmartSuggestions)
 
         AeonCardList(
             cards = cardsConfig.cards,

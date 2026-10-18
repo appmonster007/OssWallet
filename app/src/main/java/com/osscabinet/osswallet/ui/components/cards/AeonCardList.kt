@@ -84,7 +84,8 @@ class AeonCardReorderState {
 }
 
 @Composable
-fun rememberAeonCardReorderState(): AeonCardReorderState = remember { AeonCardReorderState() }
+fun rememberAeonCardReorderState(initialIsReordering: Boolean = false): AeonCardReorderState =
+    remember(initialIsReordering) { AeonCardReorderState().apply { isReordering = initialIsReordering } }
 
 /**
  * Screen-scoped ambient [AeonCardReorderState]. A screen creates one state instance, provides it

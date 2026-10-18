@@ -72,6 +72,9 @@ interface BackupRepository {
 
     suspend fun isEncryptedBackup(uriString: String): Boolean
 
+    /** Detects if the backup URI is a single CSV file and identifies its corresponding [RestorableEntity]. Returns null for ZIP or unknown files. */
+    suspend fun detectBackupEntity(uriString: String, passphrase: CharArray? = null): RestorableEntity?
+
     /** Authenticates (if encrypted) and structurally checks a backup without touching live data. */
     suspend fun verifyBackup(
         uriString: String,

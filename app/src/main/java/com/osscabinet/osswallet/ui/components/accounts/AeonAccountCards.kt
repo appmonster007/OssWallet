@@ -37,8 +37,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -153,6 +157,25 @@ fun AeonAccountCardSmall(
 }
 
 @Composable
+private fun buildCreditSubtitle(structureType: AccountStructureType, percentage: Int): AnnotatedString {
+    val percentageColor = when {
+        percentage == 0 -> AppColors.contentPrimary
+        percentage < 33 -> AppColors.positive
+        percentage < 66 -> AppColors.accent
+        else -> AppColors.negative
+    }
+
+    return buildAnnotatedString {
+        append(structureType.displayName.uppercase())
+        append(" · ")
+        withStyle(SpanStyle(color = percentageColor, fontWeight = FontWeight.Bold)) {
+            append("$percentage%")
+        }
+        append(" USED")
+    }
+}
+
+@Composable
 fun AeonAccountCardMedium(
     summary: AccountSummaryItem,
     baseCurrency: String,
@@ -171,10 +194,12 @@ fun AeonAccountCardMedium(
     val ratio = if (isCreditWithDetails) {
         (owedMedium.toDouble() / creditDetails.creditLimit.toDouble()).coerceIn(0.0, 1.0)
     } else 0.0
+    val percentage = (ratio * 100).toInt()
 
     val utilColor = when {
-        ratio < 0.30 -> AppColors.positive
-        ratio < 0.50 -> AppColors.accent
+        percentage == 0 -> AppColors.contentPrimary
+        percentage < 33 -> AppColors.positive
+        percentage < 66 -> AppColors.accent
         else -> AppColors.negative
     }
 
@@ -221,14 +246,10 @@ fun AeonAccountCardMedium(
                         overflow = TextOverflow.Ellipsis
                     )
                     if (isCreditWithDetails) {
-                        val percentage = (ratio * 100).toInt()
                         Text(
-                            "CREDIT · $percentage% USED",
-                            style = AppTextStyles.metaLabel.copy(
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = utilColor,
+                            text = buildCreditSubtitle(account.structureType, percentage),
+                            style = AppTextStyles.metaLabel.copy(fontSize = 8.sp),
+                            color = AppColors.contentSecondary.copy(alpha = 0.7f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -304,6 +325,18 @@ fun AeonAccountCardLarge(
     val shape = RoundedCornerShape(20.dp)
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
+    val creditDetailsLarge = account.creditDetails
+    val isCreditLarge = account.structureType == AccountStructureType.CREDIT && creditDetailsLarge != null && creditDetailsLarge.creditLimit.signum() > 0
+    val owedLarge = if (isCreditLarge && summary.balance < BigDecimal.ZERO) summary.balance.abs() else BigDecimal.ZERO
+    val ratioLarge = if (isCreditLarge) (owedLarge.toDouble() / creditDetailsLarge.creditLimit.toDouble()).coerceIn(0.0, 1.0) else 0.0
+    val percentageLarge = (ratioLarge * 100).toInt()
+    val utilColorLarge = when {
+        percentageLarge == 0 -> AppColors.contentPrimary
+        percentageLarge < 33 -> AppColors.positive
+        percentageLarge < 66 -> AppColors.accent
+        else -> AppColors.negative
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -343,11 +376,23 @@ fun AeonAccountCardLarge(
                             ),
                             color = AppColors.contentPrimary
                         )
-                        Text(
-                            account.structureType.displayName.uppercase(),
-                            style = AppTextStyles.metaLabel,
-                            color = AppColors.contentSecondary.copy(alpha = 0.7f)
-                        )
+                        if (isCreditLarge) {
+                            Text(
+                                text = buildCreditSubtitle(account.structureType, percentageLarge),
+                                style = AppTextStyles.metaLabel,
+                                color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        } else {
+                            Text(
+                                account.structureType.displayName.uppercase(),
+                                style = AppTextStyles.metaLabel,
+                                color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
                 Column(horizontalAlignment = Alignment.End) {
@@ -392,64 +437,37 @@ fun AeonAccountCardLarge(
                 horizontalAlignment = Alignment.Start,
             )
 
-            val creditDetailsLarge = account.creditDetails
-            if (account.structureType == AccountStructureType.CREDIT && creditDetailsLarge != null && creditDetailsLarge.creditLimit.signum() > 0) {
+            if (isCreditLarge) {
                 val limit = creditDetailsLarge.creditLimit
-                val owed = if (summary.balance < BigDecimal.ZERO) summary.balance.abs() else BigDecimal.ZERO
-                val available = if (summary.balance > BigDecimal.ZERO) limit + summary.balance else (limit - owed).coerceAtLeast(BigDecimal.ZERO)
-                val ratio = (owed.toDouble() / limit.toDouble()).coerceIn(0.0, 1.0)
-                val percentage = (ratio * 100).toInt()
-                val utilColor = when {
-                    ratio < 0.30 -> AppColors.positive
-                    ratio < 0.50 -> AppColors.accent
-                    else -> AppColors.negative
-                }
+                val available = if (summary.balance > BigDecimal.ZERO) limit + summary.balance else (limit - owedLarge).coerceAtLeast(BigDecimal.ZERO)
 
                 Column(
-                    modifier = Modifier.padding(vertical = 6.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Avail: ${formatCurrency(available, account.currencyCode)} / Limit: ${formatCurrency(limit, account.currencyCode)}",
-                            style = AppTextStyles.metaLabel.copy(fontSize = 10.sp),
-                            color = AppColors.contentSecondary
-                        )
-
-                        Surface(
-                            color = utilColor.copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                text = "$percentage% UTILIZED",
-                                style = AppTextStyles.tagLabel.copy(
-                                    fontSize = 8.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.5.sp
-                                ),
-                                color = utilColor,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
+                    Text(
+                        text = "Av: ${formatCurrency(available, account.currencyCode)} / Lim: ${formatCurrency(limit, account.currencyCode)}",
+                        style = AppTextStyles.metaLabel.copy(fontSize = 10.sp),
+                        color = AppColors.contentSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(4.dp)
-                            .clip(RoundedCornerShape(2.dp))
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
                             .background(AppColors.contentPrimary.copy(alpha = 0.08f))
                     ) {
+                        val activeFraction = if (ratioLarge > 0.0) ratioLarge.toFloat().coerceIn(0.02f, 1.0f) else 0f
                         Box(
                             modifier = Modifier
                                 .fillMaxHeight()
-                                .fillMaxWidth(ratio.toFloat())
-                                .clip(RoundedCornerShape(2.dp))
-                                .background(utilColor)
+                                .fillMaxWidth(activeFraction)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(utilColorLarge)
                         )
                     }
                 }

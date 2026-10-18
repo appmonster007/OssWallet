@@ -5,9 +5,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.FlowRowScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,12 +27,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.domain.model.CreditCardDetails
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
@@ -502,6 +507,84 @@ fun AccountsCardPreview() {
                 accountSummaries = stats,
                 baseCurrency = "USD",
                 config = AccountsCardConfig(cardId = "preview"),
+                callbacks = CardCallbacks.Accounts(onManageClick = {}, onAccountClick = {})
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Accounts Card - Grid with Credit")
+@Composable
+fun AccountsCardGridCreditPreview() {
+    val checking = Account(
+        id = "1",
+        name = "Main Checking",
+        currencyCode = "USD",
+        structureType = AccountStructureType.BANK,
+        colorHex = "#2196F3",
+        icon = "AccountBalance"
+    )
+    val chaseCredit = Account(
+        id = "2",
+        name = "Chase Freedom",
+        currencyCode = "USD",
+        structureType = AccountStructureType.CREDIT,
+        colorHex = "#F44336",
+        icon = "CreditCard",
+        creditDetails = CreditCardDetails(
+            accountId = "2",
+            creditLimit = BigDecimal("5000.00")
+        )
+    )
+    val savings = Account(
+        id = "3",
+        name = "High Yield Savings",
+        currencyCode = "USD",
+        structureType = AccountStructureType.SAVINGS,
+        colorHex = "#4CAF50",
+        icon = "Savings"
+    )
+    val amexCredit = Account(
+        id = "4",
+        name = "Amex Platinum",
+        currencyCode = "USD",
+        structureType = AccountStructureType.CREDIT,
+        colorHex = "#00BCD4",
+        icon = "CreditCard",
+        creditDetails = CreditCardDetails(
+            accountId = "4",
+            creditLimit = BigDecimal("15000.00")
+        )
+    )
+
+    val accounts = listOf(checking, chaseCredit, savings, amexCredit)
+    val stats = accounts.associate { acc ->
+        val balance = when (acc.id) {
+            "1" -> BigDecimal("4250.00")
+            "2" -> BigDecimal("1250.00")
+            "3" -> BigDecimal("12800.00")
+            else -> BigDecimal("4200.00")
+        }
+        acc.id to AccountSummaryItem(
+            account = acc,
+            currencyBalances = mapOf(acc.currencyCode to balance),
+            balance = balance,
+            balanceInBase = balance,
+            currentPeriodMetrics = FinancialSummary.EMPTY
+        )
+    }
+
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            AccountsCard(
+                accounts = accounts,
+                accountSummaries = stats,
+                baseCurrency = "USD",
+                config = AccountsCardConfig(
+                    cardId = "grid-preview",
+                    layout = "grid",
+                    gridColumns = 2
+                ),
                 callbacks = CardCallbacks.Accounts(onManageClick = {}, onAccountClick = {})
             )
         }

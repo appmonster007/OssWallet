@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.data.local.dao.TemplateDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
+import com.osscabinet.ossWallet.data.local.entity.CreditCardDetailsEntity
 import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
 import com.osscabinet.ossWallet.data.local.entity.CardCacheEntity
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
@@ -66,9 +67,10 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanPaymentEntity::class,
         CardCacheEntity::class,
         GoalEntity::class,
-        AttachmentEntity::class
+        AttachmentEntity::class,
+        CreditCardDetailsEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -210,6 +212,23 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** v5 -> v6: credit card details table for 1-to-1 extension of accounts. */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `credit_card_details` (" +
+                        "`accountId` TEXT NOT NULL, " +
+                        "`creditLimit` TEXT NOT NULL, " +
+                        "`statementClosingDay` INTEGER, " +
+                        "`paymentDueDay` INTEGER, " +
+                        "`interestRateApr` REAL, " +
+                        "`minimumPaymentAmount` TEXT, " +
+                        "PRIMARY KEY(`accountId`), " +
+                        "FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)"
+                )
+            }
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -223,7 +242,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
                     .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

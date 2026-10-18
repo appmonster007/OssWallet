@@ -12,7 +12,8 @@ data class Account(
     val icon: String,
     val allowedCurrencies: List<String> = emptyList(),
     val isArchived: Boolean = false,
-    val displayOrder: Int = 0
+    val displayOrder: Int = 0,
+    val creditDetails: CreditCardDetails? = null
 ) {
     companion object {
         // Sentinel representing the external counterparty in a transfer (id = "" by convention).

@@ -351,11 +351,12 @@ fun AnalyticsScreen(
                                         icon = Icons.Default.Check,
                                         onClick = { cardReorderState.confirm() }
                                     )
+                                } else {
+                                    AppBarIconButton(
+                                        icon = Icons.Default.Settings,
+                                        onClick = { showSettingsDialog = true }
+                                    )
                                 }
-                                AppBarIconButton(
-                                    icon = Icons.Default.Settings,
-                                    onClick = { showSettingsDialog = true }
-                                )
                             }
                         }
                     )

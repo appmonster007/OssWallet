@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
 import com.osscabinet.ossWallet.ui.components.visualization.AeonSparkline
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,10 +25,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -36,11 +41,14 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.model.CreditCardDetails
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
@@ -162,19 +170,28 @@ fun AccountHeroCard(
                     }
                 }
 
-                val symbolStyle = SpanStyle(fontWeight = FontWeight.Light, fontSize = 21.sp)
+                var multiplier by remember(summary.balance, account.currencyCode) { mutableFloatStateOf(1f) }
+                val symbolStyle = SpanStyle(fontWeight = FontWeight.Light, fontSize = (21f * multiplier).sp)
                 Text(
                     text = CurrencyReprUi.formatCurrencyAnnotated(
                         amount = summary.balance,
                         currencyCode = account.currencyCode,
-                        spec = CurrencyDisplaySpec(useSemanticColor = true),
+                        spec = CurrencyDisplaySpec(useSemanticColor = true, shortenThreshold = -1),
                         partStyles = CurrencyPartStyles(symbol = symbolStyle)
                     ),
                     style = AppTextStyles.heroAmountLarge.copy(
-                        fontSize = 30.sp,
+                        fontSize = (30f * multiplier).sp,
                         letterSpacing = (-1).sp
                     ),
                     color = AppColors.contentPrimary,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Clip,
+                    onTextLayout = { textLayoutResult ->
+                        if (textLayoutResult.didOverflowWidth && multiplier > 0.4f) {
+                            multiplier *= 0.85f
+                        }
+                    },
                     modifier = remember(config.perspective, config.filter, callbacks) {
                         Modifier.clickable {
                             if (isAccounting) callbacks.onClickNet?.invoke(config.filter)
@@ -211,6 +228,183 @@ fun AccountHeroCard(
                         .fillMaxWidth()
                         .height(52.dp)
                 )
+            }
+
+            // ── 2.1 Credit Details & Utilization Gauge ────────────────────
+            val creditDetails = account.creditDetails
+            if (account.structureType == AccountStructureType.CREDIT && creditDetails != null) {
+                val limit = creditDetails.creditLimit
+                val owed = if (summary.balance < BigDecimal.ZERO) summary.balance.abs() else BigDecimal.ZERO
+                val available = if (summary.balance > BigDecimal.ZERO) limit + summary.balance else (limit - owed).coerceAtLeast(BigDecimal.ZERO)
+                val ratio = if (limit.signum() > 0) (owed.toDouble() / limit.toDouble()).coerceIn(0.0, 1.0) else 0.0
+                val percentage = (ratio * 100).toInt()
+
+                val utilColor = when {
+                    ratio < 0.30 -> AppColors.positive
+                    ratio < 0.50 -> AppColors.accent
+                    else -> AppColors.negative
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aeonDashedTopRule()
+                        .padding(top = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Header row with title & status pill
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "CREDIT UTILIZATION",
+                            style = AppTextStyles.overlineLabel.copy(
+                                letterSpacing = 2.sp,
+                                fontSize = 9.sp
+                            ),
+                            color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                        )
+
+                        Surface(
+                            color = utilColor.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = "$percentage% UTILIZED",
+                                style = AppTextStyles.tagLabel.copy(
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
+                                ),
+                                color = utilColor,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+
+                    // Progress bar track
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(AppColors.contentPrimary.copy(alpha = 0.08f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(ratio.toFloat())
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(utilColor)
+                        )
+                    }
+
+                    // Dual readout columns (Available Credit vs Credit Limit)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "AVAILABLE CREDIT",
+                                style = AppTextStyles.overlineLabel.copy(
+                                    fontSize = 8.sp,
+                                    letterSpacing = 1.sp
+                                ),
+                                color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                            )
+                            Text(
+                                text = formatCurrency(available, account.currencyCode),
+                                style = AppTextStyles.listItemTitle.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                ),
+                                color = AppColors.contentPrimary
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "CREDIT LIMIT",
+                                style = AppTextStyles.overlineLabel.copy(
+                                    fontSize = 8.sp,
+                                    letterSpacing = 1.sp
+                                ),
+                                color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                            )
+                            Text(
+                                text = formatCurrency(limit, account.currencyCode),
+                                style = AppTextStyles.listItemTitle.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.sp
+                                ),
+                                color = AppColors.contentSecondary
+                            )
+                        }
+                    }
+
+                    // Metadata chips row (Due Day, Closing Day, APR)
+                    if (creditDetails.paymentDueDay != null || creditDetails.statementClosingDay != null || creditDetails.interestRateApr != null) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (creditDetails.paymentDueDay != null) {
+                                Surface(
+                                    color = AppColors.contentPrimary.copy(alpha = 0.05f),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = "DUE: ${creditDetails.paymentDueDay}TH",
+                                        style = AppTextStyles.metaLabel.copy(
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = AppColors.contentSecondary.copy(alpha = 0.8f),
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+
+                            if (creditDetails.statementClosingDay != null) {
+                                Surface(
+                                    color = AppColors.contentPrimary.copy(alpha = 0.05f),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = "CLOSING: ${creditDetails.statementClosingDay}TH",
+                                        style = AppTextStyles.metaLabel.copy(
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = AppColors.contentSecondary.copy(alpha = 0.8f),
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+
+                            if (creditDetails.interestRateApr != null) {
+                                Surface(
+                                    color = AppColors.contentPrimary.copy(alpha = 0.05f),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = "APR: ${creditDetails.interestRateApr}%",
+                                        style = AppTextStyles.metaLabel.copy(
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = AppColors.accent,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             // ── 3. Vertical ledger of flows ─────────────────────────────────
@@ -689,10 +883,51 @@ fun AccountHeroCardDarkPreview() {
     AccountHeroCardPreviewContent("Dark")
 }
 
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Account Hero - Amoled")
+@Preview(showBackground = true, name = "Account Hero - Amoled")
 @Composable
 fun AccountHeroCardAmoledPreview() {
     AccountHeroCardPreviewContent("Amoled")
+}
+
+@Preview(showBackground = true, name = "Account Hero - Credit Card")
+@Composable
+fun AccountHeroCardCreditPreview() {
+    OssWalletTheme {
+        val creditAccount = Account(
+            id = "credit-1",
+            name = "Chase Sapphire Reserve",
+            currencyCode = "USD",
+            structureType = AccountStructureType.CREDIT,
+            colorHex = "#F44336",
+            icon = "CreditCard",
+            creditDetails = CreditCardDetails(
+                accountId = "credit-1",
+                creditLimit = BigDecimal("10000.00"),
+                statementClosingDay = 15,
+                paymentDueDay = 25,
+                interestRateApr = 21.99f
+            )
+        )
+        val summary = AccountSummaryItem(
+            account = creditAccount,
+            balance = BigDecimal("2450.00"),
+            balanceInBase = BigDecimal("2450.00"),
+            currentPeriodMetrics = FinancialSummary(
+                income = BigDecimal("0.00"),
+                expense = BigDecimal("1250.00")
+            )
+        )
+        AccountHeroCard(
+            summary = summary,
+            baseCurrency = "USD",
+            config = AccountHeroCardConfig(cardId = "hero-credit"),
+            balanceHistory = listOf(
+                BigDecimal("1200.00"),
+                BigDecimal("1800.00"),
+                BigDecimal("2450.00")
+            )
+        )
+    }
 }
 
 @Composable
@@ -714,7 +949,7 @@ private fun AccountHeroCardPreviewContent(theme: String) {
             "GBP" to BigDecimal("12000.00"),
             "JPY" to BigDecimal("380000.00")
         ),
-        balance = BigDecimal("-245800.50"),
+        balance = BigDecimal("-2458000000000.50"),
         balanceInBase = BigDecimal("245800.50"),
         currentPeriodMetrics = FinancialSummary(
             income = BigDecimal("15000.00"),

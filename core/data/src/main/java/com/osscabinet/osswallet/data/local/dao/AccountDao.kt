@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
+import com.osscabinet.ossWallet.data.local.entity.CreditCardDetailsEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -37,4 +38,19 @@ interface AccountDao {
 
     @Query("DELETE FROM accounts")
     suspend fun clearAll()
+
+    @Query("SELECT * FROM credit_card_details WHERE accountId = :accountId")
+    suspend fun getCreditCardDetails(accountId: String): CreditCardDetailsEntity?
+
+    @Query("SELECT * FROM credit_card_details WHERE accountId = :accountId")
+    fun getCreditCardDetailsFlow(accountId: String): Flow<CreditCardDetailsEntity?>
+
+    @Query("SELECT * FROM credit_card_details")
+    suspend fun getAllCreditCardDetailsSync(): List<CreditCardDetailsEntity>
+
+    @Upsert
+    suspend fun upsertCreditCardDetails(details: CreditCardDetailsEntity)
+
+    @Query("DELETE FROM credit_card_details WHERE accountId = :accountId")
+    suspend fun deleteCreditCardDetails(accountId: String)
 }

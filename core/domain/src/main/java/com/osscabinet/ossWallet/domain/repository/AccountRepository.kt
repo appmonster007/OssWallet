@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.domain.repository
 
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.CreditCardDetails
 import kotlinx.coroutines.flow.Flow
 
 interface AccountRepository {
@@ -10,4 +11,6 @@ interface AccountRepository {
     suspend fun updateAccount(account: Account, profileId: Int)
     suspend fun deleteAccount(accountId: String, profileId: Int)
     suspend fun updateAccounts(accounts: List<Account>, profileId: Int)
+    suspend fun saveCreditCardDetails(details: CreditCardDetails)
+    suspend fun getCreditCardDetails(accountId: String): CreditCardDetails?
 }

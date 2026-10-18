@@ -100,6 +100,7 @@ fun EntryEditorialInput(
     isFlush: Boolean = false,
     isError: Boolean = false,
     scrollRequester: BringIntoViewRequester? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
     additionalContent: @Composable ColumnScope.() -> Unit = {}
 ) {
     // 1. STATE & ANIMATION
@@ -292,10 +293,7 @@ fun EntryEditorialInput(
                                     color = if (enabled) AppColors.contentPrimary else AppColors.contentSecondary
                                 ),
                                 cursorBrush = SolidColor(if (enabled) AppColors.contentPrimary else AppColors.contentSecondary),
-                                keyboardOptions = KeyboardOptions(
-                                    capitalization = KeyboardCapitalization.Sentences,
-                                    imeAction = ImeAction.Next
-                                ),
+                                keyboardOptions = keyboardOptions,
                                 maxLines = maxLines,
                                 modifier = Modifier
                                     .fillMaxWidth()

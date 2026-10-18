@@ -18,12 +18,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.AccountTree
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Percent
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -31,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +56,7 @@ import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
 import com.osscabinet.ossWallet.ui.components.entry.EntrySection
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryEvent
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryState
@@ -196,6 +203,64 @@ fun AccountFormBody(
                         currencyUsageMap = state.currencyUsageMap,
                         shortlistedCurrencies = state.shortlistedCurrencies
                     )
+                }
+            }
+
+            // CREDIT SETTINGS (Visible when structure type is Credit)
+            if (state.structureType == AccountStructureType.CREDIT) {
+                EntrySection(title = "CREDIT SETTINGS", icon = Icons.Rounded.CreditCard) {
+                    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
+                        EntryEditorialInput(
+                            value = state.creditLimitInput,
+                            onValueChange = { onEvent(AccountEntryEvent.SetCreditLimit(it)) },
+                            label = "CREDIT LIMIT (${state.primaryCurrency})",
+                            icon = Icons.Rounded.CreditCard,
+                            placeholder = "e.g. 5000.00",
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            iconColor = AppColors.primary,
+                            maxLines = 1
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+                        ) {
+                            EntryEditorialInput(
+                                value = state.paymentDueDayInput,
+                                onValueChange = { onEvent(AccountEntryEvent.SetPaymentDueDay(it)) },
+                                label = "DUE DAY (1-31)",
+                                icon = Icons.Rounded.Event,
+                                placeholder = "e.g. 25",
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                iconColor = AppColors.primary,
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            EntryEditorialInput(
+                                value = state.statementClosingDayInput,
+                                onValueChange = { onEvent(AccountEntryEvent.SetStatementClosingDay(it)) },
+                                label = "CLOSING DAY (1-31)",
+                                icon = Icons.Rounded.CalendarToday,
+                                placeholder = "e.g. 5",
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                iconColor = AppColors.primary,
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        EntryEditorialInput(
+                            value = state.interestRateAprInput,
+                            onValueChange = { onEvent(AccountEntryEvent.SetInterestRateApr(it)) },
+                            label = "INTEREST RATE APR (%)",
+                            icon = Icons.Rounded.Percent,
+                            placeholder = "e.g. 19.99",
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            iconColor = AppColors.primary,
+                            maxLines = 1
+                        )
+                    }
                 }
             }
 

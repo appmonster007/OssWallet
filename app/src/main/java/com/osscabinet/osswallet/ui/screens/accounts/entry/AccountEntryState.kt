@@ -19,6 +19,12 @@ data class AccountEntryState(
     val accentColorHex: String = AccountStructureType.BANK.colorHex,
     val currentBalance: BigDecimal = BigDecimal.ZERO,
 
+    // Credit Card Details (Active when structureType == CREDIT)
+    val creditLimitInput: String = "",
+    val statementClosingDayInput: String = "",
+    val paymentDueDayInput: String = "",
+    val interestRateAprInput: String = "",
+
     // Balance Update Flow
     val systemClosingBalances: Map<String, BigDecimal> = emptyMap(),
     val showBalanceUpdateSheet: Boolean = false,

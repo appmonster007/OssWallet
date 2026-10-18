@@ -694,9 +694,18 @@ class BackupRepositoryImpl @Inject constructor(
         withContext(dispatcherProvider.io) {
             try {
                 withPlainInput(uriString, passphrase) { inputStream ->
+                    val buffered = if (inputStream.markSupported()) inputStream else BufferedInputStream(inputStream)
                     when (type) {
-                        BackupType.CSV_ZIP -> restoreZipBackup(inputStream)
-                        BackupType.SQLITE -> restoreSqliteBackup(inputStream)
+                        BackupType.CSV_ZIP -> {
+                            if (isZipStream(buffered)) {
+                                restoreZipBackup(buffered)
+                            } else {
+                                val detected = detectRestorableEntityFromStream(buffered, queryFileName(uriString))
+                                    ?: throw IOException("Unrecognized single CSV format")
+                                restoreSingleCsv(buffered, detected)
+                            }
+                        }
+                        BackupType.SQLITE -> restoreSqliteBackup(buffered)
                         BackupType.FLAT_CSV -> throw UnsupportedOperationException("FLAT_CSV import not supported")
                     }
                 }
@@ -1312,12 +1321,130 @@ class BackupRepositoryImpl @Inject constructor(
     ): Result<Unit> = withContext(dispatcherProvider.io) {
         try {
             withPlainInput(uriString, passphrase) { inputStream ->
-                if (type == BackupType.CSV_ZIP) restoreZipBackupSelective(inputStream, entities)
-                else throw UnsupportedOperationException("Selective restore only for CSV_ZIP")
+                if (type == BackupType.CSV_ZIP) {
+                    val buffered = if (inputStream.markSupported()) inputStream else BufferedInputStream(inputStream)
+                    if (isZipStream(buffered)) {
+                        restoreZipBackupSelective(buffered, entities)
+                    } else {
+                        val targetEntity = if (entities.size == 1) entities.first()
+                        else detectRestorableEntityFromStream(buffered, queryFileName(uriString))
+                            ?: throw IOException("Unrecognized single CSV format")
+                        restoreSingleCsv(buffered, targetEntity)
+                    }
+                } else throw UnsupportedOperationException("Selective restore only for CSV_ZIP")
             }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    override suspend fun detectBackupEntity(uriString: String, passphrase: CharArray?): RestorableEntity? =
+        withContext(dispatcherProvider.io) {
+            runCatching {
+                withPlainInput(uriString, passphrase) { input ->
+                    val buffered = if (input.markSupported()) input else BufferedInputStream(input)
+                    if (isZipStream(buffered)) null
+                    else detectRestorableEntityFromStream(buffered, queryFileName(uriString))
+                }
+            }.getOrNull()
+        }
+
+    private fun queryFileName(uriString: String): String? {
+        return runCatching {
+            val uri = uriString.toUri()
+            if (uri.scheme == "content") {
+                context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getString(0) else null
+                }
+            } else uri.lastPathSegment
+        }.getOrNull()
+    }
+
+    private fun isZipStream(input: InputStream): Boolean {
+        input.mark(4)
+        val header = ByteArray(4)
+        var read = 0
+        while (read < 4) {
+            val r = input.read(header, read, 4 - read)
+            if (r < 0) break
+            read += r
+        }
+        input.reset()
+        return read == 4 && header[0] == 'P'.code.toByte() && header[1] == 'K'.code.toByte() &&
+            header[2] == 3.toByte() && header[3] == 4.toByte()
+    }
+
+    private fun detectRestorableEntityFromStream(input: InputStream, fileName: String?): RestorableEntity? {
+        val lowerName = fileName?.lowercase().orEmpty()
+        if (lowerName.contains("categories")) return RestorableEntity.CATEGORIES
+        if (lowerName.contains("accounts")) return RestorableEntity.ACCOUNTS
+        if (lowerName.contains("transactions")) return RestorableEntity.TRANSACTIONS
+        if (lowerName.contains("planned_payments")) return RestorableEntity.PLANNED_PAYMENTS
+        if (lowerName.contains("templates")) return RestorableEntity.TEMPLATES
+        if (lowerName.contains("filters")) return RestorableEntity.FILTERS
+        if (lowerName.contains("budgets")) return RestorableEntity.BUDGETS
+        if (lowerName.contains("loans")) return RestorableEntity.LOANS
+        if (lowerName.contains("goals")) return RestorableEntity.GOALS
+        if (lowerName.contains("profiles")) return RestorableEntity.PROFILES
+        if (lowerName.contains("currency_rates")) return RestorableEntity.CURRENCY_RATES
+        if (lowerName.contains("tags")) return RestorableEntity.TAGS
+
+        input.mark(8192)
+        val reader = java.io.BufferedReader(java.io.InputStreamReader(input, Charsets.UTF_8))
+        val firstLine = reader.readLine() ?: ""
+        input.reset()
+
+        val headers = firstLine.split(',').map { it.trim().removePrefix("\"").removeSuffix("\"").lowercase() }.toSet()
+
+        return when {
+            "nature" in headers || "iconname" in headers -> RestorableEntity.CATEGORIES
+            "structuretype" in headers || ("currencycode" in headers && "allowedcurrencies" in headers) -> RestorableEntity.ACCOUNTS
+            "transactiontype" in headers || ("accountid" in headers && "categoryid" in headers && "amount" in headers && "timestamp" in headers) -> RestorableEntity.TRANSACTIONS
+            "autoconfirm" in headers || "recurrencetype" in headers -> RestorableEntity.PLANNED_PAYMENTS
+            "entrymode" in headers -> RestorableEntity.TEMPLATES
+            "timelinerange" in headers -> RestorableEntity.FILTERS
+            "limitamount" in headers || "alertthreshold" in headers -> RestorableEntity.BUDGETS
+            "principalamount" in headers || "lenderorborrowername" in headers -> RestorableEntity.LOANS
+            "targetamount" in headers || "savedamount" in headers -> RestorableEntity.GOALS
+            "basecurrency" in headers && "type" in headers && "name" in headers -> RestorableEntity.PROFILES
+            "rate" in headers && "basecurrency" in headers -> RestorableEntity.CURRENCY_RATES
+            "name" in headers && "colorhex" in headers && headers.size <= 4 -> RestorableEntity.TAGS
+            else -> null
+        }
+    }
+
+    private suspend fun restoreSingleCsv(inputStream: InputStream, entity: RestorableEntity) {
+        val tempFile = File.createTempFile("single_import_", ".csv", context.cacheDir)
+        try {
+            FileOutputStream(tempFile).use { out -> inputStream.copyToLimited(out, longArrayOf(0L)) }
+            database.withTransaction {
+                when (entity) {
+                    RestorableEntity.CATEGORIES -> restoreCategories(tempFile)
+                    RestorableEntity.ACCOUNTS -> restoreAccounts(tempFile)
+                    RestorableEntity.TRANSACTIONS -> {
+                        restoreTransactions(tempFile)
+                        restoreLinks(tempFile)
+                    }
+                    RestorableEntity.TAGS -> restoreTags(tempFile)
+                    RestorableEntity.BUDGETS -> restoreBudgets(tempFile)
+                    RestorableEntity.LOANS -> {
+                        restoreLoans(tempFile)
+                        restoreLoanPayments(tempFile)
+                    }
+                    RestorableEntity.PLANNED_PAYMENTS -> {
+                        restorePlannedPayments(tempFile)
+                        restorePlannedPaymentOccurrences(tempFile)
+                    }
+                    RestorableEntity.TEMPLATES -> restoreTemplates(tempFile)
+                    RestorableEntity.FILTERS -> restoreFilters(tempFile)
+                    RestorableEntity.GOALS -> restoreGoals(tempFile)
+                    RestorableEntity.PROFILES -> restoreProfiles(tempFile)
+                    RestorableEntity.CURRENCY_RATES -> restoreCurrencyRates(tempFile)
+                }
+            }
+        } finally {
+            tempFile.delete()
         }
     }
 
@@ -1573,25 +1700,41 @@ class BackupRepositoryImpl @Inject constructor(
     ): Result<BackupVerification> = withContext(dispatcherProvider.io) {
         try {
             val encrypted = isEncryptedBackup(uriString)
-            val result = withPlainInput(uriString, passphrase) { input ->
+            val result = withPlainInput(uriString, passphrase) { rawInput ->
+                val input = if (rawInput.markSupported()) rawInput else BufferedInputStream(rawInput)
                 var entries = 0
                 var bytes = 0L
                 when (type) {
                     BackupType.CSV_ZIP -> {
-                        var sawProfiles = false
-                        val counter = longArrayOf(0L)
-                        ZipInputStream(input).use { zis ->
-                            var e = zis.nextEntry
-                            while (e != null) {
-                                entries++
-                                if (e.name == "profiles.csv") sawProfiles = true
-                                // Reading each entry through also surfaces zip-level corruption.
-                                zis.copyToLimited(DiscardOutputStream, counter)
-                                e = zis.nextEntry
+                        if (isZipStream(input)) {
+                            var sawProfiles = false
+                            val counter = longArrayOf(0L)
+                            ZipInputStream(input).use { zis ->
+                                var e = zis.nextEntry
+                                while (e != null) {
+                                    entries++
+                                    if (e.name == "profiles.csv") sawProfiles = true
+                                    // Reading each entry through also surfaces zip-level corruption.
+                                    zis.copyToLimited(DiscardOutputStream, counter)
+                                    e = zis.nextEntry
+                                }
+                            }
+                            bytes = counter[0]
+                            if (entries == 0 || !sawProfiles) throw IOException("Not a valid OssWallet backup")
+                        } else {
+                            val tempFile = File.createTempFile("verify_csv_", ".tmp", context.cacheDir)
+                            try {
+                                FileOutputStream(tempFile).use { out -> input.copyToLimited(out, longArrayOf(0L)) }
+                                bytes = tempFile.length()
+                                if (bytes == 0L) throw IOException("CSV file is empty")
+                                var lineCount = 0
+                                tempFile.forEachLine { lineCount++ }
+                                if (lineCount < 1) throw IOException("CSV file has no content")
+                                entries = 1
+                            } finally {
+                                tempFile.delete()
                             }
                         }
-                        bytes = counter[0]
-                        if (entries == 0 || !sawProfiles) throw IOException("Not a valid OssWallet backup")
                     }
                     else -> {
                         val counter = longArrayOf(0L)

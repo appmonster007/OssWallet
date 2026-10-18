@@ -204,6 +204,8 @@ fun DataManagementScreen(
                 } else if (verifyOnly) {
                     verifyAndReport(uri, null)
                 } else {
+                    val singleEntity = viewModel.detectBackupEntity(uri, null)
+                    selectedEntities = if (singleEntity != null) setOf(singleEntity) else RestorableEntity.entries.toSet()
                     showEntitySelector = true
                 }
             }
@@ -361,6 +363,8 @@ fun DataManagementScreen(
                         importPassphrase = chars
                         importPassphraseError = null
                         showImportPassphrase = false
+                        val singleEntity = viewModel.detectBackupEntity(uri, chars)
+                        selectedEntities = if (singleEntity != null) setOf(singleEntity) else RestorableEntity.entries.toSet()
                         showEntitySelector = true
                     }
                 }
@@ -877,7 +881,7 @@ private fun ImportDialog(
         title = { Text("Import / Migrate Data", style = AppTextStyles.cardTitle) },
         text = {
             Text(
-                "Restore an OssWallet backup or import transactions from another app.",
+                "Restore an OssWallet backup (ZIP archive or single CSV table update) or import transactions from another app.",
                 style = AppTextStyles.caption
             )
         },
@@ -888,7 +892,7 @@ private fun ImportDialog(
             ) {
                 AeonDashedButton(
                     onClick = onImportZip,
-                    text = "OssWallet Backup (ZIP)",
+                    text = "OssWallet Backup (ZIP or CSV)",
                     icon = Icons.Rounded.CloudSync
                 )
                 AeonDashedButton(

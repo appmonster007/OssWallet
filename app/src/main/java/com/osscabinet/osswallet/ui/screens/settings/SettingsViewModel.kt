@@ -538,6 +538,9 @@ class SettingsViewModel @Inject constructor(
 
     suspend fun isEncryptedBackup(uri: Uri): Boolean = backupRepository.isEncryptedBackup(uri.toString())
 
+    suspend fun detectBackupEntity(uri: Uri, passphrase: CharArray? = null): RestorableEntity? =
+        backupRepository.detectBackupEntity(uri.toString(), passphrase)
+
     /** Checks a backup (decrypting it if needed) without touching live data. */
     suspend fun verifyBackup(uri: Uri, type: BackupType, passphrase: CharArray?): Result<BackupVerification> =
         backupRepository.verifyBackup(uri.toString(), type, passphrase)

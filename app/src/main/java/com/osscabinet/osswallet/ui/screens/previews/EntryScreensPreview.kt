@@ -16,6 +16,7 @@ import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryState
 import com.osscabinet.ossWallet.ui.screens.filters.entry.components.FilterFormBody
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryState
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanFormBody
+import com.osscabinet.ossWallet.ui.components.IconSelectionDialog
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
@@ -51,18 +52,83 @@ fun AccountEntryEditPreview() {
     showBackground = true,
     widthDp = 400,
     heightDp = 800,
-    name = "Visual Identity Dialog Preview"
+    name = "Visual Identity Sheet - Light"
 )
 @Composable
 fun VisualIdentityDialogPreview() {
-    OssWalletTheme {
+    OssWalletTheme(theme = "Light") {
         Surface {
             AccountFormBody(
                 state = AccountEntryState(
                     accountName = "Dialog Test",
-                    showIconSheet = true
+                    showIconSheet = true,
+                    selectedIconName = "AccountBalance",
+                    accentColorHex = "#2196F3"
                 ),
                 onEvent = {}
+            )
+        }
+    }
+}
+
+@Preview(
+    showBackground = true,
+    widthDp = 400,
+    heightDp = 800,
+    name = "Visual Identity Sheet - Dark"
+)
+@Composable
+fun VisualIdentityDialogDarkPreview() {
+    OssWalletTheme(theme = "Dark") {
+        Surface {
+            AccountFormBody(
+                state = AccountEntryState(
+                    accountName = "Dialog Test",
+                    showIconSheet = true,
+                    selectedIconName = "CreditCard",
+                    accentColorHex = "#B71C1C"
+                ),
+                onEvent = {}
+            )
+        }
+    }
+}
+
+@Preview(
+    showBackground = true,
+    widthDp = 400,
+    heightDp = 600,
+    name = "Icon Selection Grid Dialog - Light"
+)
+@Composable
+fun IconSelectionGridDialogPreview() {
+    OssWalletTheme(theme = "Light") {
+        Surface {
+            IconSelectionDialog(
+                selectedIconName = "AccountBalance",
+                onIconSelected = {},
+                accentColorHex = "#2196F3",
+                onDismissRequest = {}
+            )
+        }
+    }
+}
+
+@Preview(
+    showBackground = true,
+    widthDp = 400,
+    heightDp = 600,
+    name = "Icon Selection Grid Dialog - Dark"
+)
+@Composable
+fun IconSelectionGridDialogDarkPreview() {
+    OssWalletTheme(theme = "Dark") {
+        Surface {
+            IconSelectionDialog(
+                selectedIconName = "CreditCard",
+                onIconSelected = {},
+                accentColorHex = "#B71C1C",
+                onDismissRequest = {}
             )
         }
     }

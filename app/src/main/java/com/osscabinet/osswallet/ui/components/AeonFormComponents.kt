@@ -27,7 +27,11 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -38,6 +42,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Colorize
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Lock
@@ -48,6 +53,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -333,7 +339,7 @@ fun AeonTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.weight(1f),
-                textStyle = AppTextStyles.formFieldValue,
+                textStyle = AppTextStyles.formFieldValue.copy(color = AppColors.contentPrimary),
                 cursorBrush = SolidColor(AppColors.primary),
                 singleLine = true,
                 decorationBox = { innerTextField ->
@@ -1207,6 +1213,129 @@ fun AeonColorSelection(
     }
 }
 
+@Composable
+fun IconGridContent(
+    selectedIconName: String,
+    onIconSelected: (String) -> Unit,
+    accentColorHex: String,
+    modifier: Modifier = Modifier,
+    searchQuery: String = "",
+    onSearchQueryChange: ((String) -> Unit)? = null
+) {
+    var internalQuery by remember { mutableStateOf(searchQuery) }
+    val activeQuery = onSearchQueryChange?.let { searchQuery } ?: internalQuery
+    val updateQuery = onSearchQueryChange ?: { internalQuery = it }
+
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val accentColor = accentColorHex.toColorInt()
+        .let { if (it != -1) Color(it) else AppColors.primary }
+
+    val filteredIcons = remember(activeQuery) {
+        if (activeQuery.isBlank()) {
+            AppIconMap.entries.toList()
+        } else {
+            AppIconMap.entries.filter { (name, _) ->
+                name.contains(activeQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        AeonTextField(
+            value = activeQuery,
+            onValueChange = updateQuery,
+            placeholder = "Search icons...",
+            leadingIcon = Icons.Rounded.Search
+        )
+
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 52.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 360.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            items(filteredIcons, key = { it.key }) { (name, icon) ->
+                val isSelected = selectedIconName == name
+                Surface(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clickable {
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                            onIconSelected(name)
+                        },
+                    shape = CircleShape,
+                    color = if (isSelected) accentColor else AppColors.surfaceContainerHigh,
+                    contentColor = if (isSelected) (if (accentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.contentSecondary,
+                    border = if (isSelected) BorderStroke(2.dp, AppColors.contentPrimary.copy(alpha = 0.3f)) else null
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            icon,
+                            contentDescription = name,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun IconSelectionDialog(
+    selectedIconName: String,
+    onIconSelected: (String) -> Unit,
+    accentColorHex: String,
+    onDismissRequest: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        containerColor = AppColors.sheetSurface,
+        titleContentColor = AppColors.contentPrimary,
+        textContentColor = AppColors.contentSecondary,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Select Icon",
+                    style = AppTextStyles.heroAmount.copy(fontSize = 20.sp),
+                    color = AppColors.contentPrimary
+                )
+                IconButton(
+                    onClick = onDismissRequest,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = "Close",
+                        modifier = Modifier.size(20.dp),
+                        tint = AppColors.contentSecondary
+                    )
+                }
+            }
+        },
+        text = {
+            IconGridContent(
+                selectedIconName = selectedIconName,
+                onIconSelected = {
+                    onIconSelected(it)
+                    onDismissRequest()
+                },
+                accentColorHex = accentColorHex
+            )
+        },
+        confirmButton = {}
+    )
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun VisualIdentitySection(
@@ -1249,6 +1378,7 @@ fun VisualIdentitySection(
                     Icon(
                         Icons.Rounded.GridView,
                         contentDescription = "View All Icons",
+                        tint = AppColors.contentPrimary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -1331,49 +1461,11 @@ fun VisualIdentitySection(
     }
 
     if (showAllIcons) {
-        AlertDialog(
-            onDismissRequest = { showAllIcons = false },
-            title = { Text("Select Icon") },
-            text = {
-                Box(modifier = Modifier.height(400.dp)) {
-                    FlowRow(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        AppIconMap.forEach { (name, icon) ->
-                            val isSelected = selectedIconName == name
-                            val accentColor = accentColorHex.toColorInt()
-                                .let { if (it != -1) Color(it) else AppColors.primary }
-                            Surface(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clickable {
-                                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                                        onIconSelected(name)
-                                        showAllIcons = false
-                                    },
-                                shape = CircleShape,
-                                color = if (isSelected) accentColor else AppColors.surfaceContainerHigh,
-                                contentColor = if (isSelected) (if (accentColor.isDark()) ColorOnDark else ColorOnLight) else AppColors.contentSecondary
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        icon,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showAllIcons = false }) { Text("Close") }
-            }
+        IconSelectionDialog(
+            selectedIconName = selectedIconName,
+            onIconSelected = onIconSelected,
+            accentColorHex = accentColorHex,
+            onDismissRequest = { showAllIcons = false }
         )
     }
 }
@@ -1499,6 +1591,34 @@ fun AeonFormComponentsExtraPreview() {
                 onIconSelected = {},
                 accentColorHex = "#4CAF50",
                 onColorSelected = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Icon Grid Content - Light")
+@Composable
+fun IconGridContentLightPreview() {
+    OssWalletTheme(theme = "Light") {
+        Surface(color = AppColors.sheetSurface, modifier = Modifier.padding(16.dp)) {
+            IconGridContent(
+                selectedIconName = "AccountBalance",
+                onIconSelected = {},
+                accentColorHex = "#2196F3"
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Icon Grid Content - Dark")
+@Composable
+fun IconGridContentDarkPreview() {
+    OssWalletTheme(theme = "Dark") {
+        Surface(color = AppColors.sheetSurface, modifier = Modifier.padding(16.dp)) {
+            IconGridContent(
+                selectedIconName = "CreditCard",
+                onIconSelected = {},
+                accentColorHex = "#B71C1C"
             )
         }
     }

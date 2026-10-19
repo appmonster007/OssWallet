@@ -234,9 +234,22 @@ object TimelineService {
             com.osscabinet.ossWallet.domain.model.RecurrenceType.EVERY_N_MONTHS -> {
                 val interval = if (rule.type == com.osscabinet.ossWallet.domain.model.RecurrenceType.MONTHLY) 1 else rule.interval.coerceAtLeast(1)
                 val monthDiff = java.time.temporal.ChronoUnit.MONTHS.between(startZdt.toLocalDate(), nowZdt.toLocalDate())
-                val cycle = (if (monthDiff >= 0) monthDiff / interval else (monthDiff - interval + 1) / interval) + periodic.offset
-                val periodStart = startZdt.plusMonths(cycle * interval).toLocalDate().atStartOfDay(zone)
-                val periodEnd = periodStart.plusMonths(interval.toLong()).minusNanos(1000)
+                var cycle = (if (monthDiff >= 0) monthDiff / interval else (monthDiff - interval + 1) / interval) + periodic.offset
+
+                var periodStart = startZdt.plusMonths(cycle * interval).toLocalDate().atStartOfDay(zone)
+                var periodEnd = periodStart.plusMonths(interval.toLong()).minusNanos(1000)
+
+                while (nowZdt.isBefore(periodStart)) {
+                    cycle--
+                    periodStart = startZdt.plusMonths(cycle * interval).toLocalDate().atStartOfDay(zone)
+                    periodEnd = periodStart.plusMonths(interval.toLong()).minusNanos(1000)
+                }
+                while (!nowZdt.isBefore(periodEnd)) {
+                    cycle++
+                    periodStart = startZdt.plusMonths(cycle * interval).toLocalDate().atStartOfDay(zone)
+                    periodEnd = periodStart.plusMonths(interval.toLong()).minusNanos(1000)
+                }
+
                 Pair(periodStart.toInstant().toEpochMilli(), periodEnd.toInstant().toEpochMilli())
             }
 

@@ -99,7 +99,7 @@ fun BudgetFormBody(
                     value = state.limitAmount,
                     currency = state.currency,
                     onValueClick = { onEvent(BudgetEntryEvent.ShowNumpad(show = true)) },
-                    onCurrencyClick = { onEvent(BudgetEntryEvent.ShowNumpad(show = true)) },
+                    onCurrencyClick = { onEvent(BudgetEntryEvent.ShowBaseCurrencySheet(show = true)) },
                     color = AppColors.primary
                 ),
                 nameState = AeonTextFieldState(
@@ -115,12 +115,26 @@ fun BudgetFormBody(
             // BUDGET CONTEXT: The core parameters of the budget itself
             EntrySection(title = "BUDGET PARAMETERS", icon = Icons.Rounded.Info) {
                 Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
+                    // Inline Period Selector (Direct swiping/tapping without pop-up dialogs)
+                    AeonTimelinePeriodSelector(
+                        currentRange = state.timelineRange,
+                        onRangeSelected = { onEvent(BudgetEntryEvent.SetTimelineRange(it)) },
+                        swipeEntireComponent = false,
+                        defaultThisPeriod = com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH,
+                        defaultExcludeFuture = false
+                    )
+
+                    // Custom Recurring Schedule trigger
                     EntryActionCard(
                         icon = Icons.Rounded.CalendarToday,
-                        label = "TIMELINE & RECURRING SCHEDULE",
-                        value = state.timelineRange.toDisplayString(),
-                        onClick = { onEvent(BudgetEntryEvent.ShowTimelineSheet(true)) },
-                        modifier = Modifier.fillMaxWidth()
+                        label = "CUSTOM RECURRING SCHEDULE",
+                        value = if (state.timelineRange is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.Periodic) {
+                            state.timelineRange.toDisplayString()
+                        } else "Build Custom Recurrence Rule",
+                        onClick = { onEvent(BudgetEntryEvent.ShowScheduleBuilder(true)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        iconContainerColor = AppColors.formIconContainerSecondary,
+                        iconTint = AppColors.onSecondaryContainer
                     )
 
                     // Budget's own note

@@ -57,6 +57,7 @@ data class LoanEntryState(
     val showNumpad: Boolean = false,
     val showInterestNumpad: Boolean = false,
     val showTimelineSheet: Boolean = false,
+    val showScheduleBuilder: Boolean = false,
     val showAccountSheet: Boolean = false,
     val showTrackTypeSheet: Boolean = false,
     val showCategorySheet: Boolean = false,

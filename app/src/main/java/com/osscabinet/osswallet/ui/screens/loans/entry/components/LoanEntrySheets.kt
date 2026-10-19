@@ -39,6 +39,19 @@ fun LoanEntrySheets(
         )
     }
 
+    if (state.showBaseCurrencySheet) {
+        AeonCurrencySelection(
+            selectedCurrencies = setOf(state.currency),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { onEvent(LoanEntryEvent.SetCurrency(it)) }
+            },
+            onDismiss = { onEvent(LoanEntryEvent.ShowBaseCurrencySheet(false)) },
+            mode = AeonSelectMode.SINGLE,
+            title = "Select Loan Base Currency",
+            currencies = state.shortlistedCurrencies.ifEmpty { com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies() }
+        )
+    }
+
     if (state.showInterestNumpad) {
         AeonCalculatorSheet(
             currentAmount = state.interestRate,

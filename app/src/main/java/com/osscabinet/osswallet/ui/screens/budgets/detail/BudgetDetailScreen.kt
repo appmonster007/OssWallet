@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -308,6 +307,7 @@ fun BudgetDetailContent(
                                             progress = progress,
                                             offset = offset,
                                             onOffsetChange = onOffsetChange,
+                                            history = history,
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     }
@@ -318,12 +318,6 @@ fun BudgetDetailContent(
                                             allAccounts = accounts,
                                             allCategories = categoriesList
                                         )
-                                    }
-
-                                    if (history.isNotEmpty()) {
-                                        item {
-                                            PeriodHistorySection(history = history)
-                                        }
                                     }
 
                                     if (budget.rollover && progress.rolloverAmount > BigDecimal.ZERO) {
@@ -495,94 +489,7 @@ fun BudgetDetailContent(
     }
 }
 
-@Composable
-private fun PeriodHistorySection(
-    history: List<BudgetProgress>,
-    modifier: Modifier = Modifier
-) {
-    if (history.isEmpty()) return
 
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-    ) {
-        Text(
-            text = "PERIOD HISTORY",
-            style = AppTextStyles.formSectionLabel,
-            color = AppColors.contentSecondary.copy(alpha = 0.6f)
-        )
-
-        history.forEach { progress ->
-            val (start, end) = TimelineService.getDateRange(progress.budget.timelineRange)
-            val sdf = remember { java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()) }
-            val label = if (start != null && end != null) {
-                "${sdf.format(java.util.Date(start))} - ${sdf.format(java.util.Date(end))}"
-            } else progress.budget.timelineRange.toDisplayString()
-
-            val alertColor = when (progress.alertLevel) {
-                BudgetAlertLevel.EXCEEDED, BudgetAlertLevel.WARNING -> AppColors.error
-                BudgetAlertLevel.NONE -> AppColors.primary
-            }
-
-            Surface(
-                color = AppColors.cardSurface,
-                shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-                border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(AeonTheme.dimensions.cardPadding)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = label,
-                            style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
-                            color = AppColors.contentPrimary
-                        )
-                        Text(
-                            text = "${(progress.percentage * 100).toInt()}%",
-                            style = AppTextStyles.formSectionLabel,
-                            color = alertColor
-                        )
-                    }
-
-                    LinearProgressIndicator(
-                        progress = { progress.percentage.coerceIn(0f, 1f) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp),
-                        color = alertColor,
-                        trackColor = alertColor.copy(alpha = 0.12f),
-                        strokeCap = StrokeCap.Round
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "${progress.spent.toPlainString()} spent",
-                            style = AppTextStyles.caption,
-                            color = AppColors.contentSecondary.copy(alpha = 0.8f)
-                        )
-                        Text(
-                            text = "Limit: ${progress.limit.toPlainString()} ${progress.budget.currency}",
-                            style = AppTextStyles.caption,
-                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Preview(showBackground = true)
 @Composable

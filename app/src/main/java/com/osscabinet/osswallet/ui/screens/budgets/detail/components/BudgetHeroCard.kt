@@ -2,10 +2,13 @@ package com.osscabinet.ossWallet.ui.screens.budgets.detail.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -16,19 +19,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.DonutLarge
+import androidx.compose.material.icons.rounded.Today
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -46,6 +51,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.visualization.AeonSparkline
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -60,7 +66,8 @@ fun BudgetHeroCard(
     progress: BudgetProgress,
     modifier: Modifier = Modifier,
     offset: Int = 0,
-    onOffsetChange: ((Int) -> Unit)? = null
+    onOffsetChange: ((Int) -> Unit)? = null,
+    history: List<BudgetProgress> = emptyList()
 ) {
     val accentColor = when (progress.alertLevel) {
         BudgetAlertLevel.EXCEEDED, BudgetAlertLevel.WARNING -> AppColors.error
@@ -91,99 +98,221 @@ fun BudgetHeroCard(
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Period Stepper (Hidden for AllTime open-ended budgets)
             if (onOffsetChange != null && budget.timelineRange !is TimelineRange.AllTime) {
-                Surface(
-                    color = AppColors.surfaceContainerHigh.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                val isOffsetActive = offset != 0
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Row(
+                    Surface(
+                        color = AppColors.surfaceContainerHigh.copy(alpha = if (isOffsetActive) 0.5f else 0.3f),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(
+                            width = 0.5.dp,
+                            color = if (isOffsetActive) AppColors.primary.copy(alpha = 0.35f) else AppColors.divider.copy(alpha = 0.12f)
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .height(42.dp)
                     ) {
-                        IconButton(
-                            onClick = { onOffsetChange(offset - 1) },
-                            modifier = Modifier.size(32.dp)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                                contentDescription = "Previous Period",
-                                tint = AppColors.contentPrimary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
+                            Surface(
+                                onClick = { onOffsetChange(offset - 1) },
+                                shape = CircleShape,
+                                color = AppColors.cardSurface.copy(alpha = 0.7f),
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
+                                        contentDescription = "Previous Period",
+                                        tint = AppColors.contentPrimary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
 
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = periodLabel,
-                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                                style = AppTextStyles.caption.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 12.sp
+                                ),
                                 color = AppColors.contentPrimary
                             )
-                            if (offset != 0) {
-                                Surface(
-                                    onClick = { onOffsetChange(0) },
-                                    color = AppColors.primary.copy(alpha = 0.12f),
-                                    shape = RoundedCornerShape(6.dp),
-                                    modifier = Modifier.padding(top = 3.dp)
-                                ) {
-                                    Text(
-                                        text = "Back to Current",
-                                        style = AppTextStyles.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                        color = AppColors.primary,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+
+                            Surface(
+                                onClick = { onOffsetChange(offset + 1) },
+                                shape = CircleShape,
+                                color = AppColors.cardSurface.copy(alpha = 0.7f),
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                        contentDescription = "Next Period",
+                                        tint = AppColors.contentPrimary,
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
                             }
                         }
+                    }
 
-                        IconButton(
-                            onClick = { onOffsetChange(offset + 1) },
-                            modifier = Modifier.size(32.dp)
+                    // Reset Button centered below and outside the timeline stepper pill
+                    if (isOffsetActive) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                contentDescription = "Next Period",
-                                tint = AppColors.contentPrimary,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(AppColors.primary.copy(alpha = 0.12f))
+                                    .border(0.5.dp, AppColors.primary.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
+                                    .clickable { onOffsetChange(0) }
+                                    .padding(horizontal = 10.dp, vertical = 3.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Today,
+                                    contentDescription = "Reset to Current Period",
+                                    tint = AppColors.primary,
+                                    modifier = Modifier.size(11.dp)
+                                )
+                                Text(
+                                    text = "Reset to Current",
+                                    style = AppTextStyles.caption.copy(
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.2.sp
+                                    ),
+                                    color = AppColors.primary
+                                )
+                            }
                         }
                     }
                 }
             }
 
+            // 6-month spending trendline from history
+            val trendHistory = remember(history, progress) {
+                val items = if (history.isNotEmpty()) history else listOf(progress)
+                val missing = 6 - items.size
+                if (missing > 0) {
+                    val firstItem = items.first()
+                    val padded = (missing downTo 1).map { step ->
+                        val paddedRange = TimelineService.shiftRange(firstItem.budget.timelineRange, -step)
+                        val paddedBudget = firstItem.budget.copy(timelineRange = paddedRange)
+                        BudgetProgress(
+                            budget = paddedBudget,
+                            spent = BigDecimal.ZERO,
+                            limit = paddedBudget.limitAmount,
+                            remaining = paddedBudget.limitAmount,
+                            percentage = 0f,
+                            alertLevel = BudgetAlertLevel.NONE
+                        )
+                    }
+                    padded + items
+                } else items
+            }
+            val sparklinePoints = remember(trendHistory) {
+                trendHistory.map { it.spent }
+            }
+
+            val sdfMonth = remember { java.text.SimpleDateFormat("MMM yyyy", java.util.Locale.getDefault()) }
+            if (sparklinePoints.size >= 2) {
+                var selectedHistoryIndex by remember { mutableStateOf<Int?>(null) }
+                val activeHistoryItem = selectedHistoryIndex?.let { trendHistory.getOrNull(it) }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (activeHistoryItem != null) {
+                                val (hStart, hEnd) = TimelineService.getDateRange(activeHistoryItem.budget.timelineRange)
+                                if (hStart != null && hEnd != null) {
+                                    sdfMonth.format(java.util.Date(hStart)).uppercase()
+                                } else activeHistoryItem.budget.timelineRange.toDisplayString().uppercase()
+                            } else "TREND",
+                            style = AppTextStyles.caption.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp,
+                                letterSpacing = 1.sp
+                            ),
+                            color = if (activeHistoryItem != null) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.6f)
+                        )
+
+                        if (activeHistoryItem != null) {
+                            Text(
+                                text = "${CurrencyReprUi.formatCurrencyAnnotated(activeHistoryItem.spent, budget.currency, spec = CurrencyDisplaySpec(useSemanticColor = false))} spent",
+                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                                color = AppColors.contentPrimary
+                            )
+                        }
+                    }
+
+                    AeonSparkline(
+                        points = sparklinePoints,
+                        lineColor = accentColor,
+                        selectedIndex = selectedHistoryIndex,
+                        onSelectedIndexChange = { selectedHistoryIndex = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    )
+                }
+            }
+
             // Hero Section: Label & Percentage Badge + Auto-Scaling Hero Amount
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) "OVER BUDGET" else "REMAINING",
+                        text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) "EXCEEDED BY" else "REMAINING BUDGET",
                         style = AppTextStyles.caption.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 1.5.sp
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            letterSpacing = 1.2.sp
                         ),
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                        color = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) AppColors.error else AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
 
                     Surface(
-                        color = accentColor.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.2f))
+                        color = accentColor.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(20.dp),
+                        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.25f))
                     ) {
                         Text(
-                            text = "${(progress.percentage * 100).toInt()}%",
-                            style = AppTextStyles.screenSubTitle.copy(
-                                fontWeight = FontWeight.Black,
-                                fontSize = 16.sp
+                            text = "${(progress.percentage * 100).toInt()}% used",
+                            style = AppTextStyles.caption.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
                             ),
                             color = accentColor,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -191,12 +320,12 @@ fun BudgetHeroCard(
                     }
                 }
 
-                // Auto-scaling Hero Amount (mirroring AccountHeroCard pattern)
+                // Auto-scaling Hero Amount
                 var multiplier by remember(displayAmount, budget.currency) { mutableFloatStateOf(1f) }
                 val symbolStyle = SpanStyle(
                     fontWeight = FontWeight.Light,
                     color = AppColors.contentSecondary.copy(alpha = 0.5f),
-                    fontSize = (20f * multiplier).sp
+                    fontSize = (22f * multiplier).sp
                 )
 
                 Text(
@@ -207,9 +336,9 @@ fun BudgetHeroCard(
                         partStyles = CurrencyPartStyles(symbol = symbolStyle)
                     ),
                     style = AppTextStyles.heroAmountLarge.copy(
-                        fontSize = (32f * multiplier).sp,
+                        fontSize = (34f * multiplier).sp,
                         letterSpacing = (-1).sp,
-                        lineHeight = (38f * multiplier).sp
+                        lineHeight = (40f * multiplier).sp
                     ),
                     color = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) AppColors.error else AppColors.contentPrimary,
                     maxLines = 1,
@@ -223,54 +352,74 @@ fun BudgetHeroCard(
                 )
             }
 
-            // Pace Status & Daily Allowance
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Pace Status & Daily Allowance Velocity Container
+            val paceColor = when (paceStatus) {
+                BudgetPaceStatus.OVER -> AppColors.error
+                BudgetPaceStatus.NEAR_LIMIT -> AppColors.error
+                BudgetPaceStatus.AHEAD_OF_PACE -> AppColors.accent
+                BudgetPaceStatus.ON_TRACK -> AppColors.primary
+            }
+            val paceLabel = when (paceStatus) {
+                BudgetPaceStatus.OVER -> "OVER BUDGET"
+                BudgetPaceStatus.NEAR_LIMIT -> "NEAR LIMIT"
+                BudgetPaceStatus.AHEAD_OF_PACE -> "AHEAD OF PACE"
+                BudgetPaceStatus.ON_TRACK -> "ON TRACK"
+            }
+
+            Surface(
+                color = AppColors.surfaceContainerHigh.copy(alpha = 0.4f),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.12f)),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                val paceColor = when (paceStatus) {
-                    BudgetPaceStatus.OVER -> AppColors.error
-                    BudgetPaceStatus.NEAR_LIMIT -> AppColors.error
-                    BudgetPaceStatus.AHEAD_OF_PACE -> AppColors.accent
-                    BudgetPaceStatus.ON_TRACK -> AppColors.primary
-                }
-                val paceLabel = when (paceStatus) {
-                    BudgetPaceStatus.OVER -> "OVER BUDGET"
-                    BudgetPaceStatus.NEAR_LIMIT -> "NEAR LIMIT"
-                    BudgetPaceStatus.AHEAD_OF_PACE -> "AHEAD OF PACE"
-                    BudgetPaceStatus.ON_TRACK -> "ON TRACK"
-                }
-
-                Surface(
-                    color = paceColor.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(8.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = paceLabel,
-                        style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
-                        color = paceColor,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
+                    Surface(
+                        color = paceColor.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(0.5.dp, paceColor.copy(alpha = 0.25f))
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(paceColor, CircleShape)
+                            )
+                            Text(
+                                text = paceLabel,
+                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 0.5.sp),
+                                color = paceColor
+                            )
+                        }
+                    }
 
-                if (dailyAllowance != null) {
-                    Text(
-                        text = "${CurrencyReprUi.formatCurrencyAnnotated(dailyAllowance, budget.currency, spec = CurrencyDisplaySpec(useSemanticColor = false))} / day left",
-                        style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
-                        color = AppColors.contentSecondary.copy(alpha = 0.8f)
-                    )
+                    if (dailyAllowance != null) {
+                        Text(
+                            text = "${CurrencyReprUi.formatCurrencyAnnotated(dailyAllowance, budget.currency, spec = CurrencyDisplaySpec(useSemanticColor = false))} / day",
+                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
+                            color = AppColors.contentPrimary
+                        )
+                    }
                 }
             }
 
             // Gauge & Dual Readout
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     LinearProgressIndicator(
                         progress = { progress.percentage.coerceIn(0f, 1f) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(10.dp),
+                            .height(8.dp),
                         color = accentColor,
                         trackColor = accentColor.copy(alpha = 0.08f),
                         strokeCap = StrokeCap.Round
@@ -321,6 +470,8 @@ fun BudgetHeroCard(
                     )
                 }
             }
+
+
 
             if (progress.alertLevel != BudgetAlertLevel.NONE) {
                 Surface(
@@ -393,12 +544,30 @@ private fun BudgetHeroCardOnTrackPreview() {
         percentage = 0.64f,
         alertLevel = BudgetAlertLevel.NONE
     )
+    val sampleHistory = listOf(
+        BigDecimal("210.00"),
+        BigDecimal("380.00"),
+        BigDecimal("290.00"),
+        BigDecimal("410.00"),
+        BigDecimal("350.00"),
+        BigDecimal("320.00")
+    ).map { spent ->
+        BudgetProgress(
+            budget = sampleBudget,
+            spent = spent,
+            limit = BigDecimal("500.00"),
+            remaining = BigDecimal("500.00") - spent,
+            percentage = (spent.toFloat() / 500f),
+            alertLevel = BudgetAlertLevel.NONE
+        )
+    }
     OssWalletTheme {
         BudgetHeroCard(
             budget = sampleBudget,
             progress = sampleProgress,
             offset = 0,
-            onOffsetChange = {}
+            onOffsetChange = {},
+            history = sampleHistory
         )
     }
 }
@@ -457,12 +626,30 @@ private fun BudgetHeroCardTimelineOffsetPreview() {
         percentage = 0.1875f,
         alertLevel = BudgetAlertLevel.NONE
     )
+    val sampleHistory = listOf(
+        BigDecimal("620.00"),
+        BigDecimal("450.00"),
+        BigDecimal("710.00"),
+        BigDecimal("500.00"),
+        BigDecimal("300.00"),
+        BigDecimal("150.00")
+    ).map { spent ->
+        BudgetProgress(
+            budget = sampleBudget,
+            spent = spent,
+            limit = BigDecimal("800.00"),
+            remaining = BigDecimal("800.00") - spent,
+            percentage = (spent.toFloat() / 800f),
+            alertLevel = BudgetAlertLevel.NONE
+        )
+    }
     OssWalletTheme {
         BudgetHeroCard(
             budget = sampleBudget,
             progress = sampleProgress,
             offset = -1,
-            onOffsetChange = {}
+            onOffsetChange = {},
+            history = sampleHistory
         )
     }
 }

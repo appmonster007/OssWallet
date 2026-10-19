@@ -241,4 +241,16 @@ class BudgetServiceTest {
         assertEquals(0, febSpentDirect.compareTo(febProgress.spent))
         assertEquals(0, BigDecimal("250").compareTo(febProgress.spent))
     }
+
+    @Test
+    fun `getPeriodHistory computes window relative to offset`() {
+        val now = epochOf(2024, 3, 15)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH), limit = BigDecimal("1000"))
+
+        val windowOffset0 = BudgetService.getPeriodHistory(budget, emptyList(), ExchangeRateSnapshot.EMPTY, "USD", now, offset = 0, count = 5)
+        assertEquals(6, windowOffset0.size)
+
+        val windowOffsetMinus1 = BudgetService.getPeriodHistory(budget, emptyList(), ExchangeRateSnapshot.EMPTY, "USD", now, offset = -1, count = 5)
+        assertEquals(6, windowOffsetMinus1.size)
+    }
 }

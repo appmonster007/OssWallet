@@ -27,6 +27,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
 @HiltViewModel
 class BudgetViewModel @Inject constructor(
     private val budgetRepository: BudgetRepository,
@@ -35,6 +38,9 @@ class BudgetViewModel @Inject constructor(
     private val computationRepository: ComputationRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
+
+    private val _selectedOffsets = MutableStateFlow<Map<Long, Int>>(emptyMap())
+    val selectedOffsets: StateFlow<Map<Long, Int>> = _selectedOffsets.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val currentProfileId: StateFlow<Int> = settingsRepository.currentProfileId
@@ -65,7 +71,8 @@ class BudgetViewModel @Inject constructor(
         val budgets: List<Budget>,
         val transactions: List<Transaction>,
         val rates: ExchangeRateSnapshot,
-        val categories: List<Category>
+        val categories: List<Category>,
+        val offsets: Map<Long, Int>
     )
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -73,16 +80,22 @@ class BudgetViewModel @Inject constructor(
         budgets,
         transactions,
         computationRepository.exchangeRatesSnapshot,
-        categories
-    ) { budgetsList, transactionsList, snapshot, categoriesList ->
-        BudgetSnapshot(budgetsList, transactionsList, snapshot, categoriesList)
+        categories,
+        selectedOffsets
+    ) { budgetsList, transactionsList, snapshot, categoriesList, offsets ->
+        BudgetSnapshot(budgetsList, transactionsList, snapshot, categoriesList, offsets)
     }.distinctUntilChanged()
         .map { snapshot ->
             val baseCurrency = snapshot.rates.anchor
             val now = System.currentTimeMillis()
             snapshot.budgets.associate { budget ->
+                val offset = snapshot.offsets[budget.id] ?: 0
+                val evalBudget = if (offset != 0) {
+                    budget.copy(timelineRange = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.shiftRange(budget.timelineRange, offset))
+                } else budget
+
                 val rollover = BudgetService.calculateRollover(
-                    budget,
+                    evalBudget,
                     snapshot.transactions,
                     snapshot.rates,
                     baseCurrency,
@@ -90,17 +103,44 @@ class BudgetViewModel @Inject constructor(
                     snapshot.categories
                 )
                 val spent = BudgetService.calculateSpent(
-                    budget,
+                    evalBudget,
                     snapshot.transactions,
                     snapshot.rates,
                     baseCurrency,
                     now,
                     snapshot.categories
                 )
-                budget.id to BudgetService.buildProgress(budget, spent, rollover)
+                val elapsed = BudgetService.elapsedFraction(evalBudget, now)
+                budget.id to BudgetService.buildProgress(evalBudget, spent, rollover, elapsed)
             }
         }.flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val periodHistory: StateFlow<Map<Long, List<BudgetProgress>>> = combine(
+        budgets,
+        transactions,
+        computationRepository.exchangeRatesSnapshot,
+        categories
+    ) { budgetsList, transactionsList, snapshot, categoriesList ->
+        val baseCurrency = snapshot.anchor
+        val now = System.currentTimeMillis()
+        budgetsList.associate { budget ->
+            budget.id to BudgetService.getPeriodHistory(
+                budget,
+                transactionsList,
+                snapshot,
+                baseCurrency,
+                now,
+                categoriesList
+            )
+        }
+    }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    fun setPeriodOffset(budgetId: Long, offset: Int) {
+        _selectedOffsets.value = _selectedOffsets.value + (budgetId to offset)
+    }
 
     fun delete(budgetId: Long) {
         viewModelScope.launch {

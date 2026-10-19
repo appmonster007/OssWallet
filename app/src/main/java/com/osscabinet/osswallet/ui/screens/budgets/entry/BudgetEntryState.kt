@@ -52,6 +52,7 @@ data class BudgetEntryState(
     val showCustomEndPicker: Boolean = false,
     val showNumpad: Boolean = false,
     val showTimelineSheet: Boolean = false,
+    val showScheduleBuilder: Boolean = false,
     val showAccountSheet: Boolean = false,
     val showTrackTypeSheet: Boolean = false,
     val showCategorySheet: Boolean = false,

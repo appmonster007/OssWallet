@@ -124,6 +124,18 @@ fun BudgetFormBody(
                         defaultExcludeFuture = false
                     )
 
+                    EntryActionCard(
+                        icon = Icons.Rounded.CalendarToday,
+                        label = "CUSTOM RECURRING SCHEDULE",
+                        value = if (state.timelineRange is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.Periodic) {
+                            state.timelineRange.toDisplayString()
+                        } else "Build Custom Recurrence Rule",
+                        onClick = { onEvent(BudgetEntryEvent.ShowScheduleBuilder(true)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        iconContainerColor = AppColors.formIconContainerSecondary,
+                        iconTint = AppColors.onSecondaryContainer
+                    )
+
                     // Budget's own note
                     EntryEditorialInput(
                         value = state.note,

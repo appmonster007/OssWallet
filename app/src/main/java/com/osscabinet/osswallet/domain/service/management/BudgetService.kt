@@ -195,4 +195,43 @@ object BudgetService {
         
         return previousEffectiveLimit.subtract(previousSpent).max(BigDecimal.ZERO)
     }
+
+    fun remainingDailyAllowance(progress: BudgetProgress, now: Long): BigDecimal? {
+        val budget = progress.budget
+        if (budget.timelineRange is TimelineRange.AllTime) return null
+        val (start, end) = getCurrentPeriodRange(budget, now)
+        if (end <= now || end <= start) return null
+
+        val remainingMs = end - now
+        val remainingDays = (remainingMs / (1000L * 60 * 60 * 24)).coerceAtLeast(1)
+        return progress.remaining.divide(BigDecimal(remainingDays), 2, RoundingMode.HALF_UP)
+    }
+
+    fun getPeriodHistory(
+        budget: Budget,
+        transactions: List<Transaction>,
+        exchangeRates: ExchangeRateSnapshot,
+        baseCurrency: String,
+        now: Long,
+        allCategories: List<Category> = emptyList(),
+        count: Int = 5,
+        precision: Int = CurrencyService.precision
+    ): List<BudgetProgress> {
+        if (budget.timelineRange is TimelineRange.AllTime) return emptyList()
+
+        return (0 downTo -count).map { offset ->
+            val shiftedRange = TimelineService.shiftRange(budget.timelineRange, offset)
+            val shiftedBudget = budget.copy(timelineRange = shiftedRange)
+            val (start, end) = TimelineService.getDateRange(shiftedRange, referenceTime = now)
+            val refTime = if (start != null && end != null) (start + end) / 2 else now
+
+            val rollover = if (budget.rollover) {
+                calculateRollover(shiftedBudget, transactions, exchangeRates, baseCurrency, refTime, allCategories, precision = precision)
+            } else BigDecimal.ZERO
+
+            val spent = calculateSpent(shiftedBudget, transactions, exchangeRates, baseCurrency, refTime, allCategories, precision = precision)
+            val elapsed = elapsedFraction(shiftedBudget, now)
+            buildProgress(shiftedBudget, spent, rollover, elapsed)
+        }
+    }
 }

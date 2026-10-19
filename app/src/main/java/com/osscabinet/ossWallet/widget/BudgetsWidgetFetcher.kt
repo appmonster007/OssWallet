@@ -156,6 +156,7 @@ class BudgetsWidgetFetcher : WidgetDataFetcher {
             is TimelineRange.ThisPeriod -> period.label
             is TimelineRange.LastPeriod -> "Last ${period.label}"
             is TimelineRange.CustomRange -> "Custom range"
+            is TimelineRange.Periodic -> recurrenceRule.formatHuman()
         }
     }
 }

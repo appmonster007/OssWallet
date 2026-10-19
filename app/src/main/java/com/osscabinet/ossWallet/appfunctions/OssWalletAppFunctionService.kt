@@ -12,6 +12,7 @@ import androidx.appfunctions.AppFunctionService
 import androidx.appfunctions.AppFunctionServiceEntryPoint
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
+import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CancellationException
@@ -23,11 +24,12 @@ interface AssistantEntryPoint {
 }
 
 /**
- * Registers OssWallet's functions with the system so AI assistants can call them. Every function ships disabled and
- * is switched on from Settings (see [AssistantAccessController]); each also refuses to run while the app is locked.
+ * Registers OssWallet's functions with the system so AI assistants can call them. Every function is enabled by default
+ * and can be toggled in Settings (see [AssistantAccessController]); each also refuses to run while the app is locked.
  * The work itself lives in [AssistantFunctions]; this class only describes the functions and translates errors.
  */
 @RequiresApi(36)
+@AndroidEntryPoint
 @AppFunctionServiceEntryPoint(
     serviceName = "OssWalletAppFunctionService",
     appFunctionXmlFileName = "osswallet_app_functions"
@@ -45,7 +47,7 @@ abstract class BaseOssWalletAppFunctionService : AppFunctionService() {
      *
      * @return The accounts that records can be added to.
      */
-    @AppFunctionDeclaration(isEnabled = false, isDescribedByKDoc = true)
+    @AppFunctionDeclaration(isEnabled = true, isDescribedByKDoc = true)
     suspend fun listAccounts(): AccountList = guard { functions.listAccounts() }
 
     /**
@@ -54,7 +56,7 @@ abstract class BaseOssWalletAppFunctionService : AppFunctionService() {
      *
      * @return The categories that records can be filed under.
      */
-    @AppFunctionDeclaration(isEnabled = false, isDescribedByKDoc = true)
+    @AppFunctionDeclaration(isEnabled = true, isDescribedByKDoc = true)
     suspend fun listCategories(): CategoryList = guard { functions.listCategories() }
 
     /**
@@ -63,7 +65,7 @@ abstract class BaseOssWalletAppFunctionService : AppFunctionService() {
      *
      * @return The saved filters, with a one-line description of each.
      */
-    @AppFunctionDeclaration(isEnabled = false, isDescribedByKDoc = true)
+    @AppFunctionDeclaration(isEnabled = true, isDescribedByKDoc = true)
     suspend fun listSavedFilters(): SavedFilterList = guard { functions.listSavedFilters() }
 
     /**
@@ -74,19 +76,19 @@ abstract class BaseOssWalletAppFunctionService : AppFunctionService() {
      * @param params What to record.
      * @return The record that was created.
      */
-    @AppFunctionDeclaration(isEnabled = false, isDescribedByKDoc = true)
+    @AppFunctionDeclaration(isEnabled = true, isDescribedByKDoc = true)
     suspend fun createTransaction(params: CreateTransactionParams): CreatedTransaction =
         guard { functions.createTransaction(params) }
 
     /**
-     * Searches the user's transactions by words, tag, amount, period, account, type or a saved filter, newest first.
-     * Returns at most 50 transactions and the total number that match. Use it to answer "when did I last pay X" or
-     * "show my biggest expenses this year".
+     * Searches or lists the user's transactions by words, tag, amount, period, account, type or a saved filter, newest first.
+     * Returns at most 50 transactions and the total number that match. Use it to list recent transactions or answer queries like
+     * "get my last 10 transactions", "show my recent transactions", "when did I last pay X", or "show my biggest expenses this year".
      *
      * @param params What to look for.
      * @return The matching transactions.
      */
-    @AppFunctionDeclaration(isEnabled = false, isDescribedByKDoc = true)
+    @AppFunctionDeclaration(isEnabled = true, isDescribedByKDoc = true)
     suspend fun searchTransactions(params: SearchTransactionsParams): TransactionSearchResult =
         guard { functions.searchTransactions(params) }
 
@@ -98,7 +100,7 @@ abstract class BaseOssWalletAppFunctionService : AppFunctionService() {
      * @param params What to analyse.
      * @return The statistics, ready to summarise or chart.
      */
-    @AppFunctionDeclaration(isEnabled = false, isDescribedByKDoc = true)
+    @AppFunctionDeclaration(isEnabled = true, isDescribedByKDoc = true)
     suspend fun getStatistics(params: StatisticsParams): StatisticsResult = guard { functions.statistics(params) }
 
     private suspend fun <T> guard(block: suspend () -> T): T = try {

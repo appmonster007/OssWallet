@@ -33,5 +33,6 @@ data class NetWorthWidgetConfig(
         is TimelineRange.ThisPeriod -> tr.period.label
         is TimelineRange.LastPeriod -> "Last ${tr.period.label}"
         is TimelineRange.CustomRange -> "Custom Range"
+        is TimelineRange.Periodic   -> tr.recurrenceRule.formatHuman()
     }
 }

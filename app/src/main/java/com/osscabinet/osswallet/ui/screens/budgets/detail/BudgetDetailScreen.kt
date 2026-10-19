@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.rounded.Receipt
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,6 +36,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -137,9 +140,19 @@ fun BudgetDetailScreen(
 
     val absoluteTransactionsWithBalance by transactionViewModel.absoluteTransactionsWithBalance.collectAsStateWithLifecycle()
 
-    val budgetFilter = remember(budget, categoriesList) {
+    val selectedOffsets by viewModel.selectedOffsets.collectAsStateWithLifecycle()
+    val periodHistoryMap by viewModel.periodHistory.collectAsStateWithLifecycle()
+
+    val currentOffset = selectedOffsets[budget.id] ?: 0
+    val history = periodHistoryMap[budget.id] ?: emptyList()
+
+    val evalBudget = if (currentOffset != 0) {
+        budget.copy(timelineRange = TimelineService.shiftRange(budget.timelineRange, currentOffset))
+    } else budget
+
+    val budgetFilter = remember(evalBudget, categoriesList) {
         BudgetService.buildTransactionFilter(
-            budget,
+            evalBudget,
             System.currentTimeMillis(),
             categoriesList
         )
@@ -158,6 +171,9 @@ fun BudgetDetailScreen(
     BudgetDetailContent(
         budget = budget,
         progress = progress,
+        offset = currentOffset,
+        onOffsetChange = { viewModel.setPeriodOffset(budget.id, it) },
+        history = history,
         budgetFilter = budgetFilter,
         budgetTransactions = budgetTransactions,
         absoluteTransactionsWithBalance = absoluteTransactionsWithBalance,
@@ -216,6 +232,9 @@ fun BudgetDetailScreen(
 fun BudgetDetailContent(
     budget: Budget,
     progress: BudgetProgress,
+    offset: Int = 0,
+    onOffsetChange: ((Int) -> Unit)? = null,
+    history: List<BudgetProgress> = emptyList(),
     budgetFilter: TransactionFilter,
     budgetTransactions: List<TransactionWithBalance>,
     absoluteTransactionsWithBalance: List<TransactionWithBalance>,
@@ -283,6 +302,8 @@ fun BudgetDetailContent(
                                         BudgetHeroCard(
                                             budget = budget,
                                             progress = progress,
+                                            offset = offset,
+                                            onOffsetChange = onOffsetChange,
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     }
@@ -293,6 +314,12 @@ fun BudgetDetailContent(
                                             allAccounts = accounts,
                                             allCategories = categoriesList
                                         )
+                                    }
+
+                                    if (history.isNotEmpty()) {
+                                        item {
+                                            PeriodHistorySection(history = history)
+                                        }
                                     }
 
                                     if (budget.rollover && progress.rolloverAmount > BigDecimal.ZERO) {
@@ -460,6 +487,95 @@ fun BudgetDetailContent(
                     }
                 )
             )
+        }
+    }
+}
+
+@Composable
+private fun PeriodHistorySection(
+    history: List<BudgetProgress>,
+    modifier: Modifier = Modifier
+) {
+    if (history.isEmpty()) return
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+    ) {
+        Text(
+            text = "PERIOD HISTORY",
+            style = AppTextStyles.formSectionLabel,
+            color = AppColors.contentSecondary.copy(alpha = 0.6f)
+        )
+
+        history.forEach { progress ->
+            val (start, end) = TimelineService.getDateRange(progress.budget.timelineRange)
+            val sdf = remember { java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()) }
+            val label = if (start != null && end != null) {
+                "${sdf.format(java.util.Date(start))} - ${sdf.format(java.util.Date(end))}"
+            } else progress.budget.timelineRange.toDisplayString()
+
+            val alertColor = when (progress.alertLevel) {
+                BudgetAlertLevel.EXCEEDED, BudgetAlertLevel.WARNING -> AppColors.error
+                BudgetAlertLevel.NONE -> AppColors.primary
+            }
+
+            Surface(
+                color = AppColors.cardSurface,
+                shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
+                border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(AeonTheme.dimensions.cardPadding)
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = label,
+                            style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
+                            color = AppColors.contentPrimary
+                        )
+                        Text(
+                            text = "${(progress.percentage * 100).toInt()}%",
+                            style = AppTextStyles.formSectionLabel,
+                            color = alertColor
+                        )
+                    }
+
+                    LinearProgressIndicator(
+                        progress = { progress.percentage.coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp),
+                        color = alertColor,
+                        trackColor = alertColor.copy(alpha = 0.12f),
+                        strokeCap = StrokeCap.Round
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "${progress.spent.toPlainString()} spent",
+                            style = AppTextStyles.caption,
+                            color = AppColors.contentSecondary.copy(alpha = 0.8f)
+                        )
+                        Text(
+                            text = "Limit: ${progress.limit.toPlainString()} ${progress.budget.currency}",
+                            style = AppTextStyles.caption,
+                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ import kotlinx.serialization.json.JsonClassDiscriminator
 enum class ThisPeriodType(val label: String) {
     TODAY("Today"),
     WEEK("This Week"),
+    BIWEEKLY("Bi-weekly"),
     MONTH("This Month"),
     QUARTER("This Quarter"),
     HALF_YEAR("This Half"),
@@ -55,10 +56,19 @@ sealed class TimelineRange {
         override val excludeFuture: Boolean = false
     ) : TimelineRange()
 
+    @Serializable
+    data class Periodic(
+        val recurrenceRule: com.osscabinet.ossWallet.domain.model.RecurrenceRule,
+        val startDate: Long,
+        val offset: Int = 0,
+        override val excludeFuture: Boolean = false
+    ) : TimelineRange()
+
     fun toDisplayString(): String = when (this) {
         is AllTime -> "All Time"
         is ThisPeriod -> period.label
         is LastPeriod -> "Last ${period.label}"
+        is Periodic -> recurrenceRule.formatHuman()
         is CustomRange -> {
             if (start != null && end != null) {
                 val formatter = java.time.format.DateTimeFormatter.ofPattern(
@@ -84,5 +94,6 @@ sealed class TimelineRange {
         is ThisPeriod -> copy(excludeFuture = exclude)
         is LastPeriod -> copy(excludeFuture = exclude)
         is CustomRange -> copy(excludeFuture = exclude)
+        is Periodic -> copy(excludeFuture = exclude)
     }
 }

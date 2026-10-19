@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.test
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.CreditCardDetails
 import com.osscabinet.ossWallet.domain.model.CurrencySummary
 import com.osscabinet.ossWallet.domain.model.SharedWallet
 import com.osscabinet.ossWallet.domain.model.Tag
@@ -154,6 +155,11 @@ class FakeAccountRepository(
     override suspend fun updateAccounts(accounts: List<Account>, profileId: Int) {
         accountsFlow.value = accounts
     }
+    private val cardDetails = mutableMapOf<String, CreditCardDetails>()
+    override suspend fun saveCreditCardDetails(details: CreditCardDetails) {
+        cardDetails[details.accountId] = details
+    }
+    override suspend fun getCreditCardDetails(accountId: String): CreditCardDetails? = cardDetails[accountId]
 }
 
 // ── FakeTransactionRepository ───────────────────────────────────────────────

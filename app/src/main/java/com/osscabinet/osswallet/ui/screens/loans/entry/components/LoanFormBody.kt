@@ -80,6 +80,9 @@ fun LoanFormBody(
     val dims = AeonTheme.dimensions
     val formatter =
         remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
+    val supportedCurrencies = remember(state.shortlistedCurrencies) {
+        state.shortlistedCurrencies.ifEmpty { com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies() }
+    }
 
     Box(modifier = modifier
         .fillMaxSize()
@@ -103,8 +106,15 @@ fun LoanFormBody(
                     value = state.principalAmount,
                     currency = state.currency,
                     onValueClick = { onEvent(LoanEntryEvent.ShowNumpad(show = true)) },
-                    onCurrencyClick = { onEvent(LoanEntryEvent.ShowNumpad(show = true)) },
-                    color = amountColor
+                    onCurrencyClick = { code ->
+                        if (code.length == 3) {
+                            onEvent(LoanEntryEvent.SetCurrency(code))
+                        } else {
+                            onEvent(LoanEntryEvent.ShowBaseCurrencySheet(show = true))
+                        }
+                    },
+                    color = amountColor,
+                    supportedCurrencies = supportedCurrencies
                 ),
                 nameState = AeonTextFieldState(
                     value = state.name,

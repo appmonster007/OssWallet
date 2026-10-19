@@ -58,6 +58,7 @@ class BudgetEntryViewModel @Inject constructor(
 
     private fun loadInitialData() {
         viewModelScope.launch {
+            val defaultCurr = settingsRepository.currency.first()
             settingsRepository.currentProfileId.flatMapLatest { profileId ->
                 val uniqueNotes = transactionUseCases.getUniqueNotes(profileId)
                 val payees = transactionUseCases.getUniquePayees(profileId)
@@ -76,6 +77,7 @@ class BudgetEntryViewModel @Inject constructor(
                             allPayees = payees,
                             currentProfileId = profileId,
                             availableFilters = filters,
+                            currency = if (it.isEditMode) it.currency else defaultCurr,
                             selectedAccountIds = if (it.isEditMode) it.selectedAccountIds else emptySet(),
                             selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else emptySet(),
                             selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else emptySet(),
@@ -96,29 +98,33 @@ class BudgetEntryViewModel @Inject constructor(
 
     fun initialize(budgetId: Long? = null) {
         if (budgetId == null) {
-            _state.update {
-                it.copy(
-                    isEditMode = false,
-                    budgetId = null,
-                    selectedAccountIds = emptySet(),
-                    selectedCategoryIds = emptySet(),
-                    selectedPaymentMethods = emptySet(),
-                    selectedStatuses = emptySet(),
-                    selectedTrackTypes = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
-                    selectedCurrencies = emptySet(),
-                    selectedTags = emptySet(),
-                    matchAllTags = true,
-                    queryNote = "",
-                    queryPayee = "",
-                    isNoteRegex = false,
-                    isPayeeRegex = false,
-                    minAmount = "",
-                    maxAmount = "",
-                    hasWarranty = null,
-                    warrantyExpirationStart = null,
-                    warrantyExpirationEnd = null,
-                    timelineRange = TimelineRange.AllTime(excludeFuture = true)
-                )
+            viewModelScope.launch {
+                val defaultCurr = settingsRepository.currency.first()
+                _state.update {
+                    it.copy(
+                        isEditMode = false,
+                        budgetId = null,
+                        currency = defaultCurr,
+                        selectedAccountIds = emptySet(),
+                        selectedCategoryIds = emptySet(),
+                        selectedPaymentMethods = emptySet(),
+                        selectedStatuses = emptySet(),
+                        selectedTrackTypes = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
+                        selectedCurrencies = emptySet(),
+                        selectedTags = emptySet(),
+                        matchAllTags = true,
+                        queryNote = "",
+                        queryPayee = "",
+                        isNoteRegex = false,
+                        isPayeeRegex = false,
+                        minAmount = "",
+                        maxAmount = "",
+                        hasWarranty = null,
+                        warrantyExpirationStart = null,
+                        warrantyExpirationEnd = null,
+                        timelineRange = TimelineRange.AllTime(excludeFuture = true)
+                    )
+                }
             }
             return
         }

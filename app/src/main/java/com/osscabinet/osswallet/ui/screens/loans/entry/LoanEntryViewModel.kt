@@ -59,6 +59,7 @@ class LoanEntryViewModel @Inject constructor(
 
     private fun loadInitialData() {
         viewModelScope.launch {
+            val defaultCurr = settingsRepository.currency.first()
             settingsRepository.currentProfileId.flatMapLatest { profileId ->
                 val uniqueNotes = transactionUseCases.getUniqueNotes(profileId)
                 val uniquePayees = transactionUseCases.getUniquePayees(profileId)
@@ -77,6 +78,7 @@ class LoanEntryViewModel @Inject constructor(
                             uniqueNotes = uniqueNotes,
                             currentProfileId = profileId,
                             availableFilters = filters,
+                            currency = if (it.isEditMode) it.currency else defaultCurr,
                             selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else emptySet(),
                             selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else emptySet(),
                             selectedStatuses = if (it.isEditMode) it.selectedStatuses else emptySet(),
@@ -95,27 +97,31 @@ class LoanEntryViewModel @Inject constructor(
 
     fun initialize(loanId: Long? = null) {
         if (loanId == null) {
-            _state.update {
-                it.copy(
-                    isEditMode = false,
-                    loanId = null,
-                    selectedCategoryIds = emptySet(),
-                    selectedPaymentMethods = emptySet(),
-                    selectedStatuses = emptySet(),
-                    selectedTrackTypes = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
-                    selectedCurrencies = emptySet(),
-                    selectedTags = emptySet(),
-                    queryNote = "",
-                    queryPayee = "",
-                    isNoteRegex = false,
-                    isPayeeRegex = false,
-                    minAmount = "",
-                    maxAmount = "",
-                    hasWarranty = null,
-                    warrantyExpirationStart = null,
-                    warrantyExpirationEnd = null,
-                    timelineRange = TimelineRange.AllTime(excludeFuture = true)
-                )
+            viewModelScope.launch {
+                val defaultCurr = settingsRepository.currency.first()
+                _state.update {
+                    it.copy(
+                        isEditMode = false,
+                        loanId = null,
+                        currency = defaultCurr,
+                        selectedCategoryIds = emptySet(),
+                        selectedPaymentMethods = emptySet(),
+                        selectedStatuses = emptySet(),
+                        selectedTrackTypes = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
+                        selectedCurrencies = emptySet(),
+                        selectedTags = emptySet(),
+                        queryNote = "",
+                        queryPayee = "",
+                        isNoteRegex = false,
+                        isPayeeRegex = false,
+                        minAmount = "",
+                        maxAmount = "",
+                        hasWarranty = null,
+                        warrantyExpirationStart = null,
+                        warrantyExpirationEnd = null,
+                        timelineRange = TimelineRange.AllTime(excludeFuture = true)
+                    )
+                }
             }
             return
         }
@@ -243,6 +249,7 @@ class LoanEntryViewModel @Inject constructor(
             LoanEntryEvent.MakeFilterUnique -> {}
             is LoanEntryEvent.SetDeleteFilterWithLoan -> {}
             is LoanEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
+            is LoanEntryEvent.ShowBaseCurrencySheet -> _state.update { it.copy(showBaseCurrencySheet = event.show) }
             is LoanEntryEvent.ShowStartDatePicker -> _state.update { it.copy(showStartDatePicker = event.show) }
             is LoanEntryEvent.ShowSettlementDatePicker -> _state.update {
                 it.copy(

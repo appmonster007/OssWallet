@@ -207,6 +207,36 @@ object BudgetService {
         return progress.remaining.divide(BigDecimal(remainingDays), 2, RoundingMode.HALF_UP)
     }
 
+    fun getPeriodProgressForOffset(
+        budget: Budget,
+        transactions: List<Transaction>,
+        exchangeRates: ExchangeRateSnapshot,
+        baseCurrency: String,
+        now: Long,
+        offset: Int,
+        allCategories: List<Category> = emptyList(),
+        precision: Int = CurrencyService.precision
+    ): BudgetProgress {
+        if (budget.timelineRange is TimelineRange.AllTime) {
+            val spent = calculateSpent(budget, transactions, exchangeRates, baseCurrency, now, allCategories, precision = precision)
+            return buildProgress(budget, spent)
+        }
+
+        val shiftedRange = TimelineService.shiftRange(budget.timelineRange, offset)
+        val (start, end) = TimelineService.getDateRange(shiftedRange, referenceTime = now)
+        val evalBudget = if (start != null && end != null) {
+            budget.copy(timelineRange = TimelineRange.CustomRange(start, end))
+        } else budget.copy(timelineRange = shiftedRange)
+
+        val rollover = if (budget.rollover) {
+            calculateRollover(evalBudget, transactions, exchangeRates, baseCurrency, now, allCategories, precision = precision)
+        } else BigDecimal.ZERO
+
+        val spent = calculateSpent(evalBudget, transactions, exchangeRates, baseCurrency, now, allCategories, precision = precision)
+        val elapsed = elapsedFraction(evalBudget, now)
+        return buildProgress(evalBudget, spent, rollover, elapsed)
+    }
+
     fun getPeriodHistory(
         budget: Budget,
         transactions: List<Transaction>,
@@ -214,25 +244,25 @@ object BudgetService {
         baseCurrency: String,
         now: Long,
         allCategories: List<Category> = emptyList(),
+        offset: Int = 0,
         count: Int = 5,
         precision: Int = CurrencyService.precision
     ): List<BudgetProgress> {
         if (budget.timelineRange is TimelineRange.AllTime) return emptyList()
 
-        return (0 downTo -count).map { offset ->
-            val shiftedRange = TimelineService.shiftRange(budget.timelineRange, offset)
-            val (start, end) = TimelineService.getDateRange(shiftedRange, referenceTime = now)
-            val evalBudget = if (start != null && end != null) {
-                budget.copy(timelineRange = TimelineRange.CustomRange(start, end))
-            } else budget.copy(timelineRange = shiftedRange)
-
-            val rollover = if (budget.rollover) {
-                calculateRollover(evalBudget, transactions, exchangeRates, baseCurrency, now, allCategories, precision = precision)
-            } else BigDecimal.ZERO
-
-            val spent = calculateSpent(evalBudget, transactions, exchangeRates, baseCurrency, now, allCategories, precision = precision)
-            val elapsed = elapsedFraction(evalBudget, now)
-            buildProgress(evalBudget, spent, rollover, elapsed)
+        val endOffset = offset
+        val startOffset = offset - count
+        return (startOffset..endOffset).map { targetOffset ->
+            getPeriodProgressForOffset(
+                budget = budget,
+                transactions = transactions,
+                exchangeRates = exchangeRates,
+                baseCurrency = baseCurrency,
+                now = now,
+                offset = targetOffset,
+                allCategories = allCategories,
+                precision = precision
+            )
         }
     }
 }

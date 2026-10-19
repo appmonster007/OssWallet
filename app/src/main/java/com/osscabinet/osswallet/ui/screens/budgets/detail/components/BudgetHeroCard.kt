@@ -186,9 +186,9 @@ fun BudgetHeroCard(
                 // Auto-scaling Hero Amount (mirroring AccountHeroCard pattern)
                 var multiplier by remember(displayAmount, budget.currency) { mutableFloatStateOf(1f) }
                 val symbolStyle = SpanStyle(
-                    fontWeight = FontWeight.Normal,
-                    color = AppColors.contentSecondary.copy(alpha = 0.4f),
-                    fontSize = (18f * multiplier).sp
+                    fontWeight = FontWeight.Light,
+                    color = AppColors.contentSecondary.copy(alpha = 0.5f),
+                    fontSize = (20f * multiplier).sp
                 )
 
                 Text(
@@ -198,10 +198,10 @@ fun BudgetHeroCard(
                         spec = CurrencyDisplaySpec(useSemanticColor = false, shortenThreshold = -1),
                         partStyles = CurrencyPartStyles(symbol = symbolStyle)
                     ),
-                    style = AppTextStyles.heroAmount.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = (36f * multiplier).sp,
-                        letterSpacing = (-1.5).sp
+                    style = AppTextStyles.heroAmountLarge.copy(
+                        fontSize = (32f * multiplier).sp,
+                        letterSpacing = (-1).sp,
+                        lineHeight = (38f * multiplier).sp
                     ),
                     color = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) AppColors.error else AppColors.contentPrimary,
                     maxLines = 1,

@@ -230,8 +230,8 @@ class BudgetServiceTest {
         )
 
         val history = BudgetService.getPeriodHistory(budget, transactions, ExchangeRateSnapshot.EMPTY, "USD", now, count = 5)
-        // history[0] is offset 0 (March 2024), history[1] is offset -1 (February 2024)
-        val febProgress = history[1]
+        // Chronological list (index 5 is offset 0, index 4 is offset -1)
+        val febProgress = history[history.size - 2]
 
         val shiftedRange = TimelineService.shiftRange(budget.timelineRange, -1)
         val (start, end) = TimelineService.getDateRange(shiftedRange, referenceTime = now)

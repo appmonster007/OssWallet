@@ -80,6 +80,10 @@ fun BudgetFormBody(
     modifier: Modifier = Modifier
 ) {
     val dims = AeonTheme.dimensions
+    val supportedCurrencies = remember(state.shortlistedCurrencies) {
+        state.shortlistedCurrencies.ifEmpty { com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies() }
+    }
+
     Box(modifier = modifier
         .fillMaxSize()
         .statusBarsPadding()) {
@@ -99,8 +103,15 @@ fun BudgetFormBody(
                     value = state.limitAmount,
                     currency = state.currency,
                     onValueClick = { onEvent(BudgetEntryEvent.ShowNumpad(show = true)) },
-                    onCurrencyClick = { onEvent(BudgetEntryEvent.ShowBaseCurrencySheet(show = true)) },
-                    color = AppColors.primary
+                    onCurrencyClick = { code ->
+                        if (code.length == 3) {
+                            onEvent(BudgetEntryEvent.SetCurrency(code))
+                        } else {
+                            onEvent(BudgetEntryEvent.ShowBaseCurrencySheet(show = true))
+                        }
+                    },
+                    color = AppColors.primary,
+                    supportedCurrencies = supportedCurrencies
                 ),
                 nameState = AeonTextFieldState(
                     value = state.name,

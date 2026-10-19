@@ -46,6 +46,7 @@ sealed class LoanEntryEvent {
     data class ShowDeleteDialog(val show: Boolean) : LoanEntryEvent()
 
     // Visibility
+    data class ShowBaseCurrencySheet(val show: Boolean) : LoanEntryEvent()
     data class ShowStartDatePicker(val show: Boolean) : LoanEntryEvent()
     data class ShowSettlementDatePicker(val show: Boolean) : LoanEntryEvent()
     data class ShowNumpad(val show: Boolean) : LoanEntryEvent()

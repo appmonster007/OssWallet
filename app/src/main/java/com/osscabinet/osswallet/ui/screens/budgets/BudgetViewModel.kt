@@ -126,18 +126,22 @@ class BudgetViewModel @Inject constructor(
         budgets,
         transactions,
         computationRepository.exchangeRatesSnapshot,
-        categories
-    ) { budgetsList, transactionsList, snapshot, categoriesList ->
+        categories,
+        selectedOffsets
+    ) { budgetsList, transactionsList, snapshot, categoriesList, offsetsMap ->
         val baseCurrency = snapshot.anchor
         val now = System.currentTimeMillis()
         budgetsList.associate { budget ->
+            val currentOffset = offsetsMap[budget.id] ?: 0
             budget.id to BudgetService.getPeriodHistory(
-                budget,
-                transactionsList,
-                snapshot,
-                baseCurrency,
-                now,
-                categoriesList
+                budget = budget,
+                transactions = transactionsList,
+                exchangeRates = snapshot,
+                baseCurrency = baseCurrency,
+                now = now,
+                allCategories = categoriesList,
+                offset = currentOffset,
+                count = 5
             )
         }
     }.flowOn(Dispatchers.Default)

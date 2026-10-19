@@ -34,21 +34,25 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetPaceStatus
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
+import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
+import java.math.BigDecimal
 
 @Composable
 fun BudgetHeroCard(
@@ -366,3 +370,100 @@ fun BudgetHeroCard(
         }
     }
 }
+
+@Preview(showBackground = true, name = "Budget Hero Card - On Track")
+@Composable
+private fun BudgetHeroCardOnTrackPreview() {
+    val sampleBudget = Budget(
+        id = 1L,
+        name = "Monthly Groceries",
+        limitAmount = BigDecimal("500.00"),
+        currency = "USD",
+        timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
+        categoryIds = setOf(1L),
+        accountIds = emptySet(),
+        tags = emptySet(),
+        profileId = 1
+    )
+    val sampleProgress = BudgetProgress(
+        budget = sampleBudget,
+        spent = BigDecimal("320.00"),
+        limit = BigDecimal("500.00"),
+        remaining = BigDecimal("180.00"),
+        percentage = 0.64f,
+        alertLevel = BudgetAlertLevel.NONE
+    )
+    OssWalletTheme {
+        BudgetHeroCard(
+            budget = sampleBudget,
+            progress = sampleProgress,
+            offset = 0,
+            onOffsetChange = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Budget Hero Card - Exceeded")
+@Composable
+private fun BudgetHeroCardExceededPreview() {
+    val sampleBudget = Budget(
+        id = 2L,
+        name = "Dining Out",
+        limitAmount = BigDecimal("200.00"),
+        currency = "USD",
+        timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
+        categoryIds = setOf(2L),
+        accountIds = emptySet(),
+        tags = emptySet(),
+        profileId = 1
+    )
+    val sampleProgress = BudgetProgress(
+        budget = sampleBudget,
+        spent = BigDecimal("245.50"),
+        limit = BigDecimal("200.00"),
+        remaining = BigDecimal("-45.50"),
+        percentage = 1.2275f,
+        alertLevel = BudgetAlertLevel.EXCEEDED
+    )
+    OssWalletTheme {
+        BudgetHeroCard(
+            budget = sampleBudget,
+            progress = sampleProgress,
+            offset = 0,
+            onOffsetChange = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Budget Hero Card - Timeline Offset")
+@Composable
+private fun BudgetHeroCardTimelineOffsetPreview() {
+    val sampleBudget = Budget(
+        id = 3L,
+        name = "Travel & Leisure",
+        limitAmount = BigDecimal("800.00"),
+        currency = "USD",
+        timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
+        categoryIds = setOf(3L),
+        accountIds = emptySet(),
+        tags = emptySet(),
+        profileId = 1
+    )
+    val sampleProgress = BudgetProgress(
+        budget = sampleBudget,
+        spent = BigDecimal("150.00"),
+        limit = BigDecimal("800.00"),
+        remaining = BigDecimal("650.00"),
+        percentage = 0.1875f,
+        alertLevel = BudgetAlertLevel.NONE
+    )
+    OssWalletTheme {
+        BudgetHeroCard(
+            budget = sampleBudget,
+            progress = sampleProgress,
+            offset = -1,
+            onOffsetChange = {}
+        )
+    }
+}
+

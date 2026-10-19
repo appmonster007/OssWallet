@@ -90,9 +90,14 @@ class BudgetViewModel @Inject constructor(
             val now = System.currentTimeMillis()
             snapshot.budgets.associate { budget ->
                 val offset = snapshot.offsets[budget.id] ?: 0
-                val evalBudget = if (offset != 0) {
-                    budget.copy(timelineRange = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.shiftRange(budget.timelineRange, offset))
-                } else budget
+                val shiftedRange = if (offset != 0) {
+                    com.osscabinet.ossWallet.domain.service.timeline.TimelineService.shiftRange(budget.timelineRange, offset)
+                } else budget.timelineRange
+
+                val (start, end) = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.getDateRange(shiftedRange, referenceTime = now)
+                val evalBudget = if (start != null && end != null) {
+                    budget.copy(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange(start, end))
+                } else budget.copy(timelineRange = shiftedRange)
 
                 val rollover = BudgetService.calculateRollover(
                     evalBudget,

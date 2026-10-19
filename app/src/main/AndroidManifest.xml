@@ -237,10 +237,18 @@
             android:exported="true"
             tools:targetApi="36">
             <property
+                android:name="android.app.appfunctions.schema"
+                android:value="app_functions_schema.xsd" />
+            <property
+                android:name="android.app.appfunctions"
+                android:value="app_functions.xml" />
+            <property
                 android:name="android.app.appfunctions.v2"
                 android:value="osswallet_app_functions.xml" />
             <intent-filter>
                 <action android:name="android.app.appfunctions.AppFunctionService" />
+                <action android:name="android.app.appfunctions.action.APP_FUNCTION_SERVICE" />
+                <action android:name="android.intent.action.APP_FUNCTION" />
             </intent-filter>
         </service>
 

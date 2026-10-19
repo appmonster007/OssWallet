@@ -56,7 +56,45 @@ data class RecurrenceRule(
     val dayOfWeek: Int? = null,   // 1–7 (Mon–Sun) for WEEKLY
     val dayOfMonth: Int? = null,  // 1–31 for MONTHLY; clamped to month length
     val cronExpression: String? = null
-)
+) {
+    fun formatHuman(): String {
+        val dayOfWeekName: (Int?) -> String? = { dow ->
+            when (dow) {
+                1 -> "Monday"; 2 -> "Tuesday"; 3 -> "Wednesday"; 4 -> "Thursday"
+                5 -> "Friday"; 6 -> "Saturday"; 7 -> "Sunday"
+                else -> null
+            }
+        }
+        return when (type) {
+            RecurrenceType.ONE_TIME -> "One time"
+            RecurrenceType.DAILY -> "Daily"
+            RecurrenceType.WEEKLY -> {
+                val day = dayOfWeekName(dayOfWeek)
+                if (day != null) "Every week on $day" else "Weekly"
+            }
+            RecurrenceType.MONTHLY -> {
+                if (dayOfMonth != null) "Every month on day $dayOfMonth" else "Monthly"
+            }
+            RecurrenceType.YEARLY -> "Yearly"
+            RecurrenceType.EVERY_N_DAYS -> {
+                if (interval == 1) "Daily" else "Every $interval days"
+            }
+            RecurrenceType.EVERY_N_WEEKS -> {
+                val day = dayOfWeekName(dayOfWeek)
+                val base = if (interval == 1) "Weekly" else if (interval == 2) "Bi-weekly" else "Every $interval weeks"
+                if (day != null) "$base on $day" else base
+            }
+            RecurrenceType.EVERY_N_MONTHS -> {
+                val base = if (interval == 1) "Monthly" else if (interval == 3) "Quarterly" else if (interval == 6) "Semi-annually" else "Every $interval months"
+                if (dayOfMonth != null) "$base on day $dayOfMonth" else base
+            }
+            RecurrenceType.CRON -> {
+                if (cronExpression.isNullOrBlank()) "Custom Cron"
+                else "Cron ($cronExpression)"
+            }
+        }
+    }
+}
 
 /**
  * Groups scheduling logic and state.

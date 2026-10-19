@@ -125,6 +125,7 @@ internal fun TransactionFilter.toFilterSummaryDto(): FilterSummaryDto {
         is TimelineRange.CustomRange -> Triple("CUSTOM", tl.start, tl.end)
         is TimelineRange.ThisPeriod -> Triple(tl.period.name, null, null)
         is TimelineRange.LastPeriod -> Triple(tl.period.name, null, null)
+        is TimelineRange.Periodic -> Triple("PERIODIC", tl.startDate, null)
     }
     return FilterSummaryDto(
         timelineType = timelineType, dateFrom = dateFrom, dateTo = dateTo,
@@ -513,6 +514,7 @@ internal fun Filter.toDto(): FilterDto {
         is TimelineRange.CustomRange -> Triple("CUSTOM", tl.start, tl.end)
         is TimelineRange.ThisPeriod -> Triple(tl.period.name, null, null)
         is TimelineRange.LastPeriod -> Triple(tl.period.name, null, null)
+        is TimelineRange.Periodic -> Triple("PERIODIC", tl.startDate, null)
     }
     return FilterDto(
         id = id, name = name,

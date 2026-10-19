@@ -62,6 +62,7 @@ object TimelineService {
         val base: ZonedDateTime = when (period) {
             ThisPeriodType.TODAY -> now.plusDays(offset.toLong())
             ThisPeriodType.WEEK -> now.plusWeeks(offset.toLong())
+            ThisPeriodType.BIWEEKLY -> now.plusWeeks(offset.toLong() * 2)
             ThisPeriodType.MONTH -> now.plusMonths(offset.toLong())
             ThisPeriodType.QUARTER -> now.plusMonths(offset.toLong() * 3)
             ThisPeriodType.HALF_YEAR -> now.plusMonths(offset.toLong() * 6)
@@ -70,7 +71,7 @@ object TimelineService {
 
         val start: ZonedDateTime = when (period) {
             ThisPeriodType.TODAY -> base.toLocalDate().atStartOfDay(base.zone)
-            ThisPeriodType.WEEK -> base.toLocalDate()
+            ThisPeriodType.WEEK, ThisPeriodType.BIWEEKLY -> base.toLocalDate()
                 .with(TemporalAdjusters.previousOrSame(firstDayOfWeek)).atStartOfDay(base.zone)
 
             ThisPeriodType.MONTH -> base.toLocalDate().with(TemporalAdjusters.firstDayOfMonth())
@@ -97,6 +98,7 @@ object TimelineService {
             ThisPeriodType.WEEK -> start.toLocalDate()
                 .with(TemporalAdjusters.nextOrSame(firstDayOfWeek.plus(6))).atTime(LocalTime.MAX)
                 .atZone(base.zone)
+            ThisPeriodType.BIWEEKLY -> start.toLocalDate().plusDays(13).atTime(LocalTime.MAX).atZone(base.zone)
 
             ThisPeriodType.MONTH -> base.toLocalDate().with(TemporalAdjusters.lastDayOfMonth())
                 .atTime(LocalTime.MAX).atZone(base.zone)
@@ -177,6 +179,11 @@ object TimelineService {
             )
 
             is TimelineRange.CustomRange -> Pair(timelineRange.start, timelineRange.end)
+
+            is TimelineRange.Periodic -> getPeriodicRange(
+                timelineRange,
+                referenceTime = referenceTime
+            )
         }
 
         if (!timelineRange.excludeFuture) return baseRange
@@ -188,6 +195,66 @@ object TimelineService {
         val constrainedEnd = if (end != null) minOf(end, now) else now
 
         return Pair(start, constrainedEnd)
+    }
+
+    fun getPeriodicRange(
+        periodic: TimelineRange.Periodic,
+        referenceTime: Long? = null
+    ): Pair<Long, Long> {
+        val now = referenceTime ?: System.currentTimeMillis()
+        val rule = periodic.recurrenceRule
+        val startMillis = periodic.startDate
+        val zone = systemZoneId
+
+        val startZdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(startMillis), zone)
+        val nowZdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(now), zone)
+
+        return when (rule.type) {
+            com.osscabinet.ossWallet.domain.model.RecurrenceType.DAILY,
+            com.osscabinet.ossWallet.domain.model.RecurrenceType.EVERY_N_DAYS -> {
+                val interval = rule.interval.coerceAtLeast(1)
+                val dayDiff = java.time.temporal.ChronoUnit.DAYS.between(startZdt.toLocalDate(), nowZdt.toLocalDate())
+                val cycle = (if (dayDiff >= 0) dayDiff / interval else (dayDiff - interval + 1) / interval) + periodic.offset
+                val periodStart = startZdt.plusDays(cycle * interval).toLocalDate().atStartOfDay(zone)
+                val periodEnd = periodStart.plusDays(interval.toLong()).minusNanos(1000)
+                Pair(periodStart.toInstant().toEpochMilli(), periodEnd.toInstant().toEpochMilli())
+            }
+
+            com.osscabinet.ossWallet.domain.model.RecurrenceType.WEEKLY,
+            com.osscabinet.ossWallet.domain.model.RecurrenceType.EVERY_N_WEEKS -> {
+                val interval = if (rule.type == com.osscabinet.ossWallet.domain.model.RecurrenceType.WEEKLY) 1 else rule.interval.coerceAtLeast(1)
+                val weekDiff = java.time.temporal.ChronoUnit.WEEKS.between(startZdt.toLocalDate(), nowZdt.toLocalDate())
+                val cycle = (if (weekDiff >= 0) weekDiff / interval else (weekDiff - interval + 1) / interval) + periodic.offset
+                val periodStart = startZdt.plusWeeks(cycle * interval).toLocalDate().atStartOfDay(zone)
+                val periodEnd = periodStart.plusWeeks(interval.toLong()).minusNanos(1000)
+                Pair(periodStart.toInstant().toEpochMilli(), periodEnd.toInstant().toEpochMilli())
+            }
+
+            com.osscabinet.ossWallet.domain.model.RecurrenceType.MONTHLY,
+            com.osscabinet.ossWallet.domain.model.RecurrenceType.EVERY_N_MONTHS -> {
+                val interval = if (rule.type == com.osscabinet.ossWallet.domain.model.RecurrenceType.MONTHLY) 1 else rule.interval.coerceAtLeast(1)
+                val monthDiff = java.time.temporal.ChronoUnit.MONTHS.between(startZdt.toLocalDate(), nowZdt.toLocalDate())
+                val cycle = (if (monthDiff >= 0) monthDiff / interval else (monthDiff - interval + 1) / interval) + periodic.offset
+                val periodStart = startZdt.plusMonths(cycle * interval).toLocalDate().atStartOfDay(zone)
+                val periodEnd = periodStart.plusMonths(interval.toLong()).minusNanos(1000)
+                Pair(periodStart.toInstant().toEpochMilli(), periodEnd.toInstant().toEpochMilli())
+            }
+
+            com.osscabinet.ossWallet.domain.model.RecurrenceType.YEARLY -> {
+                val interval = rule.interval.coerceAtLeast(1)
+                val yearDiff = java.time.temporal.ChronoUnit.YEARS.between(startZdt.toLocalDate(), nowZdt.toLocalDate())
+                val cycle = (if (yearDiff >= 0) yearDiff / interval else (yearDiff - interval + 1) / interval) + periodic.offset
+                val periodStart = startZdt.plusYears(cycle * interval).toLocalDate().atStartOfDay(zone)
+                val periodEnd = periodStart.plusYears(interval.toLong()).minusNanos(1000)
+                Pair(periodStart.toInstant().toEpochMilli(), periodEnd.toInstant().toEpochMilli())
+            }
+
+            else -> {
+                val periodStart = startZdt.toLocalDate().atStartOfDay(zone)
+                val periodEnd = periodStart.plusMonths(1).minusNanos(1000)
+                Pair(periodStart.toInstant().toEpochMilli(), periodEnd.toInstant().toEpochMilli())
+            }
+        }
     }
 
     /**
@@ -232,6 +299,7 @@ object TimelineService {
         return when (range) {
             is TimelineRange.ThisPeriod -> range.copy(offset = range.offset + delta)
             is TimelineRange.LastPeriod -> range.copy(offset = range.offset + delta)
+            is TimelineRange.Periodic -> range.copy(offset = range.offset + delta)
             is TimelineRange.CustomRange -> {
                 val s = range.start ?: return range
                 val e = range.end ?: return range

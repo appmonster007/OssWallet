@@ -16,6 +16,7 @@ object TimelineFormatter {
         is TimelineRange.AllTime -> "All Time"
         is TimelineRange.ThisPeriod -> range.period.label
         is TimelineRange.LastPeriod -> range.period.label
+        is TimelineRange.Periodic -> range.recurrenceRule.formatHuman()
         is TimelineRange.CustomRange -> {
             val start = range.start?.let { formatDate(it) } ?: "..."
             val end = range.end?.let { formatDate(it) } ?: "..."

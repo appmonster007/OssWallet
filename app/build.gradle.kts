@@ -13,6 +13,10 @@ val localProps = Properties().also { props ->
     if (f.exists()) f.inputStream().use { props.load(it) }
 }
 
+ksp {
+    arg("appfunctions:aggregateAppFunctions", "true")
+}
+
 android {
     namespace = "com.osscabinet.ossWallet"
     compileSdk = 37

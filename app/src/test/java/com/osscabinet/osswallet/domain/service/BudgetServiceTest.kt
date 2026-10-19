@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.*
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.math.BigDecimal
@@ -198,5 +199,23 @@ class BudgetServiceTest {
         val filter = BudgetService.buildTransactionFilter(budget, now = System.currentTimeMillis())
         assertEquals("Starbucks", filter.queryPayee)
         assertEquals(false, filter.matchAllTags)
+    }
+
+    @Test
+    fun `remainingDailyAllowance calculates correct daily budget`() {
+        val now = epochOf(2024, 3, 15)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH), limit = BigDecimal("1000"))
+        val progress = BudgetService.buildProgress(budget, BigDecimal("500"))
+        val daily = BudgetService.remainingDailyAllowance(progress, now)
+        assertNotNull(daily)
+        assertTrue(daily!! > BigDecimal.ZERO)
+    }
+
+    @Test
+    fun `getPeriodHistory returns history items for past periods`() {
+        val now = epochOf(2024, 3, 15)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH), limit = BigDecimal("1000"))
+        val history = BudgetService.getPeriodHistory(budget, emptyList(), ExchangeRateSnapshot.EMPTY, "USD", now, count = 3)
+        assertEquals(4, history.size)
     }
 }

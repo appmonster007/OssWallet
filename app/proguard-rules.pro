@@ -61,6 +61,18 @@
     public abstract <methods>;
 }
 
+# ---- AppFunctions ----
+-keep @androidx.appfunctions.AppFunctionSerializable class * { *; }
+-keepclassmembers @androidx.appfunctions.AppFunctionSerializable class * { *; }
+-keepclassmembers class * {
+    @androidx.appfunctions.AppFunctionDeclaration <methods>;
+    @androidx.appfunctions.AppFunction <methods>;
+}
+-keep class * extends androidx.appfunctions.AppFunctionService { *; }
+-keep class com.osscabinet.ossWallet.appfunctions.** { *; }
+-keep class androidx.appfunctions.** { *; }
+-dontwarn androidx.appfunctions.**
+
 # ---- Stack trace line numbers ----
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile

@@ -22,7 +22,7 @@ class AssistantAccessRepositoryImpl @Inject constructor(
 ) : AssistantAccessRepository {
     private val key = booleanPreferencesKey("enabled")
 
-    override val enabled: Flow<Boolean> = context.assistantAccessStore.data.map { it[key] ?: false }
+    override val enabled: Flow<Boolean> = context.assistantAccessStore.data.map { it[key] ?: true }
 
     override suspend fun isEnabled(): Boolean = enabled.first()
 

@@ -61,19 +61,19 @@ data class CreateTransactionParams(
     /** The amount as a positive number with at most two decimals, for example "12.50". The sign comes from [type]. */
     val amount: String,
     /** "expense" or "income". Defaults to expense. */
-    val type: String?,
+    val type: String? = null,
     /** The account's name. Optional only if the user has a single account. */
-    val accountName: String?,
+    val accountName: String? = null,
     /** The category's name. Defaults to an uncategorised record. */
-    val categoryName: String?,
+    val categoryName: String? = null,
     /** Who was paid or who paid, such as a shop or an employer. */
-    val payee: String?,
+    val payee: String? = null,
     /** A short note about the record. */
-    val note: String?,
+    val note: String? = null,
     /** Tags to attach. Missing tags are created. */
-    val tags: List<String>,
+    val tags: List<String> = emptyList(),
     /** When it happened, in the user's local time. Defaults to now. */
-    val dateTime: LocalDateTime?
+    val dateTime: LocalDateTime? = null
 )
 
 /** The record that was created. */
@@ -92,20 +92,19 @@ data class CreatedTransaction(
 data class SearchTransactionsParams(
     /**
      * Words to look for in notes, payees, names and categories. Also understands "#tag" for a tag, "49.99" for an
-     * exact amount, ">100" or "<50" for amounts over or under, and "20-50" for a range. Leave empty to list by
-     * the other filters alone.
+     * exact amount, ">100" or "<50" for amounts over or under, and "20-50" for a range. Leave empty to list all recent transactions.
      */
-    val query: String?,
-    /** One of: this month, last month, last 30 days, last 3 months, this year, last year, all time. */
-    val period: String?,
+    val query: String? = null,
+    /** One of: this month, last month, last 30 days, last 3 months, this year, last year, all time. Defaults to all time. */
+    val period: String? = null,
     /** The name of one of the user's saved filters to apply. */
-    val savedFilterName: String?,
+    val savedFilterName: String? = null,
     /** Only transactions in this account. */
-    val accountName: String?,
+    val accountName: String? = null,
     /** "expense" or "income" to narrow by direction. */
-    val type: String?,
+    val type: String? = null,
     /** How many transactions to return, at most 50. Defaults to 20. */
-    val limit: Int
+    val limit: Int = 20
 )
 
 /** One transaction in a result. */
@@ -146,15 +145,15 @@ data class TransactionSearchResult(
 @AppFunctionSerializable(isDescribedByKDoc = true)
 data class StatisticsParams(
     /** One of: this month, last month, last 30 days, last 3 months, this year, last year, all time. Defaults to this month. */
-    val period: String?,
+    val period: String? = null,
     /** The name of a saved filter to analyse. Its own date range is used unless a period is also given. */
-    val savedFilterName: String?,
+    val savedFilterName: String? = null,
     /** Only this account. */
-    val accountName: String?,
+    val accountName: String? = null,
     /** What to break spending down by: "category" (default), "account", "tag" or "payment method". */
-    val groupBy: String?,
+    val groupBy: String? = null,
     /** Whether to also draw a chart image of spending and income over time. */
-    val includeChart: Boolean
+    val includeChart: Boolean = false
 )
 
 /** Income and spending in one currency. Different currencies are never added together. */

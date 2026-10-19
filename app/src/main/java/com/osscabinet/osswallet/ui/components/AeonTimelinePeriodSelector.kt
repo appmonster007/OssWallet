@@ -128,6 +128,7 @@ fun AeonTimelinePeriodSelector(
             is TimelineRange.ThisPeriod -> 1
             is TimelineRange.LastPeriod -> 2
             is TimelineRange.CustomRange -> 3
+            is TimelineRange.Periodic -> 1
         }
     }
     val pagerState = rememberPagerState(initialPage = initialPage) { 4 }

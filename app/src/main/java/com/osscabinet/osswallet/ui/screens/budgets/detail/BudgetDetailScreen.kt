@@ -48,6 +48,7 @@ import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -112,6 +113,7 @@ fun BudgetDetailScreen(
 ) {
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
     val budgetProgress by viewModel.budgetProgress.collectAsStateWithLifecycle()
+    val exchangeRates by transactionViewModel.exchangeRates.collectAsStateWithLifecycle()
     val budget = remember(config.budgetId, budgets) { budgets.find { it.id == config.budgetId } }
 
     LaunchedEffect(budgets) {
@@ -181,6 +183,7 @@ fun BudgetDetailScreen(
         categoriesList = categoriesList,
         allTags = allTags,
         baseCurrency = config.baseCurrency,
+        exchangeRates = exchangeRates,
         revealedCardIds = revealedCardIds,
         recentActivitiesBreakdown = recentActivitiesBreakdown,
         onEditClick = { actions.onEditClick(budget.id) },
@@ -242,6 +245,7 @@ fun BudgetDetailContent(
     categoriesList: List<Category>,
     allTags: List<Tag>,
     baseCurrency: String,
+    exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot.EMPTY,
     revealedCardIds: List<String>,
     recentActivitiesBreakdown: Boolean,
     onEditClick: () -> Unit,
@@ -409,7 +413,7 @@ fun BudgetDetailContent(
                                             categories = categoriesList,
                                             allTags = allTags,
                                             baseCurrency = baseCurrency,
-                                            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot.EMPTY
+                                            exchangeRates = exchangeRates
                                         )
                                         com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper.mapToUiState(
                                             domainState = TransactionListState(

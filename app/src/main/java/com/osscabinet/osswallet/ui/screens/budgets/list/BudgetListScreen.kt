@@ -254,8 +254,12 @@ private fun BudgetListItem(
         isWarning = alertLevel != BudgetAlertLevel.NONE,
         trailingContent = {
             Text(
-                "${budget.limitAmount.toPlainString()} ${budget.currency}",
-                style = AppTextStyles.listItemTitle,
+                com.osscabinet.ossWallet.ui.util.CurrencyReprUi.formatCurrencyAnnotated(
+                    amount = budget.limitAmount,
+                    currencyCode = budget.currency,
+                    spec = com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec(useSemanticColor = false)
+                ),
+                style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
                 color = progressColor
             )
         },
@@ -292,7 +296,7 @@ private fun BudgetListItem(
                     Text(
                         "$spentText spent",
                         style = AppTextStyles.transactionSwipeAction,
-                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.8f)
                     )
                     Text(
                         "${(progressFraction * 100).toInt()}%",

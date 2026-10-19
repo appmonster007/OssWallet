@@ -29,15 +29,10 @@ class CurrencyRepositoryImpl @Inject constructor(
         combine(
             dao.observeRatesForBase(baseCurrency),
             settingsRepository.shortlistedCurrencies
-        ) { rows, shortlisted ->
-            val activeSet = shortlisted?.plus(baseCurrency) ?: emptySet()
-            val filteredRows = if (activeSet.isNotEmpty()) {
-                rows.filter { it.currencyCode in activeSet || it.currencyCode == baseCurrency }
-            } else rows
-
+        ) { rows, _ ->
             ExchangeRateSnapshot(
                 anchor = baseCurrency,
-                rates = filteredRows.associate { it.currencyCode to it.rate.toBigDecimalOrNull().orZero() }
+                rates = rows.associate { it.currencyCode to it.rate.toBigDecimalOrNull().orZero() }
             )
         }
 
@@ -68,14 +63,8 @@ class CurrencyRepositoryImpl @Inject constructor(
 
     override suspend fun saveRates(baseCurrency: String, rates: CurrencyRates) {
         val nextUpdateMillis = rates.nextUpdate ?: 0L
-        val shortlisted = settingsRepository.shortlistedCurrencies.first()
-        val activeSet = shortlisted?.plus(baseCurrency) ?: emptySet()
 
-        val filteredRates = if (activeSet.isNotEmpty()) {
-            rates.rates.filterKeys { it in activeSet || it == baseCurrency }
-        } else rates.rates
-
-        val entities = filteredRates.map {
+        val entities = rates.rates.map {
             CurrencyRateEntity(
                 currencyCode = it.key,
                 baseCurrency = baseCurrency,

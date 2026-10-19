@@ -115,25 +115,12 @@ fun BudgetFormBody(
             // BUDGET CONTEXT: The core parameters of the budget itself
             EntrySection(title = "BUDGET PARAMETERS", icon = Icons.Rounded.Info) {
                 Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
-                    // Period is a high-priority structural parameter
-                    AeonTimelinePeriodSelector(
-                        currentRange = state.timelineRange,
-                        onRangeSelected = { onEvent(BudgetEntryEvent.SetTimelineRange(it)) },
-                        swipeEntireComponent = false,
-                        defaultThisPeriod = com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH,
-                        defaultExcludeFuture = false
-                    )
-
                     EntryActionCard(
                         icon = Icons.Rounded.CalendarToday,
-                        label = "CUSTOM RECURRING SCHEDULE",
-                        value = if (state.timelineRange is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.Periodic) {
-                            state.timelineRange.toDisplayString()
-                        } else "Build Custom Recurrence Rule",
-                        onClick = { onEvent(BudgetEntryEvent.ShowScheduleBuilder(true)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        iconContainerColor = AppColors.formIconContainerSecondary,
-                        iconTint = AppColors.onSecondaryContainer
+                        label = "TIMELINE & RECURRING SCHEDULE",
+                        value = state.timelineRange.toDisplayString(),
+                        onClick = { onEvent(BudgetEntryEvent.ShowTimelineSheet(true)) },
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     // Budget's own note

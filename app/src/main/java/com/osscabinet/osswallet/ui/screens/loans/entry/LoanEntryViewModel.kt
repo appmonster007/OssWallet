@@ -255,6 +255,7 @@ class LoanEntryViewModel @Inject constructor(
             is LoanEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }
             is LoanEntryEvent.ShowTrackTypeSheet -> _state.update { it.copy(showTrackTypeSheet = event.show) }
             is LoanEntryEvent.ShowTimelineSheet -> _state.update { it.copy(showTimelineSheet = event.show) }
+            is LoanEntryEvent.ShowScheduleBuilder -> _state.update { it.copy(showScheduleBuilder = event.show) }
             is LoanEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
             is LoanEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
             is LoanEntryEvent.ShowCurrencyFilterSheet -> _state.update {

@@ -168,4 +168,41 @@ class LoanServiceTest {
         assertEquals(0, BigDecimal("10").compareTo(filter.minAmount))
         assertEquals(false, filter.matchAllTags)
     }
+
+    @Test
+    fun `getPeriodSummaryForOffset returns summary for shifted timeline range`() {
+        val now = epochOf(2024, 3, 15)
+        val loan = makeLoan().copy(
+            timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.ThisPeriod(
+                com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH
+            )
+        )
+        val summary = LoanService.getPeriodSummaryForOffset(
+            loan = loan,
+            transactions = emptyList(),
+            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot.EMPTY,
+            now = now,
+            offset = -1
+        )
+        assertEquals(0, BigDecimal.ZERO.compareTo(summary.totalPaid))
+        assertEquals(0, loan.principalAmount.compareTo(summary.remainingBalance))
+    }
+
+    @Test
+    fun `getPeriodHistory returns history list across past periods`() {
+        val now = epochOf(2024, 3, 15)
+        val loan = makeLoan().copy(
+            timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.ThisPeriod(
+                com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH
+            )
+        )
+        val history = LoanService.getPeriodHistory(
+            loan = loan,
+            transactions = emptyList(),
+            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot.EMPTY,
+            now = now,
+            count = 5
+        )
+        assertEquals(6, history.size)
+    }
 }

@@ -1,6 +1,8 @@
 package com.osscabinet.ossWallet.domain.service.management
 
 import com.osscabinet.ossWallet.domain.model.AmortizationEntry
+import com.osscabinet.ossWallet.domain.model.AmortizationScheduleSummary
+import com.osscabinet.ossWallet.domain.model.AmortizationYearlySummary
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanPayment
 import com.osscabinet.ossWallet.domain.model.LoanStatus
@@ -59,36 +61,110 @@ object LoanService {
         )
     }
 
+    fun calculateLoanTermMonths(loan: Loan): Int {
+        val targetEnd = loan.expectedSettlementDate
+        if (targetEnd == null || targetEnd <= loan.startDate) {
+            return 12
+        }
+        val zone = ZoneId.systemDefault()
+        val start = Instant.ofEpochMilli(loan.startDate).atZone(zone).toLocalDate()
+        val end = Instant.ofEpochMilli(targetEnd).atZone(zone).toLocalDate()
+        val months = java.time.temporal.ChronoUnit.MONTHS.between(start, end).toInt()
+        return months.coerceIn(1, 600)
+    }
+
+    fun calculateStandardMonthlyPayment(loan: Loan): BigDecimal {
+        val rateFraction = annualRateFraction(loan)
+            ?: return loan.principalAmount.divide(BigDecimal(12), 2, RoundingMode.HALF_UP)
+        val monthlyRate = rateFraction.divide(BigDecimal(12), 10, RoundingMode.HALF_UP)
+        val termMonths = calculateLoanTermMonths(loan)
+
+        if (monthlyRate.compareTo(BigDecimal.ZERO) == 0) {
+            return loan.principalAmount.divide(BigDecimal(termMonths), 2, RoundingMode.HALF_UP)
+        }
+
+        val onePlusR = BigDecimal.ONE.add(monthlyRate)
+        val onePlusRToN = onePlusR.pow(termMonths, java.math.MathContext(10))
+        val numerator = loan.principalAmount.multiply(monthlyRate).multiply(onePlusRToN)
+        val denominator = onePlusRToN.subtract(BigDecimal.ONE)
+
+        return if (denominator.compareTo(BigDecimal.ZERO) == 0) {
+            loan.principalAmount.divide(BigDecimal(termMonths), 2, RoundingMode.HALF_UP)
+        } else {
+            numerator.divide(denominator, 2, RoundingMode.HALF_UP)
+        }
+    }
+
     fun getAmortizationSchedule(
         loan: Loan,
-        monthlyPayment: BigDecimal,
-        startDate: Long
+        monthlyPayment: BigDecimal = calculateStandardMonthlyPayment(loan),
+        startDate: Long = loan.startDate
     ): List<AmortizationEntry> {
-        val monthlyRate = (annualRateFraction(loan) ?: return emptyList())
-            .divide(BigDecimal(12), 10, RoundingMode.HALF_UP)
+        val rateFraction = annualRateFraction(loan) ?: return emptyList()
+        val monthlyRate = rateFraction.divide(BigDecimal(12), 10, RoundingMode.HALF_UP)
         val zone = ZoneId.systemDefault()
         var date = Instant.ofEpochMilli(startDate).atZone(zone).toLocalDate()
         var balance = loan.principalAmount
         val entries = mutableListOf<AmortizationEntry>()
         var period = 1
+        val effectiveMonthlyPayment = if (monthlyPayment <= BigDecimal.ZERO) {
+            calculateStandardMonthlyPayment(loan)
+        } else monthlyPayment
+
         while (balance > BigDecimal.ZERO) {
             val interest = balance.multiply(monthlyRate).setScale(2, RoundingMode.HALF_UP)
-            val principal = (monthlyPayment - interest).coerceAtMost(balance)
+            val principal = (effectiveMonthlyPayment - interest).coerceAtLeast(BigDecimal.ZERO).coerceAtMost(balance)
+            val actualPayment = if (balance <= principal) balance + interest else effectiveMonthlyPayment
             balance = (balance - principal).coerceAtLeast(BigDecimal.ZERO)
             date = date.plusMonths(1)
             entries.add(
                 AmortizationEntry(
                     period = period++,
                     date = date.atStartOfDay(zone).toInstant().toEpochMilli(),
-                    payment = principal + interest,
+                    payment = actualPayment,
                     principal = principal,
                     interest = interest,
                     balance = balance
                 )
             )
-            if (period > 600) break
+            if (period > 600 || (principal.compareTo(BigDecimal.ZERO) == 0 && balance > BigDecimal.ZERO)) break
         }
         return entries
+    }
+
+    fun getAmortizationYearlySummaries(entries: List<AmortizationEntry>): List<AmortizationYearlySummary> {
+        val zone = ZoneId.systemDefault()
+        return entries.groupBy { entry ->
+            Instant.ofEpochMilli(entry.date).atZone(zone).year
+        }.map { (year, yearEntries) ->
+            val totalPayment = yearEntries.fold(BigDecimal.ZERO) { acc, e -> acc + e.payment }
+            val totalPrincipal = yearEntries.fold(BigDecimal.ZERO) { acc, e -> acc + e.principal }
+            val totalInterest = yearEntries.fold(BigDecimal.ZERO) { acc, e -> acc + e.interest }
+            val endingBalance = yearEntries.last().balance
+            AmortizationYearlySummary(
+                year = year,
+                totalPayment = totalPayment,
+                totalPrincipal = totalPrincipal,
+                totalInterest = totalInterest,
+                endingBalance = endingBalance
+            )
+        }
+    }
+
+    fun calculateScheduleSummary(
+        loan: Loan,
+        entries: List<AmortizationEntry>,
+        monthlyPayment: BigDecimal
+    ): AmortizationScheduleSummary {
+        val totalPrincipal = loan.principalAmount
+        val totalInterest = entries.fold(BigDecimal.ZERO) { acc, e -> acc + e.interest }
+        return AmortizationScheduleSummary(
+            totalPrincipal = totalPrincipal,
+            totalInterest = totalInterest,
+            totalCost = totalPrincipal + totalInterest,
+            monthlyPayment = monthlyPayment,
+            totalPeriods = entries.size
+        )
     }
 
     fun buildSummary(
@@ -184,6 +260,55 @@ object LoanService {
             transactions,
             buildTransactionFilter(loan, allCategories)
         )
+    }
+
+    fun getPeriodSummaryForOffset(
+        loan: Loan,
+        transactions: List<Transaction>,
+        exchangeRates: ExchangeRateSnapshot,
+        now: Long,
+        offset: Int,
+        allCategories: List<com.osscabinet.ossWallet.domain.model.Category> = emptyList(),
+        precision: Int = CurrencyService.precision
+    ): LoanSummary {
+        if (loan.timelineRange is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime) {
+            return buildSummaryFromTransactions(loan, transactions, exchangeRates, now, precision, allCategories)
+        }
+
+        val shiftedRange = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.shiftRange(loan.timelineRange, offset)
+        val (start, end) = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.getDateRange(shiftedRange, referenceTime = now)
+        val evalLoan = if (start != null && end != null) {
+            loan.copy(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange(start, end))
+        } else loan.copy(timelineRange = shiftedRange)
+
+        return buildSummaryFromTransactions(evalLoan, transactions, exchangeRates, now, precision, allCategories)
+    }
+
+    fun getPeriodHistory(
+        loan: Loan,
+        transactions: List<Transaction>,
+        exchangeRates: ExchangeRateSnapshot,
+        now: Long,
+        allCategories: List<com.osscabinet.ossWallet.domain.model.Category> = emptyList(),
+        offset: Int = 0,
+        count: Int = 5,
+        precision: Int = CurrencyService.precision
+    ): List<LoanSummary> {
+        if (loan.timelineRange is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime) return emptyList()
+
+        val endOffset = offset
+        val startOffset = offset - count
+        return (startOffset..endOffset).map { targetOffset ->
+            getPeriodSummaryForOffset(
+                loan = loan,
+                transactions = transactions,
+                exchangeRates = exchangeRates,
+                now = now,
+                offset = targetOffset,
+                allCategories = allCategories,
+                precision = precision
+            )
+        }
     }
 
     fun settledCopy(loan: Loan): Loan = loan.copy(status = LoanStatus.SETTLED)

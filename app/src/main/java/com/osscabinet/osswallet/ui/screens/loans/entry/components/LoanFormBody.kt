@@ -203,6 +203,18 @@ fun LoanFormBody(
                         defaultExcludeFuture = false
                     )
 
+                    EntryActionCard(
+                        icon = Icons.Rounded.CalendarToday,
+                        label = "CUSTOM RECURRING SCHEDULE",
+                        value = if (state.timelineRange is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.Periodic) {
+                            state.timelineRange.toDisplayString()
+                        } else "Build Custom Recurrence Rule",
+                        onClick = { onEvent(LoanEntryEvent.ShowScheduleBuilder(true)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        iconContainerColor = AppColors.formIconContainerSecondary,
+                        iconTint = AppColors.onSecondaryContainer
+                    )
+
                     // Filter Preset
                     val filterObj = state.availableFilters.find { it.id == state.filterId }
                     EntryActionCard(

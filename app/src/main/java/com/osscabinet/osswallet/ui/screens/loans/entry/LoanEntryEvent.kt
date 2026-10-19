@@ -51,6 +51,7 @@ sealed class LoanEntryEvent {
     data class ShowNumpad(val show: Boolean) : LoanEntryEvent()
     data class ShowInterestNumpad(val show: Boolean) : LoanEntryEvent()
     data class ShowTimelineSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowScheduleBuilder(val show: Boolean) : LoanEntryEvent()
     data class ShowAccountSheet(val show: Boolean) : LoanEntryEvent()
     data class ShowTrackTypeSheet(val show: Boolean) : LoanEntryEvent()
     data class ShowCategorySheet(val show: Boolean) : LoanEntryEvent()

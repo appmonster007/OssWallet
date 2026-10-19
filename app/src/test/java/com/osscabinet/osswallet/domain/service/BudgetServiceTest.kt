@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.*
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -217,5 +218,27 @@ class BudgetServiceTest {
         val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH), limit = BigDecimal("1000"))
         val history = BudgetService.getPeriodHistory(budget, emptyList(), ExchangeRateSnapshot.EMPTY, "USD", now, count = 3)
         assertEquals(4, history.size)
+    }
+
+    @Test
+    fun `getPeriodHistory offset matches calculateSpent for shifted budget`() {
+        val now = epochOf(2024, 3, 15)
+        val inPreviousPeriod = epochOf(2024, 2, 10)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH), limit = BigDecimal("1000"))
+        val transactions = listOf(
+            makeTransaction(BigDecimal("-250"), timestamp = inPreviousPeriod)
+        )
+
+        val history = BudgetService.getPeriodHistory(budget, transactions, ExchangeRateSnapshot.EMPTY, "USD", now, count = 5)
+        // history[0] is offset 0 (March 2024), history[1] is offset -1 (February 2024)
+        val febProgress = history[1]
+
+        val shiftedRange = TimelineService.shiftRange(budget.timelineRange, -1)
+        val (start, end) = TimelineService.getDateRange(shiftedRange, referenceTime = now)
+        val evalFebBudget = budget.copy(timelineRange = TimelineRange.CustomRange(start, end))
+        val febSpentDirect = BudgetService.calculateSpent(evalFebBudget, transactions, ExchangeRateSnapshot.EMPTY, "USD", now)
+
+        assertEquals(0, febSpentDirect.compareTo(febProgress.spent))
+        assertEquals(0, BigDecimal("250").compareTo(febProgress.spent))
     }
 }

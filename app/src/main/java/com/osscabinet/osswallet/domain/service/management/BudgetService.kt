@@ -221,17 +221,18 @@ object BudgetService {
 
         return (0 downTo -count).map { offset ->
             val shiftedRange = TimelineService.shiftRange(budget.timelineRange, offset)
-            val shiftedBudget = budget.copy(timelineRange = shiftedRange)
             val (start, end) = TimelineService.getDateRange(shiftedRange, referenceTime = now)
-            val refTime = if (start != null && end != null) (start + end) / 2 else now
+            val evalBudget = if (start != null && end != null) {
+                budget.copy(timelineRange = TimelineRange.CustomRange(start, end))
+            } else budget.copy(timelineRange = shiftedRange)
 
             val rollover = if (budget.rollover) {
-                calculateRollover(shiftedBudget, transactions, exchangeRates, baseCurrency, refTime, allCategories, precision = precision)
+                calculateRollover(evalBudget, transactions, exchangeRates, baseCurrency, now, allCategories, precision = precision)
             } else BigDecimal.ZERO
 
-            val spent = calculateSpent(shiftedBudget, transactions, exchangeRates, baseCurrency, refTime, allCategories, precision = precision)
-            val elapsed = elapsedFraction(shiftedBudget, now)
-            buildProgress(shiftedBudget, spent, rollover, elapsed)
+            val spent = calculateSpent(evalBudget, transactions, exchangeRates, baseCurrency, now, allCategories, precision = precision)
+            val elapsed = elapsedFraction(evalBudget, now)
+            buildProgress(evalBudget, spent, rollover, elapsed)
         }
     }
 }

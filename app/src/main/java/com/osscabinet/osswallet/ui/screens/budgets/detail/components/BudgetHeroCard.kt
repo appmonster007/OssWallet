@@ -22,7 +22,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -41,6 +40,7 @@ import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetPaceStatus
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -63,11 +63,12 @@ fun BudgetHeroCard(
         BudgetAlertLevel.NONE -> AppColors.primary
     }
 
-    val (start, end) = TimelineService.getDateRange(budget.timelineRange)
+    val shiftedRange = if (offset != 0) TimelineService.shiftRange(budget.timelineRange, offset) else budget.timelineRange
+    val (start, end) = TimelineService.getDateRange(shiftedRange)
     val sdf = remember { java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()) }
     val periodLabel = if (start != null && end != null) {
         "${sdf.format(java.util.Date(start))} - ${sdf.format(java.util.Date(end))}"
-    } else budget.timelineRange.toDisplayString()
+    } else shiftedRange.toDisplayString()
 
     val paceStatus = BudgetService.paceStatus(progress)
     val dailyAllowance = BudgetService.remainingDailyAllowance(progress, System.currentTimeMillis())
@@ -80,7 +81,7 @@ fun BudgetHeroCard(
 
     AeonExpressiveCard(
         title = budget.name,
-        subtitle = "Budget: ${budget.timelineRange.toDisplayString()}",
+        subtitle = "Budget: ${shiftedRange.toDisplayString()}",
         icon = Icons.Rounded.DonutLarge,
         accentColor = accentColor,
         modifier = modifier
@@ -89,8 +90,8 @@ fun BudgetHeroCard(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Period Stepper
-            if (onOffsetChange != null) {
+            // Period Stepper (Hidden for AllTime open-ended budgets)
+            if (onOffsetChange != null && budget.timelineRange !is TimelineRange.AllTime) {
                 Surface(
                     color = AppColors.surfaceContainerHigh.copy(alpha = 0.5f),
                     shape = RoundedCornerShape(12.dp),
@@ -99,7 +100,7 @@ fun BudgetHeroCard(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -122,14 +123,17 @@ fun BudgetHeroCard(
                                 color = AppColors.contentPrimary
                             )
                             if (offset != 0) {
-                                TextButton(
+                                Surface(
                                     onClick = { onOffsetChange(0) },
-                                    modifier = Modifier.height(24.dp)
+                                    color = AppColors.primary.copy(alpha = 0.12f),
+                                    shape = RoundedCornerShape(6.dp),
+                                    modifier = Modifier.padding(top = 3.dp)
                                 ) {
                                     Text(
-                                        "Back to Current",
-                                        style = AppTextStyles.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
-                                        color = AppColors.primary
+                                        text = "Back to Current",
+                                        style = AppTextStyles.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                        color = AppColors.primary,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                     )
                                 }
                             }

@@ -39,6 +39,19 @@ fun BudgetEntrySheets(
         )
     }
 
+    if (state.showBaseCurrencySheet) {
+        AeonCurrencySelection(
+            selectedCurrencies = setOf(state.currency),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { onEvent(BudgetEntryEvent.SetCurrency(it)) }
+            },
+            onDismiss = { onEvent(BudgetEntryEvent.ShowBaseCurrencySheet(false)) },
+            mode = AeonSelectMode.SINGLE,
+            title = "Select Budget Base Currency",
+            currencies = state.shortlistedCurrencies.ifEmpty { com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies() }
+        )
+    }
+
     if (state.showTimelineSheet) {
         AeonTimelineSheet(
             selectedRange = state.timelineRange,

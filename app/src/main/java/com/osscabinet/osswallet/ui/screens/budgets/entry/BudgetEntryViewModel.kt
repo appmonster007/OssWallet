@@ -203,6 +203,7 @@ class BudgetEntryViewModel @Inject constructor(
             }
 
             is BudgetEntryEvent.ShowNumpad -> _state.update { it.copy(showNumpad = event.show) }
+            is BudgetEntryEvent.ShowBaseCurrencySheet -> _state.update { it.copy(showBaseCurrencySheet = event.show) }
             is BudgetEntryEvent.ShowTimelineSheet -> _state.update { it.copy(showTimelineSheet = event.show) }
             is BudgetEntryEvent.ShowScheduleBuilder -> _state.update { it.copy(showScheduleBuilder = event.show) }
             is BudgetEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }

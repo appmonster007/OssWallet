@@ -10,7 +10,6 @@ import com.osscabinet.ossWallet.domain.model.BudgetPaceStatus
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -225,51 +224,39 @@ private fun BudgetProgressRow(
                 else Modifier
             )
             .padding(vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(9.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // Line 1: Budget Name & Status Chip
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = progress.budget.name,
-                        style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
-                        color = AppColors.contentPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                    val chip: Pair<String, Color>? = when (status) {
-                        BudgetPaceStatus.OVER -> "OVER" to AppColors.negative
-                        BudgetPaceStatus.AHEAD_OF_PACE -> "AHEAD OF PACE" to WarningColor
-                        BudgetPaceStatus.NEAR_LIMIT -> "NEAR LIMIT" to WarningColor
-                        BudgetPaceStatus.ON_TRACK -> if (showPaceMarker && elapsed != null) "ON TRACK" to AppColors.positive else null
-                    }
-                    if (chip != null) AeonStatusChip(text = chip.first, color = chip.second)
-                }
-                if (previousProgress != null) {
-                    val change = progress.spent.subtract(previousProgress.spent)
-                    if ((change.signum() != 0) && (previousProgress.spent.signum() != 0)) {
-                        val percentage = change.multiply(java.math.BigDecimal("100"))
-                            .divide(previousProgress.spent.abs(), 1, java.math.RoundingMode.HALF_UP)
-                        val up = change.signum() > 0
-                        Text(
-                            text = "${if (up) "▲" else "▼"} ${if (up) "+" else ""}$percentage% VS PRIOR",
-                            style = AppTextStyles.metaLabel.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 9.sp
-                            ),
-                            color = if (up) AppColors.negative else AppColors.positive
-                        )
-                    }
-                }
+            Text(
+                text = progress.budget.name,
+                style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
+                color = AppColors.contentPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+            val chip: Pair<String, Color>? = when (status) {
+                BudgetPaceStatus.OVER -> "OVER" to AppColors.negative
+                BudgetPaceStatus.AHEAD_OF_PACE -> "AHEAD OF PACE" to WarningColor
+                BudgetPaceStatus.NEAR_LIMIT -> "NEAR LIMIT" to WarningColor
+                BudgetPaceStatus.ON_TRACK -> if (showPaceMarker && elapsed != null) "ON TRACK" to AppColors.positive else null
             }
+            if (chip != null) {
+                AeonStatusChip(text = chip.first, color = chip.second)
+            }
+        }
+
+        // Line 2: Spent / Limit & Percentage
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
                 text = buildAnnotatedString {
                     append(
@@ -288,13 +275,37 @@ private fun BudgetProgressRow(
                                 spec = CurrencyDisplaySpec(useSemanticColor = false)
                             )
                         )
-                        append(" · ${(progress.percentage * 100).toInt()}%")
                     }
                 },
                 style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium)
             )
+
+            Text(
+                text = "${(progress.percentage * 100).toInt()}%",
+                style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Bold),
+                color = AppColors.contentPrimary
+            )
         }
 
+        // Line 3: VS PRIOR Comparison (if applicable)
+        if (previousProgress != null) {
+            val change = progress.spent.subtract(previousProgress.spent)
+            if ((change.signum() != 0) && (previousProgress.spent.signum() != 0)) {
+                val percentage = change.multiply(java.math.BigDecimal("100"))
+                    .divide(previousProgress.spent.abs(), 1, java.math.RoundingMode.HALF_UP)
+                val up = change.signum() > 0
+                Text(
+                    text = "${if (up) "▲" else "▼"} ${if (up) "+" else ""}$percentage% VS PRIOR",
+                    style = AppTextStyles.metaLabel.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 9.sp
+                    ),
+                    color = if (up) AppColors.negative else AppColors.positive
+                )
+            }
+        }
+
+        // Line 4: Track & Progress Bar
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -372,7 +383,7 @@ fun mapBudgets(
 fun BudgetsCardPreview() {
     val budget1 = com.osscabinet.ossWallet.domain.model.Budget(
         id = 1L,
-        name = "Food",
+        name = "Food & Dining",
         currency = "USD",
         limitAmount = java.math.BigDecimal("1000.00"),
         timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH),
@@ -380,9 +391,17 @@ fun BudgetsCardPreview() {
     )
     val budget2 = com.osscabinet.ossWallet.domain.model.Budget(
         id = 2L,
-        name = "Rent",
+        name = "Rent & Housing Utilities",
         currency = "USD",
         limitAmount = java.math.BigDecimal("1200.00"),
+        timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH),
+        profileId = 1
+    )
+    val budget3 = com.osscabinet.ossWallet.domain.model.Budget(
+        id = 3L,
+        name = "Shopping & Personal Care",
+        currency = "USD",
+        limitAmount = java.math.BigDecimal("500.00"),
         timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH),
         profileId = 1
     )
@@ -394,6 +413,7 @@ fun BudgetsCardPreview() {
             limit = java.math.BigDecimal("1000.00"),
             remaining = java.math.BigDecimal("550.00"),
             percentage = 0.45f,
+            elapsedFraction = 0.50f,
             alertLevel = BudgetAlertLevel.NONE
         ),
         BudgetProgress(
@@ -402,7 +422,44 @@ fun BudgetsCardPreview() {
             limit = java.math.BigDecimal("1200.00"),
             remaining = java.math.BigDecimal("-50.00"),
             percentage = 1.04f,
+            elapsedFraction = 0.50f,
             alertLevel = BudgetAlertLevel.EXCEEDED
+        ),
+        BudgetProgress(
+            budget = budget3,
+            spent = java.math.BigDecimal("440.00"),
+            limit = java.math.BigDecimal("500.00"),
+            remaining = java.math.BigDecimal("60.00"),
+            percentage = 0.88f,
+            elapsedFraction = 0.50f,
+            alertLevel = BudgetAlertLevel.WARNING
+        )
+    )
+
+    val previousBudgets = listOf(
+        BudgetProgress(
+            budget = budget1,
+            spent = java.math.BigDecimal("400.00"),
+            limit = java.math.BigDecimal("1000.00"),
+            remaining = java.math.BigDecimal("600.00"),
+            percentage = 0.40f,
+            alertLevel = BudgetAlertLevel.NONE
+        ),
+        BudgetProgress(
+            budget = budget2,
+            spent = java.math.BigDecimal("1200.00"),
+            limit = java.math.BigDecimal("1200.00"),
+            remaining = java.math.BigDecimal("0.00"),
+            percentage = 1.00f,
+            alertLevel = BudgetAlertLevel.EXCEEDED
+        ),
+        BudgetProgress(
+            budget = budget3,
+            spent = java.math.BigDecimal("480.00"),
+            limit = java.math.BigDecimal("500.00"),
+            remaining = java.math.BigDecimal("20.00"),
+            percentage = 0.96f,
+            alertLevel = BudgetAlertLevel.WARNING
         )
     )
 
@@ -410,7 +467,13 @@ fun BudgetsCardPreview() {
         Box(modifier = Modifier.padding(16.dp)) {
             BudgetsCard(
                 items = budgets,
-                config = BudgetsCardConfig(cardId = "preview", title = "Budgets"),
+                previousItems = previousBudgets,
+                config = BudgetsCardConfig(
+                    cardId = "preview",
+                    title = "Budgets",
+                    showPaceMarker = true,
+                    showComparison = true
+                ),
                 callbacks = CardCallbacks.Budgets(onUpdate = {}, onBudgetClick = {}, onDelete = {})
             )
         }

@@ -109,6 +109,7 @@ dependencies {
     implementation(libs.androidx.camera.core)
     implementation(libs.material)
     implementation(libs.androidx.biometric)
+    "fullImplementation"(libs.play.services.mlkit.entity.extraction)
     implementation(libs.vico.compose)
     implementation(libs.vico.compose.m3)
     implementation(libs.vico.core)

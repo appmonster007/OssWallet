@@ -36,6 +36,7 @@ material = "1.14.0"
 vico = "2.5.2"
 hilt = "2.60.1"
 mlkit-text-recognition = "19.0.1"
+mlkit-entity-extraction = "16.0.0-beta6"
 biometric = "1.1.0"
 sqlcipher = "4.17.0"
 sqlite = "2.7.0"
@@ -107,6 +108,7 @@ androidx-biometric = { group = "androidx.biometric", name = "biometric", version
 sqlcipher = { group = "net.zetetic", name = "sqlcipher-android", version.ref = "sqlcipher" }
 androidx-sqlite-ktx = { group = "androidx.sqlite", name = "sqlite-ktx", version.ref = "sqlite" }
 play-services-mlkit-text-recognition = { group = "com.google.android.gms", name = "play-services-mlkit-text-recognition", version.ref = "mlkit-text-recognition" }
+play-services-mlkit-entity-extraction = { group = "com.google.mlkit", name = "entity-extraction", version.ref = "mlkit-entity-extraction" }
 vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }

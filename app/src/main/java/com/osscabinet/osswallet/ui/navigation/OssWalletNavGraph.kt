@@ -60,6 +60,7 @@ fun OssWalletNavGraph(
     pendingWidgetFilter: String? = null,
     pendingWidgetTransactionId: Long? = null,
     pendingWidgetEntityId: String? = null,
+    pendingSharedText: String? = null,
     onWidgetRouteHandled: () -> Unit = {},
 ) {
     val vms = SharedNavViewModels(
@@ -169,6 +170,18 @@ fun OssWalletNavGraph(
                     appNavigator.navigateTo(TransactionEntryRoute(transactionId = id), widgetNavOptions)
                 }
             }
+            onWidgetRouteHandled()
+        }
+    }
+
+    val mlKitDecoder = remember { com.osscabinet.ossWallet.domain.service.mlkit.MlKitTransactionDecoder() }
+    LaunchedEffect(pendingSharedText) {
+        pendingSharedText?.let { rawText ->
+            val accounts = vms.accountViewModel.accounts.value
+            val categories = vms.categoryViewModel.categories.first()
+            val prefillDto = mlKitDecoder.decodeText(rawText, accounts, categories)
+            vms.transactionViewModel.setPrefillDto(prefillDto)
+            appNavigator.navigateTo(TransactionEntryRoute())
             onWidgetRouteHandled()
         }
     }

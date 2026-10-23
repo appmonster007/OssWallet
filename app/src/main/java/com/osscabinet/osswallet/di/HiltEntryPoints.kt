@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentConfirmer
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import dagger.hilt.EntryPoint
@@ -38,4 +39,5 @@ interface PlannedPaymentWorkerEntryPoint {
     fun settingsRepository(): SettingsRepository
     fun categoryRepository(): CategoryRepository
     fun transactionManager(): TransactionManager
+    fun plannedPaymentConfirmer(): PlannedPaymentConfirmer
 }

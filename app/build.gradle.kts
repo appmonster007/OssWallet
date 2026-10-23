@@ -98,6 +98,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.biometric)
     implementation(libs.play.services.mlkit.text.recognition)
+    implementation(libs.play.services.mlkit.entity.extraction)
     implementation(libs.vico.compose)
     implementation(libs.vico.compose.m3)
     implementation(libs.vico.core)

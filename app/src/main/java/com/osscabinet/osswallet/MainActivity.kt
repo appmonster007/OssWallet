@@ -46,6 +46,15 @@ class MainActivity : FragmentActivity() {
     private var pendingWidgetFilter by mutableStateOf<String?>(null)
     private var pendingWidgetTransactionId by mutableStateOf<Long?>(null)
     private var pendingWidgetEntityId by mutableStateOf<String?>(null)
+    private var pendingSharedText by mutableStateOf<String?>(null)
+
+    private fun extractSharedText(intent: Intent?): String? {
+        if (intent == null) return null
+        if (intent.action == Intent.ACTION_SEND && intent.type?.startsWith("text/") == true) {
+            return intent.getStringExtra(Intent.EXTRA_TEXT)
+        }
+        return null
+    }
 
     override fun onStart() {
         super.onStart()
@@ -73,6 +82,7 @@ class MainActivity : FragmentActivity() {
         pendingWidgetFilter = intent.getStringExtra(EXTRA_WIDGET_FILTER)
         pendingWidgetTransactionId = intent.getLongExtra(EXTRA_WIDGET_TRANSACTION_ID, -1L).takeIf { it != -1L }
         pendingWidgetEntityId = intent.getStringExtra(EXTRA_WIDGET_ENTITY_ID)
+        pendingSharedText = extractSharedText(intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,6 +95,7 @@ class MainActivity : FragmentActivity() {
         pendingWidgetFilter = intent?.getStringExtra(EXTRA_WIDGET_FILTER)
         pendingWidgetTransactionId = intent?.getLongExtra(EXTRA_WIDGET_TRANSACTION_ID, -1L)?.takeIf { it != -1L }
         pendingWidgetEntityId = intent?.getStringExtra(EXTRA_WIDGET_ENTITY_ID)
+        pendingSharedText = extractSharedText(intent)
 
         setContent {
             val theme by settingsRepository.theme.collectAsStateWithLifecycle(initialValue = "System")
@@ -159,11 +170,13 @@ class MainActivity : FragmentActivity() {
                         pendingWidgetFilter = pendingWidgetFilter,
                         pendingWidgetTransactionId = pendingWidgetTransactionId,
                         pendingWidgetEntityId = pendingWidgetEntityId,
+                        pendingSharedText = pendingSharedText,
                         onWidgetRouteHandled = {
                             pendingWidgetRoute = null
                             pendingWidgetFilter = null
                             pendingWidgetTransactionId = null
                             pendingWidgetEntityId = null
+                            pendingSharedText = null
                         }
                     )
                     if (!unlocked) {

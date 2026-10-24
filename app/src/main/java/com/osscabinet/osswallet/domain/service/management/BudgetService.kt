@@ -1,8 +1,10 @@
 package com.osscabinet.ossWallet.domain.service.management
 
+import com.osscabinet.ossWallet.domain.card.CardComputerUtils
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetPaceStatus
+import com.osscabinet.ossWallet.domain.model.BudgetPeriodTrend
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
@@ -11,6 +13,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.settings.BarChartGranularity
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
@@ -53,11 +56,18 @@ object BudgetService {
         val elapsed = progress.elapsedFraction
         return when {
             progress.alertLevel == BudgetAlertLevel.EXCEEDED -> BudgetPaceStatus.OVER
+            // Spent alone hasn't hit the limit yet, but committed (planned) spend would push it
+            // past — surface that now rather than waiting for the planned amount to actually land.
+            isOverIncludingPlanned(progress) -> BudgetPaceStatus.OVER
             elapsed != null && progress.percentage > elapsed + PACE_TOLERANCE -> BudgetPaceStatus.AHEAD_OF_PACE
             progress.alertLevel == BudgetAlertLevel.WARNING -> BudgetPaceStatus.NEAR_LIMIT
             else -> BudgetPaceStatus.ON_TRACK
         }
     }
+
+    /** True when spent + planned (future transactions + due planned payments) exceeds the limit, even if spent alone doesn't yet. */
+    fun isOverIncludingPlanned(progress: BudgetProgress): Boolean =
+        progress.spent.add(progress.plannedAmount) > progress.limit
 
     const val PACE_TOLERANCE = 0.10f
 
@@ -178,6 +188,61 @@ object BudgetService {
             budget, plannedPayments, exchangeRates, baseCurrency, now, allCategories, precision
         )
         return future.add(planned).setScale(precision, RoundingMode.HALF_UP)
+    }
+
+    /**
+     * Cumulative-spend series for the "this period" trend view: the current period so far,
+     * bucketed by [granularity], against the previous period at the same granularity. Null for
+     * All Time budgets (no bounded period to bucket) or a period with no buckets.
+     */
+    fun getThisPeriodTrend(
+        budget: Budget,
+        transactions: List<Transaction>,
+        spent: BigDecimal,
+        plannedAmount: BigDecimal,
+        exchangeRates: ExchangeRateSnapshot,
+        baseCurrency: String,
+        now: Long,
+        allCategories: List<Category> = emptyList(),
+        granularity: BarChartGranularity,
+        precision: Int = CurrencyService.precision
+    ): BudgetPeriodTrend? {
+        if (budget.timelineRange is TimelineRange.AllTime) return null
+        val wallNow = System.currentTimeMillis()
+        val (periodStart, periodEnd) = getCurrentPeriodRange(budget, now)
+        val resolvedGranularity = with(CardComputerUtils) {
+            CardComputerUtils.resolveBarGranularity(granularity, periodStart, periodEnd).toLegacyGranularity()
+        }
+        val currentBuckets = CardComputerUtils.generateBuckets(periodStart, periodEnd, resolvedGranularity)
+        if (currentBuckets.isEmpty()) return null
+
+        fun cumulativeAt(rangeStart: Long, bucketEnd: Long): BigDecimal {
+            val ranged = budget.copy(timelineRange = TimelineRange.CustomRange(rangeStart, bucketEnd))
+            return calculateSpent(ranged, transactions, exchangeRates, baseCurrency, now, allCategories, precision)
+        }
+
+        val currentBucketsSoFar = currentBuckets.filter { (start, _, _) -> start <= wallNow }
+        val currentPoints = currentBucketsSoFar.map { (_, end, _) -> cumulativeAt(periodStart, end) }
+        val currentLabels = currentBucketsSoFar.map { it.third }
+
+        val prevRange = TimelineService.shiftRange(budget.timelineRange, -1)
+        val (prevStart, prevEnd) = TimelineService.getDateRange(prevRange, referenceTime = now)
+        val previousPoints: List<BigDecimal>
+        val previousLabels: List<String>
+        if (prevStart != null && prevEnd != null) {
+            val prevBuckets = CardComputerUtils.generateBuckets(prevStart, prevEnd, resolvedGranularity)
+            previousPoints = prevBuckets.map { (_, end, _) -> cumulativeAt(prevStart, end) }
+            previousLabels = prevBuckets.map { it.third }
+        } else {
+            previousPoints = emptyList()
+            previousLabels = emptyList()
+        }
+
+        val plannedTailEnd = plannedAmount.takeIf { it.signum() > 0 }?.let { spent.add(it) }
+
+        return BudgetPeriodTrend(
+            currentPoints, currentLabels, currentBuckets.size, previousPoints, previousLabels, plannedTailEnd
+        )
     }
 
     private fun convertAndSum(
@@ -334,7 +399,10 @@ object BudgetService {
 
         val remainingMs = end - now
         val remainingDays = (remainingMs / (1000L * 60 * 60 * 24)).coerceAtLeast(1)
-        return progress.remaining.divide(BigDecimal(remainingDays), 2, RoundingMode.HALF_UP)
+        // Spent+planned, not spent alone — a due planned payment or a future-dated transaction
+        // already claims part of what's left, so the real per-day allowance is tighter.
+        val effectiveRemaining = progress.limit.subtract(progress.spent).subtract(progress.plannedAmount).max(BigDecimal.ZERO)
+        return effectiveRemaining.divide(BigDecimal(remainingDays), 2, RoundingMode.HALF_UP)
     }
 
     fun getPeriodProgressForOffset(

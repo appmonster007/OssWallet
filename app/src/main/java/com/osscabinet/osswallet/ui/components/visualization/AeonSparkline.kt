@@ -35,13 +35,8 @@ fun AeonSparkline(
     selectedIndex: Int? = null,
     onSelectedIndexChange: ((Int?) -> Unit)? = null,
     contentDescription: String? = null,
-    // Optional projected value for the point just past the last real one (e.g. spent+planned for
-    // the still-open current period). Drawn as a tinted dashed continuation, never solid, since
-    // it isn't actual history.
-    projectedPoint: BigDecimal? = null,
 ) {
     val values = remember(points) { points.map { it.toFloat() } }
-    val projectedValue = remember(projectedPoint) { projectedPoint?.toFloat() }
     val currentOnChange = rememberUpdatedState(onSelectedIndexChange)
     val guideColor = AppColors.contentSecondary.copy(alpha = 0.6f)
 
@@ -68,27 +63,22 @@ fun AeonSparkline(
             )
     ) {
         if (values.size < 2) return@Canvas
-        val scaleValues = if (projectedValue != null) values + projectedValue else values
-        val minV = scaleValues.min()
-        val maxV = scaleValues.max()
+        val minV = values.min()
+        val maxV = values.max()
         val range = (maxV - minV).takeIf { it != 0f } ?: 1f
-        // Reserve the last column for the projected point so the dashed continuation has somewhere
-        // to go; real points keep their normal spacing otherwise.
-        val columns = if (projectedValue != null) values.size else values.size - 1
-        val stepX = size.width / columns
+        val stepX = size.width / (values.size - 1)
         val topPad = size.height * 0.1f
         val usableH = size.height * 0.8f
 
         fun yFor(v: Float) = topPad + usableH * (1f - (v - minV) / range)
 
-        val lastRealX = (values.size - 1) * stepX
         val linePath = Path().apply {
             moveTo(0f, yFor(values.first()))
             for (i in 1 until values.size) lineTo(i * stepX, yFor(values[i]))
         }
         val fillPath = Path().apply {
             addPath(linePath)
-            lineTo(lastRealX, size.height)
+            lineTo(size.width, size.height)
             lineTo(0f, size.height)
             close()
         }
@@ -104,31 +94,104 @@ fun AeonSparkline(
             style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
         )
 
-        if (projectedValue != null) {
-            val tint = lineColor.copy(alpha = 0.55f)
-            val lastReal = Offset(lastRealX, yFor(values.last()))
-            val projected = Offset(lastRealX + stepX, yFor(projectedValue))
-            drawLine(
-                color = tint,
-                start = lastReal,
-                end = projected,
-                strokeWidth = 2.dp.toPx(),
-                cap = StrokeCap.Round,
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f))
-            )
-            drawCircle(color = lineColor.copy(alpha = 0.45f), radius = 4.dp.toPx(), center = projected)
-            drawCircle(
-                color = lineColor,
-                radius = 4.dp.toPx(),
-                center = projected,
-                style = Stroke(width = 1.5.dp.toPx())
-            )
-        }
-
         selectedIndex?.takeIf { it in values.indices }?.let { i ->
             val x = i * stepX
             drawLine(color = guideColor, start = Offset(x, 0f), end = Offset(x, size.height), strokeWidth = 1.dp.toPx())
             drawCircle(color = lineColor, radius = 4.dp.toPx(), center = Offset(x, yFor(values[i])))
+        }
+    }
+}
+
+/**
+ * Minimal sparkline for comparing the current period's cumulative spend so far against the
+ * previous period at the same bucket positions, with an optional dashed/tinted continuation of
+ * the CURRENT line (not a second series) out to a spent+planned projection. Same axis-less,
+ * chrome-free look as [AeonSparkline] — deliberately not [AeonLineChart], which reserves space
+ * for a y-axis and grid.
+ */
+@Composable
+fun AeonPeriodComparisonSparkline(
+    currentPoints: List<BigDecimal>,
+    previousPoints: List<BigDecimal>,
+    totalBuckets: Int,
+    lineColor: Color,
+    modifier: Modifier = Modifier,
+    previousLineColor: Color = AppColors.contentSecondary,
+    plannedTailEnd: BigDecimal? = null,
+) {
+    val current = remember(currentPoints) { currentPoints.map { it.toFloat() } }
+    val previous = remember(previousPoints) { previousPoints.map { it.toFloat() } }
+    val tail = remember(plannedTailEnd) { plannedTailEnd?.toFloat() }
+
+    Canvas(modifier = modifier) {
+        if (current.size < 2 || totalBuckets < 2) return@Canvas
+        val allValues = current + previous + listOfNotNull(tail)
+        val minV = allValues.min()
+        val maxV = allValues.max()
+        val range = (maxV - minV).takeIf { it != 0f } ?: 1f
+        val stepX = size.width / (totalBuckets - 1)
+        val topPad = size.height * 0.1f
+        val usableH = size.height * 0.8f
+
+        fun yFor(v: Float) = topPad + usableH * (1f - (v - minV) / range)
+
+        if (previous.size >= 2) {
+            val previousPath = Path().apply {
+                moveTo(0f, yFor(previous.first()))
+                for (i in 1 until previous.size) lineTo(i * stepX, yFor(previous[i]))
+            }
+            drawPath(
+                path = previousPath,
+                color = previousLineColor.copy(alpha = 0.7f),
+                style = Stroke(
+                    width = 2.dp.toPx(),
+                    cap = StrokeCap.Round,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))
+                )
+            )
+        }
+
+        val lastCurrentX = (current.size - 1) * stepX
+        val currentPath = Path().apply {
+            moveTo(0f, yFor(current.first()))
+            for (i in 1 until current.size) lineTo(i * stepX, yFor(current[i]))
+        }
+        val fillPath = Path().apply {
+            addPath(currentPath)
+            lineTo(lastCurrentX, size.height)
+            lineTo(0f, size.height)
+            close()
+        }
+        drawPath(
+            path = fillPath,
+            brush = Brush.verticalGradient(
+                colors = listOf(lineColor.copy(alpha = 0.22f), lineColor.copy(alpha = 0f))
+            )
+        )
+        drawPath(
+            path = currentPath,
+            color = lineColor,
+            style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round)
+        )
+
+        // The planned tail is a continuation of the SAME line: it starts exactly where the solid
+        // path ends, just drawn dashed and tinted — one bend, not two separate lines meeting.
+        if (tail != null && totalBuckets > current.size) {
+            val bend = Offset(lastCurrentX, yFor(current.last()))
+            val end = Offset((totalBuckets - 1) * stepX, yFor(tail))
+            drawCircle(color = lineColor, radius = 4.dp.toPx(), center = bend)
+            drawLine(
+                color = lineColor.copy(alpha = 0.55f),
+                start = bend,
+                end = end,
+                strokeWidth = 2.5.dp.toPx(),
+                cap = StrokeCap.Round,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))
+            )
+            drawCircle(color = lineColor.copy(alpha = 0.45f), radius = 4.dp.toPx(), center = end)
+            drawCircle(color = lineColor, radius = 4.dp.toPx(), center = end, style = Stroke(width = 1.5.dp.toPx()))
+        } else {
+            drawCircle(color = lineColor, radius = 4.dp.toPx(), center = Offset(lastCurrentX, yFor(current.last())))
         }
     }
 }

@@ -47,6 +47,7 @@ import com.osscabinet.ossWallet.domain.model.BudgetPaceStatus
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.BarChartGranularity
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -81,14 +82,17 @@ fun BudgetHeroCard(
     history: List<BudgetProgress> = emptyList(),
     transactions: List<Transaction> = emptyList(),
     exchangeRates: ExchangeRateSnapshot? = null,
-    categories: List<Category> = emptyList()
+    categories: List<Category> = emptyList(),
+    // Only for previews/tests — real callers always start on Periodic; the user picks This
+    // Period via the settings sheet, which has no other way to be pre-seeded for a screenshot.
+    initialTrendViewMode: BudgetTrendViewMode = BudgetTrendViewMode.PERIODIC
 ) {
     val accentColor = when (progress.alertLevel) {
         BudgetAlertLevel.EXCEEDED, BudgetAlertLevel.WARNING -> AppColors.error
         BudgetAlertLevel.NONE -> AppColors.primary
     }
 
-    var trendViewMode by remember { mutableStateOf(BudgetTrendViewMode.PERIODIC) }
+    var trendViewMode by remember { mutableStateOf(initialTrendViewMode) }
     var trendGranularity by remember { mutableStateOf(BarChartGranularity.DAY) }
     val supportsThisPeriod = budget.timelineRange !is TimelineRange.AllTime
 
@@ -377,6 +381,7 @@ fun BudgetHeroCard(
                                 totalBuckets = periodTrend.totalCurrentBuckets,
                                 lineColor = accentColor,
                                 plannedTailEnd = periodTrend.plannedTailEnd,
+                                limit = progress.limit,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(48.dp)
@@ -388,6 +393,7 @@ fun BudgetHeroCard(
                             lineColor = accentColor,
                             selectedIndex = selectedHistoryIndex,
                             onSelectedIndexChange = { selectedHistoryIndex = it },
+                            limit = progress.limit,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp)
@@ -710,7 +716,8 @@ private fun BudgetHeroCardOnTrackPreview() {
         BigDecimal("210.00"),
         BigDecimal("380.00"),
         BigDecimal("290.00"),
-        BigDecimal("410.00"),
+        // Exceeds the $500 limit, exercising the limit line + red crossing segment.
+        BigDecimal("540.00"),
         BigDecimal("350.00"),
         BigDecimal("320.00")
     ).map { spent ->
@@ -718,7 +725,7 @@ private fun BudgetHeroCardOnTrackPreview() {
             budget = sampleBudget,
             spent = spent,
             limit = BigDecimal("500.00"),
-            remaining = BigDecimal("500.00") - spent,
+            remaining = (BigDecimal("500.00") - spent).max(BigDecimal.ZERO),
             percentage = (spent.toFloat() / 500f),
             alertLevel = BudgetAlertLevel.NONE
         )
@@ -813,6 +820,67 @@ private fun BudgetHeroCardTimelineOffsetPreview() {
             offset = -1,
             onOffsetChange = {},
             history = sampleHistory
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Budget Hero Card - This Period (over limit)")
+@Composable
+private fun BudgetHeroCardThisPeriodPreview() {
+    val sampleBudget = Budget(
+        id = 4L,
+        name = "Dining Out",
+        limitAmount = BigDecimal("300.00"),
+        currency = "USD",
+        timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
+        categoryIds = emptySet(),
+        accountIds = emptySet(),
+        tags = emptySet(),
+        profileId = 1
+    )
+    val day = 24L * 60 * 60 * 1000
+    val now = System.currentTimeMillis()
+    fun expense(id: Long, amount: String, daysAgo: Long) = Transaction(
+        id = id,
+        name = "Sample",
+        amount = BigDecimal(amount),
+        timestamp = now - daysAgo * day,
+        currency = "USD",
+        transactionType = TransactionType.EXPENSE,
+        accountId = null,
+        categoryId = 1L
+    )
+    val sampleTransactions = listOf(
+        // Current period so far — sums to $220.
+        expense(1, "60.00", 1),
+        expense(2, "50.00", 3),
+        expense(3, "70.00", 5),
+        expense(4, "40.00", 8),
+        // Previous period, for the dashed comparison line.
+        expense(5, "55.00", 34),
+        expense(6, "65.00", 38),
+        expense(7, "45.00", 42)
+    )
+    val sampleProgress = BudgetProgress(
+        budget = sampleBudget,
+        spent = BigDecimal("220.00"),
+        limit = BigDecimal("300.00"),
+        remaining = BigDecimal("80.00"),
+        percentage = 0.7333f,
+        alertLevel = BudgetAlertLevel.NONE,
+        // $110 planned pushes spent+planned to $330 — over the $300 limit, so the planned tail
+        // crosses the limit line and turns red partway through.
+        plannedAmount = BigDecimal("110.00")
+    )
+    OssWalletTheme {
+        BudgetHeroCard(
+            budget = sampleBudget,
+            progress = sampleProgress,
+            offset = 0,
+            onOffsetChange = {},
+            transactions = sampleTransactions,
+            exchangeRates = ExchangeRateSnapshot.EMPTY,
+            initialTrendViewMode = BudgetTrendViewMode.THIS_PERIOD
         )
     }
 }

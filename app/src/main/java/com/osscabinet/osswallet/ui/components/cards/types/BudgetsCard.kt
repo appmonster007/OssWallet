@@ -194,6 +194,14 @@ private fun BudgetProgressRow(
     onClick: () -> Unit
 ) {
     val pct = progress.percentage.coerceIn(0f, 1f)
+    val plannedPct = remember(progress) {
+        if (progress.limit.signum() > 0) {
+            progress.spent.add(progress.plannedAmount)
+                .divide(progress.limit, 4, java.math.RoundingMode.HALF_UP)
+                .toFloat()
+                .coerceIn(0f, 1f)
+        } else 0f
+    }
     val status = remember(progress, showPaceMarker, showWarningStyle) {
         // Settings can switch off the pace and warning signals, falling back to what the card showed before.
         when (val raw = BudgetService.paceStatus(progress)) {
@@ -287,6 +295,24 @@ private fun BudgetProgressRow(
             )
         }
 
+        // Line 2b: Planned (future transactions + due planned payments), shown separately from spent
+        if (progress.plannedAmount.signum() > 0) {
+            Text(
+                text = buildAnnotatedString {
+                    append(
+                        CurrencyReprUi.formatCurrencyAnnotated(
+                            amount = progress.plannedAmount,
+                            currencyCode = currency,
+                            spec = CurrencyDisplaySpec(useSemanticColor = false)
+                        )
+                    )
+                    append(" planned")
+                },
+                style = AppTextStyles.metaLabel,
+                color = AppColors.contentSecondary.copy(alpha = 0.8f)
+            )
+        }
+
         // Line 3: VS PRIOR Comparison (if applicable)
         if (previousProgress != null) {
             val change = progress.spent.subtract(previousProgress.spent)
@@ -324,6 +350,14 @@ private fun BudgetProgressRow(
                     }
                 }
         ) {
+            if (progress.plannedAmount.signum() > 0) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(plannedPct)
+                        .fillMaxHeight()
+                        .background(fillColor.copy(alpha = 0.30f))
+                )
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth(pct)
@@ -414,7 +448,8 @@ fun BudgetsCardPreview() {
             remaining = java.math.BigDecimal("550.00"),
             percentage = 0.45f,
             elapsedFraction = 0.50f,
-            alertLevel = BudgetAlertLevel.NONE
+            alertLevel = BudgetAlertLevel.NONE,
+            plannedAmount = java.math.BigDecimal("120.00")
         ),
         BudgetProgress(
             budget = budget2,
@@ -432,7 +467,8 @@ fun BudgetsCardPreview() {
             remaining = java.math.BigDecimal("60.00"),
             percentage = 0.88f,
             elapsedFraction = 0.50f,
-            alertLevel = BudgetAlertLevel.WARNING
+            alertLevel = BudgetAlertLevel.WARNING,
+            plannedAmount = java.math.BigDecimal("25.00")
         )
     )
 

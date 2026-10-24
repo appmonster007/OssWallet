@@ -10,6 +10,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
@@ -34,8 +35,13 @@ fun AeonSparkline(
     selectedIndex: Int? = null,
     onSelectedIndexChange: ((Int?) -> Unit)? = null,
     contentDescription: String? = null,
+    // Optional projected value for the point just past the last real one (e.g. spent+planned for
+    // the still-open current period). Drawn as a tinted dashed continuation, never solid, since
+    // it isn't actual history.
+    projectedPoint: BigDecimal? = null,
 ) {
     val values = remember(points) { points.map { it.toFloat() } }
+    val projectedValue = remember(projectedPoint) { projectedPoint?.toFloat() }
     val currentOnChange = rememberUpdatedState(onSelectedIndexChange)
     val guideColor = AppColors.contentSecondary.copy(alpha = 0.6f)
 
@@ -62,22 +68,27 @@ fun AeonSparkline(
             )
     ) {
         if (values.size < 2) return@Canvas
-        val minV = values.min()
-        val maxV = values.max()
+        val scaleValues = if (projectedValue != null) values + projectedValue else values
+        val minV = scaleValues.min()
+        val maxV = scaleValues.max()
         val range = (maxV - minV).takeIf { it != 0f } ?: 1f
-        val stepX = size.width / (values.size - 1)
+        // Reserve the last column for the projected point so the dashed continuation has somewhere
+        // to go; real points keep their normal spacing otherwise.
+        val columns = if (projectedValue != null) values.size else values.size - 1
+        val stepX = size.width / columns
         val topPad = size.height * 0.1f
         val usableH = size.height * 0.8f
 
         fun yFor(v: Float) = topPad + usableH * (1f - (v - minV) / range)
 
+        val lastRealX = (values.size - 1) * stepX
         val linePath = Path().apply {
             moveTo(0f, yFor(values.first()))
             for (i in 1 until values.size) lineTo(i * stepX, yFor(values[i]))
         }
         val fillPath = Path().apply {
             addPath(linePath)
-            lineTo(size.width, size.height)
+            lineTo(lastRealX, size.height)
             lineTo(0f, size.height)
             close()
         }
@@ -92,6 +103,27 @@ fun AeonSparkline(
             color = lineColor,
             style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
         )
+
+        if (projectedValue != null) {
+            val tint = lineColor.copy(alpha = 0.55f)
+            val lastReal = Offset(lastRealX, yFor(values.last()))
+            val projected = Offset(lastRealX + stepX, yFor(projectedValue))
+            drawLine(
+                color = tint,
+                start = lastReal,
+                end = projected,
+                strokeWidth = 2.dp.toPx(),
+                cap = StrokeCap.Round,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f))
+            )
+            drawCircle(color = lineColor.copy(alpha = 0.45f), radius = 4.dp.toPx(), center = projected)
+            drawCircle(
+                color = lineColor,
+                radius = 4.dp.toPx(),
+                center = projected,
+                style = Stroke(width = 1.5.dp.toPx())
+            )
+        }
 
         selectedIndex?.takeIf { it in values.indices }?.let { i ->
             val x = i * stepX

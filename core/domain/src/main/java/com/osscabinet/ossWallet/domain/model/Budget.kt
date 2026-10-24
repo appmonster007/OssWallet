@@ -52,5 +52,9 @@ data class BudgetProgress(
     @Serializable(with = BigDecimalSerializer::class)
     val rolloverAmount: BigDecimal = BigDecimal.ZERO,
     // Share (0..1) of the budget's current period that has passed; null for All Time budgets.
-    val elapsedFraction: Float? = null
+    val elapsedFraction: Float? = null,
+    // Future-dated transactions + due planned payments matching this budget's scope, within its
+    // current period. Shown separately from [spent] — it's committed, not yet actually spent.
+    @Serializable(with = BigDecimalSerializer::class)
+    val plannedAmount: BigDecimal = BigDecimal.ZERO
 )

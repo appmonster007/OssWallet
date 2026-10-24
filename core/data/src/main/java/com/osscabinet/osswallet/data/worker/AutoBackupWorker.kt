@@ -14,7 +14,9 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.osscabinet.ossWallet.core.data.R
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
+import com.osscabinet.ossWallet.data.notification.NotificationPermissions
 import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import dagger.assisted.Assisted
@@ -97,7 +99,10 @@ class AutoBackupWorker @AssistedInject constructor(
         return if (result.isSuccess) Result.success() else Result.retry()
     }
 
+    @Suppress("MissingPermission")
     private fun notify(context: Context, title: String, message: String, isError: Boolean) {
+        if (!NotificationPermissions.canPost(context)) return
+
         val channelId = "auto_backup"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -107,19 +112,14 @@ class AutoBackupWorker @AssistedInject constructor(
         }
 
         val notif = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.ic_menu_save)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setAutoCancel(true)
             .build()
 
-        try {
-            NotificationManagerCompat.from(context).notify(if (isError) 2002 else 2001, notif)
-        } catch (e: SecurityException) {
-            // Permission not granted on Android 13+
-            android.util.Log.w("AutoBackupWorker", "Notification permission not granted", e)
-        }
+        NotificationManagerCompat.from(context).notify(if (isError) 2002 else 2001, notif)
     }
 
     companion object {

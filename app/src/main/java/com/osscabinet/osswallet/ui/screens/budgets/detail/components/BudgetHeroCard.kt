@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,7 +23,6 @@ import androidx.compose.material.icons.rounded.DonutLarge
 import androidx.compose.material.icons.rounded.Today
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +58,7 @@ import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Composable
 fun BudgetHeroCard(
@@ -279,6 +279,8 @@ fun BudgetHeroCard(
                         lineColor = accentColor,
                         selectedIndex = selectedHistoryIndex,
                         onSelectedIndexChange = { selectedHistoryIndex = it },
+                        projectedPoint = progress.plannedAmount.takeIf { it.signum() > 0 }
+                            ?.let { progress.spent.add(it) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
@@ -414,15 +416,37 @@ fun BudgetHeroCard(
 
             // Gauge & Dual Readout
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    LinearProgressIndicator(
-                        progress = { progress.percentage.coerceIn(0f, 1f) },
+                // Planned extends the solid "spent" fill with a tinted segment up to spent+planned,
+                // so the gauge shows the committed-but-not-yet-spent amount without affecting
+                // percentage/alertLevel (which are based on spent alone).
+                val plannedPercentage = remember(progress, budget.limitAmount) {
+                    if (budget.limitAmount.signum() > 0) {
+                        progress.spent.add(progress.plannedAmount)
+                            .divide(budget.limitAmount, 4, RoundingMode.HALF_UP)
+                            .toFloat()
+                            .coerceIn(0f, 1f)
+                    } else 0f
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(accentColor.copy(alpha = 0.08f))
+                ) {
+                    if (progress.plannedAmount.signum() > 0) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(plannedPercentage)
+                                .fillMaxHeight()
+                                .background(accentColor.copy(alpha = 0.30f))
+                        )
+                    }
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp),
-                        color = accentColor,
-                        trackColor = accentColor.copy(alpha = 0.08f),
-                        strokeCap = StrokeCap.Round
+                            .fillMaxWidth(progress.percentage.coerceIn(0f, 1f))
+                            .fillMaxHeight()
+                            .background(accentColor)
                     )
                 }
 
@@ -469,7 +493,36 @@ fun BudgetHeroCard(
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                 }
-            }
+
+                // Planned: future-dated transactions + due planned payments in this period,
+                // matching the budget's scope. Shown separately — not yet actually spent.
+                if (progress.plannedAmount.signum() > 0) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .background(AppColors.contentSecondary.copy(alpha = 0.4f), CircleShape)
+                        )
+                        Text(
+                            text = buildAnnotatedString {
+                                append(
+                                    CurrencyReprUi.formatCurrencyAnnotated(
+                                        amount = progress.plannedAmount,
+                                        currencyCode = null,
+                                        spec = CurrencyDisplaySpec(useSemanticColor = false)
+                                    )
+                                )
+                                append(" planned")
+                            },
+                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
+                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+}
 
 
 
@@ -542,7 +595,8 @@ private fun BudgetHeroCardOnTrackPreview() {
         limit = BigDecimal("500.00"),
         remaining = BigDecimal("180.00"),
         percentage = 0.64f,
-        alertLevel = BudgetAlertLevel.NONE
+        alertLevel = BudgetAlertLevel.NONE,
+        plannedAmount = BigDecimal("45.00")
     )
     val sampleHistory = listOf(
         BigDecimal("210.00"),
@@ -592,7 +646,8 @@ private fun BudgetHeroCardExceededPreview() {
         limit = BigDecimal("200.00"),
         remaining = BigDecimal("-45.50"),
         percentage = 1.2275f,
-        alertLevel = BudgetAlertLevel.EXCEEDED
+        alertLevel = BudgetAlertLevel.EXCEEDED,
+        plannedAmount = BigDecimal("30.00")
     )
     OssWalletTheme {
         BudgetHeroCard(

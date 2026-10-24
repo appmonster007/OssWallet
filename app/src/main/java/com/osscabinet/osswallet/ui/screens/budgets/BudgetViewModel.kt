@@ -4,10 +4,12 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
+import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
@@ -36,6 +38,7 @@ class BudgetViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val computationRepository: ComputationRepository,
+    private val plannedPaymentRepository: PlannedPaymentRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
 
@@ -63,11 +66,16 @@ class BudgetViewModel @Inject constructor(
         .flatMapLatest { profileId -> categoryRepository.getAllCategories(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val plannedPayments: StateFlow<List<PlannedPayment>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> plannedPaymentRepository.getActivePlannedPayments(profileId) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val availableTags: StateFlow<List<String>> = transactions
         .map { txList -> txList.flatMap { it.tags }.distinct().sorted() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private data class BudgetSnapshot(
+    private data class BudgetBaseSnapshot(
         val budgets: List<Budget>,
         val transactions: List<Transaction>,
         val rates: ExchangeRateSnapshot,
@@ -75,21 +83,32 @@ class BudgetViewModel @Inject constructor(
         val offsets: Map<Long, Int>
     )
 
+    private data class BudgetSnapshot(
+        val base: BudgetBaseSnapshot,
+        val plannedPayments: List<PlannedPayment>
+    )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val budgetProgress: StateFlow<Map<Long, BudgetProgress>> = combine(
-        budgets,
-        transactions,
-        computationRepository.exchangeRatesSnapshot,
-        categories,
-        selectedOffsets
-    ) { budgetsList, transactionsList, snapshot, categoriesList, offsets ->
-        BudgetSnapshot(budgetsList, transactionsList, snapshot, categoriesList, offsets)
+        combine(
+            budgets,
+            transactions,
+            computationRepository.exchangeRatesSnapshot,
+            categories,
+            selectedOffsets
+        ) { budgetsList, transactionsList, snapshot, categoriesList, offsets ->
+            BudgetBaseSnapshot(budgetsList, transactionsList, snapshot, categoriesList, offsets)
+        },
+        plannedPayments
+    ) { base, plannedPaymentsList ->
+        BudgetSnapshot(base, plannedPaymentsList)
     }.distinctUntilChanged()
         .map { snapshot ->
-            val baseCurrency = snapshot.rates.anchor
+            val base = snapshot.base
+            val baseCurrency = base.rates.anchor
             val now = System.currentTimeMillis()
-            snapshot.budgets.associate { budget ->
-                val offset = snapshot.offsets[budget.id] ?: 0
+            base.budgets.associate { budget ->
+                val offset = base.offsets[budget.id] ?: 0
                 val shiftedRange = if (offset != 0) {
                     com.osscabinet.ossWallet.domain.service.timeline.TimelineService.shiftRange(budget.timelineRange, offset)
                 } else budget.timelineRange
@@ -101,47 +120,62 @@ class BudgetViewModel @Inject constructor(
 
                 val rollover = BudgetService.calculateRollover(
                     evalBudget,
-                    snapshot.transactions,
-                    snapshot.rates,
+                    base.transactions,
+                    base.rates,
                     baseCurrency,
                     now,
-                    snapshot.categories
+                    base.categories
                 )
                 val spent = BudgetService.calculateSpent(
                     evalBudget,
-                    snapshot.transactions,
-                    snapshot.rates,
+                    base.transactions,
+                    base.rates,
                     baseCurrency,
                     now,
-                    snapshot.categories
+                    base.categories
+                )
+                val planned = BudgetService.calculatePlannedAmount(
+                    evalBudget,
+                    base.transactions,
+                    snapshot.plannedPayments,
+                    base.rates,
+                    baseCurrency,
+                    now,
+                    base.categories
                 )
                 val elapsed = BudgetService.elapsedFraction(evalBudget, now)
-                budget.id to BudgetService.buildProgress(evalBudget, spent, rollover, elapsed)
+                budget.id to BudgetService.buildProgress(evalBudget, spent, rollover, elapsed, planned)
             }
         }.flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val periodHistory: StateFlow<Map<Long, List<BudgetProgress>>> = combine(
-        budgets,
-        transactions,
-        computationRepository.exchangeRatesSnapshot,
-        categories,
-        selectedOffsets
-    ) { budgetsList, transactionsList, snapshot, categoriesList, offsetsMap ->
-        val baseCurrency = snapshot.anchor
+        combine(
+            budgets,
+            transactions,
+            computationRepository.exchangeRatesSnapshot,
+            categories,
+            selectedOffsets
+        ) { budgetsList, transactionsList, snapshot, categoriesList, offsets ->
+            BudgetBaseSnapshot(budgetsList, transactionsList, snapshot, categoriesList, offsets)
+        },
+        plannedPayments
+    ) { base, plannedPaymentsList ->
+        val baseCurrency = base.rates.anchor
         val now = System.currentTimeMillis()
-        budgetsList.associate { budget ->
-            val currentOffset = offsetsMap[budget.id] ?: 0
+        base.budgets.associate { budget ->
+            val currentOffset = base.offsets[budget.id] ?: 0
             budget.id to BudgetService.getPeriodHistory(
                 budget = budget,
-                transactions = transactionsList,
-                exchangeRates = snapshot,
+                transactions = base.transactions,
+                exchangeRates = base.rates,
                 baseCurrency = baseCurrency,
                 now = now,
-                allCategories = categoriesList,
+                allCategories = base.categories,
                 offset = currentOffset,
-                count = 5
+                count = 5,
+                plannedPayments = plannedPaymentsList
             )
         }
     }.flowOn(Dispatchers.Default)

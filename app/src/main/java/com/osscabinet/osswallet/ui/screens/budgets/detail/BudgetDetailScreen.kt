@@ -254,6 +254,9 @@ fun BudgetDetailContent(
 ) {
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState(initialPage = 0) { 2 }
+    val transactions = remember(absoluteTransactionsWithBalance) {
+        absoluteTransactionsWithBalance.map { it.transaction }
+    }
     val tabs = listOf(
         NavigationTab(
             icon = Icons.Rounded.Info,
@@ -308,6 +311,9 @@ fun BudgetDetailContent(
                                             offset = offset,
                                             onOffsetChange = onOffsetChange,
                                             history = history,
+                                            transactions = transactions,
+                                            exchangeRates = exchangeRates,
+                                            categories = categoriesList,
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     }

@@ -58,3 +58,17 @@ data class BudgetProgress(
     @Serializable(with = BigDecimalSerializer::class)
     val plannedAmount: BigDecimal = BigDecimal.ZERO
 )
+
+/**
+ * Bucketed cumulative-spend series for the Budget Hero Card's "this period" trend view: the
+ * current period so far vs. the previous period at the same granularity, plus an optional tail
+ * to the spent+planned projection. Transient UI data — not persisted, so not [Serializable].
+ */
+data class BudgetPeriodTrend(
+    val currentPoints: List<BigDecimal>,
+    val currentLabels: List<String>,
+    val totalCurrentBuckets: Int,
+    val previousPoints: List<BigDecimal>,
+    val previousLabels: List<String>,
+    val plannedTailEnd: BigDecimal?
+)

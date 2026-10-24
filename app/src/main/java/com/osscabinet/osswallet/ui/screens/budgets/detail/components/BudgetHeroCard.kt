@@ -45,11 +45,19 @@ import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetPaceStatus
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.settings.BarChartGranularity
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsChipGrid
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
+import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSegmentedRow
+import com.osscabinet.ossWallet.ui.components.visualization.AeonPeriodComparisonSparkline
 import com.osscabinet.ossWallet.ui.components.visualization.AeonSparkline
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -60,6 +68,9 @@ import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+/** Which shape the Budget Hero Card's TREND chart takes. Session-only state, not persisted. */
+enum class BudgetTrendViewMode { PERIODIC, THIS_PERIOD }
+
 @Composable
 fun BudgetHeroCard(
     budget: Budget,
@@ -67,12 +78,19 @@ fun BudgetHeroCard(
     modifier: Modifier = Modifier,
     offset: Int = 0,
     onOffsetChange: ((Int) -> Unit)? = null,
-    history: List<BudgetProgress> = emptyList()
+    history: List<BudgetProgress> = emptyList(),
+    transactions: List<Transaction> = emptyList(),
+    exchangeRates: ExchangeRateSnapshot? = null,
+    categories: List<Category> = emptyList()
 ) {
     val accentColor = when (progress.alertLevel) {
         BudgetAlertLevel.EXCEEDED, BudgetAlertLevel.WARNING -> AppColors.error
         BudgetAlertLevel.NONE -> AppColors.primary
     }
+
+    var trendViewMode by remember { mutableStateOf(BudgetTrendViewMode.PERIODIC) }
+    var trendGranularity by remember { mutableStateOf(BarChartGranularity.DAY) }
+    val supportsThisPeriod = budget.timelineRange !is TimelineRange.AllTime
 
     val shiftedRange = if (offset != 0) TimelineService.shiftRange(budget.timelineRange, offset) else budget.timelineRange
     val (start, end) = TimelineService.getDateRange(shiftedRange)
@@ -95,7 +113,42 @@ fun BudgetHeroCard(
         subtitle = "Budget: ${shiftedRange.toDisplayString()}",
         icon = Icons.Rounded.DonutLarge,
         accentColor = accentColor,
-        modifier = modifier
+        modifier = modifier,
+        settingsContent = if (supportsThisPeriod) {
+            {
+                CardSettingsSection("Trend") {
+                    CardSettingsSegmentedRow(
+                        options = BudgetTrendViewMode.entries,
+                        selected = trendViewMode,
+                        onSelected = { trendViewMode = it },
+                        labelProvider = {
+                            when (it) {
+                                BudgetTrendViewMode.PERIODIC -> "Periodic"
+                                BudgetTrendViewMode.THIS_PERIOD -> "This Period"
+                            }
+                        }
+                    )
+                    Text(
+                        text = "GRANULARITY",
+                        style = AppTextStyles.overlineLabel.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp,
+                            fontSize = 10.sp
+                        ),
+                        color = AppColors.primary.copy(alpha = if (trendViewMode == BudgetTrendViewMode.THIS_PERIOD) 1f else 0.4f),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                    CardSettingsChipGrid(
+                        options = BarChartGranularity.entries,
+                        selected = trendGranularity,
+                        onSelected = { trendGranularity = it },
+                        labelProvider = { it.displayName },
+                        columns = 3,
+                        enabled = trendViewMode == BudgetTrendViewMode.THIS_PERIOD
+                    )
+                }
+            }
+        } else null
     ) {
         Column(
             modifier = Modifier
@@ -271,20 +324,73 @@ fun BudgetHeroCard(
                                 style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
                                 color = AppColors.contentPrimary
                             )
+                        } else if (supportsThisPeriod) {
+                            Row(
+                                modifier = Modifier
+                                    .background(AppColors.surfaceContainerHigh.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+                                    .padding(2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                listOf(
+                                    BudgetTrendViewMode.PERIODIC to "Periodic",
+                                    BudgetTrendViewMode.THIS_PERIOD to "This Period"
+                                ).forEach { (mode, label) ->
+                                    val selected = trendViewMode == mode
+                                    Text(
+                                        text = label,
+                                        style = AppTextStyles.caption.copy(
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                            fontSize = 10.sp
+                                        ),
+                                        color = if (selected) AppColors.onPrimary else AppColors.contentSecondary,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(if (selected) accentColor else androidx.compose.ui.graphics.Color.Transparent)
+                                            .clickable { trendViewMode = mode }
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
                         }
                     }
 
-                    AeonSparkline(
-                        points = sparklinePoints,
-                        lineColor = accentColor,
-                        selectedIndex = selectedHistoryIndex,
-                        onSelectedIndexChange = { selectedHistoryIndex = it },
-                        projectedPoint = progress.plannedAmount.takeIf { it.signum() > 0 }
-                            ?.let { progress.spent.add(it) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                    )
+                    if (trendViewMode == BudgetTrendViewMode.THIS_PERIOD && supportsThisPeriod && exchangeRates != null) {
+                        val periodTrend = remember(budget, transactions, trendGranularity, exchangeRates, categories, progress.spent, progress.plannedAmount) {
+                            BudgetService.getThisPeriodTrend(
+                                budget = budget,
+                                transactions = transactions,
+                                spent = progress.spent,
+                                plannedAmount = progress.plannedAmount,
+                                exchangeRates = exchangeRates,
+                                baseCurrency = budget.currency,
+                                now = System.currentTimeMillis(),
+                                allCategories = categories,
+                                granularity = trendGranularity
+                            )
+                        }
+                        if (periodTrend != null && periodTrend.currentPoints.size >= 2) {
+                            AeonPeriodComparisonSparkline(
+                                currentPoints = periodTrend.currentPoints,
+                                previousPoints = periodTrend.previousPoints,
+                                totalBuckets = periodTrend.totalCurrentBuckets,
+                                lineColor = accentColor,
+                                plannedTailEnd = periodTrend.plannedTailEnd,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                            )
+                        }
+                    } else {
+                        AeonSparkline(
+                            points = sparklinePoints,
+                            lineColor = accentColor,
+                            selectedIndex = selectedHistoryIndex,
+                            onSelectedIndexChange = { selectedHistoryIndex = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                        )
+                    }
                 }
             }
 

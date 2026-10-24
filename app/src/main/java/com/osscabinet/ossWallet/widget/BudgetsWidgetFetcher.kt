@@ -144,7 +144,7 @@ class BudgetsWidgetFetcher : WidgetDataFetcher {
                 overByFormatted = formatCurrency((spent - limit).max(BigDecimal.ZERO), currency),
                 percentage = percentage * 100f,
                 pace = pace.name,
-                elapsedPercent = elapsedFraction?.let { (it * 100f).toInt().coerceIn(0, 100) },
+                elapsedPercent = BudgetService.paceTargetFraction(this)?.let { (it * 100f).toInt().coerceIn(0, 100) },
                 periodLabel = budget.timelineRange.budgetPeriodLabel(),
                 rolloverAmountFormatted = formatCurrency(rolloverAmount, currency),
                 hasRollover = rolloverAmount.signum() != 0

@@ -53,13 +53,13 @@ object BudgetService {
      * ahead of the elapsed share), then reaching the budget's own alert threshold.
      */
     fun paceStatus(progress: BudgetProgress): BudgetPaceStatus {
-        val elapsed = progress.elapsedFraction
+        val target = paceTargetFraction(progress)
         return when {
             progress.alertLevel == BudgetAlertLevel.EXCEEDED -> BudgetPaceStatus.OVER
             // Spent alone hasn't hit the limit yet, but committed (planned) spend would push it
             // past — surface that now rather than waiting for the planned amount to actually land.
             isOverIncludingPlanned(progress) -> BudgetPaceStatus.OVER
-            elapsed != null && progress.percentage > elapsed + PACE_TOLERANCE -> BudgetPaceStatus.AHEAD_OF_PACE
+            target != null && progress.percentage > target + PACE_TOLERANCE -> BudgetPaceStatus.AHEAD_OF_PACE
             progress.alertLevel == BudgetAlertLevel.WARNING -> BudgetPaceStatus.NEAR_LIMIT
             else -> BudgetPaceStatus.ON_TRACK
         }
@@ -68,6 +68,25 @@ object BudgetService {
     /** True when spent + planned (future transactions + due planned payments) exceeds the limit, even if spent alone doesn't yet. */
     fun isOverIncludingPlanned(progress: BudgetProgress): Boolean =
         progress.spent.add(progress.plannedAmount) > progress.limit
+
+    /**
+     * Where the "you should be here" pace marker belongs on the spent/limit bar (as a 0..1
+     * fraction of [BudgetProgress.limit]), accounting for planned commitments: the discretionary
+     * budget — limit minus what's already planned — is spread evenly across the whole period, so
+     * a budget with heavy planned commitments gets a stricter (earlier) target than pure elapsed
+     * time would suggest. Null when there's no bounded period (All Time) to pace against, or once
+     * the budget is already OVER — pace stops meaning anything once you've exceeded the limit.
+     */
+    fun paceTargetFraction(progress: BudgetProgress): Float? {
+        val elapsed = progress.elapsedFraction ?: return null
+        if (progress.alertLevel == BudgetAlertLevel.EXCEEDED || isOverIncludingPlanned(progress)) return null
+        if (progress.limit.signum() <= 0) return 0f
+        val discretionaryFraction = progress.limit.subtract(progress.plannedAmount)
+            .max(BigDecimal.ZERO)
+            .divide(progress.limit, 4, RoundingMode.HALF_UP)
+            .toFloat()
+        return (elapsed * discretionaryFraction).coerceIn(0f, 1f)
+    }
 
     const val PACE_TOLERANCE = 0.10f
 

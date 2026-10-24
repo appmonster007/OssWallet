@@ -220,6 +220,9 @@ private fun BudgetProgressRow(
         else -> AppColors.accent
     }
     val elapsed = progress.elapsedFraction
+    // Where the pace tick actually belongs: elapsed time, adjusted for how much of the limit is
+    // already claimed by planned commitments (see BudgetService.paceTargetFraction).
+    val paceTarget = remember(progress) { BudgetService.paceTargetFraction(progress) }
     val tickColor = AppColors.contentPrimary.copy(alpha = 0.7f)
     val currency = progress.budget.currency
 
@@ -339,8 +342,8 @@ private fun BudgetProgressRow(
                 .background(AppColors.outlineVariant)
                 .drawWithContent {
                     drawContent()
-                    if (showPaceMarker && elapsed != null) {
-                        val x = size.width * elapsed
+                    if (showPaceMarker && paceTarget != null) {
+                        val x = size.width * paceTarget
                         drawLine(
                             color = tickColor,
                             start = Offset(x, -4.dp.toPx()),

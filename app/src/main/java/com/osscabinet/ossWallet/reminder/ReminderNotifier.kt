@@ -1,16 +1,13 @@
 package com.osscabinet.ossWallet.reminder
 
-import android.Manifest
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import com.osscabinet.ossWallet.MainActivity
 import com.osscabinet.ossWallet.R
+import com.osscabinet.ossWallet.data.notification.NotificationPermissions
 import com.osscabinet.ossWallet.domain.service.reminder.ReminderEvent
 import com.osscabinet.ossWallet.domain.service.reminder.ReminderKind
 
@@ -21,15 +18,11 @@ object ReminderNotifier {
     const val ACTION_MARK_PAID = "com.osscabinet.ossWallet.reminder.MARK_PAID"
 
     /** True when a notification posted now would actually be shown. */
-    fun canPost(context: Context): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
-            PackageManager.PERMISSION_GRANTED
-        ) return false
-        return NotificationManagerCompat.from(context).areNotificationsEnabled()
-    }
+    fun canPost(context: Context): Boolean = NotificationPermissions.canPost(context)
 
+    @Suppress("MissingPermission")
     fun post(context: Context, event: ReminderEvent) {
+        if (!canPost(context)) return
         val isBudget = event.kind == ReminderKind.BUDGET_WARNING || event.kind == ReminderKind.BUDGET_EXCEEDED
         val open = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -78,7 +71,9 @@ object ReminderNotifier {
     }
 
     /** Replaces the reminder with a short-lived outcome ("Rent marked paid"). */
+    @Suppress("MissingPermission")
     fun postOutcome(context: Context, event: ReminderEvent, text: String) {
+        if (!canPost(context)) return
         val notification = NotificationCompat.Builder(
             context, if (event.kind == ReminderKind.PLANNED_PAYMENT) CHANNEL_PLANNED else CHANNEL_BUDGETS
         )

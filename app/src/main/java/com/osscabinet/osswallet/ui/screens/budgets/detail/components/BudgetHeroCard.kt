@@ -355,9 +355,11 @@ fun BudgetHeroCard(
                     }
 
                     if (trendViewMode == BudgetTrendViewMode.THIS_PERIOD && supportsThisPeriod && exchangeRates != null) {
-                        val periodTrend = remember(budget, transactions, trendGranularity, exchangeRates, categories, progress.spent, progress.plannedAmount) {
+                        val periodTrend = remember(shiftedRange, transactions, trendGranularity, exchangeRates, categories, progress.spent, progress.plannedAmount) {
                             BudgetService.getThisPeriodTrend(
-                                budget = budget,
+                                // The stepper's selected period, not the budget's own (unshifted)
+                                // timelineRange — otherwise this always shows the real current period.
+                                budget = budget.copy(timelineRange = shiftedRange),
                                 transactions = transactions,
                                 spent = progress.spent,
                                 plannedAmount = progress.plannedAmount,

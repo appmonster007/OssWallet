@@ -25,8 +25,10 @@ class BudgetPaceTest {
         profileId = 1
     )
 
-    private fun progress(spent: String, elapsed: Float?, alert: Float = 0.8f) =
-        BudgetService.buildProgress(budget(alert = alert), BigDecimal(spent), elapsedFraction = elapsed)
+    private fun progress(spent: String, elapsed: Float?, alert: Float = 0.8f, planned: String = "0") =
+        BudgetService.buildProgress(
+            budget(alert = alert), BigDecimal(spent), elapsedFraction = elapsed, plannedAmount = BigDecimal(planned)
+        )
 
     @Test
     fun `elapsed fraction is the share of the period that has passed`() {
@@ -94,5 +96,52 @@ class BudgetPaceTest {
         val b = budget()
         assertEquals(start, BudgetService.periodIdentity(b, start + day))
         assertEquals(start, BudgetService.periodIdentity(b, start + 4 * day))
+    }
+
+    // ---- paceTargetFraction / planned-aware pace ----
+
+    @Test
+    fun `pace target equals elapsed when nothing is planned`() {
+        assertEquals(0.5f, BudgetService.paceTargetFraction(progress("40", 0.5f))!!, 0.001f)
+    }
+
+    @Test
+    fun `pace target shrinks proportionally to planned's share of the limit`() {
+        // limit=100, planned=20 -> discretionary 80% of the limit, half the period elapsed.
+        assertEquals(0.4f, BudgetService.paceTargetFraction(progress("40", 0.5f, planned = "20"))!!, 0.001f)
+    }
+
+    @Test
+    fun `pace target is null once planned alone would exceed the limit`() {
+        // Already over before any time has passed — pace is moot, hide the marker rather than
+        // pin it somewhere that no longer means anything.
+        assertNull(BudgetService.paceTargetFraction(progress("0", 0.1f, planned = "150")))
+    }
+
+    @Test
+    fun `pace target is null once spent plus planned exceeds the limit`() {
+        // Same shape as the real-world case this was reported from: limit 500, spent 470,
+        // planned 60, 90% elapsed — scaled to this file's limit of 100.
+        assertNull(BudgetService.paceTargetFraction(progress("94", 0.9f, planned = "12")))
+    }
+
+    @Test
+    fun `pace target is null without a bounded period`() {
+        assertNull(BudgetService.paceTargetFraction(progress("40", null)))
+    }
+
+    @Test
+    fun `over including planned flips pace status even when spent alone is under the limit`() {
+        // spent=80 is under the 100 limit and under the 80% alert threshold's own boundary isn't
+        // crossed by spent alone, but spent+planned=110 exceeds the limit outright.
+        assertEquals(BudgetPaceStatus.OVER, BudgetService.paceStatus(progress("80", 0.5f, planned = "30")))
+    }
+
+    @Test
+    fun `planned shrinking the target can turn ON_TRACK into AHEAD_OF_PACE`() {
+        // Without planned: elapsed=0.5, spent=55 -> 0.55 is within tolerance (0.10) of 0.5 -> ON_TRACK.
+        assertEquals(BudgetPaceStatus.ON_TRACK, BudgetService.paceStatus(progress("55", 0.5f)))
+        // With a planned=20 commitment: target shrinks to 0.4, and 0.55 > 0.4+0.10 -> AHEAD_OF_PACE.
+        assertEquals(BudgetPaceStatus.AHEAD_OF_PACE, BudgetService.paceStatus(progress("55", 0.5f, planned = "20")))
     }
 }

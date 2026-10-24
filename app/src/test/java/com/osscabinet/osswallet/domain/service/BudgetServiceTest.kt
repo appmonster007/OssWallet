@@ -219,6 +219,20 @@ class BudgetServiceTest {
     }
 
     @Test
+    fun `remainingDailyAllowance for a future period spreads over that period's own days, not today-to-period-end`() {
+        // Today is March 15; viewing April (offset +1) via the timeline stepper. April has 30
+        // days. The buggy version divided by (April 30 - March 15) ≈ 46 days instead, badly
+        // understating the daily allowance for a period that hasn't started yet.
+        val now = epochOf(2024, 3, 15)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH, offset = 1), limit = BigDecimal("3000"))
+        val progress = BudgetService.buildProgress(budget, spent = BigDecimal.ZERO)
+        val daily = BudgetService.remainingDailyAllowance(progress, now)
+        assertNotNull(daily)
+        // 3000 / 30 days = 100/day; the pre-fix formula (3000 / ~46 days) would give ~65.
+        assertTrue("expected ~100/day for April, got $daily", daily!! >= BigDecimal("96.00"))
+    }
+
+    @Test
     fun `getPeriodHistory returns history items for past periods`() {
         val now = epochOf(2024, 3, 15)
         val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH), limit = BigDecimal("1000"))

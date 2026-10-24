@@ -416,7 +416,10 @@ object BudgetService {
         val (start, end) = getCurrentPeriodRange(budget, now)
         if (end <= now || end <= start) return null
 
-        val remainingMs = end - now
+        // For a future period (viewed via the timeline stepper, now < start), remaining days is
+        // the whole period's length, not end-now — which would also count the days between today
+        // and the period's own start, overstating how many days there are to spread spend across.
+        val remainingMs = end - maxOf(now, start)
         val remainingDays = (remainingMs / (1000L * 60 * 60 * 24)).coerceAtLeast(1)
         // Spent+planned, not spent alone — a due planned payment or a future-dated transaction
         // already claims part of what's left, so the real per-day allowance is tighter.

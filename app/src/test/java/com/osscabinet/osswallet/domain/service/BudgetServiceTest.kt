@@ -2,6 +2,12 @@ package com.osscabinet.ossWallet.domain.service
 
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
+import com.osscabinet.ossWallet.domain.model.EntryMode
+import com.osscabinet.ossWallet.domain.model.PaymentSchedule
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.RecurrenceRule
+import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
@@ -240,6 +246,121 @@ class BudgetServiceTest {
 
         assertEquals(0, febSpentDirect.compareTo(febProgress.spent))
         assertEquals(0, BigDecimal("250").compareTo(febProgress.spent))
+    }
+
+    private fun makePlannedPayment(
+        amount: BigDecimal,
+        nextDueDate: Long,
+        entryMode: EntryMode = EntryMode.EXPENSE,
+        currency: String = "USD",
+        accountId: String? = "acc1",
+        categoryId: Long = 1001L,
+        status: PlannedPaymentStatus = PlannedPaymentStatus.ACTIVE
+    ) = PlannedPayment(
+        id = 1L,
+        name = "Test Planned Payment",
+        categoryId = categoryId,
+        amount = amount,
+        entryMode = entryMode,
+        accountId = accountId,
+        currency = currency,
+        schedule = PaymentSchedule(
+            recurrenceRule = RecurrenceRule(type = RecurrenceType.MONTHLY),
+            startDate = nextDueDate,
+            nextDueDate = nextDueDate
+        ),
+        status = status
+    )
+
+    @Test
+    fun `calculateSpent excludes transactions dated after today, treating them as not-yet-spent`() {
+        val now = System.currentTimeMillis()
+        val dayMs = 24L * 60 * 60 * 1000
+        val budget = makeBudget(TimelineRange.CustomRange(now - 10 * dayMs, now + 10 * dayMs))
+        val transactions = listOf(
+            makeTransaction(BigDecimal("-200"), timestamp = now - dayMs),
+            makeTransaction(BigDecimal("-300"), timestamp = now + dayMs)
+        )
+
+        val spent = BudgetService.calculateSpent(budget, transactions, ExchangeRateSnapshot.EMPTY, "USD", now)
+        assertEquals(0, BigDecimal("200").compareTo(spent))
+    }
+
+    @Test
+    fun `calculateFutureTransactionsAmount sums only future-dated matching transactions`() {
+        val now = System.currentTimeMillis()
+        val dayMs = 24L * 60 * 60 * 1000
+        val budget = makeBudget(TimelineRange.CustomRange(now - 10 * dayMs, now + 10 * dayMs))
+        val transactions = listOf(
+            makeTransaction(BigDecimal("-200"), timestamp = now - dayMs),
+            makeTransaction(BigDecimal("-300"), timestamp = now + dayMs)
+        )
+
+        val future = BudgetService.calculateFutureTransactionsAmount(
+            budget, transactions, ExchangeRateSnapshot.EMPTY, "USD", now
+        )
+        assertEquals(0, BigDecimal("300").compareTo(future))
+    }
+
+    @Test
+    fun `calculatePlannedPaymentsAmount sums due occurrences matching the budget's scope`() {
+        val now = System.currentTimeMillis()
+        val dayMs = 24L * 60 * 60 * 1000
+        val budget = makeBudget(
+            TimelineRange.CustomRange(now - 10 * dayMs, now + 10 * dayMs),
+            categoryIds = setOf(1001L)
+        )
+        val payments = listOf(
+            makePlannedPayment(BigDecimal("150"), nextDueDate = now + 2 * dayMs),
+            makePlannedPayment(BigDecimal("999"), categoryId = 2002L, nextDueDate = now + 2 * dayMs),
+            makePlannedPayment(BigDecimal("50"), nextDueDate = now + 50 * dayMs)
+        )
+
+        val planned = BudgetService.calculatePlannedPaymentsAmount(
+            budget, payments, ExchangeRateSnapshot.EMPTY, "USD", now
+        )
+        assertEquals(0, BigDecimal("150").compareTo(planned))
+    }
+
+    @Test
+    fun `calculatePlannedPaymentsAmount excludes entry modes the budget doesn't track`() {
+        val now = System.currentTimeMillis()
+        val dayMs = 24L * 60 * 60 * 1000
+        val budget = makeBudget(TimelineRange.CustomRange(now - 10 * dayMs, now + 10 * dayMs))
+        val payments = listOf(
+            makePlannedPayment(BigDecimal("150"), entryMode = EntryMode.INCOME, nextDueDate = now + 2 * dayMs)
+        )
+
+        val planned = BudgetService.calculatePlannedPaymentsAmount(
+            budget, payments, ExchangeRateSnapshot.EMPTY, "USD", now
+        )
+        assertEquals(0, BigDecimal.ZERO.compareTo(planned))
+    }
+
+    @Test
+    fun `calculatePlannedPaymentsAmount is zero for All Time budgets`() {
+        val now = System.currentTimeMillis()
+        val budget = makeBudget(TimelineRange.AllTime())
+        val payments = listOf(makePlannedPayment(BigDecimal("150"), nextDueDate = now + 86_400_000L))
+
+        val planned = BudgetService.calculatePlannedPaymentsAmount(
+            budget, payments, ExchangeRateSnapshot.EMPTY, "USD", now
+        )
+        assertEquals(0, BigDecimal.ZERO.compareTo(planned))
+    }
+
+    @Test
+    fun `calculatePlannedAmount combines future transactions and planned payments`() {
+        val now = System.currentTimeMillis()
+        val dayMs = 24L * 60 * 60 * 1000
+        val budget = makeBudget(TimelineRange.CustomRange(now - 10 * dayMs, now + 10 * dayMs))
+        val transactions = listOf(makeTransaction(BigDecimal("-300"), timestamp = now + dayMs))
+        val payments = listOf(makePlannedPayment(BigDecimal("150"), nextDueDate = now + 2 * dayMs))
+
+        val planned = BudgetService.calculatePlannedAmount(
+            budget, transactions, payments, ExchangeRateSnapshot.EMPTY, "USD", now
+        )
+        assertEquals(0, BigDecimal("450").compareTo(planned))
     }
 
     @Test

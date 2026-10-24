@@ -348,7 +348,9 @@ object CardAggregationService {
         // Sorting needs every budget's progress, so only a saved-order card can stop early.
         val candidates = if (config.sortBy == BudgetSortMode.SAVED) budgets.take(config.maxItems) else budgets
         val progress = candidates.map { budget ->
-            val budgetFilter = BudgetService.buildTransactionFilter(budget, now, input.categories, effectiveFilter.timelineRange.excludeFuture)
+            // Spent never counts future-dated transactions, regardless of the dashboard's own
+            // filter settings — mirrors BudgetService.calculateSpent's in-memory behavior.
+            val budgetFilter = BudgetService.buildTransactionFilter(budget, now, input.categories, excludeFuture = true)
             val finalFilter = budgetFilter.copy(
                 accountIds = if (budget.accountIds.isEmpty()) effectiveFilter.accountIds else budget.accountIds
             )
@@ -359,11 +361,26 @@ object CardAggregationService {
             val spentSummary = CurrencyService.calculateTotalFinancialSummary(spentSummaries, budget.currency, input.exchangeRates)
             val spent = signedSpent(spentSummary.netFlow, budget)
 
+            // Future-dated transactions matching this budget's scope, within its current period —
+            // derived as (whole period) - (past-only), since both share the same sign convention.
+            val allFilter = finalFilter.copy(timelineRange = finalFilter.timelineRange.withExcludeFuture(false))
+            val allSummaries = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, allFilter)
+                .getOrDefault(emptyMap())
+            val allSummary = CurrencyService.calculateTotalFinancialSummary(allSummaries, budget.currency, input.exchangeRates)
+            val allSigned = signedSpent(allSummary.netFlow, budget)
+            val futureTransactionsAmount = allSigned.subtract(spent).coerceAtLeast(BigDecimal.ZERO)
+
+            // Due planned payments matching this budget's scope, within its current period.
+            val plannedPaymentsAmount = BudgetService.calculatePlannedPaymentsAmount(
+                budget, input.plannedPayments, input.exchangeRates, budget.currency, now, input.categories
+            )
+            val planned = futureTransactionsAmount.add(plannedPaymentsAmount)
+
             val rollover = if (budget.rollover) {
                 computeBudgetRollover(queryService, profileId, budget, input, effectiveFilter.accountIds, now, effectiveFilter.timelineRange.excludeFuture)
             } else BigDecimal.ZERO
 
-            BudgetService.buildProgress(budget, spent, rollover, BudgetService.elapsedFraction(budget, now))
+            BudgetService.buildProgress(budget, spent, rollover, BudgetService.elapsedFraction(budget, now), planned)
         }
 
         val items = when (config.sortBy) {

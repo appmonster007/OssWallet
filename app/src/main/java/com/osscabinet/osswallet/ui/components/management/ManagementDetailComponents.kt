@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.management
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,18 +38,26 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 /**
  * Shared chip for displaying scope/context items (Accounts, Categories, Tags)
  * Follows Aeon design philosophy: Pill shape, subtle background, colored dot indicator or circular icon.
+ *
+ * Optionally tappable ([onClick]) and/or carrying a trailing count badge ([badgeCount], shown
+ * only when > 1) — used by category drill-down chips as well as plain static ones. [onClick]
+ * is applied via [Modifier.clickable] rather than `Surface(onClick = ...)` so a tappable chip
+ * stays exactly the same size as a static one (no Material3 minimum-touch-target inflation),
+ * keeping them aligned when they sit side by side in the same row.
  */
 @Composable
 fun ScopeChip(
     text: String,
     color: Color,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null
+    icon: ImageVector? = null,
+    badgeCount: Int? = null,
+    onClick: (() -> Unit)? = null
 ) {
     Surface(
         color = AppColors.cardSurfaceProminent.copy(alpha = 0.6f),
         shape = RoundedCornerShape(12.dp),
-        modifier = modifier
+        modifier = if (onClick != null) modifier.clickable(onClick = onClick) else modifier
     ) {
         Row(
             modifier = Modifier.padding(start = 6.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
@@ -85,6 +94,22 @@ fun ScopeChip(
                 ),
                 color = AppColors.contentPrimary.copy(alpha = 0.8f)
             )
+            if (badgeCount != null && badgeCount > 1) {
+                Surface(
+                    color = color.copy(alpha = 0.18f),
+                    shape = CircleShape
+                ) {
+                    Text(
+                        text = badgeCount.toString(),
+                        style = AppTextStyles.caption.copy(
+                            fontWeight = FontWeight.Black,
+                            fontSize = 10.sp
+                        ),
+                        color = color,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                    )
+                }
+            }
         }
     }
 }

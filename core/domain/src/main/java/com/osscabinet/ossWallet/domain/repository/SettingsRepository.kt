@@ -39,6 +39,8 @@ interface SettingsRepository {
     val glassSettings: Flow<GlassSettings>
     val autoBackupConfig: Flow<AutoBackupConfig>
     val uiDensity: Flow<String>
+    val cardListEdgeSpacing: Flow<Int>
+    val cardListGap: Flow<Int>
 
     suspend fun saveCurrency(currency: String)
     suspend fun saveTheme(theme: String)
@@ -74,4 +76,6 @@ interface SettingsRepository {
     suspend fun updateGlassSettings(update: (GlassSettings) -> GlassSettings)
     suspend fun saveAutoBackupConfig(config: AutoBackupConfig)
     suspend fun saveUiDensity(name: String)
+    suspend fun saveCardListEdgeSpacing(dp: Int)
+    suspend fun saveCardListGap(dp: Int)
 }

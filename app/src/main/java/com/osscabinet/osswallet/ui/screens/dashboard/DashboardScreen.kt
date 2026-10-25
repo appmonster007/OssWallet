@@ -1238,8 +1238,8 @@ fun DashboardGlanceTab(
             highlightedId = highlightedId,
             onScrollComplete = onClearScrollTo,
             contentPadding = PaddingValues(
-                start = AeonTheme.dimensions.screenPadding,
-                end = AeonTheme.dimensions.screenPadding,
+                start = AeonTheme.dimensions.cardListEdgeSpacing,
+                end = AeonTheme.dimensions.cardListEdgeSpacing,
                 top = topPadding + AeonTheme.dimensions.spacingMd,
                 bottom = scrollBottomPadding() + bottomPadding
             ),

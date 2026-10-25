@@ -72,6 +72,7 @@ import com.osscabinet.ossWallet.ui.theme.AccentDeepPurple
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.ui.theme.color
 import com.osscabinet.ossWallet.ui.theme.AeonSize
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
@@ -94,7 +95,6 @@ data class AeonTopBarSection(
 object AeonTopBarDefaults {
     val Height = AeonSize.D64.value
     val PillHeight = AeonSize.D48.value
-    val HorizontalPadding = AeonSize.D12.value
     val ContentPadding = PaddingValues(AeonSize.D4.value)
 
     val TitleStyle: TextStyle
@@ -134,7 +134,7 @@ fun AeonTopAppBar(
             .fillMaxWidth()
             .windowInsetsPadding(windowInsets)
             .height(AeonTopBarDefaults.Height)
-            .padding(horizontal = AeonTopBarDefaults.HorizontalPadding)
+            .padding(horizontal = AeonTheme.dimensions.screenPadding)
     ) {
         Row(
             modifier = Modifier

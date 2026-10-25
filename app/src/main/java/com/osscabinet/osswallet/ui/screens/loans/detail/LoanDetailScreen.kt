@@ -507,12 +507,13 @@ private fun LoanOverviewTab(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            start = AeonTheme.dimensions.screenPadding,
-            end = AeonTheme.dimensions.screenPadding,
+            start = AeonTheme.dimensions.cardListEdgeSpacing,
+            end = AeonTheme.dimensions.cardListEdgeSpacing,
             top = AeonTheme.dimensions.screenPadding + topPadding,
             bottom = scrollBottomPadding()
         ),
-        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+        // Matches the standard card-to-card gap used on Dashboard/Analytics/Budget-list/Loan-list
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.cardListGap)
     ) {
         item {
             LoanHeroCard(

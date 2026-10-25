@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
@@ -116,6 +117,8 @@ class MainActivity : FragmentActivity() {
                 initialValue = com.osscabinet.ossWallet.domain.model.settings.CardOpenAnimation.DEFAULT.name
             )
             val cardOpenAnimation = com.osscabinet.ossWallet.domain.model.settings.CardOpenAnimation.fromName(cardOpenAnimationName)
+            val cardListEdgeSpacingDp by settingsRepository.cardListEdgeSpacing.collectAsStateWithLifecycle(initialValue = 14)
+            val cardListGapDp by settingsRepository.cardListGap.collectAsStateWithLifecycle(initialValue = 12)
 
             val lockState by appLockManager.state.collectAsStateWithLifecycle()
             val lockConfig by appLockManager.config.collectAsStateWithLifecycle()
@@ -144,7 +147,9 @@ class MainActivity : FragmentActivity() {
                 dynamicAccent = dynamicAccent,
                 glassSettings = glassSettings,
                 uiDensity = uiDensity,
-                cardOpenAnimation = cardOpenAnimation
+                cardOpenAnimation = cardOpenAnimation,
+                cardListEdgeSpacing = cardListEdgeSpacingDp.dp,
+                cardListGap = cardListGapDp.dp
             ) {
                 CompositionLocalProvider(
                     LocalGlassmorphismEnabled provides glassmorphismEnabled,

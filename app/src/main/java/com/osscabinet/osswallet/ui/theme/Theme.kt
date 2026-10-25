@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.Dp
 import androidx.core.view.WindowCompat
 import com.osscabinet.ossWallet.domain.formatter.ThemeHelper
 import com.osscabinet.ossWallet.domain.formatter.ThemeMode
@@ -223,6 +224,8 @@ fun OssWalletTheme(
     glassSettings: GlassSettings = GlassSettings(),
     uiDensity: UiDensity = UiDensity.DEFAULT,
     cardOpenAnimation: CardOpenAnimation = CardOpenAnimation.DEFAULT,
+    cardListEdgeSpacing: Dp = AeonSize.D14.value,
+    cardListGap: Dp = AeonSize.D12.value,
     setWindowBackground: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -286,7 +289,10 @@ fun OssWalletTheme(
     }
 
     CompositionLocalProvider(
-        LocalAeonDimensions provides AeonDimensions().scaled(uiDensity.scale),
+        LocalAeonDimensions provides AeonDimensions().scaled(uiDensity.scale).copy(
+            cardListEdgeSpacing = cardListEdgeSpacing,
+            cardListGap = cardListGap
+        ),
         LocalUiScale provides uiDensity.scale,
         LocalAppColorScheme provides colorScheme,
         LocalThemeMode provides themeMode,

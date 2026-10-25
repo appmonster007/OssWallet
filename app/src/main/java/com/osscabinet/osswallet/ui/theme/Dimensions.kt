@@ -53,6 +53,12 @@ data class AeonDimensions(
      */
     // Outer edge of all primary screens
     val screenPadding: Dp = AeonSize.D14.value,
+    // Horizontal edge-of-display padding for card lists (Dashboard/Analytics/Budget/Loan/
+    // Planned Payment) — user-adjustable in Display settings, 0-16dp. Not touched by
+    // [scaled] since it's independently user-set rather than density-derived.
+    val cardListEdgeSpacing: Dp = AeonSize.D14.value,
+    // Vertical gap between cards in those same card lists — user-adjustable, 0-16dp.
+    val cardListGap: Dp = AeonSize.D12.value,
     // Internal content margin of a standard Card
     val cardPadding: Dp = AeonSize.D12.value,
     // Internal padding for chips and small action items

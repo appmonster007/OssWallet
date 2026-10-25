@@ -74,7 +74,8 @@ fun TuningSliderRow(
     range: ClosedFloatingPointRange<Float>,
     valueDisplay: String,
     onValueChange: (Float) -> Unit,
-    onReset: (() -> Unit)? = null
+    onReset: (() -> Unit)? = null,
+    steps: Int = 0
 ) {
     Column(
         modifier = Modifier
@@ -122,6 +123,7 @@ fun TuningSliderRow(
             value = value,
             onValueChange = onValueChange,
             valueRange = range,
+            steps = steps,
             modifier = Modifier.fillMaxWidth(),
             colors = SliderDefaults.colors(
                 thumbColor = AppColors.primary,

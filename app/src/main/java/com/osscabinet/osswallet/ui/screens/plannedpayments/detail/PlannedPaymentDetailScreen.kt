@@ -352,12 +352,13 @@ fun PlannedPaymentDetailContent(
                                 LazyColumn(
                                     modifier = Modifier.fillMaxSize(),
                                     contentPadding = PaddingValues(
-                                        start = AeonTheme.dimensions.screenPadding,
-                                        end = AeonTheme.dimensions.screenPadding,
+                                        start = AeonTheme.dimensions.cardListEdgeSpacing,
+                                        end = AeonTheme.dimensions.cardListEdgeSpacing,
                                         top = AeonTheme.dimensions.screenPadding + pillHeight,
                                         bottom = scrollBottomPadding()
                                     ),
-                                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+                                    // Matches the standard card-to-card gap used on Dashboard/Analytics/Budget-list/Loan-list
+                                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.cardListGap)
                                 ) {
                                     // IMPACT: Hero Card (Compact Read-only)
                                     item {
@@ -564,12 +565,13 @@ fun PlannedPaymentDetailContent(
                                     LazyColumn(
                                         modifier = Modifier.fillMaxSize(),
                                         contentPadding = PaddingValues(
-                                            start = AeonTheme.dimensions.screenPadding,
-                                            end = AeonTheme.dimensions.screenPadding,
+                                            start = AeonTheme.dimensions.cardListEdgeSpacing,
+                                            end = AeonTheme.dimensions.cardListEdgeSpacing,
                                             top = AeonTheme.dimensions.screenPadding + pillHeight,
                                             bottom = scrollBottomPadding()
                                         ),
-                                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+                                        // Matches the standard card-to-card gap used on Dashboard/Analytics/Budget-list/Loan-list
+                                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.cardListGap)
                                     ) {
                                         item {
                                             ManagementSectionHeader(

@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
@@ -183,9 +184,16 @@ fun GlassSurface(
 
     // Priority: explicit param → nearest AeonGlassHost ancestor → screen-level background.
     // LocalParentGlassHaze is null outside any AeonGlassHost, so screen-level cards are unaffected.
-    val effectiveHazeState = hazeState
-        ?: LocalParentGlassHaze.current
-        ?: layers?.states?.getOrNull(depth)
+    // Haze's HazeEffectNode.draw() early-returns without drawing content when isAttached is false
+    // (https://github.com/chrisbanes/haze/issues/665), which static Compose previews trigger —
+    // so force the solid fallback path there to avoid blank preview cards.
+    val effectiveHazeState = if (LocalInspectionMode.current) {
+        null
+    } else {
+        hazeState
+            ?: LocalParentGlassHaze.current
+            ?: layers?.states?.getOrNull(depth)
+    }
 
     Box(
         modifier = modifier,

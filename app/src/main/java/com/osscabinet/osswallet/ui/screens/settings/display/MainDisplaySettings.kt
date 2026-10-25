@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.settings.display
 
+import kotlin.math.roundToInt
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -88,6 +89,8 @@ fun MainDisplaySettings(
     val expandableFabEnabled by viewModel.expandableFabEnabled.collectAsStateWithLifecycle()
     val recentActivitiesBreakdown by viewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
+    val cardListEdgeSpacing by viewModel.cardListEdgeSpacing.collectAsStateWithLifecycle()
+    val cardListGap by viewModel.cardListGap.collectAsStateWithLifecycle()
 
     val uiDensityName by viewModel.uiDensity.collectAsStateWithLifecycle()
     val currentDensity = UiDensity.fromName(uiDensityName)
@@ -645,6 +648,27 @@ fun MainDisplaySettings(
                                         it.copy(fastScrollSide = next)
                                     }
                                 }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.5f)
+                            )
+                            TuningSliderRow(
+                                label = "Card List Edge Spacing",
+                                value = cardListEdgeSpacing.toFloat(),
+                                range = 0f..16f,
+                                steps = 15,
+                                valueDisplay = "${cardListEdgeSpacing}dp",
+                                onValueChange = { viewModel.setCardListEdgeSpacing(it.roundToInt()) }
+                            )
+                            TuningSliderRow(
+                                label = "Card Spacing",
+                                value = cardListGap.toFloat(),
+                                range = 0f..16f,
+                                steps = 15,
+                                valueDisplay = "${cardListGap}dp",
+                                onValueChange = { viewModel.setCardListGap(it.roundToInt()) }
                             )
                         }
                     }

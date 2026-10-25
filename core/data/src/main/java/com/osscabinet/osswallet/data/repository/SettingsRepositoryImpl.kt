@@ -51,6 +51,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override val glassSettings: Flow<GlassSettings> = settingsDataStore.glassSettings
     override val autoBackupConfig: Flow<AutoBackupConfig> = settingsDataStore.autoBackupConfig
     override val uiDensity: Flow<String> = settingsDataStore.uiDensity
+    override val cardListEdgeSpacing: Flow<Int> = settingsDataStore.cardListEdgeSpacing
+    override val cardListGap: Flow<Int> = settingsDataStore.cardListGap
 
     override suspend fun saveCurrency(currency: String) = settingsDataStore.saveCurrency(currency)
     override suspend fun saveTheme(theme: String) = settingsDataStore.saveTheme(theme)
@@ -146,4 +148,8 @@ class SettingsRepositoryImpl @Inject constructor(
         settingsDataStore.saveAutoBackupConfig(config)
 
     override suspend fun saveUiDensity(name: String) = settingsDataStore.saveUiDensity(name)
+    override suspend fun saveCardListEdgeSpacing(dp: Int) =
+        settingsDataStore.saveCardListEdgeSpacing(dp)
+
+    override suspend fun saveCardListGap(dp: Int) = settingsDataStore.saveCardListGap(dp)
 }

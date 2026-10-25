@@ -125,6 +125,12 @@ class SettingsViewModel @Inject constructor(
             com.osscabinet.ossWallet.domain.model.settings.UiDensity.DEFAULT.name
         )
 
+    val cardListEdgeSpacing: StateFlow<Int> = settingsRepository.cardListEdgeSpacing
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 14)
+
+    val cardListGap: StateFlow<Int> = settingsRepository.cardListGap
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 12)
+
     val recentActivitiesBreakdown: StateFlow<Boolean> = settingsRepository.recentActivitiesBreakdown
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -343,6 +349,18 @@ class SettingsViewModel @Inject constructor(
     fun setUiDensity(density: com.osscabinet.ossWallet.domain.model.settings.UiDensity) {
         viewModelScope.launch {
             settingsRepository.saveUiDensity(density.name)
+        }
+    }
+
+    fun setCardListEdgeSpacing(dp: Int) {
+        viewModelScope.launch {
+            settingsRepository.saveCardListEdgeSpacing(dp)
+        }
+    }
+
+    fun setCardListGap(dp: Int) {
+        viewModelScope.launch {
+            settingsRepository.saveCardListGap(dp)
         }
     }
 

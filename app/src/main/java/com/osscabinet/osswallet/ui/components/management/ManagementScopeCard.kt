@@ -1,16 +1,11 @@
 package com.osscabinet.ossWallet.ui.components.management
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Forward
 import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.automirrored.rounded.Notes
@@ -27,22 +22,16 @@ import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.SyncAlt
 import androidx.compose.material.icons.rounded.VerifiedUser
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
@@ -57,7 +46,6 @@ import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
@@ -456,18 +444,27 @@ private fun flattenCategoryItems(
     for (category in categories) {
         val relevantChildren = childrenByParentId[category.id].orEmpty()
             .filter { hasSelectedDescendant(it, childrenByParentId, selectedIds) }
+        val categoryColor = Color(category.colorHex)
 
         if (relevantChildren.isEmpty()) {
             items += {
                 ScopeChip(
                     text = category.name,
-                    color = Color(category.colorHex),
+                    color = categoryColor,
                     icon = AppIconMap[category.iconName]
                 )
             }
         } else if (category.id in expandedIds) {
             items += {
-                CategoryBreadcrumbChip(category = category, onClick = { onToggle(category.id, false) })
+                // Breadcrumb back to the collapsed chip — same ScopeChip, just with the
+                // back-arrow in place of the category's own icon, so it stays the same size
+                // and aligns with every other chip in this row.
+                ScopeChip(
+                    text = category.name,
+                    color = categoryColor,
+                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                    onClick = { onToggle(category.id, false) }
+                )
             }
             items += flattenCategoryItems(
                 categories = relevantChildren,
@@ -479,107 +476,17 @@ private fun flattenCategoryItems(
         } else {
             val count = selectedDescendantCount(category, childrenByParentId, selectedIds)
             items += {
-                CategoryChip(category = category, count = count, onClick = { onToggle(category.id, true) })
+                ScopeChip(
+                    text = category.name,
+                    color = categoryColor,
+                    icon = AppIconMap[category.iconName],
+                    badgeCount = count,
+                    onClick = { onToggle(category.id, true) }
+                )
             }
         }
     }
     return items
-}
-
-/** Collapsed category chip; tap drills one level down into its children. */
-@Composable
-private fun CategoryChip(category: Category, count: Int, onClick: () -> Unit) {
-    val categoryColor = Color(category.colorHex)
-    Surface(
-        onClick = onClick,
-        color = AppColors.cardSurfaceProminent.copy(alpha = 0.6f),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(start = 6.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .background(categoryColor.copy(alpha = 0.15f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                val icon = AppIconMap[category.iconName]
-                if (icon != null) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = categoryColor,
-                        modifier = Modifier.size(12.dp)
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .background(categoryColor, CircleShape)
-                    )
-                }
-            }
-            Text(
-                text = category.name,
-                style = AppTextStyles.caption.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp,
-                    letterSpacing = 0.2.sp
-                ),
-                color = AppColors.contentPrimary.copy(alpha = 0.8f)
-            )
-            if (count > 1) {
-                Surface(
-                    color = categoryColor.copy(alpha = 0.18f),
-                    shape = CircleShape
-                ) {
-                    Text(
-                        text = count.toString(),
-                        style = AppTextStyles.caption.copy(
-                            fontWeight = FontWeight.Black,
-                            fontSize = 10.sp
-                        ),
-                        color = categoryColor,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-/** Expanded category's breadcrumb chip; tap collapses it back to [CategoryChip]. */
-@Composable
-private fun CategoryBreadcrumbChip(category: Category, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        color = AppColors.cardSurfaceProminent.copy(alpha = 0.35f),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                text = "‹",
-                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Black, fontSize = 12.sp),
-                color = AppColors.contentSecondary.copy(alpha = 0.7f)
-            )
-            Text(
-                text = category.name,
-                style = AppTextStyles.caption.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp,
-                    letterSpacing = 0.2.sp
-                ),
-                color = AppColors.contentSecondary.copy(alpha = 0.7f)
-            )
-        }
-    }
 }
 
 private data class ScopeGroup(

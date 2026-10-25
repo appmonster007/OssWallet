@@ -384,7 +384,7 @@ fun BudgetHeroCard(
                                 limit = progress.limit,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(48.dp)
+                                    .height(60.dp)
                             )
                         }
                     } else {
@@ -396,7 +396,7 @@ fun BudgetHeroCard(
                             limit = progress.limit,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp)
+                                .height(60.dp)
                         )
                     }
                 }

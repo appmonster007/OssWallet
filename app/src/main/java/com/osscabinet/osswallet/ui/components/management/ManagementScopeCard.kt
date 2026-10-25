@@ -1,9 +1,15 @@
 package com.osscabinet.ossWallet.ui.components.management
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Forward
 import androidx.compose.material.icons.automirrored.rounded.Label
@@ -21,13 +27,22 @@ import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.SyncAlt
 import androidx.compose.material.icons.rounded.VerifiedUser
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
@@ -42,6 +57,7 @@ import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
@@ -62,6 +78,37 @@ fun ManagementScopeCard(
     val negativeColor = AppColors.negative
     val accentColor = AppColors.accent
     val contentSecondaryColor = AppColors.contentSecondary
+
+    // Categories — always collapsed to the top-level (root) category chip; tapping a chip
+    // drills one level down into its children, however deep the hierarchy goes. Expansion is
+    // hoisted here (rather than kept per-node) so expanded children flatten into the SAME
+    // FlowRow as their siblings, instead of being boxed into their own sub-row.
+    val childrenByParentId = remember(allCategories) {
+        allCategories.filter { it.parentId != null }.groupBy { it.parentId!! }
+    }
+    val knownCategoryIds = remember(allCategories) {
+        allCategories.mapTo(mutableSetOf()) { it.id }
+    }
+    var expandedCategoryIds by remember { mutableStateOf(emptySet<Long>()) }
+    val categoryRoots = remember(allCategories, filter.categoryIds, childrenByParentId, knownCategoryIds) {
+        allCategories.filter {
+            (it.parentId == null || it.parentId !in knownCategoryIds) &&
+                hasSelectedDescendant(it, childrenByParentId, filter.categoryIds)
+        }
+    }
+    val categoryItems = remember(categoryRoots, childrenByParentId, filter.categoryIds, expandedCategoryIds) {
+        flattenCategoryItems(
+            categories = categoryRoots,
+            childrenByParentId = childrenByParentId,
+            selectedIds = filter.categoryIds,
+            expandedIds = expandedCategoryIds,
+            onToggle = { id, expand ->
+                expandedCategoryIds = if (expand) expandedCategoryIds + id else expandedCategoryIds - id
+            }
+        )
+    }
+    val categoriesIsEmpty = filter.categoryIds.isEmpty() ||
+        (allCategories.isNotEmpty() && filter.categoryIds.size == allCategories.size)
 
     val sections = remember(
         filter,
@@ -109,23 +156,6 @@ fun ManagementScopeCard(
                                 primaryColor
                             },
                             icon = AppIconMap[account.icon]
-                        )
-                    }
-                )
-            )
-
-            // Categories
-            add(
-                ScopeGroup(
-                    label = "CATEGORIES",
-                    icon = Icons.Rounded.Category,
-                    allText = "All Categories",
-                    isEmpty = filter.categoryIds.isEmpty() || (allCategories.isNotEmpty() && filter.categoryIds.size == allCategories.size),
-                    items = allCategories.filter { it.id in filter.categoryIds }.map { category ->
-                        ScopeItem(
-                            text = category.name,
-                            color = Color(category.colorHex),
-                            icon = AppIconMap[category.iconName]
                         )
                     }
                 )
@@ -375,7 +405,179 @@ fun ManagementScopeCard(
                         { ScopeChip(text = item.text, color = item.color, icon = item.icon) }
                     }
                 )
+                if (group.label == "ACCOUNTS") {
+                    ScopeSection(
+                        label = "CATEGORIES",
+                        icon = Icons.Rounded.Category,
+                        allText = "All Categories",
+                        isEmpty = categoriesIsEmpty,
+                        items = categoryItems
+                    )
+                }
             }
+        }
+    }
+}
+
+private fun hasSelectedDescendant(
+    category: Category,
+    childrenByParentId: Map<Long, List<Category>>,
+    selectedIds: Set<Long>
+): Boolean =
+    category.id in selectedIds ||
+        childrenByParentId[category.id].orEmpty().any { hasSelectedDescendant(it, childrenByParentId, selectedIds) }
+
+/** Sum of selected ids across the whole subtree rooted at [category] — all nested levels. */
+private fun selectedDescendantCount(
+    category: Category,
+    childrenByParentId: Map<Long, List<Category>>,
+    selectedIds: Set<Long>
+): Int {
+    val self = if (category.id in selectedIds) 1 else 0
+    return self + childrenByParentId[category.id].orEmpty()
+        .sumOf { selectedDescendantCount(it, childrenByParentId, selectedIds) }
+}
+
+/**
+ * Flattens [categories] (and, for any that are expanded, their relevant children —
+ * recursively) into a single list of chip composables, so an expanded parent's children land
+ * as ordinary siblings in the caller's one [FlowRow] rather than boxed into their own
+ * sub-layout. That's what lets e.g. "Transport" wrap onto the same line as "Food & Drink"'s
+ * last expanded child instead of always starting a new row.
+ */
+private fun flattenCategoryItems(
+    categories: List<Category>,
+    childrenByParentId: Map<Long, List<Category>>,
+    selectedIds: Set<Long>,
+    expandedIds: Set<Long>,
+    onToggle: (id: Long, expand: Boolean) -> Unit
+): List<@Composable () -> Unit> {
+    val items = mutableListOf<@Composable () -> Unit>()
+    for (category in categories) {
+        val relevantChildren = childrenByParentId[category.id].orEmpty()
+            .filter { hasSelectedDescendant(it, childrenByParentId, selectedIds) }
+
+        if (relevantChildren.isEmpty()) {
+            items += {
+                ScopeChip(
+                    text = category.name,
+                    color = Color(category.colorHex),
+                    icon = AppIconMap[category.iconName]
+                )
+            }
+        } else if (category.id in expandedIds) {
+            items += {
+                CategoryBreadcrumbChip(category = category, onClick = { onToggle(category.id, false) })
+            }
+            items += flattenCategoryItems(
+                categories = relevantChildren,
+                childrenByParentId = childrenByParentId,
+                selectedIds = selectedIds,
+                expandedIds = expandedIds,
+                onToggle = onToggle
+            )
+        } else {
+            val count = selectedDescendantCount(category, childrenByParentId, selectedIds)
+            items += {
+                CategoryChip(category = category, count = count, onClick = { onToggle(category.id, true) })
+            }
+        }
+    }
+    return items
+}
+
+/** Collapsed category chip; tap drills one level down into its children. */
+@Composable
+private fun CategoryChip(category: Category, count: Int, onClick: () -> Unit) {
+    val categoryColor = Color(category.colorHex)
+    Surface(
+        onClick = onClick,
+        color = AppColors.cardSurfaceProminent.copy(alpha = 0.6f),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 6.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .background(categoryColor.copy(alpha = 0.15f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                val icon = AppIconMap[category.iconName]
+                if (icon != null) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = categoryColor,
+                        modifier = Modifier.size(12.dp)
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(categoryColor, CircleShape)
+                    )
+                }
+            }
+            Text(
+                text = category.name,
+                style = AppTextStyles.caption.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    letterSpacing = 0.2.sp
+                ),
+                color = AppColors.contentPrimary.copy(alpha = 0.8f)
+            )
+            if (count > 1) {
+                Surface(
+                    color = categoryColor.copy(alpha = 0.18f),
+                    shape = CircleShape
+                ) {
+                    Text(
+                        text = count.toString(),
+                        style = AppTextStyles.caption.copy(
+                            fontWeight = FontWeight.Black,
+                            fontSize = 10.sp
+                        ),
+                        color = categoryColor,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Expanded category's breadcrumb chip; tap collapses it back to [CategoryChip]. */
+@Composable
+private fun CategoryBreadcrumbChip(category: Category, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = AppColors.cardSurfaceProminent.copy(alpha = 0.35f),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = "‹",
+                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Black, fontSize = 12.sp),
+                color = AppColors.contentSecondary.copy(alpha = 0.7f)
+            )
+            Text(
+                text = category.name,
+                style = AppTextStyles.caption.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    letterSpacing = 0.2.sp
+                ),
+                color = AppColors.contentSecondary.copy(alpha = 0.7f)
+            )
         }
     }
 }
@@ -406,7 +608,7 @@ fun ManagementScopeCardPreview() {
                         excludeFuture = false
                     ),
                     accountIds = setOf("1"),
-                    categoryIds = setOf(101L, 102L),
+                    categoryIds = setOf(201L, 202L, 203L, 204L, 301L, 102L),
                     tags = setOf("Vacation", "Work"),
                     transactionTypes = setOf(TransactionType.EXPENSE),
                     queryPayee = "Amazon",
@@ -434,27 +636,78 @@ fun ManagementScopeCardPreview() {
                     )
                 ),
                 allCategories = listOf(
+                    // Parent "Food & Drink" — all 4 children selected -> collapses to one chip
                     Category(
-                        id = 101L,
-                        name = "Food",
-                        colorHex = 0xFFFF00FF.toInt(),
+                        id = 200L,
+                        name = "Food & Drink",
+                        colorHex = 0xFFF2914D.toInt(),
                         iconName = "Fastfood",
                         isDefault = false,
                         parentId = null
                     ),
                     Category(
-                        id = 102L,
-                        name = "Travel",
-                        colorHex = 0xFF00FFFF.toInt(),
-                        iconName = "Flight",
+                        id = 201L,
+                        name = "Dining",
+                        colorHex = 0xFFF2914D.toInt(),
+                        iconName = "Restaurant",
+                        isDefault = false,
+                        parentId = 200L
+                    ),
+                    Category(
+                        id = 202L,
+                        name = "Groceries",
+                        colorHex = 0xFF4CC987.toInt(),
+                        iconName = "ShoppingCart",
+                        isDefault = false,
+                        parentId = 200L
+                    ),
+                    Category(
+                        id = 203L,
+                        name = "Coffee",
+                        colorHex = 0xFFB5793A.toInt(),
+                        iconName = "LocalCafe",
+                        isDefault = false,
+                        parentId = 200L
+                    ),
+                    Category(
+                        id = 204L,
+                        name = "Takeout",
+                        colorHex = 0xFFE85A94.toInt(),
+                        iconName = "Fastfood",
+                        isDefault = false,
+                        parentId = 200L
+                    ),
+                    // Parent "Transport" — only "Fuel" selected -> still a tappable chip, expands to "Fuel"
+                    Category(
+                        id = 300L,
+                        name = "Transport",
+                        colorHex = 0xFF4F9AE0.toInt(),
+                        iconName = "DirectionsCar",
                         isDefault = false,
                         parentId = null
                     ),
                     Category(
-                        id = 103L,
-                        name = "Rent",
-                        colorHex = 0xFF0000FF.toInt(),
-                        iconName = "Home",
+                        id = 301L,
+                        name = "Fuel",
+                        colorHex = 0xFF4F9AE0.toInt(),
+                        iconName = "LocalGasStation",
+                        isDefault = false,
+                        parentId = 300L
+                    ),
+                    Category(
+                        id = 302L,
+                        name = "Public Transit",
+                        colorHex = 0xFF4F9AE0.toInt(),
+                        iconName = "DirectionsBus",
+                        isDefault = false,
+                        parentId = 300L
+                    ),
+                    // Top-level category with no children -> renders as a plain chip
+                    Category(
+                        id = 102L,
+                        name = "Travel",
+                        colorHex = 0xFF00FFFF.toInt(),
+                        iconName = "Flight",
                         isDefault = false,
                         parentId = null
                     )

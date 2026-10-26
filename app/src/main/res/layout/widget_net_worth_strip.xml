@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Strip tier (110dp <= minHeight < 180dp), pushed via RemoteViews from
-     NetWorthRemoteViewsRenderer. "Row 1" (widget_net_worth_row1.xml — header + amount) is the
-     exact same block micro/card start with too. Below it: ONE row holding up to 4 cells side by
+     NetWorthRemoteViewsRenderer. "Row 1" (widget_net_worth_row1.xml — amount + comparison pill)
+     is the exact same block micro/card start with too. Below it: ONE row holding up to 4 cells side by
      side (cell1 | cell2 | cell3 | cell4) — not enough height at this tier to give cell3 its own
      row (that split starts at the card tier). cell4 only appears for Accounting + split
      transfers (Transfer Out, paired with cell3's Transfer In); NetWorthWidgetFetcher sets
@@ -17,13 +17,13 @@
      value uses @font/manrope (matches its transactionAmount) — same split as row1.xml.
 
      Both rows get layout_weight="1" — row 1 included, wrapped in its own container so it's a
-     single flex item — so the header+amount block and the cell row each get exactly half the
+     single flex item — so the amount block and the cell row each get exactly half the
      available height, not "row 1 sized to its content, cells get whatever's left".
 
-     Root is unpadded except for a bottom inset — horizontal/top padding now live in the shared
-     widget_header_row.xml shell (see widget_net_worth_row1.xml), matching Recent Activities'
-     layout model; the cell row below adds its own horizontal padding to compensate. Must match
-     micro.xml/card.xml exactly — all three tiers share one frame. -->
+     Root is unpadded except for a bottom inset — horizontal/top padding live on row1's own
+     amount wrapper (see widget_net_worth_row1.xml); the cell row below adds its own horizontal
+     padding to compensate. Must match micro.xml/card.xml exactly — all three tiers share one
+     frame. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:id="@+id/ll_widget_root"

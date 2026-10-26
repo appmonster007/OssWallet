@@ -1,29 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Shared "row 1" fragment — the header (via widget_header_row.xml), amount, and comparison
-     line used by EVERY NetWorth widget tier, via <include>. Not a standalone widget layout:
-     root is <merge>, so including it inside a vertical LinearLayout drops these elements in as
-     direct siblings of whatever else that tier adds below (see widget_net_worth_micro/
-     strip/card.xml). Keeping this in one file is what makes "row 1" actually identical
-     everywhere instead of hand-copied near-matches drifting apart.
+<!-- Shared "row 1" fragment — the amount and comparison line used by EVERY NetWorth widget
+     tier, via <include>. Not a standalone widget layout: root is <merge>, so including it
+     inside a vertical LinearLayout drops these elements in as direct siblings of whatever else
+     that tier adds below (see widget_net_worth_micro/strip/card.xml). Keeping this in one file
+     is what makes "row 1" actually identical everywhere instead of hand-copied near-matches
+     drifting apart.
 
-     The header line itself now lives in widget_header_row.xml, shared with Recent Activities —
-     see that file for why (header height/padding was drifting between widget types). Since that
-     shell supplies its own horizontal padding and the tier roots are now unpadded (see
-     widget_net_worth_micro/strip/card.xml), the amount/comparison content below it needs its
-     OWN 12dp horizontal inset: the amount sits inside a padded wrapper (carrying the
-     layout_weight="1" that used to be on the amount TextView directly), and the comparison pill
-     gets a matching start margin instead of being wrapped, since it's already wrap_content.
+     No header row — settings is reached via the launcher's long-press "Edit widget" (see
+     net_worth_widget_info*.xml's android:configure), not an in-widget gear. The amount wrapper
+     carries its own 12dp horizontal inset plus a 10dp top inset (there's no header above it to
+     supply one), and the comparison pill gets a matching start margin instead of being wrapped,
+     since it's already wrap_content.
 
-     Same 3-part structure as every cell (see widget_net_worth_strip/card.xml): header (top,
-     pinned via gravity="top" on every tier's row1 wrapper) / amount (vertically centered,
-     right-aligned) / comparison-% (bottom-left) — with only the amount wrapper taking
-     layout_weight="1", so it fills whatever's left between the fixed-size header and comparison
-     line.
-
-     tv_widget_header_settings (in widget_header_row.xml) is bound to a PendingIntent in
-     NetWorthRemoteViewsRenderer.bindRow1 that opens NetWorthWidgetConfigActivity for THIS
-     widget instance — lets the user jump to the widget's own config without going through the
-     launcher's "Edit widget" long-press flow.
+     Same structure as every cell (see widget_net_worth_strip/card.xml): amount (vertically
+     centered, right-aligned, now filling the FULL row since nothing above it shares the space)
+     / comparison-% (bottom-left) — with the amount wrapper taking layout_weight="1".
 
      Font families mirror NetWorthCard.kt's own AppTextStyles usage: titles/amounts
      (cardSectionTitle, heroAmountLarge, transactionAmount — all displayFamily) use
@@ -32,15 +23,14 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools">
 
-    <include layout="@layout/widget_header_row" />
-
     <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:orientation="vertical"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp">
+            android:paddingEnd="12dp"
+            android:paddingTop="10dp">
 
         <TextView
                 android:id="@+id/tv_nw_row1_amount"

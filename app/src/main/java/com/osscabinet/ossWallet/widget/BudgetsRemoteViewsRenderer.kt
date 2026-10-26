@@ -10,14 +10,13 @@ import android.widget.RemoteViews
 import androidx.datastore.preferences.core.Preferences
 import com.osscabinet.ossWallet.MainActivity
 import com.osscabinet.ossWallet.R
-import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.BudgetPaceStatus
 import kotlinx.serialization.json.Json
 
 /**
- * Builds and pushes the Budgets widget's [RemoteViews]: the shared header shell (with a status
- * chip in its extra slot) and a scrolling ListView of budgets, most urgent first, supplied by
- * [BudgetsRemoteViewsService]. Each row opens that budget.
+ * Builds and pushes the Budgets widget's [RemoteViews]: a scrolling ListView of budgets, most
+ * urgent first and grouped into OVER BUDGET / NEAR LIMIT / ON TRACK sections by
+ * [BudgetsRemoteViewsService]'s factory. Each row opens that budget.
  *
  * Progress is drawn with a ProgressBar rather than a resized View: setViewLayoutWidth is API 31+
  * and minSdk is 26. A ProgressBar's colour comes from its drawable, so each row carries three
@@ -40,47 +39,11 @@ object BudgetsRemoteViewsRenderer {
             ?: WidgetTheme.SYSTEM
         val glass = prefs[BudgetsWidgetKeys.GLASS] == "true"
         val palette = WidgetColors.resolve(theme, glass)
-        val overCount = prefs[BudgetsWidgetKeys.OVER_COUNT]?.toIntOrNull() ?: 0
-        val nearCount = prefs[BudgetsWidgetKeys.NEAR_COUNT]?.toIntOrNull() ?: 0
 
         val views = RemoteViews(context.packageName, WidgetColors.layoutFor(palette, R.layout.widget_budgets_main_t0, R.layout.widget_budgets_main_t1, R.layout.widget_budgets_main_t2))
-        views.setTextViewText(R.id.tv_widget_header_title, "BUDGETS")
-        WidgetHeader.bindIcon(context, views, CardType.BUDGETS, palette)
-        WidgetHeader.applyTheme(views, palette, glass)
+        views.applyRootTheme(palette, glass)
         views.setThemedTextColor(R.id.tv_budgets_empty_text, palette) { it.onSurfaceVariant }
 
-        WidgetHeader.clearExtras(views)
-        // The chip describes the budgets, so it waits for them: an empty list shows only the empty text.
-        val hasBudgets = (prefs[BudgetsWidgetKeys.COUNT]?.toIntOrNull() ?: 0) > 0
-        if (hasBudgets) {
-            if (overCount > 0) WidgetHeader.addChip(context, views, "$overCount OVER", WidgetHeader.ChipStyle.NEGATIVE, palette)
-            if (nearCount > 0) WidgetHeader.addChip(context, views, "$nearCount NEAR", WidgetHeader.ChipStyle.WARNING, palette)
-            if (overCount == 0 && nearCount == 0) {
-                WidgetHeader.addChip(context, views, "ON TRACK", WidgetHeader.ChipStyle.NEUTRAL, palette)
-            }
-        }
-
-        views.setOnClickPendingIntent(
-            R.id.iv_widget_header_settings,
-            PendingIntent.getActivity(
-                context, widgetId * 10,
-                Intent(context, BudgetsWidgetConfigActivity::class.java)
-                    .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        )
-        // The title opens the whole Budgets list, like "VIEW ALL" on Recent Activities.
-        views.setOnClickPendingIntent(
-            R.id.tv_widget_header_title,
-            PendingIntent.getActivity(
-                context, widgetId * 10 + 1,
-                Intent(context, MainActivity::class.java)
-                    .putExtra(MainActivity.EXTRA_WIDGET_NAV, "budgets")
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        )
         // Each row's fill-in Intent (BudgetsRemoteViewsFactory) adds the budget id to this template.
         views.setPendingIntentTemplate(
             R.id.lv_budgets_list,

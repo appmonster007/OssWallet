@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status-group header row for the Budgets widget's ListView — inserted by
+     BudgetsRemoteViewsFactory ahead of each status bucket (OVER BUDGET / NEAR LIMIT / ON TRACK;
+     see BudgetWidgetRow.pace and BudgetsWidgetFetcher's own urgency ordering, which this groups
+     by). Text color is bound per-instance (negative/warning/accent) — see
+     BudgetsRemoteViewsFactory.bindHeader. RemoteViews ListViews have no sticky headers, so this
+     is just another row, never pinned. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/tv_budgets_status_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/jetbrains_mono"
+        android:textColor="@color/widget_negative"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.05"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="4dp"
+        tools:text="OVER BUDGET" />

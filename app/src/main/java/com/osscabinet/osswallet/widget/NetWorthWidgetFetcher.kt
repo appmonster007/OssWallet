@@ -85,7 +85,6 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
             buildComparisonText(netWorth, prev?.netWorth, config.showComparison) ?: ""
         prefs[NetWorthWidgetKeys.PERIOD_LABEL] = config.timelineLabel
         prefs[NetWorthWidgetKeys.BASE_CURRENCY] = common.baseCurrency
-        prefs[NetWorthWidgetKeys.PERSPECTIVE_LABEL] = if (isCashFlow) "Cash Flow" else "Accounting"
         prefs[NetWorthWidgetKeys.THEME] = config.theme.name
         prefs[NetWorthWidgetKeys.GLASS] = config.glass.toString()
 

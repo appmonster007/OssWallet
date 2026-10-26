@@ -239,6 +239,18 @@ fun RemoteViews.setThemedColorFilter(viewId: Int, palette: WidgetPalette?, pick:
 }
 
 /**
+ * Themes the widget root surface (or glass background) — every widget calls this on every
+ * render now that none of them has a header row to carry per-element theming instead.
+ */
+fun RemoteViews.applyRootTheme(palette: WidgetPalette?, glass: Boolean = false) {
+    if (glass) {
+        setInt(R.id.ll_widget_root, "setBackgroundResource", palette?.glassBg ?: R.drawable.widget_glass_bg)
+    } else {
+        setThemedBackgroundColor(R.id.ll_widget_root, palette) { it.surface }
+    }
+}
+
+/**
  * Background drawable: the palette's fixed-colour one when a theme is forced, otherwise the
  * night-aware [systemRes]. Always set one of them — see [setThemedTextColor] for why.
  */

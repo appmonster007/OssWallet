@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Shortest NetWorth widget layout (minHeight < 110dp — true content minimum is ~40dp per the
      70dp*n-30dp cell formula), pushed via RemoteViews from NetWorthRemoteViewsRenderer. Just
-     widget_net_worth_row1.xml (header + amount) — the exact same block every taller tier
-     starts with, not a separately-styled "micro" header.
+     widget_net_worth_row1.xml (amount + comparison pill) — the exact same block every taller
+     tier starts with.
 
-     Root is unpadded except for a bottom inset — horizontal/top padding now live in the shared
-     widget_header_row.xml shell (see widget_net_worth_row1.xml), matching Recent Activities'
-     layout model. Must match strip.xml/card.xml exactly — all three tiers share one frame. -->
+     Root is unpadded except for a bottom inset — horizontal/top padding live on row1's own
+     amount wrapper (see widget_net_worth_row1.xml). Must match strip.xml/card.xml exactly — all
+     three tiers share one frame. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:id="@+id/ll_widget_root"

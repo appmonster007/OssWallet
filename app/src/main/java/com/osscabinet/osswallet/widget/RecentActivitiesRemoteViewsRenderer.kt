@@ -8,7 +8,6 @@ import android.widget.RemoteViews
 import androidx.datastore.preferences.core.Preferences
 import com.osscabinet.ossWallet.MainActivity
 import com.osscabinet.ossWallet.R
-import com.osscabinet.ossWallet.domain.card.CardType
 
 /**
  * Builds and pushes the Recent Activities widget's [RemoteViews]. Unlike NetWorthRemoteViewsRenderer,
@@ -41,44 +40,27 @@ object RecentActivitiesRemoteViewsRenderer {
         val palette = WidgetColors.resolve(theme, glass)
 
         val views = RemoteViews(context.packageName, WidgetColors.layoutFor(palette, R.layout.widget_recent_activities_main_t0, R.layout.widget_recent_activities_main_t1, R.layout.widget_recent_activities_main_t2))
-        views.setTextViewText(R.id.tv_widget_header_title, prefs[RecentActivitiesWidgetKeys.TITLE] ?: "RECENT ACTIVITIES")
-        WidgetHeader.bindIcon(context, views, CardType.RECENT_ACTIVITIES, palette)
-        WidgetHeader.applyTheme(views, palette, glass)
+        views.applyRootTheme(palette, glass)
         views.setThemedColorFilter(R.id.iv_ra_empty_icon, palette) { it.outline }
         views.setThemedTextColor(R.id.tv_ra_empty_text, palette) { it.onSurfaceVariant }
-
-        val settingsIntent = Intent(context, RecentActivitiesWidgetConfigActivity::class.java)
-            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
-        views.setOnClickPendingIntent(
-            R.id.iv_widget_header_settings,
-            PendingIntent.getActivity(
-                context, widgetId * 10, settingsIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        )
+        views.setThemedBackgroundColor(R.id.v_ra_footer_divider, palette) { it.outline }
 
         // "VIEW ALL" opens Records pre-filtered — same target as RecentActivitiesCard's own
-        // onSeeAll/onRecordsClick(config.filter). Net Worth's header has no equivalent action,
-        // so this pill is added at render time rather than living in widget_header_row.xml
-        // itself (see that file's ll_widget_header_extra slot).
-        val viewAllPill = RemoteViews(context.packageName, R.layout.widget_header_action_pill)
-        viewAllPill.setTextViewText(R.id.tv_header_action_pill, "VIEW ALL")
-        viewAllPill.setThemedTextColor(R.id.tv_header_action_pill, palette) { it.accent }
-        viewAllPill.setThemedBackgroundResource(R.id.tv_header_action_pill, palette, { it.pillBg }, R.drawable.widget_netflow_pill_bg)
+        // onSeeAll/onRecordsClick(config.filter). Lives in the footer below the list now that
+        // there's no header row to carry it.
+        views.setThemedTextColor(R.id.tv_ra_view_all, palette) { it.accent }
+        views.setThemedBackgroundResource(R.id.tv_ra_view_all, palette, { it.pillBg }, R.drawable.widget_netflow_pill_bg)
         val viewAllIntent = Intent(context, MainActivity::class.java)
             .putExtra(MainActivity.EXTRA_WIDGET_NAV, "records")
             .putExtra(MainActivity.EXTRA_WIDGET_FILTER, prefs[RecentActivitiesWidgetKeys.VIEW_ALL_FILTER] ?: "")
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        viewAllPill.setOnClickPendingIntent(
-            R.id.tv_header_action_pill,
+        views.setOnClickPendingIntent(
+            R.id.tv_ra_view_all,
             PendingIntent.getActivity(
                 context, widgetId * 10 + 1, viewAllIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         )
-        views.removeAllViews(R.id.ll_widget_header_extra)
-        views.addView(R.id.ll_widget_header_extra, viewAllPill)
 
         // Tapping a row opens that transaction — same target as RecentActivitiesCard's
         // onTransactionClick. The template intent is completed per-row by

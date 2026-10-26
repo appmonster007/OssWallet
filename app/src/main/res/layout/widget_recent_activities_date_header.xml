@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Date-group header row for the Recent Activities widget's ListView — inserted by
+     RecentActivitiesRemoteViewsFactory between day buckets (TODAY / YESTERDAY / "MON, OCT 20").
+     RemoteViews ListViews have no sticky headers, so this is just another row in the adapter's
+     view-type-2 flow, never pinned. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/tv_ra_date_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/jetbrains_mono"
+        android:textColor="@color/widget_on_surface_variant"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.05"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="5dp"
+        tools:text="TODAY" />

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Budgets widget content. Header is the shared widget_header_row.xml shell; the budgets are a
-     ListView (BudgetsRemoteViewsService) so every one is reachable by scrolling.
+<!-- Budgets widget content. No header row — settings is reached via the launcher's long-press
+     "Edit widget" (budgets_widget_info.xml's android:configure). Budgets are grouped by status
+     (Over Budget / Near Limit / On Track) with a status-header row ahead of each group, inserted
+     by BudgetsRemoteViewsFactory directly into the ListView (BudgetsRemoteViewsService) — see
+     widget_budgets_status_header.xml — so every budget is still reachable by scrolling.
      tv_budgets_empty_text is its empty view (RemoteViews.setEmptyView) and must stay a sibling. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/ll_widget_root"
@@ -8,8 +11,6 @@
         android:layout_height="match_parent"
         android:background="@color/widget_surface"
         android:orientation="vertical">
-
-    <include layout="@layout/widget_header_row" />
 
     <FrameLayout
             android:layout_width="match_parent"

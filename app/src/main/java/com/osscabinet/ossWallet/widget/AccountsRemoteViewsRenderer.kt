@@ -6,18 +6,18 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.view.View
 import android.widget.RemoteViews
 import androidx.datastore.preferences.core.Preferences
 import com.osscabinet.ossWallet.MainActivity
 import com.osscabinet.ossWallet.R
-import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 
 /**
- * Builds and pushes the Accounts widget's [RemoteViews]: the shared header shell (total as a chip)
- * and a scrolling ListView of accounts in the order set on the Accounts screen, supplied by
- * [AccountsRemoteViewsService]. Each row is the account's own icon badge, name and period net, and
- * the balance, and opens that account.
+ * Builds and pushes the Accounts widget's [RemoteViews]: a pinned total-balance header (visible
+ * without scrolling) and a scrolling ListView of accounts in the order set on the Accounts
+ * screen, supplied by [AccountsRemoteViewsService]. Each row is the account's own icon badge,
+ * name and period net, and the balance, and opens that account.
  */
 object AccountsRemoteViewsRenderer {
 
@@ -42,38 +42,29 @@ object AccountsRemoteViewsRenderer {
         val total = prefs[AccountsWidgetKeys.TOTAL_FORMATTED].orEmpty()
 
         val views = RemoteViews(context.packageName, WidgetColors.layoutFor(palette, R.layout.widget_accounts_main_t0, R.layout.widget_accounts_main_t1, R.layout.widget_accounts_main_t2))
-        views.setTextViewText(R.id.tv_widget_header_title, "ACCOUNTS")
-        WidgetHeader.bindIcon(context, views, CardType.ACCOUNTS, palette)
-        WidgetHeader.applyTheme(views, palette, glass)
+        views.applyRootTheme(palette, glass)
         views.setThemedTextColor(R.id.tv_accounts_empty_text, palette) { it.onSurfaceVariant }
+        views.setThemedBackgroundColor(R.id.v_accounts_header_divider, palette) { it.outline }
 
-        WidgetHeader.clearExtras(views)
         val hasAccounts = (prefs[AccountsWidgetKeys.COUNT]?.toIntOrNull() ?: 0) > 0
-        if (hasAccounts && total.isNotEmpty()) {
-            WidgetHeader.addChip(context, views, "≈ $total", WidgetHeader.ChipStyle.NEUTRAL, palette)
+        val showHeader = hasAccounts && total.isNotEmpty()
+        views.setViewVisibility(R.id.ll_accounts_header, if (showHeader) View.VISIBLE else View.GONE)
+        if (showHeader) {
+            views.setTextViewText(R.id.tv_accounts_total_value, total)
+            views.setThemedTextColor(R.id.tv_accounts_total_value, palette) { it.onSurface }
+            views.setThemedTextColor(R.id.tv_accounts_total_label, palette) { it.onSurfaceVariant }
+            // Tapping the total opens the whole Accounts screen, like "VIEW ALL" on Recent Activities.
+            views.setOnClickPendingIntent(
+                R.id.ll_accounts_header,
+                PendingIntent.getActivity(
+                    context, widgetId * 10 + 1,
+                    Intent(context, MainActivity::class.java)
+                        .putExtra(MainActivity.EXTRA_WIDGET_NAV, "accounts")
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            )
         }
-
-        views.setOnClickPendingIntent(
-            R.id.iv_widget_header_settings,
-            PendingIntent.getActivity(
-                context, widgetId * 10,
-                Intent(context, AccountsWidgetConfigActivity::class.java)
-                    .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        )
-        // The title opens the whole Accounts screen, like "VIEW ALL" on Recent Activities.
-        views.setOnClickPendingIntent(
-            R.id.tv_widget_header_title,
-            PendingIntent.getActivity(
-                context, widgetId * 10 + 1,
-                Intent(context, MainActivity::class.java)
-                    .putExtra(MainActivity.EXTRA_WIDGET_NAV, "accounts")
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        )
         // Each row's fill-in Intent (AccountsRemoteViewsFactory) adds the account id to this template.
         views.setPendingIntentTemplate(
             R.id.lv_accounts_list,

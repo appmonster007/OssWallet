@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.res.stringResource
+import com.osscabinet.ossWallet.R
 
 const val MIN_BACKUP_PASSPHRASE_LENGTH = 8
 
@@ -55,18 +57,17 @@ fun PassphraseSetupDialog(
         text = {
             Column {
                 Text(
-                    "If you lose this passphrase, encrypted backups cannot be recovered. " +
-                        "It is not stored anywhere.",
+                    stringResource(R.string.backup_passphrase_warning),
                     style = MaterialTheme.typography.bodySmall
                 )
-                PassphraseField(first, { first = it }, "Passphrase (min $MIN_BACKUP_PASSPHRASE_LENGTH characters)", tooShort)
-                PassphraseField(second, { second = it }, "Confirm passphrase", mismatch)
-                if (mismatch) Text("Passphrases don't match", color = MaterialTheme.colorScheme.error,
+                PassphraseField(first, { first = it }, stringResource(R.string.backup_passphrase_label, MIN_BACKUP_PASSPHRASE_LENGTH), tooShort)
+                PassphraseField(second, { second = it }, stringResource(R.string.backup_passphrase_confirm_label), mismatch)
+                if (mismatch) Text(stringResource(R.string.backup_passphrase_mismatch), color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall)
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(first.toCharArray()) }, enabled = valid) { Text("Continue") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        confirmButton = { TextButton(onClick = { onConfirm(first.toCharArray()) }, enabled = valid) { Text(stringResource(R.string.backup_passphrase_continue)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
     )
 }
 
@@ -84,12 +85,12 @@ fun PassphraseEntryDialog(
         title = { Text(title) },
         text = {
             Column {
-                PassphraseField(pass, { pass = it }, "Backup passphrase", errorText != null)
+                PassphraseField(pass, { pass = it }, stringResource(R.string.backup_passphrase_field_label), errorText != null)
                 if (errorText != null) Text(errorText, color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall)
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(pass.toCharArray()) }, enabled = pass.isNotEmpty()) { Text("Unlock") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        confirmButton = { TextButton(onClick = { onConfirm(pass.toCharArray()) }, enabled = pass.isNotEmpty()) { Text(stringResource(R.string.backup_passphrase_unlock)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
     )
 }

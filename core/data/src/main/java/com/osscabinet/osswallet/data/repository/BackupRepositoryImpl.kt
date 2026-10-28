@@ -2,7 +2,9 @@ package com.osscabinet.ossWallet.data.repository
 
 import android.content.Context
 import android.util.Log
+import androidx.core.content.FileProvider
 import androidx.core.net.toUri
+import androidx.documentfile.provider.DocumentFile
 import androidx.room.withTransaction
 import com.osscabinet.ossWallet.core.util.DispatcherProvider
 import com.osscabinet.ossWallet.data.local.AppDatabase
@@ -47,6 +49,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.repository.BackupLocation
 import com.osscabinet.ossWallet.domain.repository.BackupMeta
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import com.osscabinet.ossWallet.domain.repository.BackupScope
@@ -670,12 +673,22 @@ class BackupRepositoryImpl @Inject constructor(
      * is why they are copied as they are. Older backups are the bare database file; restore still takes those.
      */
     private fun exportSqlite(outputStream: OutputStream) {
-        val dbFile = context.getDatabasePath("osswallet_manager_db")
         val zos = ZipOutputStream(outputStream)
-        if (dbFile.exists()) {
+        // A raw copy of the live file (the old approach) can race a concurrent writer even under
+        // TRUNCATE journal mode, and it depended on guessing the db's on-disk file name. VACUUM INTO
+        // asks SQLCipher itself, through the live connection, for a transactionally consistent,
+        // still-encrypted snapshot — so the zipped copy always reflects a committed state.
+        val snapshot = File.createTempFile("backup_snapshot_", ".db", context.cacheDir)
+        try {
+            snapshot.delete() // VACUUM INTO refuses to write over an existing file
+            database.openHelper.writableDatabase.execSQL(
+                "VACUUM INTO ?", arrayOf(snapshot.absolutePath)
+            )
             zos.putNextEntry(java.util.zip.ZipEntry(SQLITE_DB_ENTRY))
-            FileInputStream(dbFile).use { it.copyTo(zos) }
+            FileInputStream(snapshot).use { it.copyTo(zos) }
             zos.closeEntry()
+        } finally {
+            snapshot.delete()
         }
         attachmentStore.listNames().sorted().forEach { name ->
             val file = attachmentStore.sealedFile(name) ?: return@forEach
@@ -1626,52 +1639,137 @@ class BackupRepositoryImpl @Inject constructor(
                             "Re-enter the backup passphrase in Data Management."
                     )
                 } else null
-                val file = File(
-                    dir,
-                    "osswallet_backup_${System.currentTimeMillis()}${if (scope == BackupScope.SINGLE_PROFILE) "_profile" else "_all"}.zip" +
-                        if (encrypt) ENCRYPTED_SUFFIX else ""
-                )
+                val finalName = "osswallet_backup_${System.currentTimeMillis()}" +
+                    "${if (scope == BackupScope.SINGLE_PROFILE) "_profile" else "_all"}.zip" +
+                    if (encrypt) ENCRYPTED_SUFFIX else ""
+                // Written under a .part name first: a crash mid-write (not just a thrown exception)
+                // then leaves only an orphaned .part file, which listBackups()/pruneOldBackups() never
+                // see, instead of a truncated file silently entering the retention rotation.
+                val partFile = File(dir, "$finalName.part")
+                val finalFile = File(dir, finalName)
                 try {
-                    FileOutputStream(file).use { raw ->
+                    FileOutputStream(partFile).use { raw ->
                         val out = if (vaultKey != null)
                             BackupCrypto.encrypt(raw, vaultKey.key, vaultKey.salt, vaultKey.iterations)
                         else raw
                         out.use { createZipBackup(it, scope, profileId) }
                     }
+                    if (!partFile.renameTo(finalFile)) throw IOException("Could not finalize backup file")
                 } catch (e: Exception) {
-                    file.delete() // no half-written backup left in the retention list
+                    partFile.delete()
                     throw e
                 }
-                Result.success(file.absolutePath)
+                Result.success(fileProviderUri(finalFile).toString())
             } catch (e: Exception) {
                 Result.failure(e)
             }
         }
 
-    override suspend fun listPrivateBackups(): List<BackupMeta> =
-        withContext(dispatcherProvider.io) {
-            File(context.filesDir, "backups").takeIf { it.exists() }
-                ?.listFiles { f -> f.name.endsWith(".zip") || f.name.endsWith(".sqlite") || f.name.endsWith(ENCRYPTED_SUFFIX) }
-                ?.sortedByDescending { it.lastModified() }
-                ?.map { f ->
-                    BackupMeta(
-                        f.name,
-                        f.absolutePath,
-                        f.lastModified(),
-                        f.length(),
-                        if (f.name.contains("_profile")) BackupScope.SINGLE_PROFILE else BackupScope.ALL_PROFILES,
-                        encrypted = f.name.endsWith(ENCRYPTED_SUFFIX)
-                    )
-                } ?: emptyList()
-        }
-
-    override suspend fun deleteBackup(id: String): Result<Unit> =
+    override suspend fun exportToCustomFolder(treeUriString: String, scope: BackupScope): Result<String> =
         withContext(dispatcherProvider.io) {
             try {
-                File(
-                    context.filesDir,
-                    "backups/$id"
-                ).let { if (it.exists()) it.delete() }; Result.success(Unit)
+                val profileId = settingsDataStore.currentProfileId.first()
+                val encrypt = settingsDataStore.autoBackupConfig.first().encrypt
+                val vaultKey = if (encrypt) {
+                    backupKeyVault.load() ?: throw IllegalStateException(
+                        "Backup encryption is on but its key is unavailable. " +
+                            "Re-enter the backup passphrase in Data Management."
+                    )
+                } else null
+                val docFolder = DocumentFile.fromTreeUri(context, treeUriString.toUri())
+                    ?: throw IOException("The chosen folder is no longer accessible")
+                if (!docFolder.canWrite()) throw IOException("The chosen folder is no longer writable")
+
+                val finalName = "osswallet_backup_${System.currentTimeMillis()}" +
+                    "${if (scope == BackupScope.SINGLE_PROFILE) "_profile" else "_all"}.zip" +
+                    if (encrypt) ENCRYPTED_SUFFIX else ""
+                val mime = if (encrypt) "application/octet-stream" else "application/zip"
+                // Same part-file-then-rename pattern as exportToPrivateStorage: the file is only
+                // visible under its real name once the write has fully succeeded.
+                val partDoc = docFolder.createFile(mime, "$finalName.part")
+                    ?: throw IOException("Could not create backup file in the chosen folder")
+                try {
+                    context.contentResolver.openOutputStream(partDoc.uri)?.use { raw ->
+                        val out = if (vaultKey != null)
+                            BackupCrypto.encrypt(raw, vaultKey.key, vaultKey.salt, vaultKey.iterations)
+                        else raw
+                        out.use { createZipBackup(it, scope, profileId) }
+                    } ?: throw IOException("Could not open the backup file for writing")
+                    if (!partDoc.renameTo(finalName)) throw IOException("Could not finalize backup file")
+                } catch (e: Exception) {
+                    partDoc.delete()
+                    throw e
+                }
+                Result.success(partDoc.uri.toString())
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    /** A `content://` URI for a private-storage file, via the app's FileProvider. */
+    private fun fileProviderUri(file: File) =
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+
+    private fun scopeFromName(name: String) =
+        if (Regex("_profile\\.zip(\\.enc)?$|_profile\\.sqlite(\\.enc)?$").containsMatchIn(name))
+            BackupScope.SINGLE_PROFILE else BackupScope.ALL_PROFILES
+
+    private fun privateBackupFiles(): List<File> =
+        File(context.filesDir, "backups").takeIf { it.exists() }
+            ?.listFiles { f -> f.name.endsWith(".zip") || f.name.endsWith(".sqlite") || f.name.endsWith(ENCRYPTED_SUFFIX) }
+            ?.toList() ?: emptyList()
+
+    private fun customFolderDocuments(treeUriString: String): List<DocumentFile> =
+        runCatching {
+            DocumentFile.fromTreeUri(context, treeUriString.toUri())
+                ?.listFiles()
+                ?.filter { it.isFile && (it.name?.endsWith(".zip") == true || it.name?.endsWith(".sqlite") == true || it.name?.endsWith(ENCRYPTED_SUFFIX) == true) }
+                ?: emptyList()
+        }.getOrElse {
+            // Folder deleted, unmounted, or the SAF grant was lost — treat as "nothing there" rather than crash.
+            emptyList()
+        }
+
+    override suspend fun listBackups(includeCustomFolder: String?): List<BackupMeta> =
+        withContext(dispatcherProvider.io) {
+            val private = privateBackupFiles().map { f ->
+                BackupMeta(
+                    id = f.name,
+                    uriString = fileProviderUri(f).toString(),
+                    location = BackupLocation.PRIVATE,
+                    createdAt = f.lastModified(),
+                    sizeBytes = f.length(),
+                    scope = scopeFromName(f.name),
+                    encrypted = f.name.endsWith(ENCRYPTED_SUFFIX)
+                )
+            }
+            val custom = includeCustomFolder?.let { treeUri ->
+                customFolderDocuments(treeUri).map { doc ->
+                    val name = doc.name.orEmpty()
+                    BackupMeta(
+                        id = name,
+                        uriString = doc.uri.toString(),
+                        location = BackupLocation.CUSTOM_FOLDER,
+                        createdAt = doc.lastModified(),
+                        sizeBytes = doc.length(),
+                        scope = scopeFromName(name),
+                        encrypted = name.endsWith(ENCRYPTED_SUFFIX)
+                    )
+                }
+            } ?: emptyList()
+            (private + custom).sortedByDescending { it.createdAt }
+        }
+
+    override suspend fun deleteBackup(backup: BackupMeta): Result<Unit> =
+        withContext(dispatcherProvider.io) {
+            try {
+                when (backup.location) {
+                    BackupLocation.PRIVATE ->
+                        File(context.filesDir, "backups/${backup.id}").let { if (it.exists()) it.delete() }
+                    BackupLocation.CUSTOM_FOLDER ->
+                        DocumentFile.fromSingleUri(context, backup.uriString.toUri())?.delete()
+                }
+                Result.success(Unit)
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -1813,11 +1911,20 @@ class BackupRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun pruneOldBackups(maxRetained: Int) {
+    override suspend fun pruneOldBackups(maxRetained: Int, customFolderUri: String?) {
         withContext(dispatcherProvider.io) {
-            val backups = listPrivateBackups()
-            if (backups.size > maxRetained) backups.drop(maxRetained)
-                .forEach { deleteBackup(it.id) }
+            val private = privateBackupFiles().map { f ->
+                BackupMeta(f.name, fileProviderUri(f).toString(), BackupLocation.PRIVATE, f.lastModified(), f.length(), scopeFromName(f.name))
+            }.sortedByDescending { it.createdAt }
+            if (private.size > maxRetained) private.drop(maxRetained).forEach { deleteBackup(it) }
+
+            if (customFolderUri != null) {
+                val custom = customFolderDocuments(customFolderUri).map { doc ->
+                    val name = doc.name.orEmpty()
+                    BackupMeta(name, doc.uri.toString(), BackupLocation.CUSTOM_FOLDER, doc.lastModified(), doc.length(), scopeFromName(name))
+                }.sortedByDescending { it.createdAt }
+                if (custom.size > maxRetained) custom.drop(maxRetained).forEach { deleteBackup(it) }
+            }
         }
     }
 }

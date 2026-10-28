@@ -2,4 +2,6 @@
 <paths>
     <!-- Camera captures and generated reports; cleared with the cache. -->
     <cache-path name="shared" path="shared/" />
+    <!-- Private-storage auto/manual backups, exposed so Recent Backups can open/share/restore them. -->
+    <files-path name="backups" path="backups/" />
 </paths>

@@ -19,6 +19,7 @@ import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
 import com.osscabinet.ossWallet.domain.repository.RestorableEntity
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.service.BackupRunState
 import com.osscabinet.ossWallet.domain.service.BackupScheduler
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
@@ -46,6 +47,23 @@ sealed class SyncState {
     data class Error(val message: String) : SyncState()
     object Success : SyncState()
 }
+
+/** A typed outcome of a backup/restore action — the UI maps each to a localized string. */
+sealed class BackupEvent {
+    data class ExportSucceeded(val encrypted: Boolean) : BackupEvent()
+    data class ExportFailed(val reason: String?) : BackupEvent()
+    data class ImportSucceeded(val restarting: Boolean) : BackupEvent()
+    data class ImportFailed(val reason: String?) : BackupEvent()
+    data class VerifySucceeded(val entryCount: Int, val sizeKb: Long, val encrypted: Boolean) : BackupEvent()
+    data class VerifyFailed(val reason: String?) : BackupEvent()
+    data class EncryptionChanged(val enabled: Boolean) : BackupEvent()
+    data class EncryptionFailed(val reason: String?) : BackupEvent()
+    data class DeleteBackupFailed(val reason: String?) : BackupEvent()
+    object DeletingAllData : BackupEvent()
+}
+
+/** What kind of backup/restore work, if any, is currently running — drives the progress banner. */
+enum class BackupOperation { EXPORTING, IMPORTING, VERIFYING, RESTORING, DELETING_ALL }
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -196,11 +214,18 @@ class SettingsViewModel @Inject constructor(
     private val _onboardingSyncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val onboardingSyncState: StateFlow<SyncState> = _onboardingSyncState
 
-    private val _backupMessage = Channel<String>(Channel.BUFFERED)
-    val backupMessage: Flow<String> = _backupMessage.receiveAsFlow()
+    private val _backupEvents = Channel<BackupEvent>(Channel.BUFFERED)
+    val backupEvents: Flow<BackupEvent> = _backupEvents.receiveAsFlow()
+
+    private val _backupOperation = MutableStateFlow<BackupOperation?>(null)
+    val backupOperation: StateFlow<BackupOperation?> = _backupOperation
 
     val autoBackupConfig: StateFlow<AutoBackupConfig> = settingsRepository.autoBackupConfig
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AutoBackupConfig())
+
+    val backupRunStatus: StateFlow<Pair<BackupRunState, Long>?> = backupScheduler.observeStatus()
+        .map { it as Pair<BackupRunState, Long>? }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _recentBackups = MutableStateFlow<List<BackupMeta>>(emptyList())
     val recentBackups: StateFlow<List<BackupMeta>> = _recentBackups
@@ -212,23 +237,75 @@ class SettingsViewModel @Inject constructor(
             _availableCurrencies.value = provider.fetchSupportedCurrencies()
         }
         viewModelScope.launch { refreshRecentBackups() }
+        // A scheduled backup can finish while this screen isn't open; refresh the list whenever
+        // its run state settles so a newly-written file shows up without reopening the screen.
+        viewModelScope.launch {
+            backupRunStatus.collect { status ->
+                if (status?.first == BackupRunState.SUCCEEDED) refreshRecentBackups()
+            }
+        }
     }
 
     private suspend fun refreshRecentBackups() {
-        _recentBackups.value = backupRepository.listPrivateBackups()
+        val config = autoBackupConfig.value
+        val customFolder = config.customFolderUri?.takeIf {
+            config.storageMode != AutoBackupConfig.StorageMode.PRIVATE
+        }
+        _recentBackups.value = backupRepository.listBackups(customFolder)
     }
 
     fun updateAutoBackupConfig(config: AutoBackupConfig) {
         viewModelScope.launch {
             settingsRepository.saveAutoBackupConfig(config)
             backupScheduler.schedule(config)
+            refreshRecentBackups()
         }
     }
 
-    fun deleteBackup(id: String) {
+    fun deleteBackup(backup: BackupMeta) {
         viewModelScope.launch {
-            backupRepository.deleteBackup(id)
+            val result = backupRepository.deleteBackup(backup)
+            if (result.isFailure) {
+                _backupEvents.send(BackupEvent.DeleteBackupFailed(result.exceptionOrNull()?.message))
+            }
             refreshRecentBackups()
+        }
+    }
+
+    /**
+     * Restores a backup picked from Recent Backups — the same restore path manual import uses,
+     * so it works whether [backup] lives in private storage or the configured custom folder.
+     */
+    fun restoreBackup(backup: BackupMeta, passphrase: CharArray? = null) {
+        viewModelScope.launch {
+            _backupOperation.value = BackupOperation.RESTORING
+            try {
+                val type = if (backup.id.endsWith(".sqlite") || backup.id.endsWith(".sqlite.enc"))
+                    BackupType.SQLITE else BackupType.CSV_ZIP
+                val check = backupRepository.verifyBackup(backup.uriString, type, passphrase)
+                if (check.isFailure) {
+                    passphrase?.fill('0')
+                    _backupEvents.send(BackupEvent.ImportFailed(check.exceptionOrNull()?.message))
+                    return@launch
+                }
+                val result = backupRepository.importData(backup.uriString, type, passphrase)
+                passphrase?.fill('0')
+                if (result.isSuccess) {
+                    if (type == BackupType.SQLITE) {
+                        _backupEvents.send(BackupEvent.ImportSucceeded(restarting = true))
+                        withContext(NonCancellable) {
+                            delay(1500)
+                            android.os.Process.killProcess(android.os.Process.myPid())
+                        }
+                    } else {
+                        _backupEvents.send(BackupEvent.ImportSucceeded(restarting = false))
+                    }
+                } else {
+                    _backupEvents.send(BackupEvent.ImportFailed(result.exceptionOrNull()?.message))
+                }
+            } finally {
+                _backupOperation.value = null
+            }
         }
     }
 
@@ -544,13 +621,18 @@ class SettingsViewModel @Inject constructor(
         passphrase: CharArray? = null
     ) {
         viewModelScope.launch {
-            val result = backupRepository.exportData(uri.toString(), type, scope, passphrase)
-            passphrase?.fill('0')
-            _backupMessage.send(
-                if (result.isSuccess) {
-                    if (passphrase != null) "Encrypted backup exported successfully" else "Backup exported successfully"
-                } else "Export failed: ${result.exceptionOrNull()?.message}"
-            )
+            _backupOperation.value = BackupOperation.EXPORTING
+            try {
+                val result = backupRepository.exportData(uri.toString(), type, scope, passphrase)
+                val encrypted = passphrase != null
+                passphrase?.fill('0')
+                _backupEvents.send(
+                    if (result.isSuccess) BackupEvent.ExportSucceeded(encrypted)
+                    else BackupEvent.ExportFailed(result.exceptionOrNull()?.message)
+                )
+            } finally {
+                _backupOperation.value = null
+            }
         }
     }
 
@@ -560,12 +642,27 @@ class SettingsViewModel @Inject constructor(
         backupRepository.detectBackupEntity(uri.toString(), passphrase)
 
     /** Checks a backup (decrypting it if needed) without touching live data. */
-    suspend fun verifyBackup(uri: Uri, type: BackupType, passphrase: CharArray?): Result<BackupVerification> =
-        backupRepository.verifyBackup(uri.toString(), type, passphrase)
-
-    fun reportBackupMessage(message: String) {
-        viewModelScope.launch { _backupMessage.send(message) }
+    fun verifyBackup(uri: Uri, type: BackupType, passphrase: CharArray?) {
+        viewModelScope.launch {
+            _backupOperation.value = BackupOperation.VERIFYING
+            try {
+                val result = backupRepository.verifyBackup(uri.toString(), type, passphrase)
+                passphrase?.fill('0')
+                _backupEvents.send(
+                    result.fold(
+                        onSuccess = { BackupEvent.VerifySucceeded(it.entryCount, it.sizeBytes / 1024, it.encrypted) },
+                        onFailure = { BackupEvent.VerifyFailed(it.message) }
+                    )
+                )
+            } finally {
+                _backupOperation.value = null
+            }
+        }
     }
+
+    /** Non-side-effecting variant used inline by the passphrase-entry flow before showing the entity selector. */
+    suspend fun verifyBackupSuspend(uri: Uri, type: BackupType, passphrase: CharArray?): Result<BackupVerification> =
+        backupRepository.verifyBackup(uri.toString(), type, passphrase)
 
     private val _backupKeyAvailable = MutableStateFlow(true)
     val backupKeyAvailable: StateFlow<Boolean> = _backupKeyAvailable
@@ -581,9 +678,9 @@ class SettingsViewModel @Inject constructor(
             if (result.isSuccess) {
                 _backupKeyAvailable.value = true
                 updateAutoBackupConfig(autoBackupConfig.value.copy(encrypt = true))
-                _backupMessage.send("Scheduled backups are now encrypted")
+                _backupEvents.send(BackupEvent.EncryptionChanged(enabled = true))
             } else {
-                _backupMessage.send("Could not enable encryption: ${result.exceptionOrNull()?.message}")
+                _backupEvents.send(BackupEvent.EncryptionFailed(result.exceptionOrNull()?.message))
             }
         }
     }
@@ -593,7 +690,7 @@ class SettingsViewModel @Inject constructor(
             backupRepository.disableBackupEncryption()
             _backupKeyAvailable.value = false
             updateAutoBackupConfig(autoBackupConfig.value.copy(encrypt = false))
-            _backupMessage.send("Scheduled backups are no longer encrypted")
+            _backupEvents.send(BackupEvent.EncryptionChanged(enabled = false))
         }
     }
 
@@ -608,38 +705,44 @@ class SettingsViewModel @Inject constructor(
         passphrase: CharArray? = null
     ) {
         viewModelScope.launch {
-            val check = backupRepository.verifyBackup(uri.toString(), type, passphrase)
-            if (check.isFailure) {
+            _backupOperation.value = BackupOperation.IMPORTING
+            try {
+                val check = backupRepository.verifyBackup(uri.toString(), type, passphrase)
+                if (check.isFailure) {
+                    passphrase?.fill('0')
+                    _backupEvents.send(BackupEvent.ImportFailed(check.exceptionOrNull()?.message))
+                    return@launch
+                }
+                val result = if (entities != null && entities.size < RestorableEntity.entries.size) {
+                    backupRepository.importDataSelective(uri.toString(), type, entities, passphrase)
+                } else {
+                    backupRepository.importData(uri.toString(), type, passphrase)
+                }
                 passphrase?.fill('0')
-                _backupMessage.send("Import failed: ${check.exceptionOrNull()?.message}. Nothing was changed.")
-                return@launch
-            }
-            val result = if (entities != null && entities.size < RestorableEntity.entries.size) {
-                backupRepository.importDataSelective(uri.toString(), type, entities, passphrase)
-            } else {
-                backupRepository.importData(uri.toString(), type, passphrase)
-            }
-            passphrase?.fill('0')
 
-            if (result.isSuccess) {
-                if (type == BackupType.SQLITE) {
-                    _backupMessage.send("Database restored. Restarting app...")
-                    withContext(NonCancellable) {
-                        delay(1500)
-                        android.os.Process.killProcess(android.os.Process.myPid())
+                if (result.isSuccess) {
+                    if (type == BackupType.SQLITE) {
+                        _backupEvents.send(BackupEvent.ImportSucceeded(restarting = true))
+                        withContext(NonCancellable) {
+                            delay(1500)
+                            android.os.Process.killProcess(android.os.Process.myPid())
+                        }
+                    } else {
+                        _backupEvents.send(BackupEvent.ImportSucceeded(restarting = false))
                     }
                 } else {
-                    _backupMessage.send("Backup imported successfully")
+                    _backupEvents.send(BackupEvent.ImportFailed(result.exceptionOrNull()?.message))
                 }
-            } else {
-                _backupMessage.send("Import failed: ${result.exceptionOrNull()?.message}")
+            } finally {
+                _backupOperation.value = null
             }
         }
     }
 
     fun deleteAllData() {
         viewModelScope.launch {
-            _backupMessage.send("Clearing all data and restarting...")
+            _backupOperation.value = BackupOperation.DELETING_ALL
+            _backupEvents.send(BackupEvent.DeletingAllData)
             backupRepository.deleteAllData()
             withContext(NonCancellable) {
                 delay(1500)

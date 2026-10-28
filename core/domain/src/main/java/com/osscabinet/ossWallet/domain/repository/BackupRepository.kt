@@ -15,10 +15,14 @@ enum class RestorableEntity {
     PLANNED_PAYMENTS, TEMPLATES, FILTERS, TAGS, CURRENCY_RATES, GOALS
 }
 
+/** Where a backup file physically lives. Both resolve to an openable `content://` URI. */
+enum class BackupLocation { PRIVATE, CUSTOM_FOLDER }
+
 data class BackupMeta(
-    val id: String,           // filename without path
-    val path: String,         // absolute path
-    val createdAt: Long,      // epoch millis
+    val id: String,              // filename, unique within its location
+    val uriString: String,       // content:// URI — openable via ContentResolver regardless of location
+    val location: BackupLocation,
+    val createdAt: Long,         // epoch millis
     val sizeBytes: Long,
     val scope: BackupScope,
     val encrypted: Boolean = false
@@ -33,7 +37,9 @@ data class AutoBackupConfig(
     val customFolderUri: String? = null,
     val notifyMode: NotifyMode = NotifyMode.ALWAYS,
     /** Encrypt scheduled backups with the key set up via [BackupRepository.enableBackupEncryption]. */
-    val encrypt: Boolean = false
+    val encrypt: Boolean = false,
+    /** Which profiles a scheduled backup covers. Manual exports pick their scope per-export instead. */
+    val scope: BackupScope = BackupScope.ALL_PROFILES
 ) {
     @Serializable
     enum class StorageMode { PRIVATE, CUSTOM_FOLDER, BOTH }
@@ -88,8 +94,17 @@ interface BackupRepository {
     suspend fun hasBackupEncryptionKey(): Boolean
 
     suspend fun deleteAllData(): Result<Unit>
+
+    /** Writes a new backup under app-private storage. Returns the written file's `content://` URI. */
     suspend fun exportToPrivateStorage(scope: BackupScope = BackupScope.ALL_PROFILES): Result<String>
-    suspend fun listPrivateBackups(): List<BackupMeta>
-    suspend fun deleteBackup(id: String): Result<Unit>
-    suspend fun pruneOldBackups(maxRetained: Int)
+
+    /** Writes a new backup into the SAF tree at [treeUriString]. Returns the written document's `content://` URI. */
+    suspend fun exportToCustomFolder(treeUriString: String, scope: BackupScope = BackupScope.ALL_PROFILES): Result<String>
+
+    /** Private-storage backups plus, when [includeCustomFolder] is set, the configured custom folder's own backups. */
+    suspend fun listBackups(includeCustomFolder: String? = null): List<BackupMeta>
+    suspend fun deleteBackup(backup: BackupMeta): Result<Unit>
+
+    /** Prunes each location independently so one location's retention never deletes the other's files. */
+    suspend fun pruneOldBackups(maxRetained: Int, customFolderUri: String? = null)
 }

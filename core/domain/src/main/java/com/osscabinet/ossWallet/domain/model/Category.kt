@@ -41,5 +41,11 @@ data class Category(
         fun isSystemCategory(id: Long) = SystemCategory.entries.any { it.id == id }
         fun isInitialBalance(id: Long) = id == SYSTEM_INITIAL_BALANCE
         fun isTransfer(id: Long) = id == SYSTEM_TRANSFER || isInitialBalance(id)
+
+        // Ids below this are permanently reserved for system + seeded default categories
+        // (currently 1000-1157). User-created categories always start at this floor, so
+        // the app can add or remove default categories in a future release without ever
+        // colliding with an id a user is already using.
+        const val USER_CATEGORY_ID_FLOOR = 2000L
     }
 }

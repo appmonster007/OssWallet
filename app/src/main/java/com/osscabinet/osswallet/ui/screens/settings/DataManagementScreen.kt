@@ -31,6 +31,8 @@ import androidx.compose.material.icons.rounded.BatteryAlert
 import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DeleteForever
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Lock
@@ -77,6 +79,7 @@ import com.osscabinet.ossWallet.domain.repository.BackupMeta
 import com.osscabinet.ossWallet.domain.repository.BackupScope
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.RestorableEntity
+import com.osscabinet.ossWallet.domain.service.BackupFileNaming
 import com.osscabinet.ossWallet.domain.service.BackupRunState
 import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
@@ -310,31 +313,28 @@ fun DataManagementScreen(
     if (showExportDialog) {
         ExportDialog(
             onDismiss = { showExportDialog = false },
-            onExportZipAll = {
+            onExportZip = { scope ->
                 showExportDialog = false
                 pendingExport = PendingExport(
-                    BackupType.CSV_ZIP, BackupScope.ALL_PROFILES,
-                    "osswallet_backup_${System.currentTimeMillis()}.zip"
-                ) { exportZipAllLauncher.launch(it) }
-                showExportEncryptChoice = true
-            },
-            onExportZipProfile = {
-                showExportDialog = false
-                pendingExport = PendingExport(
-                    BackupType.CSV_ZIP, BackupScope.SINGLE_PROFILE,
-                    "osswallet_profile_${System.currentTimeMillis()}.zip"
-                ) { exportZipProfileLauncher.launch(it) }
+                    BackupType.CSV_ZIP, scope,
+                    BackupFileNaming.build(BackupFileNaming.Kind.MANUAL, scope, "zip", encrypted = false)
+                ) {
+                    if (scope == BackupScope.SINGLE_PROFILE) exportZipProfileLauncher.launch(it)
+                    else exportZipAllLauncher.launch(it)
+                }
                 showExportEncryptChoice = true
             },
             onExportCsv = {
                 showExportDialog = false
-                exportCsvLauncher.launch("osswallet_transactions_${System.currentTimeMillis()}.csv")
+                exportCsvLauncher.launch(
+                    BackupFileNaming.build(BackupFileNaming.Kind.MANUAL, null, "csv", encrypted = false)
+                )
             },
             onExportSqlite = {
                 showExportDialog = false
                 pendingExport = PendingExport(
                     BackupType.SQLITE, BackupScope.ALL_PROFILES,
-                    "osswallet_db_${System.currentTimeMillis()}.sqlite"
+                    BackupFileNaming.build(BackupFileNaming.Kind.MANUAL, null, "sqlite", encrypted = false)
                 ) { exportSqliteLauncher.launch(it) }
                 showExportEncryptChoice = true
             }
@@ -343,7 +343,9 @@ fun DataManagementScreen(
 
     if (showImportDialog) {
         ImportDialog(
-            onDismiss = { showImportDialog = false },
+            verifyOnly = verifyOnly,
+            onVerifyOnlyChange = { verifyOnly = it },
+            onDismiss = { showImportDialog = false; verifyOnly = false },
             onImportZip = {
                 showImportDialog = false
                 pendingImportType = BackupType.CSV_ZIP
@@ -357,6 +359,7 @@ fun DataManagementScreen(
             },
             onImportCsv = {
                 showImportDialog = false
+                verifyOnly = false
                 actions.onNavigateToCsvImport()
             }
         )
@@ -1108,21 +1111,6 @@ fun DataManagementScreen(
                                 icon = Icons.Rounded.FileDownload,
                                 onClick = { showExportDialog = true }
                             )
-                            HorizontalDivider(
-                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                                thickness = 0.5.dp,
-                                color = AppColors.divider.copy(alpha = 0.5f)
-                            )
-                            AeonSettingsItem(
-                                title = stringResource(R.string.backup_verify_file_title),
-                                subtitle = stringResource(R.string.backup_verify_file_subtitle),
-                                icon = Icons.Rounded.VerifiedUser,
-                                onClick = {
-                                    verifyOnly = true
-                                    pendingImportType = BackupType.CSV_ZIP
-                                    importLauncher.launch("*/*")
-                                }
-                            )
                         }
 
                         // Section 3: Danger Zone
@@ -1163,11 +1151,13 @@ data class DataManagementActions(
 @Composable
 private fun ExportDialog(
     onDismiss: () -> Unit,
-    onExportZipAll: () -> Unit,
-    onExportZipProfile: () -> Unit,
+    onExportZip: (BackupScope) -> Unit,
     onExportCsv: () -> Unit,
     onExportSqlite: () -> Unit
 ) {
+    var scope by remember { mutableStateOf(BackupScope.ALL_PROFILES) }
+    var moreFormatsExpanded by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.backup_export_data_title), style = AppTextStyles.cardTitle) },
@@ -1182,26 +1172,67 @@ private fun ExportDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
             ) {
+                BackupScope.entries.forEach { entry ->
+                    val isSelected = scope == entry
+                    Surface(
+                        onClick = { scope = entry },
+                        color = if (isSelected) AppColors.accentContainer.copy(alpha = 0.1f) else Color.Transparent,
+                        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp)
+                        ) {
+                            RadioButton(selected = isSelected, onClick = null)
+                            Text(
+                                text = stringResource(
+                                    if (entry == BackupScope.ALL_PROFILES) R.string.backup_scope_all_profiles
+                                    else R.string.backup_scope_current_profile
+                                ),
+                                color = if (isSelected) AppColors.primary else AppColors.contentPrimary,
+                                style = AppTextStyles.listItemTitle
+                            )
+                        }
+                    }
+                }
+
                 AeonDashedButton(
-                    onClick = onExportZipAll,
-                    text = stringResource(R.string.backup_export_zip_all),
+                    onClick = { onExportZip(scope) },
+                    text = stringResource(R.string.backup_export_zip_primary),
                     icon = Icons.Rounded.Folder
                 )
-                AeonDashedButton(
-                    onClick = onExportZipProfile,
-                    text = stringResource(R.string.backup_export_zip_profile),
-                    icon = Icons.Rounded.Folder
-                )
-                AeonDashedButton(
-                    onClick = onExportCsv,
-                    text = stringResource(R.string.backup_export_flat_csv),
-                    icon = Icons.Rounded.FileDownload
-                )
-                AeonDashedButton(
-                    onClick = onExportSqlite,
-                    text = stringResource(R.string.backup_export_sqlite),
-                    icon = Icons.Rounded.Backup
-                )
+
+                TextButton(
+                    onClick = { moreFormatsExpanded = !moreFormatsExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            stringResource(R.string.backup_export_more_formats),
+                            style = AppTextStyles.buttonLabel,
+                            color = AppColors.contentSecondary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            if (moreFormatsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                            contentDescription = null,
+                            tint = AppColors.contentSecondary
+                        )
+                    }
+                }
+                if (moreFormatsExpanded) {
+                    AeonDashedButton(
+                        onClick = onExportCsv,
+                        text = stringResource(R.string.backup_export_flat_csv),
+                        icon = Icons.Rounded.FileDownload
+                    )
+                    AeonDashedButton(
+                        onClick = onExportSqlite,
+                        text = stringResource(R.string.backup_export_sqlite),
+                        icon = Icons.Rounded.Backup
+                    )
+                }
 
                 TextButton(
                     onClick = onDismiss,
@@ -1220,6 +1251,8 @@ private fun ExportDialog(
 
 @Composable
 private fun ImportDialog(
+    verifyOnly: Boolean,
+    onVerifyOnlyChange: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     onImportZip: () -> Unit,
     onImportSqlite: () -> Unit,
@@ -1254,6 +1287,38 @@ private fun ImportDialog(
                     text = stringResource(R.string.backup_import_csv),
                     icon = Icons.Rounded.AutoAwesome
                 )
+
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.3f)
+                )
+
+                Surface(
+                    onClick = { onVerifyOnlyChange(!verifyOnly) },
+                    color = Color.Transparent,
+                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        Checkbox(checked = verifyOnly, onCheckedChange = onVerifyOnlyChange)
+                        Spacer(Modifier.width(4.dp))
+                        Icon(
+                            Icons.Rounded.VerifiedUser,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = AppColors.contentSecondary
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            stringResource(R.string.backup_verify_only_toggle),
+                            style = AppTextStyles.caption,
+                            color = AppColors.contentSecondary
+                        )
+                    }
+                }
 
                 TextButton(
                     onClick = onDismiss,

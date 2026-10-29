@@ -210,8 +210,6 @@
     <string name="backup_import_migrate_subtitle">Restore from backup or import from another app</string>
     <string name="backup_export_data_title">Export Data</string>
     <string name="backup_export_data_subtitle">Download all records and database</string>
-    <string name="backup_verify_file_title">Verify a Backup File</string>
-    <string name="backup_verify_file_subtitle">Check a backup is intact without restoring it</string>
     <string name="backup_delete_all_title">Delete All Data</string>
     <string name="backup_delete_all_subtitle">Permanently clear your account</string>
     <string name="backup_delete_all_confirm_title">Delete All Data?</string>
@@ -230,15 +228,16 @@
     <string name="backup_encrypted_backup_title">Encrypted backup</string>
     <string name="backup_wrong_passphrase">Wrong passphrase, or the backup is damaged</string>
 
-    <string name="backup_export_dialog_message">Select the format you want to export your data in.</string>
-    <string name="backup_export_zip_all">ZIP - All Profiles</string>
-    <string name="backup_export_zip_profile">ZIP - Current Profile</string>
+    <string name="backup_export_dialog_message">Choose what to export, then pick a format.</string>
+    <string name="backup_export_zip_primary">Export Backup (.zip)</string>
+    <string name="backup_export_more_formats">More export formats</string>
     <string name="backup_export_flat_csv">Flat CSV</string>
     <string name="backup_export_sqlite">SQLite Database</string>
 
     <string name="backup_import_dialog_message">Restore an OssWallet backup (ZIP archive or single CSV table update) or import transactions from another app.</string>
     <string name="backup_import_zip">OssWallet Backup (ZIP or CSV)</string>
     <string name="backup_import_csv">Another App (CSV)</string>
+    <string name="backup_verify_only_toggle">Verify only — check the file is intact without changing any data</string>
 
     <string name="backup_restore_selection_title">Restore Selection</string>
     <string name="backup_restore_selection_subtitle">Choose which data components to restore from this backup.</string>

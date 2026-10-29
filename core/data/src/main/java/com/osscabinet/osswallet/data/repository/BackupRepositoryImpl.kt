@@ -55,6 +55,7 @@ import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import com.osscabinet.ossWallet.domain.repository.BackupScope
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.RestorableEntity
+import com.osscabinet.ossWallet.domain.service.BackupFileNaming
 import com.univocity.parsers.csv.CsvParser
 import com.univocity.parsers.csv.CsvParserSettings
 import com.univocity.parsers.csv.CsvWriter
@@ -1639,9 +1640,7 @@ class BackupRepositoryImpl @Inject constructor(
                             "Re-enter the backup passphrase in Data Management."
                     )
                 } else null
-                val finalName = "osswallet_backup_${System.currentTimeMillis()}" +
-                    "${if (scope == BackupScope.SINGLE_PROFILE) "_profile" else "_all"}.zip" +
-                    if (encrypt) ENCRYPTED_SUFFIX else ""
+                val finalName = BackupFileNaming.build(BackupFileNaming.Kind.AUTO, scope, "zip", encrypt)
                 // Written under a .part name first: a crash mid-write (not just a thrown exception)
                 // then leaves only an orphaned .part file, which listBackups()/pruneOldBackups() never
                 // see, instead of a truncated file silently entering the retention rotation.
@@ -1680,9 +1679,7 @@ class BackupRepositoryImpl @Inject constructor(
                     ?: throw IOException("The chosen folder is no longer accessible")
                 if (!docFolder.canWrite()) throw IOException("The chosen folder is no longer writable")
 
-                val finalName = "osswallet_backup_${System.currentTimeMillis()}" +
-                    "${if (scope == BackupScope.SINGLE_PROFILE) "_profile" else "_all"}.zip" +
-                    if (encrypt) ENCRYPTED_SUFFIX else ""
+                val finalName = BackupFileNaming.build(BackupFileNaming.Kind.AUTO, scope, "zip", encrypt)
                 val mime = if (encrypt) "application/octet-stream" else "application/zip"
                 // Same part-file-then-rename pattern as exportToPrivateStorage: the file is only
                 // visible under its real name once the write has fully succeeded.

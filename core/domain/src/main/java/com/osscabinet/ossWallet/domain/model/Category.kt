@@ -15,6 +15,7 @@ enum class SystemCategory(
     MISSING(1001L, "Missing", "MoreHoriz", -7829368, 1000L),
     UNKNOWN(1002L, "Unknown", "QuestionMark", -7829368, 1000L),
     INITIAL_BALANCE(1003L, "Initial Balance", "AccountBalance", -7829368, 1000L),
+    RECONCILIATION_ADJUSTMENT(1004L, "Reconciliation Adjustment", "Sync", -7829368, 1000L),
     TRANSFER(1005L, "Transfer", "SwapHoriz", -7829368, 1000L);
 }
 
@@ -34,6 +35,7 @@ data class Category(
         val SYSTEM_MISSING = SystemCategory.MISSING.id
         val SYSTEM_UNKNOWN = SystemCategory.UNKNOWN.id
         val SYSTEM_INITIAL_BALANCE = SystemCategory.INITIAL_BALANCE.id // 1003
+        val SYSTEM_RECONCILIATION_ADJUSTMENT = SystemCategory.RECONCILIATION_ADJUSTMENT.id // 1004
         val SYSTEM_TRANSFER = SystemCategory.TRANSFER.id        // 1005
 
         fun isSystemCategory(id: Long) = SystemCategory.entries.any { it.id == id }

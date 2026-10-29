@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "56e9cf3a57b44e9aa53f3e0a59b828b5",
+    "identityHash": "3af60eb45c79a1b1c7a88469bdc522ad",
     "entities": [
       {
         "tableName": "transactions",
@@ -911,7 +911,7 @@
       },
       {
         "tableName": "transaction_filters",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `timelineRange` TEXT NOT NULL, `queryNote` TEXT, `isNoteRegex` INTEGER NOT NULL, `queryPayee` TEXT, `isPayeeRegex` INTEGER NOT NULL, `categoryIds` TEXT NOT NULL, `accountIds` TEXT NOT NULL, `startDate` INTEGER, `endDate` INTEGER, `paymentMethods` TEXT NOT NULL, `hasWarranty` INTEGER, `warrantyExpirationStart` INTEGER, `warrantyExpirationEnd` INTEGER, `minAmount` TEXT, `maxAmount` TEXT, `transactionTypes` TEXT NOT NULL, `currencies` TEXT NOT NULL, `statuses` TEXT NOT NULL, `linkedTransactionIds` TEXT NOT NULL, `tags` TEXT NOT NULL, `matchAllTags` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `timelineRange` TEXT NOT NULL, `queryNote` TEXT, `isNoteRegex` INTEGER NOT NULL, `queryPayee` TEXT, `isPayeeRegex` INTEGER NOT NULL, `categoryIds` TEXT NOT NULL, `accountIds` TEXT NOT NULL, `startDate` INTEGER, `endDate` INTEGER, `paymentMethods` TEXT NOT NULL, `hasWarranty` INTEGER, `warrantyExpirationStart` INTEGER, `warrantyExpirationEnd` INTEGER, `minAmount` TEXT, `maxAmount` TEXT, `transactionTypes` TEXT NOT NULL, `currencies` TEXT NOT NULL, `statuses` TEXT NOT NULL, `linkedTransactionIds` TEXT NOT NULL, `tags` TEXT NOT NULL, `matchAllTags` INTEGER NOT NULL, `profileId` INTEGER NOT NULL DEFAULT 1)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1041,6 +1041,13 @@
             "columnName": "matchAllTags",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "profileId",
+            "columnName": "profileId",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
           }
         ],
         "primaryKey": {
@@ -1048,7 +1055,18 @@
           "columnNames": [
             "id"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_transaction_filters_profileId",
+            "unique": false,
+            "columnNames": [
+              "profileId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transaction_filters_profileId` ON `${TABLE_NAME}` (`profileId`)"
+          }
+        ]
       },
       {
         "tableName": "planned_payments",
@@ -1674,11 +1692,230 @@
             "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_card_cache_profileId_currency_cardId` ON `${TABLE_NAME}` (`profileId`, `currency`, `cardId`)"
           }
         ]
+      },
+      {
+        "tableName": "goals",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `targetAmount` TEXT NOT NULL, `savedAmount` TEXT NOT NULL, `currency` TEXT NOT NULL, `deadline` INTEGER, `note` TEXT NOT NULL, `profileId` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `completedAt` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetAmount",
+            "columnName": "targetAmount",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "savedAmount",
+            "columnName": "savedAmount",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currency",
+            "columnName": "currency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deadline",
+            "columnName": "deadline",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profileId",
+            "columnName": "profileId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completedAt",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_goals_profileId",
+            "unique": false,
+            "columnNames": [
+              "profileId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_goals_profileId` ON `${TABLE_NAME}` (`profileId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "attachments",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `transactionId` INTEGER NOT NULL, `profileId` INTEGER NOT NULL, `fileName` TEXT NOT NULL, `mimeType` TEXT NOT NULL, `sizeBytes` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `displayName` TEXT NOT NULL DEFAULT '')",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transactionId",
+            "columnName": "transactionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profileId",
+            "columnName": "profileId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fileName",
+            "columnName": "fileName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mimeType",
+            "columnName": "mimeType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sizeBytes",
+            "columnName": "sizeBytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "displayName",
+            "columnName": "displayName",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_attachments_transactionId",
+            "unique": false,
+            "columnNames": [
+              "transactionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_attachments_transactionId` ON `${TABLE_NAME}` (`transactionId`)"
+          },
+          {
+            "name": "index_attachments_profileId",
+            "unique": false,
+            "columnNames": [
+              "profileId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_attachments_profileId` ON `${TABLE_NAME}` (`profileId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "credit_card_details",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`accountId` TEXT NOT NULL, `creditLimit` TEXT NOT NULL, `statementClosingDay` INTEGER, `paymentDueDay` INTEGER, `interestRateApr` REAL, `minimumPaymentAmount` TEXT, PRIMARY KEY(`accountId`), FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "creditLimit",
+            "columnName": "creditLimit",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "statementClosingDay",
+            "columnName": "statementClosingDay",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "paymentDueDay",
+            "columnName": "paymentDueDay",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "interestRateApr",
+            "columnName": "interestRateApr",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "minimumPaymentAmount",
+            "columnName": "minimumPaymentAmount",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "accountId"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "accounts",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "accountId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '56e9cf3a57b44e9aa53f3e0a59b828b5')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3af60eb45c79a1b1c7a88469bdc522ad')"
     ]
   }
 }

@@ -67,11 +67,11 @@ Single-module Android app (`com.osscabinet.ossWallet`) following Clean Architect
 
 ### Database
 
-Room (`AppDatabase`) encrypted with **SQLCipher**. Current schema version: **9**. Passphrase managed by `SecurePassphraseManager` — never instantiate `AppDatabase` directly; use `@Inject` via Hilt. Migrations live in `AppDatabase.kt` companion object.
+Room (`AppDatabase`) encrypted with **SQLCipher**. Current schema version: **1**. Passphrase managed by `SecurePassphraseManager` — never instantiate `AppDatabase` directly; use `@Inject` via Hilt. Migrations live in `AppDatabase.kt` companion object (none currently — pre-release, so the schema is reset to v1 whenever it changes rather than accumulating a migration chain; this resets once the app ships).
 
 **Hard rules:**
 - Never use `fallbackToDestructiveMigration()`.
-- Every schema change needs: incremented version + `Migration` object + updated `@Database(entities=[...])` + abstract DAO accessor.
+- Pre-release, there are no real installs to preserve: every schema change keeps `version = 1` (no `Migration` object), plus updates `@Database(entities=[...])`, the abstract DAO accessor, and deletes the stale `core/data/schemas/.../1.json` snapshot so it regenerates. Once the app ships, this flips back to the normal rule — incremented version + a real `Migration` object per change — and `fallbackToDestructiveMigration()` stays forbidden either way.
 - All queries must include `profileId` — missing it leaks data across profiles.
 - Store monetary values as `TEXT` via `BigDecimalConverter`, never as `REAL`.
 

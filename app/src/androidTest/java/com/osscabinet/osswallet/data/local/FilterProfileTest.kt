@@ -2,9 +2,6 @@ package com.osscabinet.ossWallet.data.local
 
 import android.content.Context
 import androidx.room.Room
-import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.db.SupportSQLiteOpenHelper
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
@@ -18,7 +15,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Saved filters belong to one profile: the DAO keeps them apart, and the v4 -> v5 migration assigns owners. */
+/** Saved filters belong to one profile: the DAO keeps them apart. */
 @RunWith(AndroidJUnit4::class)
 class FilterProfileTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -105,39 +102,5 @@ class FilterProfileTest {
     fun aNewFilterDefaultsToProfileOne() = runBlocking<Unit> {
         val id = db.filterDao().insertFilter(FilterEntity(name = "Plain"))
         assertEquals(1, db.filterDao().getFilterById(id, 1)?.profileId)
-    }
-
-    @Test
-    fun migration_givesBudgetAndLoanFiltersTheirOwnersProfile_andLeavesTheRestWithProfileOne() {
-        val helper = FrameworkSQLiteOpenHelperFactory().create(
-            SupportSQLiteOpenHelper.Configuration.builder(context)
-                .name(null) // in-memory
-                .callback(object : SupportSQLiteOpenHelper.Callback(4) {
-                    override fun onCreate(db: SupportSQLiteDatabase) {
-                        // Just the columns the migration touches, as they were in schema v4.
-                        db.execSQL("CREATE TABLE transaction_filters (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name TEXT NOT NULL)")
-                        db.execSQL("CREATE TABLE budgets (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, profileId INTEGER NOT NULL, filterId INTEGER NOT NULL)")
-                        db.execSQL("CREATE TABLE loans (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, profileId INTEGER NOT NULL, filterId INTEGER NOT NULL)")
-                        db.execSQL("INSERT INTO transaction_filters (id, name) VALUES (1, 'budget filter'), (2, 'loan filter'), (3, 'saved by hand')")
-                        db.execSQL("INSERT INTO budgets (profileId, filterId) VALUES (2, 1)")
-                        db.execSQL("INSERT INTO loans (profileId, filterId) VALUES (3, 2)")
-                    }
-
-                    override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
-                })
-                .build()
-        )
-        helper.use {
-            val sql = it.writableDatabase
-            AppDatabase.MIGRATION_4_5.migrate(sql)
-
-            fun profileOf(id: Int) = sql.query("SELECT profileId FROM transaction_filters WHERE id = $id").use { c -> c.moveToFirst(); c.getInt(0) }
-            assertEquals(2, profileOf(1))
-            assertEquals(3, profileOf(2))
-            assertEquals(1, profileOf(3))
-            sql.query("SELECT name FROM sqlite_master WHERE type='index' AND name='index_transaction_filters_profileId'").use { c ->
-                assertTrue("profile index is created", c.moveToFirst())
-            }
-        }
     }
 }

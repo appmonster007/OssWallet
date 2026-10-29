@@ -1,104 +1,104 @@
 envelope_id,bb_category_name,osswallet_category_name,parent_category_name
-1000,Groceries,Groceries,Food & Groceries
-1001,Restaurant fast-food,Restaurant,Food & Groceries
-1002,Bar cafe,Bar & Café,Food & Groceries
-1003,Food & Drinks,Food & Groceries,
-1004,Coffee tea,Coffee & Tea,Food & Groceries
-1005,Bakery,Bakery,Food & Groceries
-1006,Fast food,Fast Food,Food & Groceries
-1007,Alcohol,Alcohol,Food & Groceries
-2000,Clothes & shoes,Clothes & Shoes,Shopping
-2001,Accessories,Accessories,Shopping
-2002,Health and beauty,Health & Beauty,Shopping
-2003,Jewellery accessories,Jewellery,Shopping
-2004,Home essentials,Home Essentials,Housing
-2005,Garden outdoor,Garden & Outdoor,Housing
+1000,Groceries,Groceries,Food & Drink
+1001,Restaurant fast-food,Dining Out,Food & Drink
+1002,Bar cafe,"Bars & Nightlife",Food & Drink
+1003,Food & Drinks,Food & Drink,
+1004,Coffee tea,Coffee & Snacks,Food & Drink
+1005,Bakery,Groceries,Food & Drink
+1006,Fast food,Fast Food,Dining Out
+1007,Alcohol,Alcohol,Bars & Nightlife
+2000,Clothes & shoes,Clothing & Apparel,Shopping
+2001,Accessories,Accessories,Clothing & Apparel
+2002,Health and beauty,Personal Care,Health & Wellness
+2003,Jewellery accessories,Accessories,Clothing & Apparel
+2004,Home essentials,Home & Living,Shopping
+2005,Garden outdoor,Home & Garden,Home & Living
 2006,Electronics accessories,Electronics,Shopping
-2007,Gifts joy,Gifts,
-2008,Stationery tools,Stationery & Tools,Shopping
-2009,Charity donations,Charity & Donations,Gifts
+2007,Gifts joy,Gifts,Gifts & Charity
+2008,Stationery tools,Books & Stationery,Shopping
+2009,Charity donations,Donations,Gifts & Charity
 2010,Shopping,Shopping,
-2011,Sport outdoor,Sport & Outdoor,Entertainment
-2012,Toys games,Toys & Games,Entertainment
-2013,Books magazines,Books & Magazines,Education
-2014,Music movies,Music & Movies,Entertainment
-2015,Pets,Pets,Others
+2011,Sport outdoor,Fitness,Health & Wellness
+2012,Toys games,Gaming,Entertainment & Leisure
+2013,Books magazines,Books & Stationery,Shopping
+2014,Music movies,Music,Entertainment & Leisure
+2015,Pets,Pets & Animals,Shopping
 3000,Rent,Rent,Housing
 3001,Mortgage,Mortgage,Housing
-3002,Energy utilities,Energy & Utilities,Housing
-3003,Water sewage,Water & Sewage,Housing
-3004,Home insurance,Home Insurance,Housing
-3005,Maintenance repairs,Maintenance & Repairs,Housing
-3006,Telephone internet,Phone & Internet,Utilities
-3007,TV streaming,TV & Streaming,Entertainment
-3008,Furniture,Furniture,Housing
-3009,Security alarm,Security & Alarm,Housing
-4000,Public transport,Public Transport,Transport
-4001,Taxi,Taxi,Transport
-4002,Long distance,Long Distance,Transport
-4003,Car insurance,Car Insurance,Transport
-4004,Transportation,Transport,
-4005,Fuel,Fuel,Transport
-4006,Car maintenance,Car Maintenance,Transport
-4007,Car rental,Car Rental,Transport
-4008,Car payments,Car Payments,Transport
-4009,Parking fees,Parking,Transport
+3002,Energy utilities,Utilities,Housing
+3003,Water sewage,Water,Utilities
+3004,Home insurance,Property Insurance,Housing
+3005,Maintenance repairs,Repairs,Home Services
+3006,Telephone internet,Internet,Communication & Technology
+3007,TV streaming,Streaming,Movies & Theater
+3008,Furniture,Furniture,Home & Living
+3009,Security alarm,Security,Home Services
+4000,Public transport,Public Transit,Transportation
+4001,Taxi,Taxi,Ride & Taxi
+4002,Long distance,Ground Transport,Travel
+4003,Car insurance,Vehicle Insurance,Vehicle
+4004,Transportation,Transportation,
+4005,Fuel,Fuel,Vehicle
+4006,Car maintenance,Vehicle Maintenance,Vehicle
+4007,Car rental,Rentals & Leasing,Vehicle
+4008,Car payments,Rentals & Leasing,Vehicle
+4009,Parking fees,Parking,Vehicle
 5000,Travel,Travel,
-5001,Parking,Parking,Transport
+5001,Parking,Parking,Vehicle
 5002,Flights,Flights,Travel
 5003,Accommodation,Accommodation,Travel
-5004,Visa fees,Visa Fees,Travel
-5005,Travel insurance,Travel Insurance,Travel
-5006,Tourist attractions,Tourist Attractions,Travel
-6000,Pharmacy,Pharmacy,Healthcare
-6001,Wellness beauty,Wellness & Beauty,Healthcare
-6002,Doctor visits,Doctor Visits,Healthcare
-6003,Dentist,Dentist,Healthcare
-6004,Hospital,Hospital,Healthcare
-6005,Health insurance,Health Insurance,Healthcare
+5004,Visa fees,Visas & Permits,Travel Essentials
+5005,Travel insurance,Travel Insurance,Travel Essentials
+5006,Tourist attractions,Activities,Travel
+6000,Pharmacy,Pharmacy,Health & Wellness
+6001,Wellness beauty,Personal Care,Health & Wellness
+6002,Doctor visits,Doctor,Medical Care
+6003,Dentist,Dentist,Medical Care
+6004,Hospital,Hospital,Medical Care
+6005,Health insurance,Health Insurance,Medical Care
 6006,Education development,Education,
-6007,Tuition fees,Tuition Fees,Education
-6008,Books courses,Books & Courses,Education
-6009,Holiday trips hotels,Holiday & Hotels,Travel
-6010,Sport fitness,Sport & Fitness,Healthcare
-6011,Gym membership,Gym,Healthcare
-6012,Culture museums,Culture & Museums,Entertainment
-6013,Life & Entertainment,Entertainment,
-6014,Concerts events,Concerts & Events,Entertainment
-6015,Cinema theater,Cinema & Theater,Entertainment
-6016,Clubs bars,Clubs & Bars,Entertainment
-6017,Social activities,Social Activities,Entertainment
-7000,Technology,Technology,Shopping
-7001,Computer accessories,Computer Accessories,Shopping
-7002,Mobile phone,Mobile Phone,Shopping
-7003,Software apps games,Software & Apps,Shopping
-7004,Online subscriptions,Online Subscriptions,Shopping
-8000,Banking fees,Banking Fees,Fees & Charges
-8001,ATM fees,ATM Fees,Fees & Charges
-8002,Interest charges,Interest Charges,Fees & Charges
-8003,Tax,Tax,Fees & Charges
-8004,Insurance,Insurance,Fees & Charges
-8005,Charges Fees,Fees & Charges,
-8006,Fines penalties,Fines & Penalties,Fees & Charges
-8007,Exchange fees,Exchange Fees,Fees & Charges
+6007,Tuition fees,University,Tuition & Fees
+6008,Books courses,Books & Supplies,Education
+6009,Holiday trips hotels,Accommodation,Travel
+6010,Sport fitness,Fitness,Health & Wellness
+6011,Gym membership,Gym,Fitness
+6012,Culture museums,Events & Shows,Entertainment & Leisure
+6013,Life & Entertainment,Entertainment & Leisure,
+6014,Concerts events,Concerts,Music
+6015,Cinema theater,Cinema,Movies & Theater
+6016,Clubs bars,Bars & Nightlife,Food & Drink
+6017,Social activities,Events & Shows,Entertainment & Leisure
+7000,Technology,Electronics,Shopping
+7001,Computer accessories,Computers,Electronics
+7002,Mobile phone,Phone & Mobile,Communication & Technology
+7003,Software apps games,Software & Subscriptions,Communication & Technology
+7004,Online subscriptions,Software & Subscriptions,Communication & Technology
+8000,Banking fees,Bank Fees & Fines,Finance & Insurance
+8001,ATM fees,Bank Fees & Fines,Finance & Insurance
+8002,Interest charges,Loans & Debt,Finance & Insurance
+8003,Tax,Taxes & Fees,Finance & Insurance
+8004,Insurance,Insurance,Finance & Insurance
+8005,Charges Fees,Bank Fees & Fines,Finance & Insurance
+8006,Fines penalties,Fines,Bank Fees & Fines
+8007,Exchange fees,Bank Fees & Fines,Finance & Insurance
 9000,Investments,Investments,
-9001,Stocks bonds,Stocks & Bonds,Investments
-9002,Financial investments,Financial Investments,Investments
+9001,Stocks bonds,Stocks & Funds,Investments
+9002,Financial investments,Stocks & Funds,Investments
 9003,Real estate,Real Estate,Investments
 9004,Crypto,Crypto,Investments
 9005,Savings,Savings,Investments
-9006,Retirement pension,Retirement & Pension,Investments
-10000,Salary,Salary,
-10001,Interests dividends,Interest & Dividends,Investment Income
+9006,Retirement pension,Retirement,Savings
+10000,Salary,Salary,Employment
+10001,Interests dividends,Dividends,Investment Returns
 10002,Business income,Business Income,Other Income
-10003,Rental income,Rental Income,Other Income
-10004,Freelance,Freelance,Other Income
-10005,Bonus,Bonus,Salary
-10006,Checks coupons,Checks & Coupons,Other Income
+10003,Rental income,Rental Income,Investment Returns
+10004,Freelance,Freelance,Income
+10005,Bonus,Bonus,Employment
+10006,Checks coupons,Other Income,Income
 10007,Gifts received,Gifts Received,Other Income
-10008,Refunds,Refunds,Other Income
-10009,Social benefits,Social Benefits,Other Income
-10010,Pocket money,Pocket Money,Other Income
+10008,Refunds,Refunds & Cashback,Other Income
+10009,Social benefits,Government Benefits,Other Income
+10010,Pocket money,Other Income,Income
 11000,Others,Others,
 11001,Missing,Missing,Others
 20001,TRANSFER,TRANSFER,

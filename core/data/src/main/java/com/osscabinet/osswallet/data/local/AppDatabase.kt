@@ -5,7 +5,6 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.BudgetDao
@@ -70,7 +69,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         AttachmentEntity::class,
         CreditCardDetailsEntity::class
     ],
-    version = 6,
+    version = 1,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -146,89 +145,6 @@ abstract class AppDatabase : RoomDatabase() {
             db.execSQL("INSERT INTO transactions_fts(docid, note, payee, name) SELECT id, note, payee, name FROM `transactions`")
         }
 
-        /** v1 -> v2: savings goals. */
-        val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `goals` (" +
-                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                        "`name` TEXT NOT NULL, " +
-                        "`targetAmount` TEXT NOT NULL, " +
-                        "`savedAmount` TEXT NOT NULL, " +
-                        "`currency` TEXT NOT NULL, " +
-                        "`deadline` INTEGER, " +
-                        "`note` TEXT NOT NULL, " +
-                        "`profileId` INTEGER NOT NULL, " +
-                        "`createdAt` INTEGER NOT NULL, " +
-                        "`completedAt` INTEGER)"
-                )
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_goals_profileId` ON `goals` (`profileId`)")
-            }
-        }
-
-        /** v2 -> v3: receipt attachments. */
-        val MIGRATION_2_3 = object : Migration(2, 3) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `attachments` (" +
-                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                        "`transactionId` INTEGER NOT NULL, " +
-                        "`profileId` INTEGER NOT NULL, " +
-                        "`fileName` TEXT NOT NULL, " +
-                        "`mimeType` TEXT NOT NULL, " +
-                        "`sizeBytes` INTEGER NOT NULL, " +
-                        "`createdAt` INTEGER NOT NULL)"
-                )
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_attachments_transactionId` ON `attachments` (`transactionId`)")
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_attachments_profileId` ON `attachments` (`profileId`)")
-            }
-        }
-
-        /** v3 -> v4: original file name, so non-image attachments can be told apart. */
-        val MIGRATION_3_4 = object : Migration(3, 4) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE `attachments` ADD COLUMN `displayName` TEXT NOT NULL DEFAULT ''")
-            }
-        }
-
-        /**
-         * v4 -> v5: saved filters belong to a profile. The filters that budgets and loans keep take their
-         * owner's profile; the rest (saved by the user) can't be told apart, so they stay with profile 1.
-         */
-        val MIGRATION_4_5 = object : Migration(4, 5) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE `transaction_filters` ADD COLUMN `profileId` INTEGER NOT NULL DEFAULT 1")
-                db.execSQL(
-                    "UPDATE `transaction_filters` SET `profileId` = " +
-                        "(SELECT `budgets`.`profileId` FROM `budgets` WHERE `budgets`.`filterId` = `transaction_filters`.`id` LIMIT 1) " +
-                        "WHERE EXISTS (SELECT 1 FROM `budgets` WHERE `budgets`.`filterId` = `transaction_filters`.`id`)"
-                )
-                db.execSQL(
-                    "UPDATE `transaction_filters` SET `profileId` = " +
-                        "(SELECT `loans`.`profileId` FROM `loans` WHERE `loans`.`filterId` = `transaction_filters`.`id` LIMIT 1) " +
-                        "WHERE EXISTS (SELECT 1 FROM `loans` WHERE `loans`.`filterId` = `transaction_filters`.`id`)"
-                )
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transaction_filters_profileId` ON `transaction_filters` (`profileId`)")
-            }
-        }
-
-        /** v5 -> v6: credit card details table for 1-to-1 extension of accounts. */
-        val MIGRATION_5_6 = object : Migration(5, 6) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `credit_card_details` (" +
-                        "`accountId` TEXT NOT NULL, " +
-                        "`creditLimit` TEXT NOT NULL, " +
-                        "`statementClosingDay` INTEGER, " +
-                        "`paymentDueDay` INTEGER, " +
-                        "`interestRateApr` REAL, " +
-                        "`minimumPaymentAmount` TEXT, " +
-                        "PRIMARY KEY(`accountId`), " +
-                        "FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)"
-                )
-            }
-        }
-
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -242,7 +158,6 @@ abstract class AppDatabase : RoomDatabase() {
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
                     .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

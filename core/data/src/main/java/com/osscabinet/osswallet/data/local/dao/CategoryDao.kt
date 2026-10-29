@@ -32,4 +32,7 @@ interface CategoryDao {
 
     @Query("SELECT * FROM categories WHERE parentId = :parentId")
     suspend fun getSubCategories(parentId: Long): List<CategoryEntity>
+
+    @Query("SELECT MAX(id) FROM categories")
+    suspend fun getMaxCategoryId(): Long?
 }

@@ -1,0 +1,16 @@
+OssWallet is a privacy-first, encrypted, and highly customizable personal finance manager.
+
+All data is stored locally in a SQLCipher-encrypted (256-bit AES) database — nothing leaves your device except optional, user-initiated exchange-rate lookups.
+
+Features:
+
+* End-to-end local encryption of all financial data
+* Multi-profile support to isolate separate sets of accounts and transactions
+* Planned payments with automated recurrence scheduling
+* Full-text search across transactions
+* Customizable dashboard with a card-based layout
+* Open in Web: an embedded local server to manage your data from a desktop browser on the same network
+* Budgets, loans, and account structures for cash, bank, and credit accounts
+* Currency conversion using live exchange rates (requires internet access; optional)
+
+OssWallet does not require a Google account, does not use any proprietary Google Play Services APIs in this build, and does not include ads or trackers.

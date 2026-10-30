@@ -91,7 +91,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.android.gms.location.LocationServices
+import com.osscabinet.ossWallet.location.LastLocationProvider
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonOSMMap
@@ -205,10 +205,7 @@ private fun fetchLastLocation(
     context: android.content.Context,
     onResult: (android.location.Location?) -> Unit
 ) {
-    LocationServices.getFusedLocationProviderClient(context)
-        .lastLocation
-        .addOnSuccessListener { onResult(it) }
-        .addOnFailureListener { onResult(null) }
+    LastLocationProvider.getLastLocation(context, onResult)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

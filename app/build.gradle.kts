@@ -59,6 +59,16 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            // Personal local signed builds: ENABLE_BUY_ME_A_COFFEE_RELEASE in local.properties
+            // overrides ENABLE_BUY_ME_A_COFFEE for release builds only, so you can turn the
+            // donation nudge off on your own signed build without changing the default
+            // (ENABLE_BUY_ME_A_COFFEE, still true) that debug and anyone else's build sees.
+            val enableBuyMeACoffeeRelease =
+                localProps.getProperty("ENABLE_BUY_ME_A_COFFEE_RELEASE")?.toBooleanStrictOrNull()
+            if (enableBuyMeACoffeeRelease != null) {
+                buildConfigField("boolean", "ENABLE_BUY_ME_A_COFFEE", "$enableBuyMeACoffeeRelease")
+            }
         }
     }
     compileOptions {

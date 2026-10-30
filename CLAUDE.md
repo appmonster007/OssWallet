@@ -43,6 +43,10 @@ BUY_ME_A_COFFEE_URL=https://buymeacoffee.com/your_page_name
 
 `BUY_ME_A_COFFEE_URL` is optional — it backs the periodic donation prompt (`BuildConfig.BUY_ME_A_COFFEE_URL`). Omitting it falls back to `https://buymeacoffee.com/osscabinet`; the build does not fail.
 
+`ENABLE_BUY_ME_A_COFFEE` is optional — set to `false` to compile out the donation popup and Settings > Support Us page entirely, for every build variant. Defaults to `true`.
+
+`ENABLE_BUY_ME_A_COFFEE_RELEASE` is optional and release-only — overrides `ENABLE_BUY_ME_A_COFFEE` for `release` builds specifically (e.g. your own locally-signed build), without touching the default debug/global behavior. Unset by default, so release follows `ENABLE_BUY_ME_A_COFFEE` like everything else.
+
 ## Key Versions
 
 - AGP: 9.2.1 · Kotlin: 2.2.10 · Compose BOM: 2026.04.01

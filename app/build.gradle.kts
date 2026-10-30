@@ -30,6 +30,18 @@ android {
         buildConfigField("String", "CURRENCY_API_KEY", "\"$currencyApiKey\"")
     }
 
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("full") {
+            dimension = "distribution"
+            buildConfigField("boolean", "ENABLE_GMS_FEATURES", "true")
+        }
+        create("fdroid") {
+            dimension = "distribution"
+            buildConfigField("boolean", "ENABLE_GMS_FEATURES", "false")
+        }
+    }
+
     packaging {
         jniLibs {
             useLegacyPackaging = false
@@ -86,14 +98,13 @@ dependencies {
     implementation(libs.kotlinx.collections.immutable)
     implementation(libs.kotlinx.datetime)
     implementation(libs.accompanist.permissions)
-    implementation(libs.play.services.location)
+    "fullImplementation"(libs.play.services.location)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.core)
     implementation(libs.material)
     implementation(libs.androidx.biometric)
-    implementation(libs.play.services.mlkit.text.recognition)
     implementation(libs.vico.compose)
     implementation(libs.vico.compose.m3)
     implementation(libs.vico.core)

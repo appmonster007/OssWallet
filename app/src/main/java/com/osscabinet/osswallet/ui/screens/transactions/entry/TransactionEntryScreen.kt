@@ -17,9 +17,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.android.gms.location.LocationServices
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
+import com.osscabinet.ossWallet.location.LastLocationProvider
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionFormBody
@@ -174,7 +174,6 @@ private fun LocationAutoFiller(
 ) {
     val context = LocalContext.current
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
-    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     var hasAttempted by remember { mutableStateOf(false) }
 
     LaunchedEffect(locationPermissionState.status.isGranted) {
@@ -182,7 +181,7 @@ private fun LocationAutoFiller(
             if (locationPermissionState.status.isGranted) {
                 hasAttempted = true
                 try {
-                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    LastLocationProvider.getLastLocation(context) { location ->
                         location?.let {
                             onLocationDetected("${it.latitude},${it.longitude}")
                         }

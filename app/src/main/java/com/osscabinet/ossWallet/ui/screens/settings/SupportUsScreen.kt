@@ -200,18 +200,12 @@ private fun MembershipTierRow(tier: SupportTier, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                tier.label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = AppColors.contentPrimary
-            )
-            Text(
-                "Exclusive posts and messages",
-                style = AppTextStyles.metaLabel,
-                color = AppColors.contentSecondary
-            )
-        }
+        Text(
+            tier.label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = AppColors.contentPrimary,
+            modifier = Modifier.weight(1f)
+        )
         Text(
             tier.priceLine,
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),

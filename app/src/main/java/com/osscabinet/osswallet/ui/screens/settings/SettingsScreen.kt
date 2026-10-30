@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
+import com.osscabinet.ossWallet.BuildConfig
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -223,17 +224,19 @@ fun SettingsScreen(
                         }
 
                         // ── SUPPORT ──────────────────────────────────────────
-                        AeonSettingsSection(
-                            title = "SUPPORT",
-                            accentBar = AppColors.accent
-                        ) {
-                            SettingsNavigationItem(
-                                title = "Support Us",
-                                subtitle = "BUY ME A COFFEE • MEMBERSHIP TIERS",
-                                icon = Icons.Rounded.Coffee,
-                                iconTint = AppColors.accent,
-                                onClick = actions.onSupportUsClick
-                            )
+                        if (BuildConfig.ENABLE_BUY_ME_A_COFFEE) {
+                            AeonSettingsSection(
+                                title = "SUPPORT",
+                                accentBar = AppColors.accent
+                            ) {
+                                SettingsNavigationItem(
+                                    title = "Support Us",
+                                    subtitle = "BUY ME A COFFEE • MEMBERSHIP TIERS",
+                                    icon = Icons.Rounded.Coffee,
+                                    iconTint = AppColors.accent,
+                                    onClick = actions.onSupportUsClick
+                                )
+                            }
                         }
 
                         SettingsFooter(attribution = providerAttribution)

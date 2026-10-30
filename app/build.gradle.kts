@@ -44,6 +44,12 @@ android {
 
         val buyMeACoffeeUrl = localProps.getProperty("BUY_ME_A_COFFEE_URL") ?: "https://buymeacoffee.com/osscabinet"
         buildConfigField("String", "BUY_ME_A_COFFEE_URL", "\"$buyMeACoffeeUrl\"")
+
+        // Compile-time switch for the Buy Me a Coffee nudge popup and Settings > Support Us
+        // page — forks/custom builds can set ENABLE_BUY_ME_A_COFFEE=false in local.properties
+        // to build with both entirely absent, rather than toggling it at runtime.
+        val enableBuyMeACoffee = localProps.getProperty("ENABLE_BUY_ME_A_COFFEE")?.toBooleanStrictOrNull() ?: true
+        buildConfigField("boolean", "ENABLE_BUY_ME_A_COFFEE", "$enableBuyMeACoffee")
     }
 
     flavorDimensions += "distribution"

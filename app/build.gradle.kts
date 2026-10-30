@@ -41,6 +41,9 @@ android {
 
         val currencyApiKey = localProps.getProperty("CURRENCY_API_KEY") ?: ""
         buildConfigField("String", "CURRENCY_API_KEY", "\"$currencyApiKey\"")
+
+        val buyMeACoffeeUrl = localProps.getProperty("BUY_ME_A_COFFEE_URL") ?: "https://buymeacoffee.com/osscabinet"
+        buildConfigField("String", "BUY_ME_A_COFFEE_URL", "\"$buyMeACoffeeUrl\"")
     }
 
     flavorDimensions += "distribution"

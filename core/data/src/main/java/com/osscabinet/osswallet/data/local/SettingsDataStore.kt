@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -62,6 +63,7 @@ class SettingsDataStore(private val context: Context) {
         val UI_DENSITY_KEY = stringPreferencesKey("ui_density")
         val CARD_LIST_EDGE_SPACING_KEY = intPreferencesKey("card_list_edge_spacing")
         val CARD_LIST_GAP_KEY = intPreferencesKey("card_list_gap")
+        val BUY_ME_A_COFFEE_PROMPT_LAST_SHOWN_WINDOW_KEY = longPreferencesKey("buy_me_a_coffee_prompt_last_shown_window")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -454,6 +456,14 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun saveCardListGap(dp: Int) {
         context.dataStore.edit { it[CARD_LIST_GAP_KEY] = dp }
+    }
+
+    val buyMeACoffeePromptLastShownWindow: Flow<Long> = context.dataStore.data.map { preferences ->
+        preferences[BUY_ME_A_COFFEE_PROMPT_LAST_SHOWN_WINDOW_KEY] ?: -1L
+    }
+
+    suspend fun saveBuyMeACoffeePromptLastShownWindow(epochDay: Long) {
+        context.dataStore.edit { it[BUY_ME_A_COFFEE_PROMPT_LAST_SHOWN_WINDOW_KEY] = epochDay }
     }
 
     suspend fun clearAll() {

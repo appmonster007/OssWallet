@@ -41,6 +41,7 @@ interface SettingsRepository {
     val uiDensity: Flow<String>
     val cardListEdgeSpacing: Flow<Int>
     val cardListGap: Flow<Int>
+    val buyMeACoffeePromptLastShownWindow: Flow<Long>
 
     suspend fun saveCurrency(currency: String)
     suspend fun saveTheme(theme: String)
@@ -78,4 +79,5 @@ interface SettingsRepository {
     suspend fun saveUiDensity(name: String)
     suspend fun saveCardListEdgeSpacing(dp: Int)
     suspend fun saveCardListGap(dp: Int)
+    suspend fun saveBuyMeACoffeePromptLastShownWindow(epochDay: Long)
 }

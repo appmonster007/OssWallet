@@ -36,9 +36,12 @@ Create `local.properties` with:
 ```
 sdk.dir=/path/to/Android/sdk
 CURRENCY_API_KEY=your_api_key_here
+BUY_ME_A_COFFEE_URL=https://buymeacoffee.com/your_page_name
 ```
 
 `CURRENCY_API_KEY` is required for currency exchange rate fetching. The build will fail without it.
+
+`BUY_ME_A_COFFEE_URL` is optional — it backs the periodic donation prompt (`BuildConfig.BUY_ME_A_COFFEE_URL`). Omitting it falls back to `https://buymeacoffee.com/osscabinet`; the build does not fail.
 
 ## Key Versions
 

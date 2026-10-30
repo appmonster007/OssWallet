@@ -82,6 +82,9 @@ class FakeSettingsRepository(
     override val glassSettings: Flow<GlassSettings> = flowOf(GlassSettings())
     override val autoBackupConfig: Flow<AutoBackupConfig> = flowOf(AutoBackupConfig())
     override val uiDensity: Flow<String> = flowOf("default")
+    override val cardListEdgeSpacing: Flow<Int> = flowOf(14)
+    override val cardListGap: Flow<Int> = flowOf(12)
+    override val buyMeACoffeePromptLastShownWindow: Flow<Long> = flowOf(-1L)
 
     override suspend fun saveCurrency(currency: String) { currencyFlow.value = currency }
     override suspend fun saveTheme(theme: String) {}
@@ -117,6 +120,9 @@ class FakeSettingsRepository(
     override suspend fun updateGlassSettings(update: (GlassSettings) -> GlassSettings) {}
     override suspend fun saveAutoBackupConfig(config: AutoBackupConfig) {}
     override suspend fun saveUiDensity(name: String) {}
+    override suspend fun saveCardListEdgeSpacing(dp: Int) {}
+    override suspend fun saveCardListGap(dp: Int) {}
+    override suspend fun saveBuyMeACoffeePromptLastShownWindow(epochDay: Long) {}
 }
 
 // ── FakeComputationRepository ───────────────────────────────────────────────

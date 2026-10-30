@@ -222,7 +222,7 @@ private fun MembershipTierRow(tier: SupportTier, onClick: () -> Unit) {
 
 @Preview(showBackground = true)
 @Composable
-private fun SupportUsScreenPreview() {
+fun SupportUsScreenPreview() {
     OssWalletTheme {
         SupportUsScreen(onBackClick = {})
     }

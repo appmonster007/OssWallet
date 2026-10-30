@@ -80,7 +80,7 @@ fun BuyMeACoffeeSupportDialog(
 
 @Preview(showBackground = true)
 @Composable
-private fun BuyMeACoffeeSupportDialogPreview() {
+fun BuyMeACoffeeSupportDialogPreview() {
     OssWalletTheme {
         BuyMeACoffeeSupportDialog(show = true, onDismiss = {})
     }

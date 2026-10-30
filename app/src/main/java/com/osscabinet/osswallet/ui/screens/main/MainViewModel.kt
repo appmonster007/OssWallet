@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.main
 
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.BuildConfig
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.model.Template
@@ -14,6 +15,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -50,12 +52,16 @@ class MainViewModel @Inject constructor(
         .flatMapLatest { profileId -> templateRepository.getStarredTemplates(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val showBuyMeACoffeePrompt: StateFlow<Boolean> = combine(
-        settingsRepository.isOnboardingCompleted,
-        settingsRepository.buyMeACoffeePromptLastShownWindow
-    ) { onboardingCompleted, lastShownWindow ->
-        onboardingCompleted && BuyMeACoffeePromptScheduler.shouldShowPrompt(LocalDate.now(), lastShownWindow)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val showBuyMeACoffeePrompt: StateFlow<Boolean> = if (!BuildConfig.ENABLE_BUY_ME_A_COFFEE) {
+        MutableStateFlow(false)
+    } else {
+        combine(
+            settingsRepository.isOnboardingCompleted,
+            settingsRepository.buyMeACoffeePromptLastShownWindow
+        ) { onboardingCompleted, lastShownWindow ->
+            onboardingCompleted && BuyMeACoffeePromptScheduler.shouldShowPrompt(LocalDate.now(), lastShownWindow)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    }
 
     fun onBuyMeACoffeePromptDismissed() {
         viewModelScope.launch {

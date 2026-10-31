@@ -247,7 +247,14 @@ class SettingsViewModel @Inject constructor(
     }
 
     private suspend fun refreshRecentBackups() {
-        val config = autoBackupConfig.value
+        // autoBackupConfig is WhileSubscribed(5000): until the screen actually collects it, its
+        // .value is still the AutoBackupConfig() seed (customFolderUri = null), which would
+        // silently drop the custom-folder backups from the list. Read the persisted config
+        // directly instead of relying on that lazily-started StateFlow.
+        refreshRecentBackups(settingsRepository.autoBackupConfig.first())
+    }
+
+    private suspend fun refreshRecentBackups(config: AutoBackupConfig) {
         val customFolder = config.customFolderUri?.takeIf {
             config.storageMode != AutoBackupConfig.StorageMode.PRIVATE
         }
@@ -258,7 +265,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.saveAutoBackupConfig(config)
             backupScheduler.schedule(config)
-            refreshRecentBackups()
+            refreshRecentBackups(config)
         }
     }
 

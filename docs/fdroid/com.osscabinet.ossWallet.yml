@@ -13,7 +13,7 @@ Repo: https://github.com/appmonster007/OssWallet.git
 Builds:
   - versionName: '1.0'
     versionCode: 1
-    commit: 7cff1176c41ad1cf1007904980838956ed732eae
+    commit: 8b89d6f36aecd983c652f7e1c75dafbfbe0bbc1c
     subdir: app
     gradle:
       - fdroid

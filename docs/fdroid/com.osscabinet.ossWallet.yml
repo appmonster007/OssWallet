@@ -1,14 +1,3 @@
-# Draft F-Droid recipe for OssWallet.
-#
-# This file is NOT consumed by this repo's build — it's the recipe submitted
-# as metadata/com.osscabinet.ossWallet.yml in a fork of
-# https://gitlab.com/fdroid/fdroiddata (F-Droid builds and signs the APK
-# itself from this recipe; nothing here is built locally).
-#
-# Validated locally with:
-#   fdroid build -v -t -f com.osscabinet.ossWallet:1
-# against the v1.0.0 tag.
-
 Categories:
   - Finance Manager
 License: AGPL-3.0-only

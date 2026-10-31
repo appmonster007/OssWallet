@@ -1,14 +1,13 @@
 # Draft F-Droid recipe for OssWallet.
 #
-# This file is NOT consumed by this repo's build — it's a draft of the recipe
-# that must eventually be submitted as metadata/com.osscabinet.ossWallet.yml
-# in a fork of https://gitlab.com/fdroiddata/fdroiddata (F-Droid builds and
-# signs the APK itself from this recipe; nothing here is built locally).
+# This file is NOT consumed by this repo's build — it's the recipe submitted
+# as metadata/com.osscabinet.ossWallet.yml in a fork of
+# https://gitlab.com/fdroid/fdroiddata (F-Droid builds and signs the APK
+# itself from this recipe; nothing here is built locally).
 #
-# Before submitting: pin a real commit/tag in CurrentVersionCode's Builds
-# entry, replace YYYY placeholders, and validate with:
-#   fdroid build -v -l com.osscabinet.ossWallet
-# from a checkout of fdroiddata with this file added.
+# Validated locally with:
+#   fdroid build -v -t -f com.osscabinet.ossWallet:1
+# against the v1.0.0 tag.
 
 Categories:
   - Finance Manager
@@ -29,7 +28,7 @@ Repo: https://github.com/appmonster007/OssWallet.git
 Builds:
   - versionName: '1.0'
     versionCode: 1
-    commit: v1.0  # TODO: pin to the actual release tag/commit once cut
+    commit: v1.0.0
     subdir: app
     gradle:
       - fdroid

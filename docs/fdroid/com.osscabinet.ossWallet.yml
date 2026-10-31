@@ -1,11 +1,11 @@
 Categories:
   - Finance Manager
 License: AGPL-3.0-only
+AuthorName: appmonster007
 SourceCode: https://github.com/appmonster007/OssWallet
 IssueTracker: https://github.com/appmonster007/OssWallet/issues
 
 AutoName: OssWallet
-AuthorName: appmonster007
 
 RepoType: git
 Repo: https://github.com/appmonster007/OssWallet.git

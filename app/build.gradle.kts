@@ -17,6 +17,15 @@ ksp {
     arg("appfunctions:aggregateAppFunctions", "true")
 }
 
+val releaseStoreFile = localProps.getProperty("RELEASE_STORE_FILE")
+val releaseStorePassword = localProps.getProperty("RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = localProps.getProperty("RELEASE_KEY_ALIAS")
+val releaseKeyPassword = localProps.getProperty("RELEASE_KEY_PASSWORD")
+val hasReleaseSigningConfig = !releaseStoreFile.isNullOrBlank() &&
+    !releaseStorePassword.isNullOrBlank() &&
+    !releaseKeyAlias.isNullOrBlank() &&
+    !releaseKeyPassword.isNullOrBlank()
+
 android {
     namespace = "com.osscabinet.ossWallet"
     compileSdk = 37
@@ -52,6 +61,17 @@ android {
         }
     }
 
+    signingConfigs {
+        if (hasReleaseSigningConfig) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         debug {
             buildConfigField("boolean", "ENABLE_SEEDING", "true")
@@ -62,6 +82,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (hasReleaseSigningConfig) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {

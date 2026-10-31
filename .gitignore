@@ -29,6 +29,7 @@ output-metadata.json
 # Keystores & Secrets
 *.jks
 *.keystore
+keystore/
 google-services.json
 
 # Profiling

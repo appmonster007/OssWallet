@@ -49,6 +49,10 @@ class BackupRepositoryPruneTest {
             plannedPaymentOccurrenceDao = db.plannedPaymentOccurrenceDao(),
             filterDao = db.filterDao(),
             currencyDao = db.currencyDao(),
+            goalDao = db.goalDao(),
+            attachmentDao = db.attachmentDao(),
+            attachmentStore = com.osscabinet.ossWallet.data.local.AttachmentStore(context),
+            backupKeyVault = com.osscabinet.ossWallet.data.local.BackupKeyVault(context),
             database = db,
             settingsDataStore = settingsDataStore,
             dispatcherProvider = com.osscabinet.ossWallet.core.util.RealDispatcherProvider(),
@@ -77,23 +81,23 @@ class BackupRepositoryPruneTest {
     }
 
     @Test
-    fun listPrivateBackups_returnsFiles() = runBlocking {
+    fun listBackups_returnsFiles() = runBlocking {
         createFakeZip("backup_100_all.zip", lastModifiedOffset = 0)
         createFakeZip("backup_200_all.zip", lastModifiedOffset = 1000)
         createFakeZip("backup_300_all.zip", lastModifiedOffset = 2000)
 
-        val result = repository.listPrivateBackups()
+        val result = repository.listBackups()
 
         assertEquals(3, result.size)
     }
 
     @Test
-    fun listPrivateBackups_returnsSortedByDateDescending() = runBlocking {
+    fun listBackups_returnsSortedByDateDescending() = runBlocking {
         val oldest = createFakeZip("osswallet_backup_100_all.zip", lastModifiedOffset = 0)
         val middle = createFakeZip("osswallet_backup_200_all.zip", lastModifiedOffset = 1000)
         val newest = createFakeZip("osswallet_backup_300_all.zip", lastModifiedOffset = 2000)
 
-        val result = repository.listPrivateBackups()
+        val result = repository.listBackups()
 
         assertEquals(newest.name, result[0].id)
         assertEquals(middle.name, result[1].id)
@@ -101,29 +105,29 @@ class BackupRepositoryPruneTest {
     }
 
     @Test
-    fun listPrivateBackups_emptyWhenNoDirExists() = runBlocking {
+    fun listBackups_emptyWhenNoDirExists() = runBlocking {
         backupsDir.deleteRecursively()
 
-        val result = repository.listPrivateBackups()
+        val result = repository.listBackups()
 
         assertTrue(result.isEmpty())
     }
 
     @Test
-    fun listPrivateBackups_scopeDetection_singleProfile() = runBlocking {
+    fun listBackups_scopeDetection_singleProfile() = runBlocking {
         createFakeZip("osswallet_backup_100_profile.zip", lastModifiedOffset = 0)
 
-        val result = repository.listPrivateBackups()
+        val result = repository.listBackups()
 
         assertEquals(1, result.size)
         assertEquals(BackupScope.SINGLE_PROFILE, result[0].scope)
     }
 
     @Test
-    fun listPrivateBackups_scopeDetection_allProfiles() = runBlocking {
+    fun listBackups_scopeDetection_allProfiles() = runBlocking {
         createFakeZip("osswallet_backup_100_all.zip", lastModifiedOffset = 0)
 
-        val result = repository.listPrivateBackups()
+        val result = repository.listBackups()
 
         assertEquals(1, result.size)
         assertEquals(BackupScope.ALL_PROFILES, result[0].scope)
@@ -133,8 +137,9 @@ class BackupRepositoryPruneTest {
     fun deleteBackup_removesFile() = runBlocking {
         val file = createFakeZip("osswallet_backup_to_delete_all.zip")
         assertTrue("File should exist before deletion", file.exists())
+        val meta = repository.listBackups().first { it.id == file.name }
 
-        val result = repository.deleteBackup(file.name)
+        val result = repository.deleteBackup(meta)
 
         assertTrue(result.isSuccess)
         assertFalse("File should be gone after deletion", file.exists())
@@ -142,7 +147,15 @@ class BackupRepositoryPruneTest {
 
     @Test
     fun deleteBackup_nonExistentFile_succeeds() = runBlocking {
-        val result = repository.deleteBackup("nonexistent_backup.zip")
+        val meta = com.osscabinet.ossWallet.domain.repository.BackupMeta(
+            id = "nonexistent_backup.zip",
+            uriString = "file:///nonexistent_backup.zip",
+            location = com.osscabinet.ossWallet.domain.repository.BackupLocation.PRIVATE,
+            createdAt = 0L,
+            sizeBytes = 0L,
+            scope = BackupScope.ALL_PROFILES
+        )
+        val result = repository.deleteBackup(meta)
         assertTrue(result.isSuccess)
     }
 
@@ -155,7 +168,7 @@ class BackupRepositoryPruneTest {
 
         repository.pruneOldBackups(maxRetained = 3)
 
-        val remaining = repository.listPrivateBackups()
+        val remaining = repository.listBackups()
         assertEquals(3, remaining.size)
     }
 
@@ -167,7 +180,7 @@ class BackupRepositoryPruneTest {
 
         repository.pruneOldBackups(maxRetained = 2)
 
-        val remaining = repository.listPrivateBackups()
+        val remaining = repository.listBackups()
         // The newest two should be retained (highest lastModified)
         assertEquals(2, remaining.size)
         assertTrue(remaining[0].id.contains("5000"))
@@ -181,7 +194,7 @@ class BackupRepositoryPruneTest {
 
         repository.pruneOldBackups(maxRetained = 5)
 
-        val remaining = repository.listPrivateBackups()
+        val remaining = repository.listBackups()
         assertEquals(2, remaining.size)
     }
 }

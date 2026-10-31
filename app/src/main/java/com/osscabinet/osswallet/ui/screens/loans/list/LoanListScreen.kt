@@ -126,12 +126,13 @@ fun LoanListScreen(
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(
-                                start = AeonTheme.dimensions.screenPadding,
-                                end = AeonTheme.dimensions.screenPadding,
+                                start = AeonTheme.dimensions.cardListEdgeSpacing,
+                                end = AeonTheme.dimensions.cardListEdgeSpacing,
                                 top = AeonSize.D64.value + AeonTheme.dimensions.screenPadding + 48.dp, // approx status bar
                                 bottom = innerPadding.calculateBottomPadding() + scrollBottomPadding()
                             ),
-                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
+                            // Matches AeonCardList's default card-to-card gap (Dashboard/Analytics)
+                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.cardListGap)
                         ) {
                             if (active.isNotEmpty()) {
                                 item {

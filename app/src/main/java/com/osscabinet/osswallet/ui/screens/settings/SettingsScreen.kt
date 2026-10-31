@@ -18,6 +18,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Assessment
+import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.CurrencyExchange
@@ -140,6 +143,14 @@ fun SettingsScreen(
                                 iconTint = AppColors.positive,
                                 onClick = actions.onTagsClick
                             )
+                            SettingsDivider()
+                            SettingsNavigationItem(
+                                title = "Goals",
+                                subtitle = "SAVINGS TARGETS • PROGRESS",
+                                icon = Icons.Rounded.Flag,
+                                iconTint = AppColors.positive,
+                                onClick = actions.onGoalsClick
+                            )
                         }
 
                         // ── AUTOMATION & TOOLS ──────────────────────────────
@@ -170,6 +181,14 @@ fun SettingsScreen(
                                 iconTint = AppColors.accent.copy(alpha = 0.7f),
                                 onClick = actions.onFiltersClick
                             )
+                            SettingsDivider()
+                            SettingsNavigationItem(
+                                title = "Reports",
+                                subtitle = "PDF • CSV • TAXES & SHARING",
+                                icon = Icons.Rounded.Assessment,
+                                iconTint = AppColors.accent.copy(alpha = 0.7f),
+                                onClick = actions.onReportsClick
+                            )
                         }
 
                         // ── PRIVACY & SAFETY ────────────────────────────────
@@ -177,6 +196,14 @@ fun SettingsScreen(
                             title = "PRIVACY & SAFETY",
                             accentBar = AppColors.negative
                         ) {
+                            SettingsNavigationItem(
+                                title = "Notifications",
+                                subtitle = "DUE DATES • BUDGET ALERTS",
+                                icon = Icons.Rounded.Notifications,
+                                iconTint = AppColors.negative,
+                                onClick = actions.onNotificationsClick
+                            )
+                            SettingsDivider()
                             SettingsNavigationItem(
                                 title = "Security & Privacy",
                                 subtitle = "APP LOCK • LOCATION • WEB ACCESS",
@@ -266,9 +293,12 @@ data class SettingsActions(
     val onAccountsClick: () -> Unit,
     val onCategoriesClick: () -> Unit,
     val onTagsClick: () -> Unit,
+    val onGoalsClick: () -> Unit,
+    val onReportsClick: () -> Unit,
     val onTemplatesClick: () -> Unit,
     val onSmartSuggestionsClick: () -> Unit,
     val onFiltersClick: () -> Unit,
+    val onNotificationsClick: () -> Unit,
     val onSecurityClick: () -> Unit,
     val onDataManagementClick: () -> Unit,
     val onBackClick: () -> Unit

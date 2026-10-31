@@ -618,20 +618,29 @@ fun AccountDetailScreen(
                             AeonTopBarActionPill {
                                 when (pagerState.currentPage) {
                                     0 -> {
-                                        AppBarIconButton(
-                                            icon = Icons.Rounded.Edit,
-                                            onClick = { navigate { actions.onEditAccountClick(config.accountId) } })
-                                        AppBarIconButton(
-                                            icon = Icons.Rounded.Settings,
-                                            onClick = { showSettingsDialog = true })
                                         if (cardReorderState.isReordering) {
                                             AppBarIconButton(
                                                 icon = Icons.Rounded.Check,
-                                                onClick = { cardReorderState.confirm() })
+                                                onClick = { cardReorderState.confirm() }
+                                            )
+                                            AppBarIconButton(
+                                                icon = Icons.Rounded.Add,
+                                                onClick = { showAddCardDialog = true }
+                                            )
+                                        } else {
+                                            AppBarIconButton(
+                                                icon = Icons.Rounded.Edit,
+                                                onClick = { navigate { actions.onEditAccountClick(config.accountId) } }
+                                            )
+                                            AppBarIconButton(
+                                                icon = Icons.Rounded.Settings,
+                                                onClick = { showSettingsDialog = true }
+                                            )
+                                            AppBarIconButton(
+                                                icon = Icons.Rounded.Add,
+                                                onClick = { showAddCardDialog = true }
+                                            )
                                         }
-                                        AppBarIconButton(
-                                            icon = Icons.Rounded.Add,
-                                            onClick = { showAddCardDialog = true })
                                     }
 
                                     1 -> {

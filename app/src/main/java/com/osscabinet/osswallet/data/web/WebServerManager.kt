@@ -4,6 +4,8 @@ import android.content.Context
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.model.web.WebServerState
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.AttachmentProcessor
+import com.osscabinet.ossWallet.domain.repository.AttachmentRepository
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
@@ -17,6 +19,7 @@ import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.repository.WebServerRepository
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.service.security.AppLockGate
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -69,7 +72,10 @@ class WebServerManager @Inject constructor(
     private val templateRepository: TemplateRepository,
     private val transactionManager: TransactionManager,
     private val transactionUseCases: TransactionUseCases,
-    private val accountUseCases: AccountUseCases
+    private val accountUseCases: AccountUseCases,
+    private val appLockGate: AppLockGate,
+    private val attachmentRepository: AttachmentRepository,
+    private val attachmentProcessor: AttachmentProcessor
 ) : WebServerRepository {
 
     private val _serverState = MutableStateFlow<WebServerState>(WebServerState.Stopped)
@@ -133,7 +139,10 @@ class WebServerManager @Inject constructor(
             templateRepository = templateRepository,
             transactionManager = transactionManager,
             transactionUseCases = transactionUseCases,
-            accountUseCases = accountUseCases
+            accountUseCases = accountUseCases,
+            appLockGate = appLockGate,
+            attachmentRepository = attachmentRepository,
+            attachmentProcessor = attachmentProcessor
         )
 
         try {
@@ -157,7 +166,7 @@ class WebServerManager @Inject constructor(
                 install(DefaultHeaders) {
                     header(
                         "Content-Security-Policy",
-                        "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
+                        "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
                     )
                     header("X-Content-Type-Options", "nosniff")
                     header("X-Frame-Options", "DENY")

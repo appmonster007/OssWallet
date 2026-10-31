@@ -5,15 +5,18 @@
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <exclude domain="file" path="attachments/" />
+        <!-- Backups already carry a full, self-contained copy of the data; folding them into the
+             OS's own backup would duplicate it outside this feature's own encryption/retention
+             controls, and an unencrypted backup would otherwise leave the device in the clear. -->
+        <exclude domain="file" path="backups/" />
+        <!-- Wrapped backup-encryption key; the Keystore key wrapping it never leaves this device,
+             so the entry is useless elsewhere, but it is excluded anyway. -->
+        <exclude domain="file" path="datastore/backup_vault.preferences_pb" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <exclude domain="file" path="attachments/" />
+        <exclude domain="file" path="backups/" />
+        <exclude domain="file" path="datastore/backup_vault.preferences_pb" />
     </device-transfer>
-    -->
 </data-extraction-rules>

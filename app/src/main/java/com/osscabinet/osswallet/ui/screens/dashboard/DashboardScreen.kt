@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,6 +50,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Surface
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonSnackbarHost
@@ -75,6 +78,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.card.CardComputeState
 import com.osscabinet.ossWallet.domain.card.CardInput
@@ -120,6 +124,7 @@ import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterPillController
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.cards.GoalActions
 import com.osscabinet.ossWallet.ui.components.cards.LoanActions
 import com.osscabinet.ossWallet.ui.components.cards.LocalEditingCardId
 import com.osscabinet.ossWallet.ui.components.cards.LocalFilterPillController
@@ -183,6 +188,8 @@ data class DashboardActions(
     val onNavigateToPlannedPaymentList: () -> Unit = {},
     val onNavigateToBudgetList: () -> Unit = {},
     val onNavigateToLoanList: () -> Unit = {},
+    val onNavigateToGoalList: () -> Unit = {},
+    val onNavigateToSmartSuggestions: () -> Unit = {},
     val onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
     val onNavigateToBudgetDetail: (Long) -> Unit = {},
     val onNavigateToLoanDetail: (Long) -> Unit = {},
@@ -230,6 +237,8 @@ fun DashboardScreen(
 
     val dashboardUiState by dashboardViewModel.uiState.collectAsStateWithLifecycle()
     val cardsConfig by dashboardViewModel.cardsConfig.collectAsStateWithLifecycle()
+    val recurringNudgeViewModel: RecurringNudgeViewModel = hiltViewModel()
+    val unseenRecurringPatterns by recurringNudgeViewModel.unseen.collectAsStateWithLifecycle()
 
     val successState = dashboardUiState as? DashboardUiState.Success
 
@@ -240,6 +249,7 @@ fun DashboardScreen(
 
     DashboardScreenLayout(
         isTopLevel = isTopLevel,
+        hasUnseenSmartSuggestions = unseenRecurringPatterns.isNotEmpty(),
         initialViewContext = successState?.initialViewContext ?: DashboardViewContext.None,
         uiState = dashboardUiState,
         cardsConfig = cardsConfig,
@@ -359,6 +369,8 @@ fun DashboardScreenLayout(
     currentProfileName: String?,
     cardAnimationEnabled: Boolean,
     expandableFabEnabled: Boolean,
+    hasUnseenSmartSuggestions: Boolean = false,
+    isInitialReordering: Boolean = false,
     allTemplates: List<Template>,
     allCategories: List<Category>,
     lastUndoAction: UndoAction?,
@@ -415,7 +427,7 @@ fun DashboardScreenLayout(
     var isFabExpanded by remember { mutableStateOf(false) }
     var showQuickAddSheet by remember { mutableStateOf(false) }
     var editingCardId by remember { mutableStateOf<String?>(null) }
-    val cardReorderState = rememberAeonCardReorderState()
+    val cardReorderState = rememberAeonCardReorderState(initialIsReordering = isInitialReordering)
 
     BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
     BackHandler(enabled = showSettingsDialog) { showSettingsDialog = false }
@@ -640,6 +652,8 @@ fun DashboardScreenLayout(
                                 onNavigateToPlannedPaymentList = { navigate(actions.onNavigateToPlannedPaymentList) },
                                 onNavigateToBudgetList = { navigate(actions.onNavigateToBudgetList) },
                                 onNavigateToLoanList = { navigate(actions.onNavigateToLoanList) },
+                                onNavigateToGoalList = { navigate(actions.onNavigateToGoalList) },
+                                onNavigateToSmartSuggestions = { navigate(actions.onNavigateToSmartSuggestions) },
                                 onNavigateToPlannedPaymentDetail = { id ->
                                     navigate {
                                         actions.onNavigateToPlannedPaymentDetail(
@@ -771,15 +785,30 @@ fun DashboardScreenLayout(
                                                 icon = Icons.Default.Check,
                                                 onClick = { cardReorderState.confirm() }
                                             )
+                                            AppBarIconButton(
+                                                icon = Icons.Default.Add,
+                                                onClick = { showAddCardDialog = true }
+                                            )
+                                        } else {
+                                            if (hasUnseenSmartSuggestions) {
+                                                BadgedBox(
+                                                    badge = { Badge() }
+                                                ) {
+                                                    AppBarIconButton(
+                                                        icon = Icons.Rounded.AutoAwesome,
+                                                        onClick = { navigate(actions.onNavigateToSmartSuggestions) }
+                                                    )
+                                                }
+                                            }
+                                            AppBarIconButton(
+                                                icon = Icons.Default.Settings,
+                                                onClick = { showSettingsDialog = true }
+                                            )
+                                            AppBarIconButton(
+                                                icon = Icons.Default.Add,
+                                                onClick = { showAddCardDialog = true }
+                                            )
                                         }
-                                        AppBarIconButton(
-                                            icon = Icons.Default.Settings,
-                                            onClick = { showSettingsDialog = true }
-                                        )
-                                        AppBarIconButton(
-                                            icon = Icons.Default.Add,
-                                            onClick = { showAddCardDialog = true }
-                                        )
                                     }
 
                                     1 -> AppBarIconButton(
@@ -884,6 +913,8 @@ fun DashboardContent(
     onNavigateToPlannedPaymentList: () -> Unit = {},
     onNavigateToBudgetList: () -> Unit = {},
     onNavigateToLoanList: () -> Unit = {},
+    onNavigateToGoalList: () -> Unit = {},
+    onNavigateToSmartSuggestions: () -> Unit = {},
     onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
     onNavigateToBudgetDetail: (Long) -> Unit = {},
     onNavigateToLoanDetail: (Long) -> Unit = {},
@@ -946,6 +977,8 @@ fun DashboardContent(
                         onNavigateToPlannedPaymentList = onNavigateToPlannedPaymentList,
                         onNavigateToBudgetList = onNavigateToBudgetList,
                         onNavigateToLoanList = onNavigateToLoanList,
+                        onNavigateToGoalList = onNavigateToGoalList,
+                        onNavigateToSmartSuggestions = onNavigateToSmartSuggestions,
                         onNavigateToPlannedPaymentDetail = onNavigateToPlannedPaymentDetail,
                         onNavigateToBudgetDetail = onNavigateToBudgetDetail,
                         onNavigateToLoanDetail = onNavigateToLoanDetail,
@@ -1058,6 +1091,8 @@ fun DashboardGlanceTab(
     onNavigateToPlannedPaymentList: () -> Unit = {},
     onNavigateToBudgetList: () -> Unit = {},
     onNavigateToLoanList: () -> Unit = {},
+    onNavigateToGoalList: () -> Unit = {},
+    onNavigateToSmartSuggestions: () -> Unit = {},
     onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
     onNavigateToBudgetDetail: (Long) -> Unit = {},
     onNavigateToLoanDetail: (Long) -> Unit = {},
@@ -1097,6 +1132,7 @@ fun DashboardGlanceTab(
         val onBudgetListRef by rememberUpdatedState(onNavigateToBudgetList)
         val onLoanDetailRef by rememberUpdatedState(onNavigateToLoanDetail)
         val onLoanListRef by rememberUpdatedState(onNavigateToLoanList)
+        val onGoalListRef by rememberUpdatedState(onNavigateToGoalList)
         val onEditTxRef by rememberUpdatedState(onEditTransactionClick)
         val onJumpTxRef by rememberUpdatedState(onJumpTransaction)
         val onPerformJumpRef by rememberUpdatedState(onPerformJump)
@@ -1128,6 +1164,10 @@ fun DashboardGlanceTab(
                 loanActions = LoanActions(
                     onClick = { id -> onLoanDetailRef(id) },
                     onSeeAll = { onLoanListRef() }
+                ),
+                goalActions = GoalActions(
+                    onClick = { onGoalListRef() },
+                    onSeeAll = { onGoalListRef() }
                 ),
                 transactionActions = TransactionActions(
                     onClick = { id -> onEditTxRef(id) },
@@ -1198,8 +1238,8 @@ fun DashboardGlanceTab(
             highlightedId = highlightedId,
             onScrollComplete = onClearScrollTo,
             contentPadding = PaddingValues(
-                start = AeonTheme.dimensions.screenPadding,
-                end = AeonTheme.dimensions.screenPadding,
+                start = AeonTheme.dimensions.cardListEdgeSpacing,
+                end = AeonTheme.dimensions.cardListEdgeSpacing,
                 top = topPadding + AeonTheme.dimensions.spacingMd,
                 bottom = scrollBottomPadding() + bottomPadding
             ),
@@ -1531,3 +1571,137 @@ fun DashboardRecentActivitiesTabPreview() {
         )
     }
 }
+
+@Preview(name = "Dashboard - Reorder Mode Top Bar Squeezed (Narrow 360dp)", showBackground = true, widthDp = 360, heightDp = 720)
+@Composable
+fun DashboardScreenReorderModePreview() {
+    val sampleAccount = Account(
+        id = "1",
+        name = "Main Savings",
+        currencyCode = "USD",
+        structureType = AccountStructureType.SAVINGS,
+        colorHex = AccountStructureType.SAVINGS.colorHex,
+        icon = AccountStructureType.SAVINGS.iconKey,
+    )
+
+    val netWorthConfig = NetWorthCardConfig(cardId = "net_worth_1", order = 0)
+    val accountsConfig = AccountsCardConfig(cardId = "accounts_1", order = 1)
+
+    val mockState = DashboardUiState.Success(
+        profileId = 1,
+        accounts = persistentListOf(sampleAccount),
+        allAccounts = persistentListOf(sampleAccount),
+        cardDataMap = persistentMapOf(
+            "net_worth_1" to CardComputeState.Success(
+                CardRenderData.NetWorth(
+                    config = netWorthConfig,
+                    currentPeriodMetrics = NetWorthMetrics(
+                        netWorth = BigDecimal("12500.00"),
+                        cashFlow = CashFlowResult.empty().copy(
+                            metricsInBase = FinancialSummary(
+                                income = BigDecimal("5000.00"),
+                                expense = BigDecimal("-3000.00"),
+                                transactionCount = 10
+                            )
+                        )
+                    ),
+                    currency = "USD"
+                )
+            ),
+            "accounts_1" to CardComputeState.Success(
+                CardRenderData.Accounts(
+                    config = accountsConfig,
+                    updatedAccounts = listOf(sampleAccount),
+                    accountSummaries = mapOf(
+                        "1" to AccountSummaryItem(
+                            account = sampleAccount,
+                            currencyBalances = mapOf("USD" to BigDecimal("12500.00")),
+                            balance = BigDecimal("12500.00"),
+                            balanceInBase = BigDecimal("12500.00"),
+                            currentPeriodMetrics = FinancialSummary(
+                                income = BigDecimal("5000.00"),
+                                expense = BigDecimal("-3000.00"),
+                                transactionCount = 10
+                            )
+                        )
+                    ),
+                    currency = "USD",
+                    currentTheme = "Glass"
+                )
+            )
+        ),
+        allTransactions = persistentListOf(),
+        recentActivitiesState = TransactionListUiState(groups = emptyList(), isEmpty = true),
+        allCategories = persistentListOf(),
+        allTags = persistentListOf(),
+        baseCurrency = "USD",
+        exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot.EMPTY,
+        plannedPayments = persistentListOf(),
+        budgets = persistentListOf(),
+        loans = persistentListOf(),
+        loanPayments = persistentMapOf()
+    )
+
+    val sampleCards = listOf(netWorthConfig, accountsConfig)
+
+    OssWalletTheme {
+        DashboardScreenLayout(
+            isTopLevel = true,
+            initialViewContext = DashboardViewContext.None,
+            uiState = mockState,
+            cardsConfig = DashboardCardsConfig(cards = sampleCards),
+            currentProfileName = "Intelligence",
+            cardAnimationEnabled = true,
+            expandableFabEnabled = true,
+            hasUnseenSmartSuggestions = true,
+            isInitialReordering = true,
+            allTemplates = emptyList(),
+            allCategories = emptyList(),
+            lastUndoAction = null,
+            savedFilters = emptyList(),
+            revealedCardIds = persistentListOf(),
+            transactionSnackbarMessage = null,
+            scrollToId = null,
+            highlightedId = null,
+            recentActivitiesBreakdown = true,
+            actions = DashboardActions(
+                onMenuClick = {},
+                onRecordsClick = {},
+                onAddClick = { _, _ -> },
+                onManageAccountsClick = {},
+                onAccountClick = {},
+                onEditTransactionClick = {}
+            ),
+            onResetView = {},
+            onUndoAction = {},
+            onClearUndo = {},
+            onClearTransactionSnackbar = {},
+            onClearScrollTo = {},
+            onAddCard = {},
+            onReorderCards = {},
+            onRemoveCard = {},
+            onQuickConfirm = { _, _ -> },
+            onQuickSkip = { _, _ -> },
+            onSearchTransactions = { flowOf(emptyList()) },
+            onItemExpanded = {},
+            onItemCollapsed = {},
+            onStatusChange = { _, _ -> },
+            onDeleteTransaction = {},
+            onCloneTransactionClick = {},
+            onFullSwipeRight = {},
+            onJumpTransaction = { _, _ -> },
+            onPerformJump = { _, _ -> },
+            onCloseLinkedPopup = {},
+            linkedPopupTxs = null,
+            onAddTag = { _, _ -> },
+            onConfirmPlanned = { _, _ -> },
+            onCancelPlanned = { _, _ -> },
+            cardUpdateHandler = object : CardUpdateHandler {
+                override val cardUpdateScope: CoroutineScope get() = MainScope()
+                override val cardRepository: CardRepository get() = error("Mock")
+                override val cardScreenContext: ScreenContext get() = ScreenContext.DASHBOARD
+            }
+        )
+    }
+}
+

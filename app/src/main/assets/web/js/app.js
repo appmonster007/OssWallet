@@ -61,7 +61,9 @@ async function doLogin() {
       body: JSON.stringify({ accessCode: code })
     });
     const json = await res.json();
-    if (res.status === 429) {
+    if (res.status === 423) {
+      errEl.textContent = json.error || 'OssWallet is locked. Unlock the app on your phone.';
+    } else if (res.status === 429) {
       errEl.textContent = json.error || 'Too many attempts. Wait 60 seconds.';
     } else if (json.success && json.data?.token) {
       token = json.data.token;

@@ -23,9 +23,6 @@ object BudgetsWidgetKeys {
     val IS_LOADED = stringPreferencesKey("budgets_is_loaded")
     /** Number of rows, so the header can tell an empty list from a loaded one. */
     val COUNT = stringPreferencesKey("budgets_count")
-    /** Budgets over their limit / at or ahead of their alert pace, across all budgets, not just the visible rows. */
-    val OVER_COUNT = stringPreferencesKey("budgets_over_count")
-    val NEAR_COUNT = stringPreferencesKey("budgets_near_count")
     /** Name of a [WidgetTheme] constant — see NetWorthWidgetKeys.THEME. */
     val THEME = stringPreferencesKey("budgets_theme")
     val GLASS = stringPreferencesKey("budgets_glass")
@@ -51,11 +48,9 @@ data class BudgetWidgetRow(
     val hasRollover: Boolean
 )
 
-/** Everything the Budgets widget shows: the header counts and every row, most urgent first. */
+/** Everything the Budgets widget shows: every row, most urgent first. */
 data class BudgetsSnapshot(
     val rows: List<BudgetWidgetRow>,
-    val overCount: Int,
-    val nearCount: Int,
     val theme: WidgetTheme,
     val glass: Boolean
 )
@@ -73,8 +68,6 @@ class BudgetsWidgetFetcher : WidgetDataFetcher {
         prefs[BudgetsWidgetKeys.COUNT] = snapshot.rows.size.toString()
         prefs[BudgetsWidgetKeys.THEME] = snapshot.theme.name
         prefs[BudgetsWidgetKeys.GLASS] = snapshot.glass.toString()
-        prefs[BudgetsWidgetKeys.OVER_COUNT] = snapshot.overCount.toString()
-        prefs[BudgetsWidgetKeys.NEAR_COUNT] = snapshot.nearCount.toString()
     }
 
     companion object {
@@ -117,10 +110,6 @@ class BudgetsWidgetFetcher : WidgetDataFetcher {
 
             return BudgetsSnapshot(
                 rows = rows,
-                overCount = withPace.count { it.second == BudgetPaceStatus.OVER },
-                nearCount = withPace.count {
-                    it.second == BudgetPaceStatus.AHEAD_OF_PACE || it.second == BudgetPaceStatus.NEAR_LIMIT
-                },
                 theme = config.theme,
                 glass = config.glass
             )
@@ -144,7 +133,7 @@ class BudgetsWidgetFetcher : WidgetDataFetcher {
                 overByFormatted = formatCurrency((spent - limit).max(BigDecimal.ZERO), currency),
                 percentage = percentage * 100f,
                 pace = pace.name,
-                elapsedPercent = elapsedFraction?.let { (it * 100f).toInt().coerceIn(0, 100) },
+                elapsedPercent = BudgetService.paceTargetFraction(this)?.let { (it * 100f).toInt().coerceIn(0, 100) },
                 periodLabel = budget.timelineRange.budgetPeriodLabel(),
                 rolloverAmountFormatted = formatCurrency(rolloverAmount, currency),
                 hasRollover = rolloverAmount.signum() != 0
@@ -156,6 +145,7 @@ class BudgetsWidgetFetcher : WidgetDataFetcher {
             is TimelineRange.ThisPeriod -> period.label
             is TimelineRange.LastPeriod -> "Last ${period.label}"
             is TimelineRange.CustomRange -> "Custom range"
+            is TimelineRange.Periodic -> recurrenceRule.formatHuman()
         }
     }
 }

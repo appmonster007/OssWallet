@@ -63,6 +63,32 @@ data class AmortizationEntry(
 )
 
 @Serializable
+data class AmortizationYearlySummary(
+    val year: Int,
+    @Serializable(with = BigDecimalSerializer::class)
+    val totalPayment: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
+    val totalPrincipal: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
+    val totalInterest: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
+    val endingBalance: BigDecimal
+)
+
+@Serializable
+data class AmortizationScheduleSummary(
+    @Serializable(with = BigDecimalSerializer::class)
+    val totalPrincipal: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
+    val totalInterest: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
+    val totalCost: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
+    val monthlyPayment: BigDecimal,
+    val totalPeriods: Int
+)
+
+@Serializable
 data class LoanSummary(
     val loan: Loan,
     @Serializable(with = BigDecimalSerializer::class)

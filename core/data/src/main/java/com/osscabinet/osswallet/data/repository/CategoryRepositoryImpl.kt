@@ -22,7 +22,18 @@ class CategoryRepositoryImpl @Inject constructor(
 
     override suspend fun upsertCategory(category: Category) {
         if (Category.isSystemCategory(category.id)) return
-        categoryDao.insertCategory(category.toEntity())
+        val toInsert = if (category.id == 0L) {
+            // A genuinely new category, not an edit of an existing one (editing always
+            // passes a real, already-assigned id). Assign an explicit id at or above the
+            // user-category floor instead of trusting Room's bare autoincrement, so this
+            // category's id can never fall inside the range reserved for defaults -- even
+            // if a future release adds more default categories above today's highest id.
+            val nextId = maxOf(categoryDao.getMaxCategoryId() ?: 0L, Category.USER_CATEGORY_ID_FLOOR - 1) + 1
+            category.copy(id = nextId)
+        } else {
+            category
+        }
+        categoryDao.insertCategory(toInsert.toEntity())
     }
 
     override suspend fun deleteCategory(category: Category) {

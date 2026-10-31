@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.AmortizationEntry
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanStatus
@@ -58,6 +57,7 @@ import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.ui.screens.loans.detail.components.LoanAmortizationScheduleSection
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.LoanService
@@ -144,12 +144,22 @@ fun LoanDetailScreen(
     val absoluteTransactionsWithBalance by transactionViewModel.absoluteTransactionsWithBalance.collectAsStateWithLifecycle()
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
+    val selectedOffsets by viewModel.selectedOffsets.collectAsStateWithLifecycle()
+    val periodHistoryMap by viewModel.periodHistory.collectAsStateWithLifecycle()
+
+    val currentOffset = selectedOffsets[loan.id] ?: 0
+    val history = periodHistoryMap[loan.id] ?: emptyList()
+
+    val evalLoan = if (currentOffset != 0) {
+        loan.copy(timelineRange = TimelineService.shiftRange(loan.timelineRange, currentOffset))
+    } else loan
+
     val summary = loanSummaries[config.loanId] ?: LoanService.buildSummary(
-        loan, emptyList(), System.currentTimeMillis()
+        evalLoan, emptyList(), System.currentTimeMillis()
     )
 
-    val loanFilter = remember(loan, categoriesList) {
-        LoanService.buildTransactionFilter(loan, categoriesList)
+    val loanFilter = remember(evalLoan, categoriesList) {
+        LoanService.buildTransactionFilter(evalLoan, categoriesList)
     }
 
     val loanTransactions = remember(loanFilter, absoluteTransactionsWithBalance) {
@@ -164,6 +174,9 @@ fun LoanDetailScreen(
     LoanDetailContent(
         loan = loan,
         summary = summary,
+        offset = currentOffset,
+        onOffsetChange = { viewModel.setPeriodOffset(loan.id, it) },
+        history = history,
         loanFilter = loanFilter,
         loanTransactions = loanTransactions,
         absoluteTransactionsWithBalance = absoluteTransactionsWithBalance,
@@ -223,6 +236,9 @@ fun LoanDetailScreen(
 fun LoanDetailContent(
     loan: Loan,
     summary: LoanSummary,
+    offset: Int = 0,
+    onOffsetChange: ((Int) -> Unit)? = null,
+    history: List<LoanSummary> = emptyList(),
     loanFilter: TransactionFilter,
     loanTransactions: List<TransactionWithBalance>,
     absoluteTransactionsWithBalance: List<TransactionWithBalance>,
@@ -279,6 +295,9 @@ fun LoanDetailContent(
                             0 -> LoanOverviewTab(
                                 loan = loan,
                                 summary = summary,
+                                offset = offset,
+                                onOffsetChange = onOffsetChange,
+                                history = history,
                                 loanFilter = loanFilter,
                                 accounts = accounts,
                                 categoriesList = categoriesList,
@@ -471,37 +490,38 @@ fun LoanDetailPreview() {
 private fun LoanOverviewTab(
     loan: Loan,
     summary: LoanSummary,
+    offset: Int = 0,
+    onOffsetChange: ((Int) -> Unit)? = null,
+    history: List<LoanSummary> = emptyList(),
     loanFilter: TransactionFilter,
     accounts: List<Account>,
     categoriesList: List<Category>,
     topPadding: androidx.compose.ui.unit.Dp = 0.dp
 ) {
     var showAmortization by remember { mutableStateOf(false) }
-    var showAllAmortization by remember { mutableStateOf(false) }
 
-    val amortizationSchedule = remember(loan, showAmortization) {
-        if (!showAmortization || loan.interestRate == null) emptyList()
-        else {
-            val monthlyPayment =
-                loan.principalAmount.divide(BigDecimal(12), 2, RoundingMode.HALF_UP)
-            LoanService.getAmortizationSchedule(loan, monthlyPayment, loan.startDate)
-        }
+    val monthlyPayment = remember(loan) {
+        LoanService.calculateStandardMonthlyPayment(loan)
     }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            start = AeonTheme.dimensions.screenPadding,
-            end = AeonTheme.dimensions.screenPadding,
+            start = AeonTheme.dimensions.cardListEdgeSpacing,
+            end = AeonTheme.dimensions.cardListEdgeSpacing,
             top = AeonTheme.dimensions.screenPadding + topPadding,
             bottom = scrollBottomPadding()
         ),
-        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+        // Matches the standard card-to-card gap used on Dashboard/Analytics/Budget-list/Loan-list
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.cardListGap)
     ) {
         item {
             LoanHeroCard(
                 loan = loan,
                 summary = summary,
+                offset = offset,
+                onOffsetChange = onOffsetChange,
+                history = history,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -533,125 +553,15 @@ private fun LoanOverviewTab(
                     }
                 }
             }
-        }
 
-        if (showAmortization && amortizationSchedule.isNotEmpty()) {
-            val displayRows =
-                if (showAllAmortization) amortizationSchedule else amortizationSchedule.take(12)
-            items(displayRows, key = { it.period }) { entry ->
-                AmortizationRow(entry = entry, currency = loan.currency)
-            }
-            if (amortizationSchedule.size > 12) {
+            if (showAmortization) {
                 item {
-                    TextButton(
-                        onClick = { showAllAmortization = !showAllAmortization },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(if (showAllAmortization) "Show less" else "Show all (${amortizationSchedule.size} periods)")
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AmortizationRow(entry: AmortizationEntry, currency: String) {
-    val dateStr = remember(entry.date) {
-        SimpleDateFormat("MMM yyyy", Locale.getDefault()).format(Date(entry.date))
-    }
-    Surface(
-        color = AppColors.cardSurfaceProminent.copy(alpha = 0.3f),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Surface(
-                        color = AppColors.primary.copy(alpha = 0.1f),
-                        shape = CircleShape,
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                entry.period.toString(),
-                                style = AppTextStyles.caption.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 10.sp
-                                ),
-                                color = AppColors.primary
-                            )
-                        }
-                    }
-                    Text(
-                        dateStr,
-                        style = AppTextStyles.managementItemTitle.copy(fontWeight = FontWeight.Bold)
+                    LoanAmortizationScheduleSection(
+                        loan = loan,
+                        monthlyPayment = monthlyPayment
                     )
                 }
-
-                Text(
-                    text = "Balance: ${
-                        entry.balance.setScale(2, RoundingMode.HALF_UP).toPlainString()
-                    } $currency",
-                    style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
-                    color = AppColors.primary
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                AmortizationDetailItem(
-                    label = "PRINCIPAL",
-                    value = entry.principal.setScale(2, RoundingMode.HALF_UP).toPlainString(),
-                    color = AppColors.contentPrimary,
-                    modifier = Modifier.weight(1f)
-                )
-                AmortizationDetailItem(
-                    label = "INTEREST",
-                    value = entry.interest.setScale(2, RoundingMode.HALF_UP).toPlainString(),
-                    color = AppColors.error,
-                    modifier = Modifier.weight(1f)
-                )
             }
         }
-    }
-}
-
-@Composable
-private fun AmortizationDetailItem(
-    label: String,
-    value: String,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        Text(
-            label,
-            style = AppTextStyles.caption.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 9.sp,
-                letterSpacing = 1.sp
-            ),
-            color = AppColors.contentSecondary.copy(alpha = 0.5f)
-        )
-        Text(
-            value,
-            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
-            color = color
-        )
     }
 }

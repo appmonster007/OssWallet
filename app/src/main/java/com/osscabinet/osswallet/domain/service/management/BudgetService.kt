@@ -1,13 +1,19 @@
 package com.osscabinet.ossWallet.domain.service.management
 
+import com.osscabinet.ossWallet.domain.card.CardComputerUtils
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetPaceStatus
+import com.osscabinet.ossWallet.domain.model.BudgetPeriodTrend
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.settings.BarChartGranularity
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
@@ -22,6 +28,14 @@ object BudgetService {
         val (start, end) = TimelineService.getDateRange(budget.timelineRange, referenceTime = now)
         return Pair(start ?: now, end ?: now)
     }
+
+    /**
+     * Start of the budget's current period for use as an identity (e.g. a notification dedupe
+     * key). Unlike [getCurrentPeriodRange] it never falls back to [now] for open-ended ranges,
+     * so it only changes when the period itself rolls over.
+     */
+    fun periodIdentity(budget: Budget, now: Long): Long =
+        TimelineService.getDateRange(budget.timelineRange, referenceTime = now).first ?: 0L
 
     /**
      * Share (0..1) of the budget's current period that has passed at [now], or null when the budget
@@ -39,13 +53,39 @@ object BudgetService {
      * ahead of the elapsed share), then reaching the budget's own alert threshold.
      */
     fun paceStatus(progress: BudgetProgress): BudgetPaceStatus {
-        val elapsed = progress.elapsedFraction
+        val target = paceTargetFraction(progress)
         return when {
             progress.alertLevel == BudgetAlertLevel.EXCEEDED -> BudgetPaceStatus.OVER
-            elapsed != null && progress.percentage > elapsed + PACE_TOLERANCE -> BudgetPaceStatus.AHEAD_OF_PACE
+            // Spent alone hasn't hit the limit yet, but committed (planned) spend would push it
+            // past — surface that now rather than waiting for the planned amount to actually land.
+            isOverIncludingPlanned(progress) -> BudgetPaceStatus.OVER
+            target != null && progress.percentage > target + PACE_TOLERANCE -> BudgetPaceStatus.AHEAD_OF_PACE
             progress.alertLevel == BudgetAlertLevel.WARNING -> BudgetPaceStatus.NEAR_LIMIT
             else -> BudgetPaceStatus.ON_TRACK
         }
+    }
+
+    /** True when spent + planned (future transactions + due planned payments) exceeds the limit, even if spent alone doesn't yet. */
+    fun isOverIncludingPlanned(progress: BudgetProgress): Boolean =
+        progress.spent.add(progress.plannedAmount) > progress.limit
+
+    /**
+     * Where the "you should be here" pace marker belongs on the spent/limit bar (as a 0..1
+     * fraction of [BudgetProgress.limit]), accounting for planned commitments: the discretionary
+     * budget — limit minus what's already planned — is spread evenly across the whole period, so
+     * a budget with heavy planned commitments gets a stricter (earlier) target than pure elapsed
+     * time would suggest. Null when there's no bounded period (All Time) to pace against, or once
+     * the budget is already OVER — pace stops meaning anything once you've exceeded the limit.
+     */
+    fun paceTargetFraction(progress: BudgetProgress): Float? {
+        val elapsed = progress.elapsedFraction ?: return null
+        if (progress.alertLevel == BudgetAlertLevel.EXCEEDED || isOverIncludingPlanned(progress)) return null
+        if (progress.limit.signum() <= 0) return 0f
+        val discretionaryFraction = progress.limit.subtract(progress.plannedAmount)
+            .max(BigDecimal.ZERO)
+            .divide(progress.limit, 4, RoundingMode.HALF_UP)
+            .toFloat()
+        return (elapsed * discretionaryFraction).coerceIn(0f, 1f)
     }
 
     const val PACE_TOLERANCE = 0.10f
@@ -60,27 +100,205 @@ object BudgetService {
         precision: Int = CurrencyService.precision,
         excludeFuture: Boolean = false
     ): BigDecimal {
+        val wallNow = System.currentTimeMillis()
+        // A transaction dated after today hasn't actually happened yet — it's a commitment,
+        // not spend, so it's excluded here and surfaced separately via calculatePlannedAmount.
         val filteredTransactions =
             filterTransactionsForBudget(budget, transactions, now, allCategories, excludeFuture)
+                .filter { it.timestamp <= wallNow }
 
-        // Aggregation logic using currency conversion
-        val netAmount = filteredTransactions.fold(BigDecimal.ZERO) { acc, tx ->
-            val converted = CurrencyService.convertAmount(
-                amount = tx.amount, // Use signed amount to correctly handle income vs expense
-                fromCurrency = tx.currency,
+        val netAmount = convertAndSum(filteredTransactions.map { it.amount to it.currency }, budget, exchangeRates)
+        return applySignConvention(budget, netAmount).setScale(precision, RoundingMode.HALF_UP)
+    }
+
+    /**
+     * Sum of this budget's future-dated transactions (timestamp after today) within its current
+     * period — money already entered as a transaction but not yet actually spent.
+     */
+    fun calculateFutureTransactionsAmount(
+        budget: Budget,
+        transactions: List<Transaction>,
+        exchangeRates: ExchangeRateSnapshot,
+        baseCurrency: String,
+        now: Long,
+        allCategories: List<Category> = emptyList(),
+        precision: Int = CurrencyService.precision
+    ): BigDecimal {
+        val wallNow = System.currentTimeMillis()
+        val futureTransactions =
+            filterTransactionsForBudget(budget, transactions, now, allCategories, excludeFuture = false)
+                .filter { it.timestamp > wallNow }
+
+        val netAmount = convertAndSum(futureTransactions.map { it.amount to it.currency }, budget, exchangeRates)
+        return applySignConvention(budget, netAmount).setScale(precision, RoundingMode.HALF_UP)
+    }
+
+    /**
+     * Active planned payments matching this budget's own scope (account/category/currency/tags/
+     * track types) — the same scoping a real transaction would need to count toward [calculateSpent].
+     */
+    fun filterPlannedPaymentsForBudget(
+        budget: Budget,
+        plannedPayments: List<PlannedPayment>,
+        allCategories: List<Category> = emptyList()
+    ): List<PlannedPayment> {
+        val categoryIdSet = if (allCategories.isNotEmpty() && budget.categoryIds.isNotEmpty()) {
+            TransactionFilterService.expandCategoryIds(budget.categoryIds, allCategories)
+        } else budget.categoryIds
+
+        return plannedPayments.filter { payment ->
+            payment.status == PlannedPaymentStatus.ACTIVE &&
+                (budget.accountIds.isEmpty() || payment.accountId in budget.accountIds) &&
+                (categoryIdSet.isEmpty() || payment.categoryId in categoryIdSet) &&
+                (budget.currencies.isEmpty() || payment.currency in budget.currencies) &&
+                matchesTags(budget, payment.tags) &&
+                matchesTrackType(budget, payment.entryMode)
+        }
+    }
+
+    /**
+     * Sum of occurrences (of planned payments matching this budget's scope) due within the
+     * budget's current period. Null for All Time budgets, which have no period to bound this to.
+     */
+    fun calculatePlannedPaymentsAmount(
+        budget: Budget,
+        plannedPayments: List<PlannedPayment>,
+        exchangeRates: ExchangeRateSnapshot,
+        baseCurrency: String,
+        now: Long,
+        allCategories: List<Category> = emptyList(),
+        precision: Int = CurrencyService.precision
+    ): BigDecimal {
+        if (budget.timelineRange is TimelineRange.AllTime) {
+            return BigDecimal.ZERO.setScale(precision, RoundingMode.HALF_UP)
+        }
+
+        val (periodStart, periodEnd) = getCurrentPeriodRange(budget, now)
+        val matching = filterPlannedPaymentsForBudget(budget, plannedPayments, allCategories)
+        val occurrences = PlannedPaymentService.generateUpcoming(matching, periodStart, periodEnd)
+            .filter { it.scheduledDate in periodStart..periodEnd }
+
+        val signedAmounts = occurrences.map { item ->
+            val payment = item.plannedPayment
+            val signedMagnitude =
+                if (payment.entryMode == EntryMode.INCOME) payment.amount else payment.amount.negate()
+            signedMagnitude to payment.currency
+        }
+
+        val netAmount = convertAndSum(signedAmounts, budget, exchangeRates)
+        return applySignConvention(budget, netAmount).setScale(precision, RoundingMode.HALF_UP)
+    }
+
+    /** [calculateFutureTransactionsAmount] + [calculatePlannedPaymentsAmount] — the budget's full "committed but not yet spent" figure. */
+    fun calculatePlannedAmount(
+        budget: Budget,
+        transactions: List<Transaction>,
+        plannedPayments: List<PlannedPayment>,
+        exchangeRates: ExchangeRateSnapshot,
+        baseCurrency: String,
+        now: Long,
+        allCategories: List<Category> = emptyList(),
+        precision: Int = CurrencyService.precision
+    ): BigDecimal {
+        val future = calculateFutureTransactionsAmount(
+            budget, transactions, exchangeRates, baseCurrency, now, allCategories, precision
+        )
+        val planned = calculatePlannedPaymentsAmount(
+            budget, plannedPayments, exchangeRates, baseCurrency, now, allCategories, precision
+        )
+        return future.add(planned).setScale(precision, RoundingMode.HALF_UP)
+    }
+
+    /**
+     * Cumulative-spend series for the "this period" trend view: the current period so far,
+     * bucketed by [granularity], against the previous period at the same granularity. Null for
+     * All Time budgets (no bounded period to bucket) or a period with no buckets.
+     */
+    fun getThisPeriodTrend(
+        budget: Budget,
+        transactions: List<Transaction>,
+        spent: BigDecimal,
+        plannedAmount: BigDecimal,
+        exchangeRates: ExchangeRateSnapshot,
+        baseCurrency: String,
+        now: Long,
+        allCategories: List<Category> = emptyList(),
+        granularity: BarChartGranularity,
+        precision: Int = CurrencyService.precision
+    ): BudgetPeriodTrend? {
+        if (budget.timelineRange is TimelineRange.AllTime) return null
+        val wallNow = System.currentTimeMillis()
+        val (periodStart, periodEnd) = getCurrentPeriodRange(budget, now)
+        val resolvedGranularity = with(CardComputerUtils) {
+            CardComputerUtils.resolveBarGranularity(granularity, periodStart, periodEnd).toLegacyGranularity()
+        }
+        val currentBuckets = CardComputerUtils.generateBuckets(periodStart, periodEnd, resolvedGranularity)
+        if (currentBuckets.isEmpty()) return null
+
+        fun cumulativeAt(rangeStart: Long, bucketEnd: Long): BigDecimal {
+            val ranged = budget.copy(timelineRange = TimelineRange.CustomRange(rangeStart, bucketEnd))
+            return calculateSpent(ranged, transactions, exchangeRates, baseCurrency, now, allCategories, precision)
+        }
+
+        val currentBucketsSoFar = currentBuckets.filter { (start, _, _) -> start <= wallNow }
+        val currentPoints = currentBucketsSoFar.map { (_, end, _) -> cumulativeAt(periodStart, end) }
+        val currentLabels = currentBucketsSoFar.map { it.third }
+
+        val prevRange = TimelineService.shiftRange(budget.timelineRange, -1)
+        val (prevStart, prevEnd) = TimelineService.getDateRange(prevRange, referenceTime = now)
+        val previousPoints: List<BigDecimal>
+        val previousLabels: List<String>
+        if (prevStart != null && prevEnd != null) {
+            val prevBuckets = CardComputerUtils.generateBuckets(prevStart, prevEnd, resolvedGranularity)
+            previousPoints = prevBuckets.map { (_, end, _) -> cumulativeAt(prevStart, end) }
+            previousLabels = prevBuckets.map { it.third }
+        } else {
+            previousPoints = emptyList()
+            previousLabels = emptyList()
+        }
+
+        val plannedTailEnd = plannedAmount.takeIf { it.signum() > 0 }?.let { spent.add(it) }
+
+        return BudgetPeriodTrend(
+            currentPoints, currentLabels, currentBuckets.size, previousPoints, previousLabels, plannedTailEnd
+        )
+    }
+
+    private fun convertAndSum(
+        amounts: List<Pair<BigDecimal, String>>,
+        budget: Budget,
+        exchangeRates: ExchangeRateSnapshot
+    ): BigDecimal = amounts.fold(BigDecimal.ZERO) { acc, (amount, currency) ->
+        acc.add(
+            CurrencyService.convertAmount(
+                amount = amount,
+                fromCurrency = currency,
                 toCurrency = budget.currency,
                 exchangeRates = exchangeRates,
                 precision = 10 // Use high precision for intermediate sum
             )
-            acc.add(converted)
-        }
+        )
+    }
 
-        // If it's an income-only budget, we track progress towards positive target.
-        // Otherwise (expense or mixed), we track net outflow.
+    // If it's an income-only budget, we track progress towards a positive target.
+    // Otherwise (expense or mixed), we track net outflow.
+    private fun applySignConvention(budget: Budget, netAmount: BigDecimal): BigDecimal {
         val isIncomeOnly = budget.trackTypes.isNotEmpty() && budget.trackTypes.all { it == TransactionType.INCOME }
-        val spent = if (isIncomeOnly) netAmount else netAmount.negate()
+        return if (isIncomeOnly) netAmount else netAmount.negate()
+    }
 
-        return spent.setScale(precision, RoundingMode.HALF_UP)
+    private fun matchesTags(budget: Budget, tags: Set<String>): Boolean =
+        if (budget.matchAllTags) tags.containsAll(budget.tags) else budget.tags.isEmpty() || tags.any { it in budget.tags }
+
+    private fun matchesTrackType(budget: Budget, entryMode: EntryMode): Boolean {
+        if (budget.trackTypes.isEmpty()) return true
+        return when (entryMode) {
+            EntryMode.EXPENSE -> TransactionType.EXPENSE in budget.trackTypes
+            EntryMode.INCOME -> TransactionType.INCOME in budget.trackTypes
+            // A transfer's direction isn't known until it's confirmed into real inflow/outflow
+            // legs, so it can't be matched against trackTypes ahead of time.
+            EntryMode.TRANSFER -> false
+        }
     }
 
     fun buildTransactionFilter(
@@ -133,10 +351,13 @@ object BudgetService {
         budget: Budget,
         spent: BigDecimal,
         rolloverAmount: BigDecimal = BigDecimal.ZERO,
-        elapsedFraction: Float? = null
+        elapsedFraction: Float? = null,
+        plannedAmount: BigDecimal = BigDecimal.ZERO
     ): BudgetProgress {
         val effective = budget.limitAmount.add(rolloverAmount)
         // Remaining balance = budget amount (effective) - total transactions amount after converting to base currency
+        // Planned/future amounts are deliberately excluded from both — they're shown
+        // separately so a committed-but-not-yet-spent payment doesn't trigger a false alert.
         val remaining = effective.subtract(spent).max(BigDecimal.ZERO)
         val percentage = if (effective.compareTo(BigDecimal.ZERO) == 0) 0f
         else spent.divide(effective, 4, RoundingMode.HALF_UP).toFloat()
@@ -154,7 +375,8 @@ object BudgetService {
             percentage = percentage,
             alertLevel = alertLevel,
             rolloverAmount = rolloverAmount,
-            elapsedFraction = elapsedFraction
+            elapsedFraction = elapsedFraction,
+            plannedAmount = plannedAmount
         )
     }
 
@@ -186,5 +408,87 @@ object BudgetService {
         val previousEffectiveLimit = budget.limitAmount.add(previousRollover)
         
         return previousEffectiveLimit.subtract(previousSpent).max(BigDecimal.ZERO)
+    }
+
+    fun remainingDailyAllowance(progress: BudgetProgress, now: Long): BigDecimal? {
+        val budget = progress.budget
+        if (budget.timelineRange is TimelineRange.AllTime) return null
+        val (start, end) = getCurrentPeriodRange(budget, now)
+        if (end <= now || end <= start) return null
+
+        // For a future period (viewed via the timeline stepper, now < start), remaining days is
+        // the whole period's length, not end-now — which would also count the days between today
+        // and the period's own start, overstating how many days there are to spread spend across.
+        val remainingMs = end - maxOf(now, start)
+        val remainingDays = (remainingMs / (1000L * 60 * 60 * 24)).coerceAtLeast(1)
+        // Spent+planned, not spent alone — a due planned payment or a future-dated transaction
+        // already claims part of what's left, so the real per-day allowance is tighter.
+        val effectiveRemaining = progress.limit.subtract(progress.spent).subtract(progress.plannedAmount).max(BigDecimal.ZERO)
+        return effectiveRemaining.divide(BigDecimal(remainingDays), 2, RoundingMode.HALF_UP)
+    }
+
+    fun getPeriodProgressForOffset(
+        budget: Budget,
+        transactions: List<Transaction>,
+        exchangeRates: ExchangeRateSnapshot,
+        baseCurrency: String,
+        now: Long,
+        offset: Int,
+        allCategories: List<Category> = emptyList(),
+        precision: Int = CurrencyService.precision,
+        plannedPayments: List<PlannedPayment> = emptyList()
+    ): BudgetProgress {
+        if (budget.timelineRange is TimelineRange.AllTime) {
+            val spent = calculateSpent(budget, transactions, exchangeRates, baseCurrency, now, allCategories, precision = precision)
+            return buildProgress(budget, spent)
+        }
+
+        val shiftedRange = TimelineService.shiftRange(budget.timelineRange, offset)
+        val (start, end) = TimelineService.getDateRange(shiftedRange, referenceTime = now)
+        val evalBudget = if (start != null && end != null) {
+            budget.copy(timelineRange = TimelineRange.CustomRange(start, end))
+        } else budget.copy(timelineRange = shiftedRange)
+
+        val rollover = if (budget.rollover) {
+            calculateRollover(evalBudget, transactions, exchangeRates, baseCurrency, now, allCategories, precision = precision)
+        } else BigDecimal.ZERO
+
+        val spent = calculateSpent(evalBudget, transactions, exchangeRates, baseCurrency, now, allCategories, precision = precision)
+        val planned = calculatePlannedAmount(
+            evalBudget, transactions, plannedPayments, exchangeRates, baseCurrency, now, allCategories, precision
+        )
+        val elapsed = elapsedFraction(evalBudget, now)
+        return buildProgress(evalBudget, spent, rollover, elapsed, planned)
+    }
+
+    fun getPeriodHistory(
+        budget: Budget,
+        transactions: List<Transaction>,
+        exchangeRates: ExchangeRateSnapshot,
+        baseCurrency: String,
+        now: Long,
+        allCategories: List<Category> = emptyList(),
+        offset: Int = 0,
+        count: Int = 5,
+        precision: Int = CurrencyService.precision,
+        plannedPayments: List<PlannedPayment> = emptyList()
+    ): List<BudgetProgress> {
+        if (budget.timelineRange is TimelineRange.AllTime) return emptyList()
+
+        val endOffset = offset
+        val startOffset = offset - count
+        return (startOffset..endOffset).map { targetOffset ->
+            getPeriodProgressForOffset(
+                budget = budget,
+                transactions = transactions,
+                exchangeRates = exchangeRates,
+                baseCurrency = baseCurrency,
+                now = now,
+                offset = targetOffset,
+                allCategories = allCategories,
+                precision = precision,
+                plannedPayments = plannedPayments
+            )
+        }
     }
 }

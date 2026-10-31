@@ -2,13 +2,21 @@ package com.osscabinet.ossWallet.domain.service
 
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
+import com.osscabinet.ossWallet.domain.model.EntryMode
+import com.osscabinet.ossWallet.domain.model.PaymentSchedule
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.RecurrenceRule
+import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.*
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.math.BigDecimal
@@ -198,5 +206,186 @@ class BudgetServiceTest {
         val filter = BudgetService.buildTransactionFilter(budget, now = System.currentTimeMillis())
         assertEquals("Starbucks", filter.queryPayee)
         assertEquals(false, filter.matchAllTags)
+    }
+
+    @Test
+    fun `remainingDailyAllowance calculates correct daily budget`() {
+        val now = epochOf(2024, 3, 15)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH), limit = BigDecimal("1000"))
+        val progress = BudgetService.buildProgress(budget, BigDecimal("500"))
+        val daily = BudgetService.remainingDailyAllowance(progress, now)
+        assertNotNull(daily)
+        assertTrue(daily!! > BigDecimal.ZERO)
+    }
+
+    @Test
+    fun `remainingDailyAllowance for a future period spreads over that period's own days, not today-to-period-end`() {
+        // Today is March 15; viewing April (offset +1) via the timeline stepper. April has 30
+        // days. The buggy version divided by (April 30 - March 15) ≈ 46 days instead, badly
+        // understating the daily allowance for a period that hasn't started yet.
+        val now = epochOf(2024, 3, 15)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH, offset = 1), limit = BigDecimal("3000"))
+        val progress = BudgetService.buildProgress(budget, spent = BigDecimal.ZERO)
+        val daily = BudgetService.remainingDailyAllowance(progress, now)
+        assertNotNull(daily)
+        // 3000 / 30 days = 100/day; the pre-fix formula (3000 / ~46 days) would give ~65.
+        assertTrue("expected ~100/day for April, got $daily", daily!! >= BigDecimal("96.00"))
+    }
+
+    @Test
+    fun `getPeriodHistory returns history items for past periods`() {
+        val now = epochOf(2024, 3, 15)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH), limit = BigDecimal("1000"))
+        val history = BudgetService.getPeriodHistory(budget, emptyList(), ExchangeRateSnapshot.EMPTY, "USD", now, count = 3)
+        assertEquals(4, history.size)
+    }
+
+    @Test
+    fun `getPeriodHistory offset matches calculateSpent for shifted budget`() {
+        val now = epochOf(2024, 3, 15)
+        val inPreviousPeriod = epochOf(2024, 2, 10)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH), limit = BigDecimal("1000"))
+        val transactions = listOf(
+            makeTransaction(BigDecimal("-250"), timestamp = inPreviousPeriod)
+        )
+
+        val history = BudgetService.getPeriodHistory(budget, transactions, ExchangeRateSnapshot.EMPTY, "USD", now, count = 5)
+        // Chronological list (index 5 is offset 0, index 4 is offset -1)
+        val febProgress = history[history.size - 2]
+
+        val shiftedRange = TimelineService.shiftRange(budget.timelineRange, -1)
+        val (start, end) = TimelineService.getDateRange(shiftedRange, referenceTime = now)
+        val evalFebBudget = budget.copy(timelineRange = TimelineRange.CustomRange(start, end))
+        val febSpentDirect = BudgetService.calculateSpent(evalFebBudget, transactions, ExchangeRateSnapshot.EMPTY, "USD", now)
+
+        assertEquals(0, febSpentDirect.compareTo(febProgress.spent))
+        assertEquals(0, BigDecimal("250").compareTo(febProgress.spent))
+    }
+
+    private fun makePlannedPayment(
+        amount: BigDecimal,
+        nextDueDate: Long,
+        entryMode: EntryMode = EntryMode.EXPENSE,
+        currency: String = "USD",
+        accountId: String? = "acc1",
+        categoryId: Long = 1001L,
+        status: PlannedPaymentStatus = PlannedPaymentStatus.ACTIVE
+    ) = PlannedPayment(
+        id = 1L,
+        name = "Test Planned Payment",
+        categoryId = categoryId,
+        amount = amount,
+        entryMode = entryMode,
+        accountId = accountId,
+        currency = currency,
+        schedule = PaymentSchedule(
+            recurrenceRule = RecurrenceRule(type = RecurrenceType.MONTHLY),
+            startDate = nextDueDate,
+            nextDueDate = nextDueDate
+        ),
+        status = status
+    )
+
+    @Test
+    fun `calculateSpent excludes transactions dated after today, treating them as not-yet-spent`() {
+        val now = System.currentTimeMillis()
+        val dayMs = 24L * 60 * 60 * 1000
+        val budget = makeBudget(TimelineRange.CustomRange(now - 10 * dayMs, now + 10 * dayMs))
+        val transactions = listOf(
+            makeTransaction(BigDecimal("-200"), timestamp = now - dayMs),
+            makeTransaction(BigDecimal("-300"), timestamp = now + dayMs)
+        )
+
+        val spent = BudgetService.calculateSpent(budget, transactions, ExchangeRateSnapshot.EMPTY, "USD", now)
+        assertEquals(0, BigDecimal("200").compareTo(spent))
+    }
+
+    @Test
+    fun `calculateFutureTransactionsAmount sums only future-dated matching transactions`() {
+        val now = System.currentTimeMillis()
+        val dayMs = 24L * 60 * 60 * 1000
+        val budget = makeBudget(TimelineRange.CustomRange(now - 10 * dayMs, now + 10 * dayMs))
+        val transactions = listOf(
+            makeTransaction(BigDecimal("-200"), timestamp = now - dayMs),
+            makeTransaction(BigDecimal("-300"), timestamp = now + dayMs)
+        )
+
+        val future = BudgetService.calculateFutureTransactionsAmount(
+            budget, transactions, ExchangeRateSnapshot.EMPTY, "USD", now
+        )
+        assertEquals(0, BigDecimal("300").compareTo(future))
+    }
+
+    @Test
+    fun `calculatePlannedPaymentsAmount sums due occurrences matching the budget's scope`() {
+        val now = System.currentTimeMillis()
+        val dayMs = 24L * 60 * 60 * 1000
+        val budget = makeBudget(
+            TimelineRange.CustomRange(now - 10 * dayMs, now + 10 * dayMs),
+            categoryIds = setOf(1001L)
+        )
+        val payments = listOf(
+            makePlannedPayment(BigDecimal("150"), nextDueDate = now + 2 * dayMs),
+            makePlannedPayment(BigDecimal("999"), categoryId = 2002L, nextDueDate = now + 2 * dayMs),
+            makePlannedPayment(BigDecimal("50"), nextDueDate = now + 50 * dayMs)
+        )
+
+        val planned = BudgetService.calculatePlannedPaymentsAmount(
+            budget, payments, ExchangeRateSnapshot.EMPTY, "USD", now
+        )
+        assertEquals(0, BigDecimal("150").compareTo(planned))
+    }
+
+    @Test
+    fun `calculatePlannedPaymentsAmount excludes entry modes the budget doesn't track`() {
+        val now = System.currentTimeMillis()
+        val dayMs = 24L * 60 * 60 * 1000
+        val budget = makeBudget(TimelineRange.CustomRange(now - 10 * dayMs, now + 10 * dayMs))
+        val payments = listOf(
+            makePlannedPayment(BigDecimal("150"), entryMode = EntryMode.INCOME, nextDueDate = now + 2 * dayMs)
+        )
+
+        val planned = BudgetService.calculatePlannedPaymentsAmount(
+            budget, payments, ExchangeRateSnapshot.EMPTY, "USD", now
+        )
+        assertEquals(0, BigDecimal.ZERO.compareTo(planned))
+    }
+
+    @Test
+    fun `calculatePlannedPaymentsAmount is zero for All Time budgets`() {
+        val now = System.currentTimeMillis()
+        val budget = makeBudget(TimelineRange.AllTime())
+        val payments = listOf(makePlannedPayment(BigDecimal("150"), nextDueDate = now + 86_400_000L))
+
+        val planned = BudgetService.calculatePlannedPaymentsAmount(
+            budget, payments, ExchangeRateSnapshot.EMPTY, "USD", now
+        )
+        assertEquals(0, BigDecimal.ZERO.compareTo(planned))
+    }
+
+    @Test
+    fun `calculatePlannedAmount combines future transactions and planned payments`() {
+        val now = System.currentTimeMillis()
+        val dayMs = 24L * 60 * 60 * 1000
+        val budget = makeBudget(TimelineRange.CustomRange(now - 10 * dayMs, now + 10 * dayMs))
+        val transactions = listOf(makeTransaction(BigDecimal("-300"), timestamp = now + dayMs))
+        val payments = listOf(makePlannedPayment(BigDecimal("150"), nextDueDate = now + 2 * dayMs))
+
+        val planned = BudgetService.calculatePlannedAmount(
+            budget, transactions, payments, ExchangeRateSnapshot.EMPTY, "USD", now
+        )
+        assertEquals(0, BigDecimal("450").compareTo(planned))
+    }
+
+    @Test
+    fun `getPeriodHistory computes window relative to offset`() {
+        val now = epochOf(2024, 3, 15)
+        val budget = makeBudget(TimelineRange.ThisPeriod(ThisPeriodType.MONTH), limit = BigDecimal("1000"))
+
+        val windowOffset0 = BudgetService.getPeriodHistory(budget, emptyList(), ExchangeRateSnapshot.EMPTY, "USD", now, offset = 0, count = 5)
+        assertEquals(6, windowOffset0.size)
+
+        val windowOffsetMinus1 = BudgetService.getPeriodHistory(budget, emptyList(), ExchangeRateSnapshot.EMPTY, "USD", now, offset = -1, count = 5)
+        assertEquals(6, windowOffsetMinus1.size)
     }
 }

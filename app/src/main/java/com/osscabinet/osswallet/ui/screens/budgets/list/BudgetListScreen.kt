@@ -140,12 +140,13 @@ fun BudgetListScreen(
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(
-                                start = AeonTheme.dimensions.screenPadding,
-                                end = AeonTheme.dimensions.screenPadding,
+                                start = AeonTheme.dimensions.cardListEdgeSpacing,
+                                end = AeonTheme.dimensions.cardListEdgeSpacing,
                                 top = AeonSize.D64.value + AeonTheme.dimensions.screenPadding + 48.dp, // approx status bar
                                 bottom = innerPadding.calculateBottomPadding() + scrollBottomPadding()
                             ),
-                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
+                            // Matches AeonCardList's default card-to-card gap (Dashboard/Analytics)
+                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.cardListGap)
                         ) {
                             if (active.isNotEmpty()) {
                                 item {
@@ -254,8 +255,12 @@ private fun BudgetListItem(
         isWarning = alertLevel != BudgetAlertLevel.NONE,
         trailingContent = {
             Text(
-                "${budget.limitAmount.toPlainString()} ${budget.currency}",
-                style = AppTextStyles.listItemTitle,
+                com.osscabinet.ossWallet.ui.util.CurrencyReprUi.formatCurrencyAnnotated(
+                    amount = budget.limitAmount,
+                    currencyCode = budget.currency,
+                    spec = com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec(useSemanticColor = false)
+                ),
+                style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
                 color = progressColor
             )
         },
@@ -292,7 +297,7 @@ private fun BudgetListItem(
                     Text(
                         "$spentText spent",
                         style = AppTextStyles.transactionSwipeAction,
-                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.8f)
                     )
                     Text(
                         "${(progressFraction * 100).toInt()}%",

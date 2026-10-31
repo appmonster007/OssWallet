@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.Receipt
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -45,6 +47,7 @@ import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -109,6 +112,7 @@ fun BudgetDetailScreen(
 ) {
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
     val budgetProgress by viewModel.budgetProgress.collectAsStateWithLifecycle()
+    val exchangeRates by transactionViewModel.exchangeRates.collectAsStateWithLifecycle()
     val budget = remember(config.budgetId, budgets) { budgets.find { it.id == config.budgetId } }
 
     LaunchedEffect(budgets) {
@@ -137,9 +141,19 @@ fun BudgetDetailScreen(
 
     val absoluteTransactionsWithBalance by transactionViewModel.absoluteTransactionsWithBalance.collectAsStateWithLifecycle()
 
-    val budgetFilter = remember(budget, categoriesList) {
+    val selectedOffsets by viewModel.selectedOffsets.collectAsStateWithLifecycle()
+    val periodHistoryMap by viewModel.periodHistory.collectAsStateWithLifecycle()
+
+    val currentOffset = selectedOffsets[budget.id] ?: 0
+    val history = periodHistoryMap[budget.id] ?: emptyList()
+
+    val evalBudget = if (currentOffset != 0) {
+        budget.copy(timelineRange = TimelineService.shiftRange(budget.timelineRange, currentOffset))
+    } else budget
+
+    val budgetFilter = remember(evalBudget, categoriesList) {
         BudgetService.buildTransactionFilter(
-            budget,
+            evalBudget,
             System.currentTimeMillis(),
             categoriesList
         )
@@ -158,6 +172,9 @@ fun BudgetDetailScreen(
     BudgetDetailContent(
         budget = budget,
         progress = progress,
+        offset = currentOffset,
+        onOffsetChange = { viewModel.setPeriodOffset(budget.id, it) },
+        history = history,
         budgetFilter = budgetFilter,
         budgetTransactions = budgetTransactions,
         absoluteTransactionsWithBalance = absoluteTransactionsWithBalance,
@@ -165,6 +182,7 @@ fun BudgetDetailScreen(
         categoriesList = categoriesList,
         allTags = allTags,
         baseCurrency = config.baseCurrency,
+        exchangeRates = exchangeRates,
         revealedCardIds = revealedCardIds,
         recentActivitiesBreakdown = recentActivitiesBreakdown,
         onEditClick = { actions.onEditClick(budget.id) },
@@ -216,6 +234,9 @@ fun BudgetDetailScreen(
 fun BudgetDetailContent(
     budget: Budget,
     progress: BudgetProgress,
+    offset: Int = 0,
+    onOffsetChange: ((Int) -> Unit)? = null,
+    history: List<BudgetProgress> = emptyList(),
     budgetFilter: TransactionFilter,
     budgetTransactions: List<TransactionWithBalance>,
     absoluteTransactionsWithBalance: List<TransactionWithBalance>,
@@ -223,6 +244,7 @@ fun BudgetDetailContent(
     categoriesList: List<Category>,
     allTags: List<Tag>,
     baseCurrency: String,
+    exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot.EMPTY,
     revealedCardIds: List<String>,
     recentActivitiesBreakdown: Boolean,
     onEditClick: () -> Unit,
@@ -232,6 +254,9 @@ fun BudgetDetailContent(
 ) {
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState(initialPage = 0) { 2 }
+    val transactions = remember(absoluteTransactionsWithBalance) {
+        absoluteTransactionsWithBalance.map { it.transaction }
+    }
     val tabs = listOf(
         NavigationTab(
             icon = Icons.Rounded.Info,
@@ -272,17 +297,24 @@ fun BudgetDetailContent(
                                 LazyColumn(
                                     modifier = Modifier.fillMaxSize(),
                                     contentPadding = PaddingValues(
-                                        start = AeonTheme.dimensions.screenPadding,
-                                        end = AeonTheme.dimensions.screenPadding,
+                                        start = AeonTheme.dimensions.cardListEdgeSpacing,
+                                        end = AeonTheme.dimensions.cardListEdgeSpacing,
                                         top = AeonTheme.dimensions.screenPadding + pillHeight,
                                         bottom = scrollBottomPadding()
                                     ),
-                                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
+                                    // Matches the standard card-to-card gap used on Dashboard/Analytics/Budget-list/Loan-list
+                                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.cardListGap)
                                 ) {
                                     item {
                                         BudgetHeroCard(
                                             budget = budget,
                                             progress = progress,
+                                            offset = offset,
+                                            onOffsetChange = onOffsetChange,
+                                            history = history,
+                                            transactions = transactions,
+                                            exchangeRates = exchangeRates,
+                                            categories = categoriesList,
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     }
@@ -382,7 +414,7 @@ fun BudgetDetailContent(
                                             categories = categoriesList,
                                             allTags = allTags,
                                             baseCurrency = baseCurrency,
-                                            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot.EMPTY
+                                            exchangeRates = exchangeRates
                                         )
                                         com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper.mapToUiState(
                                             domainState = TransactionListState(
@@ -463,6 +495,8 @@ fun BudgetDetailContent(
         }
     }
 }
+
+
 
 @Preview(showBackground = true)
 @Composable

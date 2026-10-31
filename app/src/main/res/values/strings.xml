@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">OssWallet</string>
+    <string name="app_function_display_description">Add, search and analyse your transactions</string>
     <string name="widget_preview_income_label">INCOME</string>
     <string name="widget_preview_expense_label">EXPENSE</string>
     <string name="widget_preview_income_amount">5,000.00</string>
@@ -121,7 +122,9 @@
 
     <!-- Notification channels -->
     <string name="notification_channel_planned_payments_name">Planned Payments</string>
-    <string name="notification_channel_planned_payments_description">Reminders for upcoming planned payments</string>
+    <string name="notification_channel_planned_payments_description">Reminders for upcoming planned payments and loan due dates</string>
+    <string name="notification_channel_budget_alerts_name">Budget alerts</string>
+    <string name="notification_channel_budget_alerts_description">Alerts when a budget is nearly used up or exceeded</string>
 
     <!-- App shortcuts -->
     <string name="shortcut_quick_add_short">Quick Add</string>
@@ -133,4 +136,134 @@
     <string name="shortcut_template_config_search">Search templates…</string>
     <string name="shortcut_template_config_empty">No templates found</string>
     <string name="shortcut_template_added">Shortcut added to home screen</string>
+
+    <!-- Auto Backup (Data Management screen) -->
+    <string name="backup_section_auto_title">AUTO BACKUP</string>
+    <string name="backup_enable_title">Enable Auto Backup</string>
+    <string name="backup_enable_subtitle">Automatically back up your data</string>
+    <string name="backup_interval_label">Backup Interval</string>
+    <string name="backup_interval_suffix">hours</string>
+    <string name="backup_interval_error">Enter a number between %1$d and %2$d</string>
+    <string name="backup_scope_label">Backup Scope</string>
+    <string name="backup_scope_all_profiles">All Profiles</string>
+    <string name="backup_scope_current_profile">Current Profile Only</string>
+    <string name="backup_retention_label">Keep Last N Backups</string>
+    <string name="backup_storage_location_label">Storage Location</string>
+    <string name="backup_storage_private">Private (App Storage)</string>
+    <string name="backup_storage_custom_folder">Custom Folder</string>
+    <string name="backup_storage_both">Both</string>
+    <string name="backup_choose_folder">Choose Folder</string>
+    <string name="backup_change_folder">Change Folder</string>
+    <string name="backup_no_folder_warning">Choose a folder — custom-folder backups won\'t run until you do.</string>
+    <string name="backup_notifications_label">Notifications</string>
+    <string name="backup_notify_always">Always</string>
+    <string name="backup_notify_failure_only">Failure Only</string>
+    <string name="backup_notify_never">Never</string>
+    <string name="backup_battery_optimization_title">Allow background backups</string>
+    <string name="backup_battery_optimization_subtitle">Battery optimization may delay or block scheduled backups</string>
+    <string name="backup_next_run_pending">Next backup is scheduled</string>
+    <string name="backup_last_run_succeeded">Last backup: succeeded</string>
+    <string name="backup_last_run_failed">Last backup: failed</string>
+    <string name="backup_last_run_running">Backing up now…</string>
+    <string name="backup_last_run_none">No scheduled backup has run yet</string>
+    <string name="backup_recent_title">Recent Backups</string>
+    <string name="backup_item_location_private">App storage</string>
+    <string name="backup_item_location_custom">Custom folder</string>
+    <string name="backup_action_restore">Restore</string>
+    <string name="backup_action_open">Open</string>
+    <string name="backup_action_share">Share</string>
+    <string name="backup_action_delete">Delete</string>
+    <string name="backup_open_no_app">No app can open this file</string>
+    <string name="backup_restore_confirm_title">Restore this backup?</string>
+    <string name="backup_restore_confirm_message">This replaces all current data with the contents of this backup. This cannot be undone.</string>
+    <string name="backup_encryption_title">Encrypt scheduled backups</string>
+    <string name="backup_encryption_subtitle_on">AES-256 with a passphrase only you know</string>
+    <string name="backup_encryption_subtitle_key_unavailable">Key unavailable on this device — set the passphrase again</string>
+    <string name="backup_encryption_reenter_title">Re-enter passphrase</string>
+    <string name="backup_encryption_reenter_subtitle">Scheduled backups fail until the key is restored</string>
+    <string name="backup_progress_exporting">Exporting backup…</string>
+    <string name="backup_progress_importing">Restoring data…</string>
+    <string name="backup_progress_verifying">Verifying backup…</string>
+    <string name="backup_progress_restoring">Restoring backup…</string>
+    <string name="backup_progress_deleting_all">Clearing all data…</string>
+    <string name="backup_export_succeeded">Backup exported successfully</string>
+    <string name="backup_export_succeeded_encrypted">Encrypted backup exported successfully</string>
+    <string name="backup_export_failed">Export failed: %1$s</string>
+    <string name="backup_import_succeeded">Backup imported successfully</string>
+    <string name="backup_import_succeeded_restarting">Database restored. Restarting app…</string>
+    <string name="backup_import_failed">Import failed: %1$s</string>
+    <string name="backup_verify_succeeded">Backup is valid: %1$d files, %2$d KB</string>
+    <string name="backup_verify_succeeded_encrypted">Backup is valid: %1$d files, %2$d KB (encrypted)</string>
+    <string name="backup_verify_failed">Verification failed: %1$s</string>
+    <string name="backup_encryption_enabled">Scheduled backups are now encrypted</string>
+    <string name="backup_encryption_disabled">Scheduled backups are no longer encrypted</string>
+    <string name="backup_encryption_failed">Could not enable encryption: %1$s</string>
+    <string name="backup_delete_failed">Could not delete backup: %1$s</string>
+    <string name="backup_deleting_all_data">Clearing all data and restarting…</string>
+    <string name="backup_unknown_error">Unknown error</string>
+
+    <string name="data_management_title">Data Management</string>
+    <string name="backup_encryption_section_title">BACKUP ENCRYPTION</string>
+    <string name="backup_manual_section_title">MANUAL BACKUP</string>
+    <string name="backup_danger_zone_title">DANGER ZONE</string>
+    <string name="backup_import_migrate_title">Import / Migrate Data</string>
+    <string name="backup_import_migrate_subtitle">Restore from backup or import from another app</string>
+    <string name="backup_export_data_title">Export Data</string>
+    <string name="backup_export_data_subtitle">Download all records and database</string>
+    <string name="backup_verify_file_title">Verify a Backup File</string>
+    <string name="backup_verify_file_subtitle">Check a backup is intact without restoring it</string>
+    <string name="backup_delete_all_title">Delete All Data</string>
+    <string name="backup_delete_all_subtitle">Permanently clear your account</string>
+    <string name="backup_delete_all_confirm_title">Delete All Data?</string>
+    <string name="backup_delete_all_confirm_message">This action is permanent and cannot be undone. All your transactions, accounts, and settings will be wiped.</string>
+    <string name="backup_delete_all_confirm_button">Delete Everything</string>
+
+    <string name="backup_protect_export_title">Protect this export?</string>
+    <string name="backup_protect_export_message">Encrypt it with a passphrase so only you can open it. Plain exports can be read by anyone who gets the file.</string>
+    <string name="backup_protect_export_encrypt">Encrypt</string>
+    <string name="backup_protect_export_plain">Export plain</string>
+    <string name="backup_export_passphrase_title">Export passphrase</string>
+    <string name="backup_stop_encrypting_title">Stop encrypting backups?</string>
+    <string name="backup_stop_encrypting_message">New scheduled backups will be plain files. Existing encrypted backups stay encrypted and still need the passphrase.</string>
+    <string name="backup_turn_off">Turn off</string>
+    <string name="backup_verify_encrypted_title">Verify encrypted backup</string>
+    <string name="backup_encrypted_backup_title">Encrypted backup</string>
+    <string name="backup_wrong_passphrase">Wrong passphrase, or the backup is damaged</string>
+
+    <string name="backup_export_dialog_message">Select the format you want to export your data in.</string>
+    <string name="backup_export_zip_all">ZIP - All Profiles</string>
+    <string name="backup_export_zip_profile">ZIP - Current Profile</string>
+    <string name="backup_export_flat_csv">Flat CSV</string>
+    <string name="backup_export_sqlite">SQLite Database</string>
+
+    <string name="backup_import_dialog_message">Restore an OssWallet backup (ZIP archive or single CSV table update) or import transactions from another app.</string>
+    <string name="backup_import_zip">OssWallet Backup (ZIP or CSV)</string>
+    <string name="backup_import_csv">Another App (CSV)</string>
+
+    <string name="backup_restore_selection_title">Restore Selection</string>
+    <string name="backup_restore_selection_subtitle">Choose which data components to restore from this backup.</string>
+    <string name="backup_restore_selected_button">Restore Selected</string>
+    <string name="backup_group_foundational">Foundational Data</string>
+    <string name="backup_group_records">Records</string>
+    <string name="backup_group_planning">Financial Planning</string>
+    <string name="backup_entity_desc_profiles">User profiles and base currencies</string>
+    <string name="backup_entity_desc_accounts">Bank accounts, wallets, and cash</string>
+    <string name="backup_entity_desc_categories">Expense and income categories</string>
+    <string name="backup_entity_desc_tags">Labels and custom tags</string>
+    <string name="backup_entity_desc_currency_rates">Downloaded exchange rates</string>
+    <string name="backup_entity_desc_transactions">All transaction history and transfers</string>
+    <string name="backup_entity_desc_budgets">Monthly budgets and alerts</string>
+    <string name="backup_entity_desc_loans">Debts, loans, and loan payments</string>
+    <string name="backup_entity_desc_goals">Savings goals and progress</string>
+    <string name="backup_entity_desc_planned_payments">Scheduled recurring transactions</string>
+    <string name="backup_entity_desc_templates">Transaction quick-entry templates</string>
+    <string name="backup_entity_desc_filters">Saved search and report filters</string>
+
+    <string name="backup_passphrase_warning">If you lose this passphrase, encrypted backups cannot be recovered. It is not stored anywhere.</string>
+    <string name="backup_passphrase_label">Passphrase (min %1$d characters)</string>
+    <string name="backup_passphrase_confirm_label">Confirm passphrase</string>
+    <string name="backup_passphrase_mismatch">Passphrases don\'t match</string>
+    <string name="backup_passphrase_continue">Continue</string>
+    <string name="backup_passphrase_field_label">Backup passphrase</string>
+    <string name="backup_passphrase_unlock">Unlock</string>
 </resources>

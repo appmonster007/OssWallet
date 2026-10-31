@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRatePro
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -25,7 +26,10 @@ class CurrencyRepositoryImpl @Inject constructor(
 ) : CurrencyRepository {
 
     override fun observeRatesSnapshot(baseCurrency: String): Flow<ExchangeRateSnapshot> =
-        dao.observeRatesForBase(baseCurrency).map { rows ->
+        combine(
+            dao.observeRatesForBase(baseCurrency),
+            settingsRepository.shortlistedCurrencies
+        ) { rows, _ ->
             ExchangeRateSnapshot(
                 anchor = baseCurrency,
                 rates = rows.associate { it.currencyCode to it.rate.toBigDecimalOrNull().orZero() }
@@ -59,6 +63,7 @@ class CurrencyRepositoryImpl @Inject constructor(
 
     override suspend fun saveRates(baseCurrency: String, rates: CurrencyRates) {
         val nextUpdateMillis = rates.nextUpdate ?: 0L
+
         val entities = rates.rates.map {
             CurrencyRateEntity(
                 currencyCode = it.key,

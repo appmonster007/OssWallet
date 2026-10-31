@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
@@ -387,6 +388,7 @@ private fun CardType.getIntentSubtitle(): String = when (this) {
     CardType.BUDGETS -> "Limit Status"
     CardType.PLANNED_PAYMENTS -> "Upcoming"
     CardType.LOANS -> "Debt Tracker"
+    CardType.GOALS -> "Savings Targets"
     CardType.CATEGORY_PIE_CHART -> "Distribution"
     CardType.CATEGORY_TREEMAP -> "Weighting"
     CardType.CASHFLOW_COMPARISON -> "Period Growth"
@@ -409,6 +411,7 @@ fun CardType.toIcon(): ImageVector = when (this) {
     CardType.ACCOUNT_HERO -> Icons.Default.AccountCircle
     CardType.PLANNED_PAYMENTS -> Icons.Default.Schedule
     CardType.LOANS -> Icons.Default.CreditCard
+    CardType.GOALS -> Icons.Default.Flag
     CardType.RECENT_ACTIVITIES -> Icons.Default.History
     CardType.CASHFLOW_COMPARISON -> Icons.AutoMirrored.Filled.ShowChart
     CardType.INCOME_EXPENSE_BAR -> Icons.Default.BarChart

@@ -51,7 +51,6 @@ import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.rememberShimmerBrush
 import com.osscabinet.ossWallet.ui.reorderable.ReorderableItem
 import com.osscabinet.ossWallet.ui.reorderable.longPressToTrigger
@@ -85,7 +84,8 @@ class AeonCardReorderState {
 }
 
 @Composable
-fun rememberAeonCardReorderState(): AeonCardReorderState = remember { AeonCardReorderState() }
+fun rememberAeonCardReorderState(initialIsReordering: Boolean = false): AeonCardReorderState =
+    remember(initialIsReordering) { AeonCardReorderState().apply { isReordering = initialIsReordering } }
 
 /**
  * Screen-scoped ambient [AeonCardReorderState]. A screen creates one state instance, provides it
@@ -106,8 +106,8 @@ fun AeonCardList(
     onDelete: ((String) -> Unit)?,
     onRecordsClick: (TransactionFilter) -> Unit,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(AeonTheme.dimensions.screenPadding),
-    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
+    contentPadding: PaddingValues = PaddingValues(AeonTheme.dimensions.cardListEdgeSpacing),
+    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(AeonTheme.dimensions.cardListGap),
     animateCards: Boolean = false,
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     callbacks: AeonInteractionCallbacks = AeonInteractionCallbacks(),
@@ -298,8 +298,7 @@ private fun CardItem(
     // The period a card falls back to: the screen's default when the screen drives the card's
     // timeline, otherwise the card type's own default. Keeps Reset and the "filtered" indicator
     // in line with what the card shows out of the box.
-    val screenDrivesTimeline = cardInput.screenOwnsTimeline ||
-            cardInput.filter.timelineRange !is TimelineRange.AllTime
+    val screenDrivesTimeline = cardInput.screenOwnsTimeline
     val cardBaseFilter = remember(
         baseFilter, cardConfig.cardType, cardConfig.screenContext, screenDrivesTimeline
     ) {

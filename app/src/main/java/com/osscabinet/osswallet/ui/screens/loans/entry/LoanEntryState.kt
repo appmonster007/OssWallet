@@ -52,11 +52,13 @@ data class LoanEntryState(
     val showDeleteDialog: Boolean = false,
 
     // UI State
+    val showBaseCurrencySheet: Boolean = false,
     val showStartDatePicker: Boolean = false,
     val showSettlementDatePicker: Boolean = false,
     val showNumpad: Boolean = false,
     val showInterestNumpad: Boolean = false,
     val showTimelineSheet: Boolean = false,
+    val showScheduleBuilder: Boolean = false,
     val showAccountSheet: Boolean = false,
     val showTrackTypeSheet: Boolean = false,
     val showCategorySheet: Boolean = false,

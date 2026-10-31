@@ -39,11 +39,42 @@ fun BudgetEntrySheets(
         )
     }
 
+    if (state.showBaseCurrencySheet) {
+        AeonCurrencySelection(
+            selectedCurrencies = setOf(state.currency),
+            onSelectionChange = { ids ->
+                ids.firstOrNull()?.let { onEvent(BudgetEntryEvent.SetCurrency(it)) }
+            },
+            onDismiss = { onEvent(BudgetEntryEvent.ShowBaseCurrencySheet(false)) },
+            mode = AeonSelectMode.SINGLE,
+            title = "Select Budget Base Currency",
+            currencies = state.shortlistedCurrencies.ifEmpty { com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies() }
+        )
+    }
+
     if (state.showTimelineSheet) {
         AeonTimelineSheet(
             selectedRange = state.timelineRange,
             onRangeSelected = { onEvent(BudgetEntryEvent.SetTimelineRange(it)) },
             onDismiss = { onEvent(BudgetEntryEvent.ShowTimelineSheet(false)) }
+        )
+    }
+
+    if (state.showScheduleBuilder) {
+        val periodic = state.timelineRange as? com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.Periodic
+        com.osscabinet.ossWallet.ui.components.entry.AeonScheduleBuilder(
+            initialStartDate = periodic?.startDate ?: System.currentTimeMillis(),
+            initialRecurrenceType = periodic?.recurrenceRule?.type ?: com.osscabinet.ossWallet.domain.model.RecurrenceType.MONTHLY,
+            initialInterval = periodic?.recurrenceRule?.interval ?: 1,
+            initialDayOfWeek = periodic?.recurrenceRule?.dayOfWeek,
+            initialDayOfMonth = periodic?.recurrenceRule?.dayOfMonth,
+            initialCronExpression = periodic?.recurrenceRule?.cronExpression,
+            onConfirm = { start, type, interval, dow, dom, cron ->
+                val rule = com.osscabinet.ossWallet.domain.model.RecurrenceRule(type, interval, dow, dom, cron)
+                onEvent(BudgetEntryEvent.SetTimelineRange(com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.Periodic(rule, start)))
+                onEvent(BudgetEntryEvent.ShowScheduleBuilder(false))
+            },
+            onDismiss = { onEvent(BudgetEntryEvent.ShowScheduleBuilder(false)) }
         )
     }
 

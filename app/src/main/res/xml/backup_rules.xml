@@ -6,8 +6,13 @@
    See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- Receipts are sealed with a device-bound Keystore key and would be unreadable if restored elsewhere. -->
+    <exclude domain="file" path="attachments/" />
+    <!-- The app's own backup files already carry everything they need to restore; letting the OS
+         fold them into its own backup/transfer would duplicate (and, when unencrypted, expose)
+         the same data outside this feature's own encryption and retention controls. -->
+    <exclude domain="file" path="backups/" />
+    <!-- Wrapped backup-encryption key material; useless off-device (the Keystore key that wraps it
+         never leaves this device), but excluded anyway to minimize what leaves the device at all. -->
+    <exclude domain="file" path="datastore/backup_vault.preferences_pb" />
 </full-backup-content>

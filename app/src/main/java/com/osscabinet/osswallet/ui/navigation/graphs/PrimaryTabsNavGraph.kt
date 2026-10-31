@@ -6,6 +6,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.osscabinet.ossWallet.ui.navigation.SmartSuggestionsRoute
 import com.osscabinet.ossWallet.ui.navigation.AccountDetailRoute
 import com.osscabinet.ossWallet.ui.navigation.AccountListRoute
 import com.osscabinet.ossWallet.ui.navigation.AnalyticsRoute
@@ -19,6 +20,7 @@ import com.osscabinet.ossWallet.ui.navigation.FadeEnterTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.FadeExitTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.FilterEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.LoanDetailRoute
+import com.osscabinet.ossWallet.ui.navigation.GoalListRoute
 import com.osscabinet.ossWallet.ui.navigation.LoanListRoute
 import com.osscabinet.ossWallet.ui.navigation.PlannedPaymentDetailRoute
 import com.osscabinet.ossWallet.ui.navigation.PlannedPaymentListRoute
@@ -75,6 +77,7 @@ fun NavGraphBuilder.primaryTabsGraph(
             ),
             actions = DashboardActions(
                 onMenuClick = { scope.launch { drawerState.open() } },
+                onNavigateToSmartSuggestions = { navController.navigate(SmartSuggestionsRoute) },
                 onBackClick = { navController.popBackStack() },
                 onRecordsClick = { filter ->
                     navController.navigateToRecords(filter, topLevel = false)
@@ -90,6 +93,7 @@ fun NavGraphBuilder.primaryTabsGraph(
                 onNavigateToPlannedPaymentList = { navController.navigate(PlannedPaymentListRoute) },
                 onNavigateToBudgetList = { navController.navigate(BudgetListRoute) },
                 onNavigateToLoanList = { navController.navigate(LoanListRoute) },
+                onNavigateToGoalList = { navController.navigate(GoalListRoute) },
                 onNavigateToPlannedPaymentDetail = { id ->
                     navController.navigate(
                         PlannedPaymentDetailRoute(id)

@@ -11,63 +11,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:baselineAligned="false"
-            android:gravity="center_vertical"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="6dp">
-
-        <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginEnd="6dp"
-                android:src="@drawable/widget_pv_ic_history"
-                android:contentDescription="@null" />
-
-        <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="@font/jetbrains_mono"
-                android:textColor="@color/widget_on_surface_variant"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                android:text="RECENT ACTIVITIES" />
-
-        <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="6dp"
-                android:background="@drawable/widget_netflow_pill_bg"
-                android:fontFamily="@font/jetbrains_mono"
-                android:textColor="@color/widget_accent"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:paddingStart="5dp"
-                android:paddingEnd="5dp"
-                android:paddingTop="1dp"
-                android:paddingBottom="1dp"
-                android:text="VIEW ALL" />
-
-        <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginStart="8dp"
-                android:src="@drawable/widget_ic_more_horiz"
-                android:contentDescription="@null" />
-
-    </LinearLayout>
-
-    <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/widget_outline" />
-
-    <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
@@ -336,6 +279,37 @@
                     android:text="Mon" />
 
         </LinearLayout>
+
+    </LinearLayout>
+
+    <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/widget_outline" />
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end|center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/widget_netflow_pill_bg"
+                android:fontFamily="@font/jetbrains_mono"
+                android:textColor="@color/widget_accent"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="VIEW ALL" />
 
     </LinearLayout>
 

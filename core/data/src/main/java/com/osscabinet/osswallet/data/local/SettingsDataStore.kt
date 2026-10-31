@@ -60,6 +60,8 @@ class SettingsDataStore(private val context: Context) {
         val GLASS_SETTINGS_KEY = stringPreferencesKey("glass_settings")
         val AUTO_BACKUP_CONFIG_KEY = stringPreferencesKey("auto_backup_config")
         val UI_DENSITY_KEY = stringPreferencesKey("ui_density")
+        val CARD_LIST_EDGE_SPACING_KEY = intPreferencesKey("card_list_edge_spacing")
+        val CARD_LIST_GAP_KEY = intPreferencesKey("card_list_gap")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -436,6 +438,22 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun saveCardOpenAnimation(name: String) {
         context.dataStore.edit { it[CARD_OPEN_ANIMATION_KEY] = name }
+    }
+
+    val cardListEdgeSpacing: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[CARD_LIST_EDGE_SPACING_KEY] ?: 14
+    }
+
+    suspend fun saveCardListEdgeSpacing(dp: Int) {
+        context.dataStore.edit { it[CARD_LIST_EDGE_SPACING_KEY] = dp }
+    }
+
+    val cardListGap: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[CARD_LIST_GAP_KEY] ?: 12
+    }
+
+    suspend fun saveCardListGap(dp: Int) {
+        context.dataStore.edit { it[CARD_LIST_GAP_KEY] = dp }
     }
 
     suspend fun clearAll() {

@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.AttachmentRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
@@ -35,7 +36,8 @@ fun Route.transactionRoutes(
     settingsRepository: SettingsRepository,
     plannedPaymentRepository: PlannedPaymentRepository,
     transactionManager: TransactionManager,
-    transactionUseCases: TransactionUseCases
+    transactionUseCases: TransactionUseCases,
+    attachmentRepository: AttachmentRepository
 ) {
     route("/transactions") {
         get {
@@ -404,6 +406,7 @@ fun Route.transactionRoutes(
                     )
                 val profileId = settingsRepository.currentProfileId.first()
                 transactionRepository.deleteTransaction(id, profileId)
+                runCatching { attachmentRepository.deleteForTransaction(id, profileId) }
                 call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
             } catch (e: Exception) {
                 call.respond(

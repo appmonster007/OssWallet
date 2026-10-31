@@ -32,6 +32,7 @@ data class CardInput(
     val plannedPayments: List<PlannedPayment> = emptyList(),
     val budgets: List<Budget> = emptyList(),
     val loans: List<Loan> = emptyList(),
+    val goals: List<com.osscabinet.ossWallet.domain.model.Goal> = emptyList(),
     val loanPayments: Map<Long, List<LoanPayment>> = emptyMap(),
     // Pre-computed hierarchy — built once in ComputeCardUseCase before dispatching to all cards.
     // Default is Empty; ComputeCardUseCase always enriches it before compute.

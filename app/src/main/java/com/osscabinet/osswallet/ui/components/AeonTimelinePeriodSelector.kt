@@ -66,6 +66,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.timeline.PickedDays
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -127,6 +128,7 @@ fun AeonTimelinePeriodSelector(
             is TimelineRange.ThisPeriod -> 1
             is TimelineRange.LastPeriod -> 2
             is TimelineRange.CustomRange -> 3
+            is TimelineRange.Periodic -> 1
         }
     }
     val pagerState = rememberPagerState(initialPage = initialPage) { 4 }
@@ -495,9 +497,10 @@ fun AeonDateRangePicker(
     onDismiss: () -> Unit,
     onConfirmed: (Long, Long) -> Unit
 ) {
+    val zone = java.time.ZoneId.systemDefault()
     val state = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = initialStart,
-        initialSelectedEndDateMillis = initialEnd
+        initialSelectedStartDateMillis = initialStart?.let { PickedDays.toPickerMillis(it, zone) },
+        initialSelectedEndDateMillis = initialEnd?.let { PickedDays.toPickerMillis(it, zone) }
     )
 
     DatePickerDialog(
@@ -508,7 +511,9 @@ fun AeonDateRangePicker(
                     val start = state.selectedStartDateMillis
                     val end = state.selectedEndDateMillis
                     if (start != null && end != null) {
-                        onConfirmed(start, end)
+                        // The picker reports UTC midnight; make it whole local days (end inclusive).
+                        val (from, to) = PickedDays.toRange(start, end, zone)
+                        onConfirmed(from, to)
                     }
                 },
                 enabled = state.selectedStartDateMillis != null && state.selectedEndDateMillis != null

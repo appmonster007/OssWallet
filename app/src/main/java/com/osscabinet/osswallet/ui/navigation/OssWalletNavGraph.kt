@@ -60,6 +60,7 @@ fun OssWalletNavGraph(
     pendingWidgetFilter: String? = null,
     pendingWidgetTransactionId: Long? = null,
     pendingWidgetEntityId: String? = null,
+    pendingSharedText: String? = null,
     onWidgetRouteHandled: () -> Unit = {},
 ) {
     val vms = SharedNavViewModels(
@@ -154,6 +155,7 @@ fun OssWalletNavGraph(
                 "accounts"       -> appNavigator.navigateTo(AccountListRoute, widgetNavOptions)
                 // The Budgets / Accounts widgets' per-row taps; the id comes from the list row's
                 // fill-in Intent, not from this route string.
+                "smart_suggestions" -> appNavigator.navigateTo(SmartSuggestionsRoute, widgetNavOptions)
                 "budget_detail"  -> pendingWidgetEntityId?.toLongOrNull()?.let { id ->
                     appNavigator.navigateTo(BudgetDetailRoute(budgetId = id), widgetNavOptions)
                 }
@@ -168,6 +170,18 @@ fun OssWalletNavGraph(
                     appNavigator.navigateTo(TransactionEntryRoute(transactionId = id), widgetNavOptions)
                 }
             }
+            onWidgetRouteHandled()
+        }
+    }
+
+    val mlKitDecoder = remember { com.osscabinet.ossWallet.domain.service.mlkit.MlKitTransactionDecoder() }
+    LaunchedEffect(pendingSharedText) {
+        pendingSharedText?.let { rawText ->
+            val accounts = vms.accountViewModel.accounts.value
+            val categories = vms.categoryViewModel.categories.first()
+            val prefillDto = mlKitDecoder.decodeText(rawText, accounts, categories)
+            vms.transactionViewModel.setPrefillDto(prefillDto)
+            appNavigator.navigateTo(TransactionEntryRoute())
             onWidgetRouteHandled()
         }
     }
@@ -249,6 +263,7 @@ fun OssWalletNavGraph(
                     onPlannedPaymentsClick = { navigateFromDrawer(PlannedPaymentListRoute) },
                     onBudgetsClick = { navigateFromDrawer(BudgetListRoute) },
                     onLoansClick = { navigateFromDrawer(LoanListRoute) },
+                    onSearchClick = { navigateFromDrawer(SearchRoute) },
                 )
             }
         ) {

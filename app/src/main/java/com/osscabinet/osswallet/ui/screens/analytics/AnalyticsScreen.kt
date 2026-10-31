@@ -262,8 +262,8 @@ fun AnalyticsScreen(
                                             onRecordsClick = actions.onRecordsClick,
                                             modifier = Modifier.fillMaxSize(),
                                             contentPadding = PaddingValues(
-                                                start = AeonTheme.dimensions.screenPadding,
-                                                end = AeonTheme.dimensions.screenPadding,
+                                                start = AeonTheme.dimensions.cardListEdgeSpacing,
+                                                end = AeonTheme.dimensions.cardListEdgeSpacing,
                                                 top = AeonTheme.dimensions.spacingMd + pillHeight,
                                                 bottom = scrollBottomPadding() + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                                             ),
@@ -351,11 +351,12 @@ fun AnalyticsScreen(
                                         icon = Icons.Default.Check,
                                         onClick = { cardReorderState.confirm() }
                                     )
+                                } else {
+                                    AppBarIconButton(
+                                        icon = Icons.Default.Settings,
+                                        onClick = { showSettingsDialog = true }
+                                    )
                                 }
-                                AppBarIconButton(
-                                    icon = Icons.Default.Settings,
-                                    onClick = { showSettingsDialog = true }
-                                )
                             }
                         }
                     )

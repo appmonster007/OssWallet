@@ -59,6 +59,7 @@ class LoanEntryViewModel @Inject constructor(
 
     private fun loadInitialData() {
         viewModelScope.launch {
+            val defaultCurr = settingsRepository.currency.first()
             settingsRepository.currentProfileId.flatMapLatest { profileId ->
                 val uniqueNotes = transactionUseCases.getUniqueNotes(profileId)
                 val uniquePayees = transactionUseCases.getUniquePayees(profileId)
@@ -66,7 +67,7 @@ class LoanEntryViewModel @Inject constructor(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.getAllCategories(profileId),
                     tagRepository.getAllTags(),
-                    filterRepository.getAllFilters()
+                    filterRepository.getAllFilters(profileId)
                 ) { accounts, categories, tags, filters ->
                     _state.update {
                         it.copy(
@@ -77,6 +78,7 @@ class LoanEntryViewModel @Inject constructor(
                             uniqueNotes = uniqueNotes,
                             currentProfileId = profileId,
                             availableFilters = filters,
+                            currency = if (it.isEditMode) it.currency else defaultCurr,
                             selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else emptySet(),
                             selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else emptySet(),
                             selectedStatuses = if (it.isEditMode) it.selectedStatuses else emptySet(),
@@ -95,27 +97,31 @@ class LoanEntryViewModel @Inject constructor(
 
     fun initialize(loanId: Long? = null) {
         if (loanId == null) {
-            _state.update {
-                it.copy(
-                    isEditMode = false,
-                    loanId = null,
-                    selectedCategoryIds = emptySet(),
-                    selectedPaymentMethods = emptySet(),
-                    selectedStatuses = emptySet(),
-                    selectedTrackTypes = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
-                    selectedCurrencies = emptySet(),
-                    selectedTags = emptySet(),
-                    queryNote = "",
-                    queryPayee = "",
-                    isNoteRegex = false,
-                    isPayeeRegex = false,
-                    minAmount = "",
-                    maxAmount = "",
-                    hasWarranty = null,
-                    warrantyExpirationStart = null,
-                    warrantyExpirationEnd = null,
-                    timelineRange = TimelineRange.AllTime(excludeFuture = true)
-                )
+            viewModelScope.launch {
+                val defaultCurr = settingsRepository.currency.first()
+                _state.update {
+                    it.copy(
+                        isEditMode = false,
+                        loanId = null,
+                        currency = defaultCurr,
+                        selectedCategoryIds = emptySet(),
+                        selectedPaymentMethods = emptySet(),
+                        selectedStatuses = emptySet(),
+                        selectedTrackTypes = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
+                        selectedCurrencies = emptySet(),
+                        selectedTags = emptySet(),
+                        queryNote = "",
+                        queryPayee = "",
+                        isNoteRegex = false,
+                        isPayeeRegex = false,
+                        minAmount = "",
+                        maxAmount = "",
+                        hasWarranty = null,
+                        warrantyExpirationStart = null,
+                        warrantyExpirationEnd = null,
+                        timelineRange = TimelineRange.AllTime(excludeFuture = true)
+                    )
+                }
             }
             return
         }
@@ -123,10 +129,10 @@ class LoanEntryViewModel @Inject constructor(
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
             loanRepository.getLoanById(loanId, profileId)?.let { loan: Loan ->
-                val filter = loan.filterId?.let { id -> filterRepository.getFilterById(id) }
+                val filter = loan.filterId?.let { id -> filterRepository.getFilterById(id, profileId) }
                 val tf = filter?.filter ?: TransactionFilter()
                 val usageCount =
-                    loan.filterId?.let { filterRepository.getFilterUsageCount(it) } ?: 0
+                    loan.filterId?.let { filterRepository.getFilterUsageCount(it, profileId) } ?: 0
                 _state.update {
                     it.copy(
                         loanId = loanId,
@@ -243,6 +249,7 @@ class LoanEntryViewModel @Inject constructor(
             LoanEntryEvent.MakeFilterUnique -> {}
             is LoanEntryEvent.SetDeleteFilterWithLoan -> {}
             is LoanEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
+            is LoanEntryEvent.ShowBaseCurrencySheet -> _state.update { it.copy(showBaseCurrencySheet = event.show) }
             is LoanEntryEvent.ShowStartDatePicker -> _state.update { it.copy(showStartDatePicker = event.show) }
             is LoanEntryEvent.ShowSettlementDatePicker -> _state.update {
                 it.copy(
@@ -255,6 +262,7 @@ class LoanEntryViewModel @Inject constructor(
             is LoanEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }
             is LoanEntryEvent.ShowTrackTypeSheet -> _state.update { it.copy(showTrackTypeSheet = event.show) }
             is LoanEntryEvent.ShowTimelineSheet -> _state.update { it.copy(showTimelineSheet = event.show) }
+            is LoanEntryEvent.ShowScheduleBuilder -> _state.update { it.copy(showScheduleBuilder = event.show) }
             is LoanEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
             is LoanEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
             is LoanEntryEvent.ShowCurrencyFilterSheet -> _state.update {
@@ -324,6 +332,7 @@ class LoanEntryViewModel @Inject constructor(
             // 1. Create or Update Filter for this loan
             val filter = Filter(
                 id = if (forceNewFilter) 0L else (s.filterId ?: 0L),
+                profileId = s.currentProfileId,
                 name = "${s.name}-Filter",
                 filter = TransactionFilter(
                     categoryIds = s.selectedCategoryIds,
@@ -430,7 +439,7 @@ class LoanEntryViewModel @Inject constructor(
         viewModelScope.launch {
             // Always delete the private filter when deleting a loan
             if (filterId != null) {
-                filterRepository.getFilterById(filterId)?.let { filter ->
+                filterRepository.getFilterById(filterId, _state.value.currentProfileId)?.let { filter ->
                     filterRepository.deleteFilter(filter)
                 }
             }

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.data.di
 
 import com.osscabinet.ossWallet.data.repository.AccountRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.AppLockRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.BackupRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.BudgetRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.CardRepositoryImpl
@@ -8,9 +9,17 @@ import com.osscabinet.ossWallet.data.repository.CategoryRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.ComputationRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.CurrencyRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.FilterRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.AttachmentRepositoryImpl
+import com.osscabinet.ossWallet.data.media.AttachmentProcessorImpl
+import com.osscabinet.ossWallet.data.repository.AssistantAccessRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.SuggestionStateRepositoryImpl
+import com.osscabinet.ossWallet.domain.repository.AssistantAccessRepository
+import com.osscabinet.ossWallet.domain.repository.SuggestionStateRepository
+import com.osscabinet.ossWallet.data.repository.GoalRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.LoanRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.PlannedPaymentRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.ProfileRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.ReminderRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.SettingsRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.SharedWalletRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.TagRepositoryImpl
@@ -19,6 +28,7 @@ import com.osscabinet.ossWallet.data.repository.TransactionRepositoryImpl
 import com.osscabinet.ossWallet.data.service.BackupSchedulerImpl
 import com.osscabinet.ossWallet.data.service.CsvImportServiceImpl
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.AppLockRepository
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
@@ -26,9 +36,13 @@ import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
+import com.osscabinet.ossWallet.domain.repository.AttachmentRepository
+import com.osscabinet.ossWallet.domain.repository.AttachmentProcessor
+import com.osscabinet.ossWallet.domain.repository.GoalRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
+import com.osscabinet.ossWallet.domain.repository.ReminderRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
@@ -79,6 +93,29 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindProfileRepository(impl: ProfileRepositoryImpl): ProfileRepository
+    @Binds
+    @Singleton
+    abstract fun bindReminderRepository(impl: ReminderRepositoryImpl): ReminderRepository
+    @Binds
+    @Singleton
+    abstract fun bindGoalRepository(impl: GoalRepositoryImpl): GoalRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAssistantAccessRepository(impl: AssistantAccessRepositoryImpl): AssistantAccessRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSuggestionStateRepository(impl: SuggestionStateRepositoryImpl): SuggestionStateRepository
+
+    @Binds
+    abstract fun bindAttachmentRepository(impl: AttachmentRepositoryImpl): AttachmentRepository
+
+    @Binds
+    abstract fun bindAttachmentProcessor(impl: AttachmentProcessorImpl): AttachmentProcessor
+    @Binds
+    @Singleton
+    abstract fun bindAppLockRepository(impl: AppLockRepositoryImpl): AppLockRepository
     @Binds
     @Singleton
     abstract fun bindSettingsRepository(impl: SettingsRepositoryImpl): SettingsRepository

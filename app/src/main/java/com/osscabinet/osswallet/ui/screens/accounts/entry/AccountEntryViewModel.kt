@@ -1,7 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.entry
 
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.CreditCardDetails
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -191,7 +193,11 @@ class AccountEntryViewModel @Inject constructor(
                             allowedCurrencies = account.allowedCurrencies.toSet(),
                             selectedIconName = account.icon,
                             accentColorHex = account.colorHex,
-                            initialBalances = initialBalances
+                            initialBalances = initialBalances,
+                            creditLimitInput = account.creditDetails?.creditLimit?.stripTrailingZeros()?.toPlainString() ?: "",
+                            statementClosingDayInput = account.creditDetails?.statementClosingDay?.toString() ?: "",
+                            paymentDueDayInput = account.creditDetails?.paymentDueDay?.toString() ?: "",
+                            interestRateAprInput = account.creditDetails?.interestRateApr?.toString() ?: ""
                         )
                     }
                 }
@@ -237,6 +243,12 @@ class AccountEntryViewModel @Inject constructor(
 
             is AccountEntryEvent.SetIcon -> _state.update { it.copy(selectedIconName = event.icon) }
             is AccountEntryEvent.SetColor -> _state.update { it.copy(accentColorHex = event.color) }
+
+            // Credit details events
+            is AccountEntryEvent.SetCreditLimit -> _state.update { it.copy(creditLimitInput = event.limit) }
+            is AccountEntryEvent.SetStatementClosingDay -> _state.update { it.copy(statementClosingDayInput = event.day) }
+            is AccountEntryEvent.SetPaymentDueDay -> _state.update { it.copy(paymentDueDayInput = event.day) }
+            is AccountEntryEvent.SetInterestRateApr -> _state.update { it.copy(interestRateAprInput = event.apr) }
 
             is AccountEntryEvent.OpenBalanceUpdate -> {
                 val currency = event.currency
@@ -466,6 +478,19 @@ class AccountEntryViewModel @Inject constructor(
                     profileId = profileId
                 )
             }
+
+            val creditLimitBD = s.creditLimitInput.toBigDecimalOrNull()
+            if (s.structureType == AccountStructureType.CREDIT && creditLimitBD != null) {
+                val creditDetails = CreditCardDetails(
+                    accountId = savedAccountId,
+                    creditLimit = creditLimitBD,
+                    statementClosingDay = s.statementClosingDayInput.toIntOrNull(),
+                    paymentDueDay = s.paymentDueDayInput.toIntOrNull(),
+                    interestRateApr = s.interestRateAprInput.toFloatOrNull()
+                )
+                accountRepository.saveCreditCardDetails(creditDetails)
+            }
+
             onSuccess(AccountEntryResult.Persisted(savedAccountId))
         }
     }

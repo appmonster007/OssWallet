@@ -58,6 +58,7 @@ class BudgetEntryViewModel @Inject constructor(
 
     private fun loadInitialData() {
         viewModelScope.launch {
+            val defaultCurr = settingsRepository.currency.first()
             settingsRepository.currentProfileId.flatMapLatest { profileId ->
                 val uniqueNotes = transactionUseCases.getUniqueNotes(profileId)
                 val payees = transactionUseCases.getUniquePayees(profileId)
@@ -65,7 +66,7 @@ class BudgetEntryViewModel @Inject constructor(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.getAllCategories(profileId),
                     tagRepository.getAllTags(),
-                    filterRepository.getAllFilters()
+                    filterRepository.getAllFilters(profileId)
                 ) { accounts, categories, tags, filters ->
                     _state.update {
                         it.copy(
@@ -76,6 +77,7 @@ class BudgetEntryViewModel @Inject constructor(
                             allPayees = payees,
                             currentProfileId = profileId,
                             availableFilters = filters,
+                            currency = if (it.isEditMode) it.currency else defaultCurr,
                             selectedAccountIds = if (it.isEditMode) it.selectedAccountIds else emptySet(),
                             selectedCategoryIds = if (it.isEditMode) it.selectedCategoryIds else emptySet(),
                             selectedPaymentMethods = if (it.isEditMode) it.selectedPaymentMethods else emptySet(),
@@ -96,29 +98,33 @@ class BudgetEntryViewModel @Inject constructor(
 
     fun initialize(budgetId: Long? = null) {
         if (budgetId == null) {
-            _state.update {
-                it.copy(
-                    isEditMode = false,
-                    budgetId = null,
-                    selectedAccountIds = emptySet(),
-                    selectedCategoryIds = emptySet(),
-                    selectedPaymentMethods = emptySet(),
-                    selectedStatuses = emptySet(),
-                    selectedTrackTypes = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
-                    selectedCurrencies = emptySet(),
-                    selectedTags = emptySet(),
-                    matchAllTags = true,
-                    queryNote = "",
-                    queryPayee = "",
-                    isNoteRegex = false,
-                    isPayeeRegex = false,
-                    minAmount = "",
-                    maxAmount = "",
-                    hasWarranty = null,
-                    warrantyExpirationStart = null,
-                    warrantyExpirationEnd = null,
-                    timelineRange = TimelineRange.AllTime(excludeFuture = true)
-                )
+            viewModelScope.launch {
+                val defaultCurr = settingsRepository.currency.first()
+                _state.update {
+                    it.copy(
+                        isEditMode = false,
+                        budgetId = null,
+                        currency = defaultCurr,
+                        selectedAccountIds = emptySet(),
+                        selectedCategoryIds = emptySet(),
+                        selectedPaymentMethods = emptySet(),
+                        selectedStatuses = emptySet(),
+                        selectedTrackTypes = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
+                        selectedCurrencies = emptySet(),
+                        selectedTags = emptySet(),
+                        matchAllTags = true,
+                        queryNote = "",
+                        queryPayee = "",
+                        isNoteRegex = false,
+                        isPayeeRegex = false,
+                        minAmount = "",
+                        maxAmount = "",
+                        hasWarranty = null,
+                        warrantyExpirationStart = null,
+                        warrantyExpirationEnd = null,
+                        timelineRange = TimelineRange.AllTime(excludeFuture = true)
+                    )
+                }
             }
             return
         }
@@ -126,10 +132,10 @@ class BudgetEntryViewModel @Inject constructor(
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
             budgetRepository.getById(budgetId, profileId)?.let { budget ->
-                val filter = budget.filterId?.let { id -> filterRepository.getFilterById(id) }
+                val filter = budget.filterId?.let { id -> filterRepository.getFilterById(id, profileId) }
                 val tf = filter?.filter ?: TransactionFilter()
                 val usageCount =
-                    budget.filterId?.let { filterRepository.getFilterUsageCount(it) } ?: 0
+                    budget.filterId?.let { filterRepository.getFilterUsageCount(it, profileId) } ?: 0
                 _state.update {
                     it.copy(
                         budgetId = budgetId,
@@ -203,7 +209,9 @@ class BudgetEntryViewModel @Inject constructor(
             }
 
             is BudgetEntryEvent.ShowNumpad -> _state.update { it.copy(showNumpad = event.show) }
+            is BudgetEntryEvent.ShowBaseCurrencySheet -> _state.update { it.copy(showBaseCurrencySheet = event.show) }
             is BudgetEntryEvent.ShowTimelineSheet -> _state.update { it.copy(showTimelineSheet = event.show) }
+            is BudgetEntryEvent.ShowScheduleBuilder -> _state.update { it.copy(showScheduleBuilder = event.show) }
             is BudgetEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }
             is BudgetEntryEvent.ShowTrackTypeSheet -> _state.update { it.copy(showTrackTypeSheet = event.show) }
             is BudgetEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
@@ -324,6 +332,7 @@ class BudgetEntryViewModel @Inject constructor(
             // 1. Create or Update the Filter for this budget
             val filter = Filter(
                 id = if (forceNewFilter) 0L else (s.filterId ?: 0L),
+                profileId = s.currentProfileId,
                 name = "${s.name}-Filter",
                 filter = TransactionFilter(
                     categoryIds = s.selectedCategoryIds,
@@ -422,7 +431,7 @@ class BudgetEntryViewModel @Inject constructor(
         viewModelScope.launch {
             // Always delete the private filter when deleting a budget
             if (filterId != null) {
-                filterRepository.getFilterById(filterId)?.let { filter ->
+                filterRepository.getFilterById(filterId, _state.value.currentProfileId)?.let { filter ->
                     filterRepository.deleteFilter(filter)
                 }
             }

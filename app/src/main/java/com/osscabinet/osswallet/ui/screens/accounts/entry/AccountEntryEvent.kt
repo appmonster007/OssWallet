@@ -11,6 +11,12 @@ sealed class AccountEntryEvent {
     data class SetIcon(val icon: String) : AccountEntryEvent()
     data class SetColor(val color: String) : AccountEntryEvent()
 
+    // Credit Details Events
+    data class SetCreditLimit(val limit: String) : AccountEntryEvent()
+    data class SetStatementClosingDay(val day: String) : AccountEntryEvent()
+    data class SetPaymentDueDay(val day: String) : AccountEntryEvent()
+    data class SetInterestRateApr(val apr: String) : AccountEntryEvent()
+
     // Balance Update Flow
     data class OpenBalanceUpdate(val currency: String) : AccountEntryEvent()
     data class SetBalanceUpdateMode(val mode: BalanceUpdateMode) : AccountEntryEvent()

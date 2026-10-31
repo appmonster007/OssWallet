@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:name=".OssWalletApp"
@@ -36,6 +37,16 @@
                 tools:node="remove" />
         </provider>
 
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -46,6 +57,11 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
             <meta-data
                 android:name="android.app.shortcuts"
@@ -209,11 +225,42 @@
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
 
+        <!-- Snooze / Mark paid buttons on reminder notifications. Only our own PendingIntents target it. -->
+        <receiver
+            android:name=".reminder.ReminderActionReceiver"
+            android:exported="false" />
+
         <service
             android:name=".service.WebServerService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+        <!-- AI assistants call OssWallet through this service (Android 16+). Every function ships disabled and
+             is switched on from Settings → Security & Privacy; each one also refuses to run while the app is locked. -->
+        <service
+            android:name=".appfunctions.OssWalletAppFunctionService"
+            android:permission="android.permission.BIND_APP_FUNCTION_SERVICE"
+            android:exported="true"
+            tools:targetApi="36">
+            <property
+                android:name="android.app.appfunctions.schema"
+                android:value="app_functions_schema.xsd" />
+            <property
+                android:name="android.app.appfunctions"
+                android:value="app_functions.xml" />
+            <property
+                android:name="android.app.appfunctions.v2"
+                android:value="osswallet_app_functions.xml" />
+            <intent-filter>
+                <action android:name="android.app.appfunctions.AppFunctionService" />
+                <action android:name="android.app.appfunctions.action.APP_FUNCTION_SERVICE" />
+                <action android:name="android.intent.action.APP_FUNCTION" />
+            </intent-filter>
+        </service>
+
+        <property
+            android:name="android.app.appfunctions.app_metadata"
+            android:resource="@xml/app_function_metadata" />
     </application>
 
 </manifest>

@@ -53,7 +53,8 @@ class OpenInWebViewModel @Inject constructor(
                 action =
                     if (enabled) WebServerService.ACTION_START else WebServerService.ACTION_STOP
             }
-            context.startForegroundService(intent)
+            // The stop path never calls startForeground(), so it must not go through startForegroundService().
+            if (enabled) context.startForegroundService(intent) else context.startService(intent)
         }
     }
 

@@ -26,7 +26,9 @@ import androidx.compose.material.icons.rounded.Apartment
 import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material.icons.rounded.AttachMoney
+import androidx.compose.material.icons.rounded.Attractions
 import androidx.compose.material.icons.rounded.AudioFile
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.AutoGraph
@@ -36,6 +38,7 @@ import androidx.compose.material.icons.rounded.BakeryDining
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Bathtub
 import androidx.compose.material.icons.rounded.BeachAccess
+import androidx.compose.material.icons.rounded.Bed
 import androidx.compose.material.icons.rounded.Bloodtype
 import androidx.compose.material.icons.rounded.Bluetooth
 import androidx.compose.material.icons.rounded.Bolt
@@ -44,6 +47,7 @@ import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.BreakfastDining
 import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.icons.rounded.BrunchDining
+import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.BusinessCenter
@@ -55,14 +59,20 @@ import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material.icons.rounded.Campaign
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.CardGiftcard
+import androidx.compose.material.icons.rounded.CardMembership
 import androidx.compose.material.icons.rounded.CardTravel
 import androidx.compose.material.icons.rounded.Casino
 import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Chair
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Checkroom
 import androidx.compose.material.icons.rounded.ChildCare
+import androidx.compose.material.icons.rounded.Class
+import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.Code
@@ -71,6 +81,7 @@ import androidx.compose.material.icons.rounded.Computer
 import androidx.compose.material.icons.rounded.ConfirmationNumber
 import androidx.compose.material.icons.rounded.Construction
 import androidx.compose.material.icons.rounded.Contactless
+import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.CorporateFare
 import androidx.compose.material.icons.rounded.Cottage
 import androidx.compose.material.icons.rounded.Countertops
@@ -79,7 +90,9 @@ import androidx.compose.material.icons.rounded.CreditScore
 import androidx.compose.material.icons.rounded.CurrencyBitcoin
 import androidx.compose.material.icons.rounded.CurrencyExchange
 import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.DeliveryDining
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.Diamond
 import androidx.compose.material.icons.rounded.DinnerDining
 import androidx.compose.material.icons.rounded.DirectionsBus
@@ -90,6 +103,7 @@ import androidx.compose.material.icons.rounded.DirectionsSubway
 import androidx.compose.material.icons.rounded.Discount
 import androidx.compose.material.icons.rounded.Diversity1
 import androidx.compose.material.icons.rounded.Diversity3
+import androidx.compose.material.icons.rounded.Domain
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Eco
@@ -105,9 +119,11 @@ import androidx.compose.material.icons.rounded.Engineering
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.Euro
 import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.EventNote
 import androidx.compose.material.icons.rounded.Explore
 import androidx.compose.material.icons.rounded.Face
 import androidx.compose.material.icons.rounded.Factory
+import androidx.compose.material.icons.rounded.FamilyRestroom
 import androidx.compose.material.icons.rounded.Fastfood
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Festival
@@ -124,12 +140,15 @@ import androidx.compose.material.icons.rounded.FoodBank
 import androidx.compose.material.icons.rounded.Forest
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Foundation
+import androidx.compose.material.icons.rounded.Gamepad
 import androidx.compose.material.icons.rounded.GasMeter
 import androidx.compose.material.icons.rounded.Gavel
 import androidx.compose.material.icons.rounded.Grass
 import androidx.compose.material.icons.rounded.Group
 import androidx.compose.material.icons.rounded.GroupAdd
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Hail
+import androidx.compose.material.icons.rounded.Handshake
 import androidx.compose.material.icons.rounded.Handyman
 import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.Healing
@@ -152,17 +171,21 @@ import androidx.compose.material.icons.rounded.KebabDining
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.KingBed
 import androidx.compose.material.icons.rounded.Kitchen
-import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Laptop
+import androidx.compose.material.icons.rounded.LaptopMac
+import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Liquor
 import androidx.compose.material.icons.rounded.LiveTv
 import androidx.compose.material.icons.rounded.LocalAtm
 import androidx.compose.material.icons.rounded.LocalBar
 import androidx.compose.material.icons.rounded.LocalCafe
+import androidx.compose.material.icons.rounded.LocalCarWash
 import androidx.compose.material.icons.rounded.LocalConvenienceStore
+import androidx.compose.material.icons.rounded.LocalDining
 import androidx.compose.material.icons.rounded.LocalDrink
+import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.LocalFlorist
 import androidx.compose.material.icons.rounded.LocalGasStation
 import androidx.compose.material.icons.rounded.LocalGroceryStore
@@ -171,6 +194,7 @@ import androidx.compose.material.icons.rounded.LocalLibrary
 import androidx.compose.material.icons.rounded.LocalMall
 import androidx.compose.material.icons.rounded.LocalMovies
 import androidx.compose.material.icons.rounded.LocalOffer
+import androidx.compose.material.icons.rounded.LocalParking
 import androidx.compose.material.icons.rounded.LocalPharmacy
 import androidx.compose.material.icons.rounded.LocalPizza
 import androidx.compose.material.icons.rounded.LocalTaxi
@@ -195,9 +219,12 @@ import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Nature
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.OndemandVideo
 import androidx.compose.material.icons.rounded.Paid
+import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Park
 import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material.icons.rounded.PedalBike
 import androidx.compose.material.icons.rounded.Percent
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Pets
@@ -226,6 +253,7 @@ import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.SelfImprovement
 import androidx.compose.material.icons.rounded.Sell
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Shield
@@ -239,11 +267,13 @@ import androidx.compose.material.icons.rounded.SportsBasketball
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.SportsSoccer
 import androidx.compose.material.icons.rounded.SportsTennis
+import androidx.compose.material.icons.rounded.Stadium
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Stars
 import androidx.compose.material.icons.rounded.Store
 import androidx.compose.material.icons.rounded.Storefront
 import androidx.compose.material.icons.rounded.SubdirectoryArrowRight
+import androidx.compose.material.icons.rounded.Subscriptions
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.Tag
@@ -258,6 +288,9 @@ import androidx.compose.material.icons.rounded.Tram
 import androidx.compose.material.icons.rounded.TravelExplore
 import androidx.compose.material.icons.rounded.TwoWheeler
 import androidx.compose.material.icons.rounded.Vaccines
+import androidx.compose.material.icons.rounded.Verified
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VolunteerActivism
 import androidx.compose.material.icons.rounded.VpnKey
 import androidx.compose.material.icons.rounded.Wallet
 import androidx.compose.material.icons.rounded.Warning
@@ -567,6 +600,41 @@ val AppIconMap: Map<String, ImageVector> by lazy {
         "VpnKey" to Icons.Rounded.VpnKey,
         "Warning" to Icons.Rounded.Warning,
         "Policy" to Icons.Rounded.Policy,
+
+        // Additional category icons (newly registered)
+        "Article" to Icons.Rounded.Article,
+        "Attractions" to Icons.Rounded.Attractions,
+        "Bed" to Icons.Rounded.Bed,
+        "Brush" to Icons.Rounded.Brush,
+        "Campaign" to Icons.Rounded.Campaign,
+        "CardMembership" to Icons.Rounded.CardMembership,
+        "Chair" to Icons.Rounded.Chair,
+        "Checkroom" to Icons.Rounded.Checkroom,
+        "Class" to Icons.Rounded.Class,
+        "CleaningServices" to Icons.Rounded.CleaningServices,
+        "ContentCut" to Icons.Rounded.ContentCut,
+        "DeliveryDining" to Icons.Rounded.DeliveryDining,
+        "Devices" to Icons.Rounded.Devices,
+        "Domain" to Icons.Rounded.Domain,
+        "EventNote" to Icons.Rounded.EventNote,
+        "FamilyRestroom" to Icons.Rounded.FamilyRestroom,
+        "Gamepad" to Icons.Rounded.Gamepad,
+        "Hail" to Icons.Rounded.Hail,
+        "Handshake" to Icons.Rounded.Handshake,
+        "LaptopMac" to Icons.Rounded.LaptopMac,
+        "LocalCarWash" to Icons.Rounded.LocalCarWash,
+        "LocalDining" to Icons.Rounded.LocalDining,
+        "LocalFireDepartment" to Icons.Rounded.LocalFireDepartment,
+        "LocalParking" to Icons.Rounded.LocalParking,
+        "OndemandVideo" to Icons.Rounded.OndemandVideo,
+        "Palette" to Icons.Rounded.Palette,
+        "PedalBike" to Icons.Rounded.PedalBike,
+        "Stadium" to Icons.Rounded.Stadium,
+        "Subscriptions" to Icons.Rounded.Subscriptions,
+        "Verified" to Icons.Rounded.Verified,
+        "VolunteerActivism" to Icons.Rounded.VolunteerActivism,
+        "Visibility" to Icons.Rounded.Visibility,
+        "SelfImprovement" to Icons.Rounded.SelfImprovement,
     )
 }
 

@@ -1,15 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Accounts widget content. Header is the shared widget_header_row.xml shell; the accounts are a
-     ListView (AccountsRemoteViewsService) so every one is reachable by scrolling.
-     tv_accounts_empty_text is its empty view (RemoteViews.setEmptyView) and must stay a sibling. -->
+<!-- Accounts widget content. No header row — settings is reached via the launcher's long-press
+     "Edit widget" (accounts_widget_info.xml's android:configure). ll_accounts_header (total,
+     pinned above the list — so it's visible without scrolling) is bound by
+     AccountsRemoteViewsRenderer and GONE entirely when there's no total to show. The accounts
+     are a ListView (AccountsRemoteViewsService) so every one is reachable by scrolling.
+     tv_accounts_empty_text is its empty view (RemoteViews.setEmptyView) and must stay a sibling
+     of the ListView. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
         android:id="@+id/ll_widget_root"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/widget_surface"
         android:orientation="vertical">
 
-    <include layout="@layout/widget_header_row" />
+    <LinearLayout
+            android:id="@+id/ll_accounts_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="8dp">
+
+            <TextView
+                    android:id="@+id/tv_accounts_total_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:textColor="@color/widget_on_surface_variant"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05"
+                    android:text="TOTAL BALANCE" />
+
+            <TextView
+                    android:id="@+id/tv_accounts_total_value"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/manrope"
+                    android:textColor="@color/widget_on_surface"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:text="$9,565.20"
+                    tools:text="$9,565.20" />
+
+        </LinearLayout>
+
+        <FrameLayout
+                android:id="@+id/v_accounts_header_divider"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/widget_outline" />
+
+    </LinearLayout>
 
     <FrameLayout
             android:layout_width="match_parent"

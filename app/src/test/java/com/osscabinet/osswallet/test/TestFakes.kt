@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.test
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.CreditCardDetails
 import com.osscabinet.ossWallet.domain.model.CurrencySummary
 import com.osscabinet.ossWallet.domain.model.SharedWallet
 import com.osscabinet.ossWallet.domain.model.Tag
@@ -34,6 +35,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import java.io.InputStream
 import java.math.BigDecimal
 
@@ -153,6 +155,11 @@ class FakeAccountRepository(
     override suspend fun updateAccounts(accounts: List<Account>, profileId: Int) {
         accountsFlow.value = accounts
     }
+    private val cardDetails = mutableMapOf<String, CreditCardDetails>()
+    override suspend fun saveCreditCardDetails(details: CreditCardDetails) {
+        cardDetails[details.accountId] = details
+    }
+    override suspend fun getCreditCardDetails(accountId: String): CreditCardDetails? = cardDetails[accountId]
 }
 
 // ── FakeTransactionRepository ───────────────────────────────────────────────
@@ -178,6 +185,11 @@ class FakeTransactionRepository : TransactionRepository {
     override fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>> = flowOf(emptyList())
     override fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>> = flowOf(emptyList())
     override fun searchTransactions(profileId: Int, query: String): Flow<List<Transaction>> = txFlow
+    override suspend fun searchForGlobal(
+        profileId: Int,
+        query: com.osscabinet.ossWallet.domain.service.search.ParsedSearch,
+        limit: Int
+    ): List<Transaction> = emptyList()
     override fun observeFilteredTransactionsWithBalance(
         profileId: Int,
         filter: TransactionFilter,
@@ -254,6 +266,79 @@ class FakeTagRepository : TagRepository {
     override suspend fun updateTag(oldName: String, newTag: Tag) {}
 }
 
+// ── FakeAttachmentRepository ─────────────────────────────────────────────────
+
+class FakeAttachmentRepository : com.osscabinet.ossWallet.domain.repository.AttachmentRepository {
+    private val rows = MutableStateFlow<List<com.osscabinet.ossWallet.domain.model.Attachment>>(emptyList())
+    private val bytes = mutableMapOf<Long, ByteArray>()
+    private var nextId = 1L
+
+    override fun observeForTransaction(transactionId: Long, profileId: Int) =
+        rows.map { list -> list.filter { it.transactionId == transactionId && it.profileId == profileId } }
+
+    override fun observeCounts(profileId: Int) =
+        rows.map { list -> list.filter { it.profileId == profileId }.groupingBy { it.transactionId }.eachCount() }
+
+    override suspend fun getForTransaction(transactionId: Long, profileId: Int) =
+        rows.value.filter { it.transactionId == transactionId && it.profileId == profileId }
+
+    override suspend fun add(
+        transactionId: Long, profileId: Int, bytes: ByteArray, mimeType: String, displayName: String
+    ) = addShared(listOf(transactionId), profileId, bytes, mimeType, displayName).single()
+
+    override suspend fun addShared(
+        transactionIds: List<Long>, profileId: Int, bytes: ByteArray, mimeType: String, displayName: String
+    ): List<com.osscabinet.ossWallet.domain.model.Attachment> {
+        val file = "f${nextId}"
+        val created = transactionIds.distinct().map { tx ->
+            com.osscabinet.ossWallet.domain.model.Attachment(
+                id = nextId++, transactionId = tx, profileId = profileId, fileName = file,
+                mimeType = mimeType, sizeBytes = bytes.size.toLong(), createdAt = 0, displayName = displayName
+            ).also { this.bytes[it.id] = bytes }
+        }
+        rows.value = rows.value + created
+        return created
+    }
+
+    override suspend fun shareWith(
+        attachments: List<com.osscabinet.ossWallet.domain.model.Attachment>, transactionIds: List<Long>, profileId: Int
+    ) {
+        val extra = attachments.flatMap { a ->
+            transactionIds.distinct().filter { t -> t != a.transactionId && rows.value.none { it.transactionId == t && it.fileName == a.fileName } }
+                .map { t -> a.copy(id = nextId++, transactionId = t).also { this.bytes[it.id] = this.bytes[a.id] ?: ByteArray(0) } }
+        }
+        rows.value = rows.value + extra
+    }
+
+    override suspend fun readBytes(attachment: com.osscabinet.ossWallet.domain.model.Attachment) = bytes[attachment.id]
+
+    override suspend fun delete(id: Long, profileId: Int) {
+        val file = rows.value.firstOrNull { it.id == id && it.profileId == profileId }?.fileName ?: return
+        rows.value = rows.value.filterNot { it.fileName == file && it.profileId == profileId }
+    }
+
+    override suspend fun deleteForTransaction(transactionId: Long, profileId: Int) {
+        rows.value = rows.value.filterNot { it.transactionId == transactionId && it.profileId == profileId }
+    }
+
+    override suspend fun removeOrphans() {}
+    override suspend fun clearAll() { rows.value = emptyList() }
+}
+
+/** Returns the source string as a file's bytes (".pdf" sources become PDFs), or throws for sources starting with "bad". */
+class FakeAttachmentProcessor : com.osscabinet.ossWallet.domain.repository.AttachmentProcessor {
+    override suspend fun prepare(source: String): com.osscabinet.ossWallet.domain.model.PreparedAttachment {
+        require(!source.startsWith("bad")) { "That file is larger than 20 MB" }
+        val pdf = source.endsWith(".pdf")
+        return com.osscabinet.ossWallet.domain.model.PreparedAttachment(
+            source.toByteArray(), if (pdf) "application/pdf" else "image/jpeg", source
+        )
+    }
+
+    override suspend fun prepareBytes(bytes: ByteArray, displayName: String) =
+        com.osscabinet.ossWallet.domain.model.PreparedAttachment(bytes, "application/octet-stream", displayName)
+}
+
 // ── FakeCsvImportService ─────────────────────────────────────────────────────
 
 class FakeCsvImportService(
@@ -304,4 +389,34 @@ class FakeSharedWalletRepository : SharedWalletRepository {
     override suspend fun joinWallet(inviteCode: String) {}
     override suspend fun addTransactionToWallet(walletId: String, transaction: Transaction) {}
     override suspend fun syncTransactions(walletId: String) {}
+}
+
+// ── FakeFilterRepository ─────────────────────────────────────────────────────
+
+/** Saved filters, kept per profile like the real repository. */
+class FakeFilterRepository : com.osscabinet.ossWallet.domain.repository.FilterRepository {
+    private val all = MutableStateFlow<List<com.osscabinet.ossWallet.domain.model.Filter>>(emptyList())
+    private var nextId = 1L
+
+    override fun getAllFilters(profileId: Int) =
+        all.map { list -> list.filter { it.profileId == profileId }.sortedBy { it.name } }
+
+    override suspend fun getFilterById(id: Long, profileId: Int) =
+        all.value.firstOrNull { it.id == id && it.profileId == profileId }
+
+    override suspend fun insertFilter(filter: com.osscabinet.ossWallet.domain.model.Filter): Long {
+        val id = nextId++
+        all.value = all.value + filter.copy(id = id)
+        return id
+    }
+
+    override suspend fun updateFilter(filter: com.osscabinet.ossWallet.domain.model.Filter) {
+        all.value = all.value.map { if (it.id == filter.id) filter else it }
+    }
+
+    override suspend fun deleteFilter(filter: com.osscabinet.ossWallet.domain.model.Filter) {
+        all.value = all.value.filterNot { it.id == filter.id }
+    }
+
+    override suspend fun getFilterUsageCount(filterId: Long, profileId: Int) = 0
 }

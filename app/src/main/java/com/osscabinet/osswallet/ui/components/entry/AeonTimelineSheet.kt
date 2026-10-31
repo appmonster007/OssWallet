@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -38,7 +40,8 @@ fun AeonTimelineSheet(
     selectedRange: TimelineRange,
     onRangeSelected: (TimelineRange) -> Unit,
     onDismiss: () -> Unit,
-    title: String = "Select Period"
+    title: String = "Select Period",
+    onCustomScheduleClick: (() -> Unit)? = null
 ) {
     var currentRange by remember(selectedRange) { mutableStateOf(selectedRange) }
     val surfaceColor = AppColors.surfaceContainerHigh
@@ -75,6 +78,20 @@ fun AeonTimelineSheet(
                     isFlush = true
                 )
 
+                if (onCustomScheduleClick != null) {
+                    Spacer(Modifier.height(8.dp))
+                    EntryActionCard(
+                        icon = Icons.Rounded.Repeat,
+                        label = "CUSTOM RECURRING SCHEDULE",
+                        value = if (currentRange is TimelineRange.Periodic) currentRange.toDisplayString() else "Build Custom Recurrence Rule",
+                        onClick = {
+                            onDismiss()
+                            onCustomScheduleClick()
+                        },
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
+
                 Spacer(Modifier.height(8.dp))
 
                 Row(
@@ -100,7 +117,8 @@ fun AeonTimelineSheetPreview() {
         AeonTimelineSheet(
             selectedRange = TimelineRange.AllTime(),
             onRangeSelected = {},
-            onDismiss = {}
+            onDismiss = {},
+            onCustomScheduleClick = {}
         )
     }
 }

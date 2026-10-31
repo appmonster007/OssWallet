@@ -12,6 +12,8 @@ import com.osscabinet.ossWallet.data.local.dao.CardCacheDao
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.data.local.dao.CurrencyDao
 import com.osscabinet.ossWallet.data.local.dao.FilterDao
+import com.osscabinet.ossWallet.data.local.dao.AttachmentDao
+import com.osscabinet.ossWallet.data.local.dao.GoalDao
 import com.osscabinet.ossWallet.data.local.dao.LoanDao
 import com.osscabinet.ossWallet.data.local.dao.LoanPaymentDao
 import com.osscabinet.ossWallet.data.local.dao.PlannedPaymentDao
@@ -22,11 +24,14 @@ import com.osscabinet.ossWallet.data.local.dao.TemplateDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
+import com.osscabinet.ossWallet.data.local.entity.CreditCardDetailsEntity
 import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
 import com.osscabinet.ossWallet.data.local.entity.CardCacheEntity
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.data.local.entity.AttachmentEntity
+import com.osscabinet.ossWallet.data.local.entity.GoalEntity
 import com.osscabinet.ossWallet.data.local.entity.LoanEntity
 import com.osscabinet.ossWallet.data.local.entity.LoanPaymentEntity
 import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentEntity
@@ -59,7 +64,10 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         BudgetEntity::class,
         LoanEntity::class,
         LoanPaymentEntity::class,
-        CardCacheEntity::class
+        CardCacheEntity::class,
+        GoalEntity::class,
+        AttachmentEntity::class,
+        CreditCardDetailsEntity::class
     ],
     version = 1,
     exportSchema = true
@@ -81,6 +89,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun loanDao(): LoanDao
     abstract fun loanPaymentDao(): LoanPaymentDao
     abstract fun cardCacheDao(): CardCacheDao
+    abstract fun goalDao(): GoalDao
+    abstract fun attachmentDao(): AttachmentDao
 
     companion object {
         init {

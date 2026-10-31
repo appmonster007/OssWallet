@@ -46,6 +46,17 @@ interface TransactionRepository {
     fun searchTransactions(profileId: Int, query: String): Flow<List<Transaction>>
 
     /**
+     * Candidates for the global search, newest first. Words use the full-text index (and category names),
+     * `#tags` and amounts have their own lookups. Callers finish the job with
+     * `GlobalSearchService.matchesTransaction`, because SQL only approximates tags and amounts.
+     */
+    suspend fun searchForGlobal(
+        profileId: Int,
+        query: com.osscabinet.ossWallet.domain.service.search.ParsedSearch,
+        limit: Int
+    ): List<Transaction>
+
+    /**
      * Observes filtered transactions and calculates anchored running balances.
      * Use this for history feeds that require financial accuracy.
      */

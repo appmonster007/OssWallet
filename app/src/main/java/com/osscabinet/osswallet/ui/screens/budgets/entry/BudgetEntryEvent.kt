@@ -43,7 +43,9 @@ sealed class BudgetEntryEvent {
 
     // Visibility
     data class ShowNumpad(val show: Boolean) : BudgetEntryEvent()
+    data class ShowBaseCurrencySheet(val show: Boolean) : BudgetEntryEvent()
     data class ShowTimelineSheet(val show: Boolean) : BudgetEntryEvent()
+    data class ShowScheduleBuilder(val show: Boolean) : BudgetEntryEvent()
     data class ShowAccountSheet(val show: Boolean) : BudgetEntryEvent()
     data class ShowTrackTypeSheet(val show: Boolean) : BudgetEntryEvent()
     data class ShowCategorySheet(val show: Boolean) : BudgetEntryEvent()

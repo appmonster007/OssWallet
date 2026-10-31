@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Picker preview (android:previewLayout, net_worth_widget_info_card.xml) for
-     NetWorthWidgetProviderCard — delegates straight to widget_net_worth_card.xml inside a
-     FrameLayout root container. -->
+     NetWorthWidgetProviderCard — delegates straight to widget_net_worth_card.xml. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -10,9 +9,5 @@
             layout="@layout/widget_net_worth_card"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
-
-    <include layout="@layout/widget_net_worth_preview_header"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
 
 </FrameLayout>

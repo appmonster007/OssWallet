@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -36,14 +37,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.domain.model.CreditCardDetails
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
@@ -114,8 +120,8 @@ fun AeonAccountCardSmall(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .size(28.dp)
-                .graphicsLayer { alpha = 0.12f },
-            tint = dotColor
+                .graphicsLayer { alpha = 0.10f },
+            tint = AppColors.contentPrimary // Account color accent: dotColor
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -151,6 +157,25 @@ fun AeonAccountCardSmall(
 }
 
 @Composable
+private fun buildCreditSubtitle(structureType: AccountStructureType, percentage: Int): AnnotatedString {
+    val percentageColor = when {
+        percentage == 0 -> AppColors.contentPrimary
+        percentage < 33 -> AppColors.positive
+        percentage < 66 -> AppColors.accent
+        else -> AppColors.negative
+    }
+
+    return buildAnnotatedString {
+        append(structureType.displayName.uppercase())
+        append(" · ")
+        withStyle(SpanStyle(color = percentageColor, fontWeight = FontWeight.Bold)) {
+            append("$percentage%")
+        }
+        append(" USED")
+    }
+}
+
+@Composable
 fun AeonAccountCardMedium(
     summary: AccountSummaryItem,
     baseCurrency: String,
@@ -162,6 +187,22 @@ fun AeonAccountCardMedium(
     val shape = RoundedCornerShape(16.dp)
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
+    val creditDetails = account.creditDetails
+    val isCreditWithDetails = account.structureType == AccountStructureType.CREDIT && creditDetails != null && creditDetails.creditLimit.signum() > 0
+
+    val owedMedium = if (isCreditWithDetails && summary.balance < BigDecimal.ZERO) summary.balance.abs() else BigDecimal.ZERO
+    val ratio = if (isCreditWithDetails) {
+        (owedMedium.toDouble() / creditDetails.creditLimit.toDouble()).coerceIn(0.0, 1.0)
+    } else 0.0
+    val percentage = (ratio * 100).toInt()
+
+    val utilColor = when {
+        percentage == 0 -> AppColors.contentPrimary
+        percentage < 33 -> AppColors.positive
+        percentage < 66 -> AppColors.accent
+        else -> AppColors.negative
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -169,19 +210,24 @@ fun AeonAccountCardMedium(
             .background(AppColors.cardSurfaceProminent)
             .aeonHairlineBorder(shape)
             .clickable { onClick() }
-            .padding(10.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
+                .padding(10.dp)
                 .size(40.dp)
-                .graphicsLayer { alpha = 0.12f },
-            tint = dotColor
+                .graphicsLayer { alpha = 0.10f },
+            tint = AppColors.contentPrimary
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp, top = 10.dp, end = 12.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -199,13 +245,23 @@ fun AeonAccountCardMedium(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        account.structureType.displayName.uppercase(),
-                        style = AppTextStyles.metaLabel.copy(fontSize = 8.sp),
-                        color = AppColors.contentSecondary.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    if (isCreditWithDetails) {
+                        Text(
+                            text = buildCreditSubtitle(account.structureType, percentage),
+                            style = AppTextStyles.metaLabel.copy(fontSize = 8.sp),
+                            color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    } else {
+                        Text(
+                            account.structureType.displayName.uppercase(),
+                            style = AppTextStyles.metaLabel.copy(fontSize = 8.sp),
+                            color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
 
@@ -223,6 +279,24 @@ fun AeonAccountCardMedium(
                 subtextColor = AppColors.contentSecondary.copy(alpha = 0.7f),
                 horizontalAlignment = Alignment.Start,
             )
+        }
+
+        // Flush 2.dp utilization indicator bar at bottom edge of card
+        if (isCreditWithDetails) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .background(utilColor.copy(alpha = 0.2f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(ratio.toFloat())
+                        .background(utilColor)
+                )
+            }
         }
     }
 }
@@ -251,6 +325,18 @@ fun AeonAccountCardLarge(
     val shape = RoundedCornerShape(20.dp)
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
+    val creditDetailsLarge = account.creditDetails
+    val isCreditLarge = account.structureType == AccountStructureType.CREDIT && creditDetailsLarge != null && creditDetailsLarge.creditLimit.signum() > 0
+    val owedLarge = if (isCreditLarge && summary.balance < BigDecimal.ZERO) summary.balance.abs() else BigDecimal.ZERO
+    val ratioLarge = if (isCreditLarge) (owedLarge.toDouble() / creditDetailsLarge.creditLimit.toDouble()).coerceIn(0.0, 1.0) else 0.0
+    val percentageLarge = (ratioLarge * 100).toInt()
+    val utilColorLarge = when {
+        percentageLarge == 0 -> AppColors.contentPrimary
+        percentageLarge < 33 -> AppColors.positive
+        percentageLarge < 66 -> AppColors.accent
+        else -> AppColors.negative
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -266,8 +352,8 @@ fun AeonAccountCardLarge(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .size(56.dp)
-                .graphicsLayer { alpha = 0.12f },
-            tint = dotColor
+                .graphicsLayer { alpha = 0.10f },
+            tint = AppColors.contentPrimary // Account color accent: dotColor
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -290,11 +376,23 @@ fun AeonAccountCardLarge(
                             ),
                             color = AppColors.contentPrimary
                         )
-                        Text(
-                            account.structureType.displayName.uppercase(),
-                            style = AppTextStyles.metaLabel,
-                            color = AppColors.contentSecondary.copy(alpha = 0.7f)
-                        )
+                        if (isCreditLarge) {
+                            Text(
+                                text = buildCreditSubtitle(account.structureType, percentageLarge),
+                                style = AppTextStyles.metaLabel,
+                                color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        } else {
+                            Text(
+                                account.structureType.displayName.uppercase(),
+                                style = AppTextStyles.metaLabel,
+                                color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
                 Column(horizontalAlignment = Alignment.End) {
@@ -338,6 +436,42 @@ fun AeonAccountCardLarge(
                 subtextColor = AppColors.contentSecondary.copy(alpha = 0.7f),
                 horizontalAlignment = Alignment.Start,
             )
+
+            if (isCreditLarge) {
+                val limit = creditDetailsLarge.creditLimit
+                val available = if (summary.balance > BigDecimal.ZERO) limit + summary.balance else (limit - owedLarge).coerceAtLeast(BigDecimal.ZERO)
+
+                Column(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "Av: ${formatCurrency(available, account.currencyCode)} / Lim: ${formatCurrency(limit, account.currencyCode)}",
+                        style = AppTextStyles.metaLabel.copy(fontSize = 10.sp),
+                        color = AppColors.contentSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(AppColors.contentPrimary.copy(alpha = 0.08f))
+                    ) {
+                        val activeFraction = if (ratioLarge > 0.0) ratioLarge.toFloat().coerceIn(0.02f, 1.0f) else 0f
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(activeFraction)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(utilColorLarge)
+                        )
+                    }
+                }
+            }
 
             val flow = summary.currentPeriodMetrics
             val prevFlow = previousSummary?.currentPeriodMetrics ?: summary.previousPeriodMetrics
@@ -682,11 +816,18 @@ private fun glassPreviewAccounts() = Triple(
     ),
     Account(
         id = "2",
-        name = "Checking",
+        name = "Chase Freedom",
         currencyCode = "EUR",
-        structureType = AccountStructureType.BANK,
-        colorHex = "#2196F3",
-        icon = "AccountBalance"
+        structureType = AccountStructureType.CREDIT,
+        colorHex = "#F44336",
+        icon = "CreditCard",
+        creditDetails = CreditCardDetails(
+            accountId = "2",
+            creditLimit = BigDecimal("5000.00"),
+            paymentDueDay = 25,
+            statementClosingDay = 5,
+            interestRateApr = 19.99f
+        )
     ),
     Account(
         id = "3",
@@ -698,26 +839,29 @@ private fun glassPreviewAccounts() = Triple(
     )
 )
 
-private fun mockSummary(account: Account) = AccountSummaryItem(
-    account = account,
-    currencyBalances = mapOf(account.currencyCode to BigDecimal("12345.67")),
-    balance = BigDecimal("12345.67"),
-    balanceInBase = BigDecimal("12345.67"),
-    currentPeriodMetrics = FinancialSummary(
-        income = BigDecimal("5200.00"),
-        expense = BigDecimal("1840.50"),
-        transferIn = BigDecimal.ZERO,
-        transferOut = BigDecimal.ZERO
+private fun mockSummary(account: Account): AccountSummaryItem {
+    val isCredit = account.structureType == AccountStructureType.CREDIT
+    val balance = if (isCredit) BigDecimal("-1250.00") else BigDecimal("12345.67")
+    val balanceInBase = if (isCredit) BigDecimal("-1350.00") else BigDecimal("12345.67")
+    return AccountSummaryItem(
+        account = account,
+        currencyBalances = mapOf(account.currencyCode to balance.abs()),
+        balance = balance,
+        balanceInBase = balanceInBase,
+        currentPeriodMetrics = FinancialSummary(
+            income = if (isCredit) BigDecimal.ZERO else BigDecimal("5200.00"),
+            expense = BigDecimal("1840.50"),
+            transferIn = BigDecimal.ZERO,
+            transferOut = BigDecimal.ZERO
+        )
     )
-)
+}
 
 @Preview(showBackground = true, name = "Glass – Light")
 @Composable
 fun AeonAccountCardsGlassLightPreview() {
-    val (savings, checking, portfolio) = glassPreviewAccounts()
+    val (savings, creditCard, portfolio) = glassPreviewAccounts()
     OssWalletTheme(theme = "Light") {
-        // hazeEffect is a GPU operation that Compose Preview can't execute — it renders as white.
-        // Disabling glass shows the fallback tinted colors instead, which is useful for layout review.
         CompositionLocalProvider(LocalGlassmorphismEnabled provides false) {
             AeonHazeProvider { _ ->
                 Column(
@@ -732,7 +876,7 @@ fun AeonAccountCardsGlassLightPreview() {
                             modifier = Modifier.weight(1f)
                         )
                         AeonAccountCardSmall(
-                            summary = mockSummary(checking).copy(balanceInBase = BigDecimal("3754.20")),
+                            summary = mockSummary(creditCard),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
@@ -752,14 +896,14 @@ fun AeonAccountCardsGlassLightPreview() {
                             modifier = Modifier.weight(1f)
                         )
                         AeonAccountCardMedium(
-                            summary = mockSummary(checking).copy(balanceInBase = BigDecimal("3754.20")),
+                            summary = mockSummary(creditCard),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                     }
                     AeonAccountCardLarge(
-                        summary = mockSummary(savings),
+                        summary = mockSummary(creditCard),
                         baseCurrency = "USD",
                         onClick = {},
                         cardNumber = "•••• 4921"
@@ -773,7 +917,7 @@ fun AeonAccountCardsGlassLightPreview() {
 @Preview(showBackground = true, name = "Glass – Dark")
 @Composable
 fun AeonAccountCardsGlassDarkPreview() {
-    val (savings, checking, portfolio) = glassPreviewAccounts()
+    val (savings, creditCard, portfolio) = glassPreviewAccounts()
     OssWalletTheme(theme = "Dark") {
         CompositionLocalProvider(LocalGlassmorphismEnabled provides false) {
             AeonHazeProvider { _ ->
@@ -789,7 +933,7 @@ fun AeonAccountCardsGlassDarkPreview() {
                             modifier = Modifier.weight(1f)
                         )
                         AeonAccountCardSmall(
-                            summary = mockSummary(checking).copy(balanceInBase = BigDecimal("3754.20")),
+                            summary = mockSummary(creditCard),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
@@ -809,14 +953,14 @@ fun AeonAccountCardsGlassDarkPreview() {
                             modifier = Modifier.weight(1f)
                         )
                         AeonAccountCardMedium(
-                            summary = mockSummary(checking).copy(balanceInBase = BigDecimal("3754.20")),
+                            summary = mockSummary(creditCard),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                     }
                     AeonAccountCardLarge(
-                        summary = mockSummary(savings),
+                        summary = mockSummary(creditCard),
                         baseCurrency = "USD",
                         onClick = {},
                         cardNumber = "•••• 4921"
@@ -932,6 +1076,73 @@ fun AeonAccountCardsDarkPreview() {
                     onClick = {}
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Credit Card - Medium")
+@Composable
+fun AeonAccountCardMediumCreditPreview() {
+    val creditAccount = Account(
+        id = "credit-1",
+        name = "Chase Freedom",
+        currencyCode = "USD",
+        structureType = AccountStructureType.CREDIT,
+        colorHex = "#F44336",
+        icon = "CreditCard",
+        creditDetails = CreditCardDetails(
+            accountId = "credit-1",
+            creditLimit = BigDecimal("5000.00")
+        )
+    )
+    val summary = AccountSummaryItem(
+        account = creditAccount,
+        balance = BigDecimal("1250.00"),
+        balanceInBase = BigDecimal("1250.00"),
+        currentPeriodMetrics = FinancialSummary()
+    )
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            AeonAccountCardMedium(
+                summary = summary,
+                baseCurrency = "USD",
+                onClick = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Credit Card - Large")
+@Composable
+fun AeonAccountCardLargeCreditPreview() {
+    val creditAccount = Account(
+        id = "credit-2",
+        name = "Amex Platinum",
+        currencyCode = "USD",
+        structureType = AccountStructureType.CREDIT,
+        colorHex = "#00BCD4",
+        icon = "CreditCard",
+        creditDetails = CreditCardDetails(
+            accountId = "credit-2",
+            creditLimit = BigDecimal("15000.00")
+        )
+    )
+    val summary = AccountSummaryItem(
+        account = creditAccount,
+        balance = BigDecimal("4200.00"),
+        balanceInBase = BigDecimal("4200.00"),
+        currentPeriodMetrics = FinancialSummary(
+            income = BigDecimal("0.00"),
+            expense = BigDecimal("2100.00")
+        )
+    )
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            AeonAccountCardLarge(
+                summary = summary,
+                baseCurrency = "USD",
+                onClick = {}
+            )
         }
     }
 }

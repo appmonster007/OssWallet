@@ -380,12 +380,15 @@ object AppTextStyles {
     // Hint / placeholder text inside an entry field.
     val formFieldHint: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelSmall
+            MaterialTheme.typography.labelSmall.copy(color = AppColors.contentSecondary)
 
     // Primary value text inside an entry field.
     val formFieldValue: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+            MaterialTheme.typography.bodyLarge.copy(
+                fontWeight = FontWeight.SemiBold,
+                color = AppColors.contentPrimary
+            )
 
     // Supporting note / description beneath a form field.
     val formFieldNote: TextStyle

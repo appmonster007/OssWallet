@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.location.LastLocationProvider
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.AttachmentsSection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionFormBody
 
 /**
@@ -49,6 +50,7 @@ fun TransactionEntryScreen(
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val attachments by viewModel.attachments.collectAsStateWithLifecycle()
 
     // Cleanup when leaving the screen
     DisposableEffect(Unit) {
@@ -84,7 +86,16 @@ fun TransactionEntryScreen(
             viewModel.deleteTransaction { actions.onBackClick() }
         },
         showDeleteConfirmation = showDeleteConfirmation,
-        onShowDeleteConfirmation = { showDeleteConfirmation = it }
+        onShowDeleteConfirmation = { showDeleteConfirmation = it },
+        extraContent = {
+            AttachmentsSection(
+                state = attachments,
+                onPicked = viewModel::onAttachmentPicked,
+                onRemove = viewModel::removeAttachment,
+                onDismissError = viewModel::clearAttachmentError,
+                readBytes = viewModel::readAttachment
+            )
+        }
     )
 }
 
@@ -102,7 +113,8 @@ fun TransactionEntryContent(
     onDeleteConfirm: () -> Unit,
     showDeleteConfirmation: Boolean,
     onShowDeleteConfirmation: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    extraContent: @Composable () -> Unit = {}
 ) {
     AeonEntryScaffold(
         title = if (state.isEditMode) "Edit Transaction" else "New Transaction",
@@ -128,7 +140,8 @@ fun TransactionEntryContent(
             state = state,
             onEvent = onEvent,
             onSearch = onSearch,
-            contentPadding = innerPadding
+            contentPadding = innerPadding,
+            extraContent = extraContent
         )
     }
 

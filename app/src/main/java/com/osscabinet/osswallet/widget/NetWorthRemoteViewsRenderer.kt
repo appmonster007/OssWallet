@@ -13,7 +13,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.osscabinet.ossWallet.MainActivity
 import com.osscabinet.ossWallet.R
-import com.osscabinet.ossWallet.domain.card.CardType
 
 /**
  * Preference keys written by [NetWorthWidgetFetcher]. Plays the same role
@@ -30,7 +29,6 @@ object NetWorthWidgetKeys {
     val NET_WORTH_COMPARISON = stringPreferencesKey("nw_comparison")
     val PERIOD_LABEL = stringPreferencesKey("nw_period_label")
     val BASE_CURRENCY = stringPreferencesKey("nw_base_currency")
-    val PERSPECTIVE_LABEL = stringPreferencesKey("nw_perspective_label")
     /** Name of a [WidgetTheme] constant — forces LIGHT/DARK regardless of the device's current night mode, or SYSTEM to leave every color/drawable as XML already declares it. */
     val THEME = stringPreferencesKey("nw_theme")
     val GLASS = stringPreferencesKey("nw_glass")
@@ -78,7 +76,7 @@ object NetWorthWidgetKeys {
  * maxResizeHeight="180dp" in both widget-info XMLs (there's nothing taller to grow into, and
  * an earlier unbounded maxResizeHeight stretched card's 3 equal-weight rows into oddly-spaced
  * "4-5 row"-looking shapes). Every tier starts with the exact same "row 1"
- * (widget_net_worth_row1.xml — header + amount), via <include>:
+ * (widget_net_worth_row1.xml — amount + comparison pill), via <include>:
  *  - micro (<110dp): row 1 only.
  *  - strip (110-179dp): row 1 + one row packing all 3 cells side by side (not enough height to
  *    give cell3 its own row yet).
@@ -205,32 +203,13 @@ object NetWorthRemoteViewsRenderer {
     }
 
     /**
-     * Row 1 — identical on every tier: header label + settings button, amount, comparison
-     * pill. [widgetId] targets the settings button's PendingIntent at THIS widget instance's
-     * own config screen (NetWorthWidgetConfigActivity reads EXTRA_APPWIDGET_ID to know which
-     * instance's prefs to load/save — see BaseWidgetConfigActivity). [palette] non-null forces
-     * every color below to that theme instead of the XML's resource-qualified default.
+     * Row 1 — identical on every tier: amount, comparison pill. No header/gear — settings is
+     * reached via the launcher's long-press "Edit widget" (net_worth_widget_info*.xml's
+     * android:configure). [palette] non-null forces every color below to that theme instead of
+     * the XML's resource-qualified default.
      */
     private fun bindRow1(views: RemoteViews, prefs: Preferences, context: Context, widgetId: Int, palette: WidgetPalette?) {
-        val perspectiveLabel = prefs[NetWorthWidgetKeys.PERSPECTIVE_LABEL] ?: "Cash Flow"
-        views.setTextViewText(R.id.tv_widget_header_title, "NET WORTH · ${perspectiveLabel.uppercase()}")
-        WidgetHeader.bindIcon(context, views, CardType.NET_WORTH, palette)
-        WidgetHeader.applyTheme(views, palette, prefs[NetWorthWidgetKeys.GLASS] == "true")
-
-        // NEW_TASK + MULTIPLE_TASK: launched from the widget host (home screen), not from
-        // inside our app, so without an explicit new task this activity can attach itself to
-        // the app's existing background task if one is running — finish() after save would
-        // then pop back to MainActivity underneath it instead of returning to the home screen.
-        val settingsIntent = Intent(context, NetWorthWidgetConfigActivity::class.java)
-            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
-        val settingsPendingIntent = PendingIntent.getActivity(
-            context,
-            widgetId * 10,
-            settingsIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        views.setOnClickPendingIntent(R.id.iv_widget_header_settings, settingsPendingIntent)
+        views.applyRootTheme(palette, prefs[NetWorthWidgetKeys.GLASS] == "true")
 
         // Tapping the amount opens Analytics pre-filtered — same target as NetWorthCard's own
         // onClickNet/onClickNetFlow (an unfiltered-by-type drill into this widget's base filter).

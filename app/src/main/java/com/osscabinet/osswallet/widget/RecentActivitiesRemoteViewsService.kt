@@ -12,15 +12,20 @@ import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.util.TimeUtils
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * Backs the Recent Activities widget's ListView. Unlike every other widget here (a single
  * RemoteViews tree pushed by a renderer reading pre-fetched prefs), a ListView's rows are
  * supplied on demand by this service's [RemoteViewsFactory] — the system binds to it and calls
  * [RemoteViewsFactory.getViewAt] per visible row, which is what makes true scrolling possible in
- * a widget (a plain RemoteViews tree can't scroll or lazily render). [RecentActivitiesWidgetFetcher]
- * only prepares the header (title); row data is queried here, directly, each time the system
- * asks for it.
+ * a widget (a plain RemoteViews tree can't scroll or lazily render). Transactions are grouped by
+ * calendar day: a date-header row (TODAY / YESTERDAY / "MON, OCT 20") is inserted ahead of each
+ * day's first transaction, so the per-row time line only needs the time of day, not the date —
+ * see [RecentActivitiesRemoteViewsFactory.groupLabel].
  */
 class RecentActivitiesRemoteViewsService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
@@ -39,7 +44,7 @@ private class RecentActivitiesRemoteViewsFactory(
     private val palette: WidgetPalette?
 ) : RemoteViewsService.RemoteViewsFactory {
 
-    private var rows: List<RowData> = emptyList()
+    private var entries: List<ListEntry> = emptyList()
 
     // Rendered category icons, keyed by icon name + tint + size. Rows repeat the same few categories,
     // so the cache stays small, and the key fully determines the bitmap so it can never go stale.
@@ -57,6 +62,12 @@ private class RecentActivitiesRemoteViewsFactory(
         val categoryColor: Int?
     )
 
+    /** One ListView position: either a day's group label or one transaction row. */
+    private sealed class ListEntry {
+        data class Header(val label: String) : ListEntry()
+        data class Item(val row: RowData) : ListEntry()
+    }
+
     override fun onCreate() = Unit
 
     /**
@@ -65,7 +76,7 @@ private class RecentActivitiesRemoteViewsFactory(
      * expected shape, not a shortcut.
      */
     override fun onDataSetChanged() {
-        rows = runBlocking {
+        entries = runBlocking {
             runCatching {
                 val config = RecentActivitiesWidgetPrefsStore(context).loadSafe(widgetId)
                 val common = WidgetDataLoader.loadCommon(context)
@@ -83,40 +94,63 @@ private class RecentActivitiesRemoteViewsFactory(
                 val formatter = CurrencyReprUi.CurrencyNumberFormatter()
                 val now = System.currentTimeMillis()
 
-                transactions.map { tx ->
+                val rows = transactions.map { tx ->
                     val title = tx.name.ifBlank { tx.note.ifBlank { tx.transactionType.displayName } }
-                    // Account + category only — time moved out to its own line under the
-                    // amount on the right (design pick: canvas "Row B" with time relocated).
+                    // Account + category only — the date now lives in this row's group header;
+                    // time-of-day sits under the amount on the right (see RowData.timeText).
                     val subtitleParts = buildList {
                         if (config.showAccount) accountsById[tx.accountId]?.name?.let { add(it) }
                         if (config.showCategory) categoriesById[tx.categoryId]?.name?.let { add(it) }
                     }
                     val isPositive = tx.transactionType == TransactionType.INCOME ||
                         tx.transactionType == TransactionType.TRANSFER_INFLOW
-                    RowData(
+                    tx.timestamp to RowData(
                         transactionId = tx.id,
                         title = title,
                         initial = title.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
                         iconName = categoriesById[tx.categoryId]?.iconName,
                         subtitle = subtitleParts.joinToString(" · "),
-                        timeText = if (config.showTimestamp) TimeUtils.formatRelativeDate(tx.timestamp, now) else "",
+                        timeText = if (config.showTimestamp) TimeUtils.formatTime(tx.timestamp) else "",
                         amountText = formatter.format(tx.amount, tx.currency),
                         isPositive = isPositive,
                         categoryColor = categoriesById[tx.categoryId]?.colorHex
                     )
+                }
+
+                buildList {
+                    var lastLabel: String? = null
+                    rows.forEach { (timestamp, row) ->
+                        val label = groupLabel(timestamp, now)
+                        if (label != lastLabel) {
+                            add(ListEntry.Header(label))
+                            lastLabel = label
+                        }
+                        add(ListEntry.Item(row))
+                    }
                 }
             }.getOrDefault(emptyList())
         }
     }
 
     override fun onDestroy() {
-        rows = emptyList()
+        entries = emptyList()
     }
 
-    override fun getCount(): Int = rows.size
+    override fun getCount(): Int = entries.size
 
-    override fun getViewAt(position: Int): RemoteViews {
-        val row = rows[position]
+    override fun getViewAt(position: Int): RemoteViews = when (val entry = entries[position]) {
+        is ListEntry.Header -> bindHeader(entry)
+        is ListEntry.Item -> bindItem(entry.row)
+    }
+
+    private fun bindHeader(header: ListEntry.Header): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.widget_recent_activities_date_header)
+        views.setTextViewText(R.id.tv_ra_date_header, header.label)
+        views.setThemedTextColor(R.id.tv_ra_date_header, palette) { it.onSurfaceVariant }
+        return views
+    }
+
+    private fun bindItem(row: RowData): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_recent_activities_item)
 
         views.setTextViewText(R.id.tv_ra_item_title, row.title)
@@ -190,9 +224,32 @@ private class RecentActivitiesRemoteViewsFactory(
         }
     }
 
+    /** TODAY / YESTERDAY / "MON, OCT 20" — matches the per-row amount's uppercase, mono styling. */
+    private fun groupLabel(dateMillis: Long, now: Long): String {
+        val zone = ZoneId.systemDefault()
+        val target = Instant.ofEpochMilli(dateMillis).atZone(zone).toLocalDate()
+        val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+        return when (target) {
+            today -> "TODAY"
+            today.minusDays(1) -> "YESTERDAY"
+            else -> DateTimeFormatter.ofPattern("EEE, MMM d", Locale.getDefault())
+                .format(target)
+                .uppercase(Locale.getDefault())
+        }
+    }
+
     override fun getLoadingView(): RemoteViews? = null
-    override fun getViewTypeCount(): Int = 1
-    override fun getItemId(position: Int): Long = rows[position].transactionId
+    // RemoteViewsFactory has no getItemViewType — the host tracks recycling by each returned
+    // RemoteViews' own layout id instead, so this just needs to cover the distinct layouts used.
+    override fun getViewTypeCount(): Int = 2
+
+    // Headers have no natural row id of their own; their label hash is stable across refreshes
+    // as long as the same calendar day keeps the same label, which it always does.
+    override fun getItemId(position: Int): Long = when (val entry = entries[position]) {
+        is ListEntry.Header -> -(entry.label.hashCode().toLong())
+        is ListEntry.Item -> entry.row.transactionId
+    }
+
     override fun hasStableIds(): Boolean = true
 
     private companion object {

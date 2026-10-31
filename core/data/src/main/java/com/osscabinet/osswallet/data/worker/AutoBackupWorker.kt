@@ -14,15 +14,14 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.osscabinet.ossWallet.core.data.R
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
+import com.osscabinet.ossWallet.data.notification.NotificationPermissions
 import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
-import okio.buffer
-import okio.sink
-import okio.source
 import java.util.concurrent.TimeUnit
 
 @HiltWorker
@@ -35,65 +34,50 @@ class AutoBackupWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         val config = settingsDataStore.autoBackupConfig.first()
+        val wantsPrivate = config.storageMode == AutoBackupConfig.StorageMode.PRIVATE ||
+            config.storageMode == AutoBackupConfig.StorageMode.BOTH
+        val wantsCustomFolder = config.storageMode == AutoBackupConfig.StorageMode.CUSTOM_FOLDER ||
+            config.storageMode == AutoBackupConfig.StorageMode.BOTH
 
-        val result = backupRepo.exportToPrivateStorage()
-        if (result.isSuccess) {
-            backupRepo.pruneOldBackups(config.maxRetained)
+        val privateResult = if (wantsPrivate) backupRepo.exportToPrivateStorage(config.scope) else null
+        val customFolderResult = if (wantsCustomFolder) {
+            val folderUri = config.customFolderUri
+            if (folderUri == null) {
+                kotlin.Result.failure(IllegalStateException("No custom folder is configured"))
+            } else {
+                backupRepo.exportToCustomFolder(folderUri, config.scope)
+            }
+        } else null
+
+        // The job only succeeds if every destination the config actually asked for succeeded —
+        // a custom-folder failure (lost SAF permission, folder deleted, ...) must not be masked
+        // by a private copy the user didn't ask to rely on, and vice versa.
+        val requiredResults = listOfNotNull(privateResult, customFolderResult)
+        val allSucceeded = requiredResults.isNotEmpty() && requiredResults.all { it.isSuccess }
+
+        if (allSucceeded) {
+            backupRepo.pruneOldBackups(
+                config.maxRetained,
+                customFolderUri = if (wantsCustomFolder) config.customFolderUri else null
+            )
             if (config.notifyMode == AutoBackupConfig.NotifyMode.ALWAYS) {
-                notify(
-                    appContext,
-                    "Backup completed",
-                    "Your data has been backed up successfully.",
-                    false
-                )
+                notify(appContext, "Backup completed", "Your data has been backed up successfully.", false)
             }
-            if (config.storageMode == AutoBackupConfig.StorageMode.CUSTOM_FOLDER ||
-                config.storageMode == AutoBackupConfig.StorageMode.BOTH
-            ) {
-                config.customFolderUri?.let { folderUri ->
-                    try {
-                        val docFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(
-                            appContext, android.net.Uri.parse(folderUri)
-                        )
-                        val timestamp = java.time.LocalDateTime.now()
-                            .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
-                        val fileName = "osswallet_backup_${timestamp}_all.zip"
-                        val newFile = docFolder?.createFile("application/zip", fileName)
-                        newFile?.uri?.let { fileUri ->
-                            appContext.contentResolver.openOutputStream(fileUri)?.use { os ->
-                                val privatePath = result.getOrNull()
-                                if (privatePath != null) {
-                                    java.io.File(privatePath).source().buffer().use { source ->
-                                        os.sink().buffer().use { sink ->
-                                            sink.writeAll(source)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        android.util.Log.e(
-                            "AutoBackupWorker",
-                            "Failed to write to custom folder",
-                            e
-                        )
-                    }
-                }
-            }
-        } else {
-            if (config.notifyMode != AutoBackupConfig.NotifyMode.NEVER) {
-                notify(
-                    appContext,
-                    "Backup failed",
-                    result.exceptionOrNull()?.message ?: "Unknown error",
-                    true
-                )
-            }
+            return Result.success()
         }
-        return if (result.isSuccess) Result.success() else Result.retry()
+
+        val failureMessage = requiredResults.firstOrNull { it.isFailure }
+            ?.exceptionOrNull()?.message ?: "Unknown error"
+        if (config.notifyMode != AutoBackupConfig.NotifyMode.NEVER) {
+            notify(appContext, "Backup failed", failureMessage, true)
+        }
+        return Result.retry()
     }
 
+    @Suppress("MissingPermission")
     private fun notify(context: Context, title: String, message: String, isError: Boolean) {
+        if (!NotificationPermissions.canPost(context)) return
+
         val channelId = "auto_backup"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -103,19 +87,14 @@ class AutoBackupWorker @AssistedInject constructor(
         }
 
         val notif = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.ic_menu_save)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setAutoCancel(true)
             .build()
 
-        try {
-            NotificationManagerCompat.from(context).notify(if (isError) 2002 else 2001, notif)
-        } catch (e: SecurityException) {
-            // Permission not granted on Android 13+
-            android.util.Log.w("AutoBackupWorker", "Notification permission not granted", e)
-        }
+        NotificationManagerCompat.from(context).notify(if (isError) 2002 else 2001, notif)
     }
 
     companion object {

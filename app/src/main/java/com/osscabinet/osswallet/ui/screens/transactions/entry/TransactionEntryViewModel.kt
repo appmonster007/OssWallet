@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.service.management.attachmentTargets
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -17,7 +18,9 @@ import com.osscabinet.ossWallet.domain.model.isOutside
 import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.toDbTransferSide
 import com.osscabinet.ossWallet.domain.model.toEntryMode
+import com.osscabinet.ossWallet.domain.repository.AttachmentRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
+import com.osscabinet.ossWallet.domain.repository.AttachmentProcessor
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
@@ -33,7 +36,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -51,11 +56,32 @@ class TransactionEntryViewModel @Inject constructor(
     private val transactionManager: TransactionManager,
     settingsRepository: SettingsRepository,
     computationRepository: ComputationRepository,
-    private val tagRepository: TagRepository
+    private val tagRepository: TagRepository,
+    private val attachmentRepository: AttachmentRepository,
+    attachmentProcessor: AttachmentProcessor
 ) : BaseEntryViewModel(entryFormDataUseCase, computationRepository, settingsRepository) {
 
     private val _state = MutableStateFlow(TransactionEntryState())
     val state: StateFlow<TransactionEntryState> = _state.asStateFlow()
+
+    private val attachmentStaging = AttachmentStaging(attachmentRepository, attachmentProcessor, viewModelScope)
+    val attachments: StateFlow<AttachmentsUiState> = attachmentStaging.state
+
+    init {
+        viewModelScope.launch {
+            _state.map { it.transactionId }.distinctUntilChanged().collect { id ->
+                attachmentStaging.load(id, settingsRepository.currentProfileId.first())
+            }
+        }
+    }
+
+    private suspend fun attachmentTargets(id: Long, profileId: Int) = transactionUseCases.attachmentTargets(id, profileId)
+
+    fun onAttachmentPicked(source: String) = attachmentStaging.add(source)
+    fun removeAttachment(item: AttachmentItem) = attachmentStaging.remove(item)
+    fun clearAttachmentError() = attachmentStaging.clearError()
+    suspend fun readAttachment(item: AttachmentItem): ByteArray? =
+        item.pending?.bytes ?: item.attachment?.let { attachmentRepository.readBytes(it) }
 
     private var initialTimestamp: Long = System.currentTimeMillis()
     private var lastInitParams: Any? = null
@@ -883,6 +909,7 @@ class TransactionEntryViewModel @Inject constructor(
                             currentState.categories.find { it.id == catId }?.name ?: "Transaction"
                         }
                     )
+                    attachmentStaging.commit(attachmentTargets(id, profileId), profileId)
                     onSuccess(id)
                 } else {
                     val request = buildTransactionRequest() ?: return@launch
@@ -896,6 +923,7 @@ class TransactionEntryViewModel @Inject constructor(
                         scheduledDate = currentState.prefillDto?.plannedScheduledDate
                             ?: currentState.selectedDateMillis
                     )
+                    attachmentStaging.commit(attachmentTargets(id, profileId), profileId)
                     onSuccess(id)
                 }
             } finally {
@@ -953,6 +981,7 @@ class TransactionEntryViewModel @Inject constructor(
             _state.value.transactionId?.let { id ->
                 withProfile { profileId ->
                     transactionManager.deleteTransaction(id, profileId)
+                    runCatching { attachmentRepository.deleteForTransaction(id, profileId) }
                 }
                 onDeleted()
             }

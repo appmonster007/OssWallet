@@ -13,6 +13,10 @@ val localProps = Properties().also { props ->
     if (f.exists()) f.inputStream().use { props.load(it) }
 }
 
+ksp {
+    arg("appfunctions:aggregateAppFunctions", "true")
+}
+
 android {
     namespace = "com.osscabinet.ossWallet"
     compileSdk = 37
@@ -105,6 +109,7 @@ dependencies {
     implementation(libs.androidx.camera.core)
     implementation(libs.material)
     implementation(libs.androidx.biometric)
+    "fullImplementation"(libs.play.services.mlkit.entity.extraction)
     implementation(libs.vico.compose)
     implementation(libs.vico.compose.m3)
     implementation(libs.vico.core)
@@ -140,6 +145,9 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
+    // Lets AI assistants call into the app (Android 16+). Experimental; the API changes between alphas.
+    implementation(libs.androidx.appfunctions)
+    ksp(libs.androidx.appfunctions.compiler)
     ksp(libs.hilt.compiler)
     implementation(libs.oss.hilt.work)
     ksp(libs.oss.hilt.work.compiler)
@@ -152,6 +160,7 @@ dependencies {
     testImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.work.testing)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.runner)

@@ -2,9 +2,9 @@
 <!-- Recent Activities widget's real content. No fixed tiers like Net Worth — it's a true
      scrolling ListView (RecentActivitiesRemoteViewsService), so no upper height bound.
 
-     Header is the shared widget_header_row.xml shell (see that file) — its
-     ll_widget_header_extra slot gets the "VIEW ALL" pill added via RemoteViews.addView() in
-     RecentActivitiesRemoteViewsRenderer, since Net Worth's header has no equivalent action.
+     No header row — settings is reached via the launcher's long-press "Edit widget"
+     (recent_activities_widget_info.xml's android:configure). "VIEW ALL" now lives in a footer
+     row below the list instead (tv_ra_view_all), bound by RecentActivitiesRemoteViewsRenderer.
      ll_ra_empty is the ListView's empty view (RemoteViews.setEmptyView) — must stay a sibling
      of it for that to work. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -14,8 +14,6 @@
         android:layout_height="match_parent"
         android:background="@color/widget_surface"
         android:orientation="vertical">
-
-    <include layout="@layout/widget_header_row" />
 
     <FrameLayout
             android:layout_width="match_parent"
@@ -64,5 +62,39 @@
         </LinearLayout>
 
     </FrameLayout>
+
+    <FrameLayout
+            android:id="@+id/v_ra_footer_divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/widget_outline" />
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end|center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+        <TextView
+                android:id="@+id/tv_ra_view_all"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/widget_netflow_pill_bg"
+                android:fontFamily="@font/jetbrains_mono"
+                android:textColor="@color/widget_accent"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="VIEW ALL"
+                tools:text="VIEW ALL" />
+
+    </LinearLayout>
 
 </LinearLayout>

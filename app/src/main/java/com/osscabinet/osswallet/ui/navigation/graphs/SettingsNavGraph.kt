@@ -24,6 +24,7 @@ import com.osscabinet.ossWallet.ui.navigation.SettingsCurrencyRoute
 import com.osscabinet.ossWallet.ui.navigation.SettingsDataManagementRoute
 import com.osscabinet.ossWallet.ui.navigation.SettingsDisplayRoute
 import com.osscabinet.ossWallet.ui.navigation.SettingsRoute
+import com.osscabinet.ossWallet.ui.navigation.SettingsSupportUsRoute
 import com.osscabinet.ossWallet.ui.navigation.GoalListRoute
 import com.osscabinet.ossWallet.ui.navigation.ReportsRoute
 import com.osscabinet.ossWallet.ui.navigation.SearchRoute
@@ -64,6 +65,7 @@ import com.osscabinet.ossWallet.ui.screens.settings.SettingsActions
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsScreen
 import com.osscabinet.ossWallet.ui.screens.settings.ShortlistedCurrenciesActions
 import com.osscabinet.ossWallet.ui.screens.settings.ShortlistedCurrenciesScreen
+import com.osscabinet.ossWallet.ui.screens.settings.SupportUsScreen
 import com.osscabinet.ossWallet.ui.screens.smartsuggestions.SmartSuggestionsActions
 import com.osscabinet.ossWallet.ui.screens.smartsuggestions.SmartSuggestionsScreen
 import kotlinx.serialization.json.Json
@@ -94,6 +96,7 @@ fun NavGraphBuilder.settingsGraph(
                 onNotificationsClick = { navController.navigate(SettingsNotificationsRoute) },
                 onSecurityClick = { navController.navigate(SettingsSecurityRoute) },
                 onDataManagementClick = { navController.navigate(SettingsDataManagementRoute) },
+                onSupportUsClick = { navController.navigate(SettingsSupportUsRoute) },
                 onBackClick = { navController.popBackStack() }
             )
         )
@@ -167,6 +170,15 @@ fun NavGraphBuilder.settingsGraph(
         popExitTransition = { PopExitTransitionSpec }
     ) {
         ReportsScreen(onBackClick = { navController.popBackStack() })
+    }
+
+    composable<SettingsSupportUsRoute>(
+        enterTransition = { EnterTransitionSpec },
+        exitTransition = { ExitTransitionSpec },
+        popEnterTransition = { PopEnterTransitionSpec },
+        popExitTransition = { PopExitTransitionSpec }
+    ) {
+        SupportUsScreen(onBackClick = { navController.popBackStack() })
     }
 
     composable<SettingsNotificationsRoute>(

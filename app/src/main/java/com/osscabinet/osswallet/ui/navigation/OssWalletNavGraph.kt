@@ -31,6 +31,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.toRoute
 import com.osscabinet.ossWallet.ui.components.AppDrawerContent
+import com.osscabinet.ossWallet.ui.components.BuyMeACoffeeSupportDialog
 import com.osscabinet.ossWallet.ui.navigation.graphs.accountsGraph
 import com.osscabinet.ossWallet.ui.navigation.graphs.planningGraph
 import com.osscabinet.ossWallet.ui.navigation.graphs.primaryTabsGraph
@@ -98,6 +99,12 @@ fun OssWalletNavGraph(
     // Splash covers the blank frame while DataStore resolves (<50ms on any device).
     // Captured as a local val so Kotlin can smart-cast it (delegated props can't be smart-cast).
     val resolvedDestination = startDestination ?: return
+
+    val showBuyMeACoffeePrompt by vms.mainViewModel.showBuyMeACoffeePrompt.collectAsStateWithLifecycle()
+    BuyMeACoffeeSupportDialog(
+        show = showBuyMeACoffeePrompt,
+        onDismiss = vms.mainViewModel::onBuyMeACoffeePromptDismissed
+    )
 
     val drawerHazeState = remember { HazeState() }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)

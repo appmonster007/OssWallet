@@ -230,6 +230,10 @@ val LocalCardOpenAnimation = staticCompositionLocalOf {
     CardOpenAnimation.DEFAULT
 }
 
+// --- BUY ME A COFFEE BRAND (fixed third-party identity colors — not app theme tokens) ---
+val BuyMeACoffeeYellow = Color(0xFFFFDD00)
+val BuyMeACoffeeInk = Color(0xFF0D0C22)
+
 object AppColors {
 
     // ── Accent / Brand ──────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
+import com.osscabinet.ossWallet.BuildConfig
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.CloudSync
+import androidx.compose.material.icons.rounded.Coffee
 import androidx.compose.material.icons.rounded.CurrencyExchange
 import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.Lock
@@ -221,6 +223,22 @@ fun SettingsScreen(
                             )
                         }
 
+                        // ── SUPPORT ──────────────────────────────────────────
+                        if (BuildConfig.ENABLE_BUY_ME_A_COFFEE) {
+                            AeonSettingsSection(
+                                title = "SUPPORT",
+                                accentBar = AppColors.accent
+                            ) {
+                                SettingsNavigationItem(
+                                    title = "Support Us",
+                                    subtitle = "BUY ME A COFFEE • MEMBERSHIP TIERS",
+                                    icon = Icons.Rounded.Coffee,
+                                    iconTint = AppColors.accent,
+                                    onClick = actions.onSupportUsClick
+                                )
+                            }
+                        }
+
                         SettingsFooter(attribution = providerAttribution)
                     }
                 }
@@ -301,6 +319,7 @@ data class SettingsActions(
     val onNotificationsClick: () -> Unit,
     val onSecurityClick: () -> Unit,
     val onDataManagementClick: () -> Unit,
+    val onSupportUsClick: () -> Unit,
     val onBackClick: () -> Unit
 )
 

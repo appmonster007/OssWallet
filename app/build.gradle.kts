@@ -41,6 +41,15 @@ android {
 
         val currencyApiKey = localProps.getProperty("CURRENCY_API_KEY") ?: ""
         buildConfigField("String", "CURRENCY_API_KEY", "\"$currencyApiKey\"")
+
+        val buyMeACoffeeUrl = localProps.getProperty("BUY_ME_A_COFFEE_URL") ?: "https://buymeacoffee.com/osscabinet"
+        buildConfigField("String", "BUY_ME_A_COFFEE_URL", "\"$buyMeACoffeeUrl\"")
+
+        // Compile-time switch for the Buy Me a Coffee nudge popup and Settings > Support Us
+        // page — forks/custom builds can set ENABLE_BUY_ME_A_COFFEE=false in local.properties
+        // to build with both entirely absent, rather than toggling it at runtime.
+        val enableBuyMeACoffee = localProps.getProperty("ENABLE_BUY_ME_A_COFFEE")?.toBooleanStrictOrNull() ?: true
+        buildConfigField("boolean", "ENABLE_BUY_ME_A_COFFEE", "$enableBuyMeACoffee")
     }
 
     flavorDimensions += "distribution"
@@ -84,6 +93,16 @@ android {
             )
             if (hasReleaseSigningConfig) {
                 signingConfig = signingConfigs.getByName("release")
+            }
+
+            // Personal local signed builds: ENABLE_BUY_ME_A_COFFEE_RELEASE in local.properties
+            // overrides ENABLE_BUY_ME_A_COFFEE for release builds only, so you can turn the
+            // donation nudge off on your own signed build without changing the default
+            // (ENABLE_BUY_ME_A_COFFEE, still true) that debug and anyone else's build sees.
+            val enableBuyMeACoffeeRelease =
+                localProps.getProperty("ENABLE_BUY_ME_A_COFFEE_RELEASE")?.toBooleanStrictOrNull()
+            if (enableBuyMeACoffeeRelease != null) {
+                buildConfigField("boolean", "ENABLE_BUY_ME_A_COFFEE", "$enableBuyMeACoffeeRelease")
             }
         }
     }

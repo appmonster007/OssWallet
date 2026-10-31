@@ -36,9 +36,16 @@ Create `local.properties` with:
 ```
 sdk.dir=/path/to/Android/sdk
 CURRENCY_API_KEY=your_api_key_here
+BUY_ME_A_COFFEE_URL=https://buymeacoffee.com/your_page_name
 ```
 
 `CURRENCY_API_KEY` is required for currency exchange rate fetching. The build will fail without it.
+
+`BUY_ME_A_COFFEE_URL` is optional — it backs the periodic donation prompt (`BuildConfig.BUY_ME_A_COFFEE_URL`). Omitting it falls back to `https://buymeacoffee.com/osscabinet`; the build does not fail.
+
+`ENABLE_BUY_ME_A_COFFEE` is optional — set to `false` to compile out the donation popup and Settings > Support Us page entirely, for every build variant. Defaults to `true`.
+
+`ENABLE_BUY_ME_A_COFFEE_RELEASE` is optional and release-only — overrides `ENABLE_BUY_ME_A_COFFEE` for `release` builds specifically (e.g. your own locally-signed build), without touching the default debug/global behavior. Unset by default, so release follows `ENABLE_BUY_ME_A_COFFEE` like everything else.
 
 ## Key Versions
 

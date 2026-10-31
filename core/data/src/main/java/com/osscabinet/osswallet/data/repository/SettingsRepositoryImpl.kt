@@ -53,6 +53,8 @@ class SettingsRepositoryImpl @Inject constructor(
     override val uiDensity: Flow<String> = settingsDataStore.uiDensity
     override val cardListEdgeSpacing: Flow<Int> = settingsDataStore.cardListEdgeSpacing
     override val cardListGap: Flow<Int> = settingsDataStore.cardListGap
+    override val buyMeACoffeePromptLastShownWindow: Flow<Long> =
+        settingsDataStore.buyMeACoffeePromptLastShownWindow
 
     override suspend fun saveCurrency(currency: String) = settingsDataStore.saveCurrency(currency)
     override suspend fun saveTheme(theme: String) = settingsDataStore.saveTheme(theme)
@@ -152,4 +154,6 @@ class SettingsRepositoryImpl @Inject constructor(
         settingsDataStore.saveCardListEdgeSpacing(dp)
 
     override suspend fun saveCardListGap(dp: Int) = settingsDataStore.saveCardListGap(dp)
+    override suspend fun saveBuyMeACoffeePromptLastShownWindow(epochDay: Long) =
+        settingsDataStore.saveBuyMeACoffeePromptLastShownWindow(epochDay)
 }

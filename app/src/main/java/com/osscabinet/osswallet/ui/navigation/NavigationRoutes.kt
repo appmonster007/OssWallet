@@ -161,6 +161,9 @@ data object SettingsNotificationsRoute
 data object SettingsDataManagementRoute
 
 @Serializable
+data object SettingsSupportUsRoute
+
+@Serializable
 data object ShortlistedCurrenciesRoute
 
 @Serializable

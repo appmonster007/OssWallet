@@ -1,14 +1,3 @@
-# Draft F-Droid recipe for OssWallet.
-#
-# This file is NOT consumed by this repo's build — it's the recipe submitted
-# as metadata/com.osscabinet.ossWallet.yml in a fork of
-# https://gitlab.com/fdroid/fdroiddata (F-Droid builds and signs the APK
-# itself from this recipe; nothing here is built locally).
-#
-# Validated locally with:
-#   fdroid build -v -t -f com.osscabinet.ossWallet:1
-# against the v1.0.0 tag.
-
 Categories:
   - Finance Manager
 License: AGPL-3.0-only
@@ -16,15 +5,10 @@ SourceCode: https://github.com/appmonster007/OssWallet
 IssueTracker: https://github.com/appmonster007/OssWallet/issues
 
 AutoName: OssWallet
-Summary: Privacy-first, encrypted personal finance manager
 
 RepoType: git
 Repo: https://github.com/appmonster007/OssWallet.git
 
-# AGP/Gradle wrapper versions are read from gradle/wrapper + libs.versions.toml;
-# no srclibs or prebuild steps are required since the fdroid flavor excludes all
-# GMS dependencies and the build needs no secrets (CURRENCY_API_KEY defaults to
-# an empty string and is unused in the request path).
 Builds:
   - versionName: '1.0'
     versionCode: 1
@@ -37,7 +21,3 @@ AutoUpdateMode: Version
 UpdateCheckMode: Tags
 CurrentVersion: '1.0'
 CurrentVersionCode: 1
-
-# AntiFeatures: none expected once the fdroid flavor lands — the app has no ads,
-# no trackers, and (after this change) no required non-free network services or
-# dependencies in that flavor. Re-check this once the flavor split is verified.

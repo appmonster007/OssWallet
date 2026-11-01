@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -64,7 +65,11 @@ sealed class OnboardingEvent {
     data class ShortlistedCurrenciesChanged(val currencies: Set<String>) : OnboardingEvent()
     object CompleteOnboarding : OnboardingEvent()
     object SeedDataRequested : OnboardingEvent()
-    data class ImportBackupRequested(val uri: Uri, val passphrase: CharArray?) : OnboardingEvent()
+    data class ImportBackupRequested(
+        val uri: Uri,
+        val type: BackupType,
+        val passphrase: CharArray?
+    ) : OnboardingEvent()
     object ImportErrorDismissed : OnboardingEvent()
 }
 
@@ -119,7 +124,7 @@ class OnboardingViewModel @Inject constructor(
             }
 
             is OnboardingEvent.ImportBackupRequested -> {
-                importBackup(event.uri, event.passphrase)
+                importBackup(event.uri, event.type, event.passphrase)
             }
 
             OnboardingEvent.ImportErrorDismissed -> {
@@ -180,12 +185,12 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 
-    private fun importBackup(uri: Uri, passphrase: CharArray?) {
+    private fun importBackup(uri: Uri, type: BackupType, passphrase: CharArray?) {
         if (_uiState.value.isImporting) return
         _uiState.update { it.copy(isImporting = true, importError = null) }
         viewModelScope.launch {
             try {
-                val check = backupRepository.verifyBackup(uri.toString(), BackupType.SQLITE, passphrase)
+                val check = backupRepository.verifyBackup(uri.toString(), type, passphrase)
                 if (check.isFailure) {
                     passphrase?.fill('0')
                     _uiState.update {
@@ -196,15 +201,27 @@ class OnboardingViewModel @Inject constructor(
                     }
                     return@launch
                 }
-                val result = backupRepository.importData(uri.toString(), BackupType.SQLITE, passphrase)
+                val result = backupRepository.importData(uri.toString(), type, passphrase)
                 passphrase?.fill('0')
                 if (result.isSuccess) {
-                    // A full SQLite restore replaces the database file underneath the already-open
-                    // connection, so the process is killed and relaunched to pick up the restored
-                    // profiles/settings instead of continuing the onboarding wizard.
-                    withContext(NonCancellable) {
-                        delay(1500)
-                        android.os.Process.killProcess(android.os.Process.myPid())
+                    if (type == BackupType.SQLITE) {
+                        // A full SQLite restore replaces the database file underneath the already-open
+                        // connection, so the process is killed and relaunched to pick up the restored
+                        // profiles/settings instead of continuing the onboarding wizard.
+                        withContext(NonCancellable) {
+                            delay(1500)
+                            android.os.Process.killProcess(android.os.Process.myPid())
+                        }
+                    } else {
+                        // A CSV/ZIP restore writes straight into the live database without touching
+                        // DataStore settings, so onboarding-completion and the active profile have to
+                        // be set explicitly here from whatever the backup just restored.
+                        val restoredProfileId = profileRepository.getAllProfiles().first()
+                            .firstOrNull()?.id ?: 1
+                        settingsRepository.saveCurrentProfileId(restoredProfileId)
+                        settingsRepository.saveOnboardingCompleted(true)
+                        _uiState.update { it.copy(isImporting = false) }
+                        _onboardingCompleted.emit(Unit)
                     }
                 } else {
                     _uiState.update {

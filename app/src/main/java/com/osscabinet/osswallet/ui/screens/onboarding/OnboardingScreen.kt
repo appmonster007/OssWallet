@@ -84,6 +84,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.R
+import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
@@ -121,6 +122,10 @@ fun OnboardingScreen(
         }
     }
 
+    // The file picker can't tell SQLite exports from CSV/ZIP ones apart (both are .sqlite/.zip
+    // files, or the SAF picker reports neither extension), so the user names the format up front
+    // and that choice travels with the pick through to the import call.
+    var pendingImportType by remember { mutableStateOf(BackupType.SQLITE) }
     // Tracks whether the file the user just picked needs a passphrase, so a wrong-passphrase
     // import failure (reported back only as uiState.importError) knows to reopen that dialog
     // rather than surface as a plain inline error.
@@ -139,7 +144,7 @@ fun OnboardingScreen(
                 if (encrypted) {
                     showPassphraseDialog = true
                 } else {
-                    viewModel.onEvent(OnboardingEvent.ImportBackupRequested(uri, null))
+                    viewModel.onEvent(OnboardingEvent.ImportBackupRequested(uri, pendingImportType, null))
                 }
             }
         }
@@ -158,7 +163,7 @@ fun OnboardingScreen(
             onConfirm = { chars ->
                 showPassphraseDialog = false
                 pendingImportUri?.let {
-                    viewModel.onEvent(OnboardingEvent.ImportBackupRequested(it, chars))
+                    viewModel.onEvent(OnboardingEvent.ImportBackupRequested(it, pendingImportType, chars))
                 }
             },
             onDismiss = {
@@ -179,7 +184,14 @@ fun OnboardingScreen(
         OnboardingEntryChoice.IMPORT_BACKUP -> ImportBackupScreen(
             isImporting = uiState.isImporting,
             errorText = if (!isPendingImportEncrypted) uiState.importError else null,
-            onChooseFile = { importLauncher.launch("*/*") },
+            onChooseSqliteFile = {
+                pendingImportType = BackupType.SQLITE
+                importLauncher.launch("*/*")
+            },
+            onChooseZipFile = {
+                pendingImportType = BackupType.CSV_ZIP
+                importLauncher.launch("*/*")
+            },
             onBack = {
                 pendingImportUri = null
                 isPendingImportEncrypted = false
@@ -315,7 +327,8 @@ private fun EntryChoiceCard(
 private fun ImportBackupScreen(
     isImporting: Boolean,
     errorText: String?,
-    onChooseFile: () -> Unit,
+    onChooseSqliteFile: () -> Unit,
+    onChooseZipFile: () -> Unit,
     onBack: () -> Unit
 ) {
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
@@ -368,24 +381,24 @@ private fun ImportBackupScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "Choose a backup file (.sqlite or encrypted) exported from OssWallet. Restoring will replace any data created during this setup and restart the app.",
+                        "Choose the backup exported from Settings → Data Management. Restoring will replace any data created during this setup.",
                         style = AppTextStyles.listItemTitle,
                         color = AppColors.contentSecondary,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
 
-                    Button(
-                        onClick = onChooseFile,
-                        enabled = !isImporting,
-                        modifier = Modifier.height(56.dp),
-                        shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = AppColors.primary,
-                            contentColor = AppColors.onPrimary
-                        )
-                    ) {
-                        if (isImporting) {
+                    if (isImporting) {
+                        Button(
+                            onClick = {},
+                            enabled = false,
+                            modifier = Modifier.height(56.dp),
+                            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AppColors.primary,
+                                contentColor = AppColors.onPrimary
+                            )
+                        ) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
                                 color = AppColors.onPrimary,
@@ -393,8 +406,36 @@ private fun ImportBackupScreen(
                             )
                             Spacer(Modifier.width(AeonTheme.dimensions.spacingSm))
                             Text("RESTORING…")
-                        } else {
-                            Text("CHOOSE BACKUP FILE")
+                        }
+                    } else {
+                        Button(
+                            onClick = onChooseSqliteFile,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AppColors.primary,
+                                contentColor = AppColors.onPrimary
+                            )
+                        ) {
+                            Text("FULL BACKUP (.SQLITE)")
+                        }
+
+                        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
+
+                        Button(
+                            onClick = onChooseZipFile,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AppColors.cardSurface,
+                                contentColor = AppColors.contentPrimary
+                            )
+                        ) {
+                            Text("DATA BACKUP (.ZIP)")
                         }
                     }
 

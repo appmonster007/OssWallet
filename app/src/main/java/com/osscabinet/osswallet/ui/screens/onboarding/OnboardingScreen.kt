@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.onboarding
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Deselect
@@ -39,6 +42,7 @@ import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SelectAll
@@ -72,12 +76,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
@@ -88,6 +94,7 @@ import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
+import com.osscabinet.ossWallet.ui.screens.settings.PassphraseEntryDialog
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -106,6 +113,7 @@ fun OnboardingScreen(
     actions: OnboardingActions
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.onboardingCompleted.collect {
@@ -113,10 +121,77 @@ fun OnboardingScreen(
         }
     }
 
-    OnboardingContent(
-        uiState = uiState,
-        onEvent = viewModel::onEvent
-    )
+    // Tracks whether the file the user just picked needs a passphrase, so a wrong-passphrase
+    // import failure (reported back only as uiState.importError) knows to reopen that dialog
+    // rather than surface as a plain inline error.
+    var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var isPendingImportEncrypted by remember { mutableStateOf(false) }
+    var showPassphraseDialog by remember { mutableStateOf(false) }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            pendingImportUri = uri
+            scope.launch {
+                val encrypted = viewModel.isEncryptedBackup(uri)
+                isPendingImportEncrypted = encrypted
+                if (encrypted) {
+                    showPassphraseDialog = true
+                } else {
+                    viewModel.onEvent(OnboardingEvent.ImportBackupRequested(uri, null))
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(uiState.importError) {
+        if (uiState.importError != null && isPendingImportEncrypted) {
+            showPassphraseDialog = true
+        }
+    }
+
+    if (showPassphraseDialog && pendingImportUri != null) {
+        PassphraseEntryDialog(
+            title = stringResource(R.string.backup_encrypted_backup_title),
+            errorText = uiState.importError,
+            onConfirm = { chars ->
+                showPassphraseDialog = false
+                pendingImportUri?.let {
+                    viewModel.onEvent(OnboardingEvent.ImportBackupRequested(it, chars))
+                }
+            },
+            onDismiss = {
+                showPassphraseDialog = false
+                pendingImportUri = null
+                isPendingImportEncrypted = false
+                viewModel.onEvent(OnboardingEvent.ImportErrorDismissed)
+            }
+        )
+    }
+
+    when (uiState.entryChoice) {
+        null -> EntryChoiceScreen(
+            onCreateNew = { viewModel.onEvent(OnboardingEvent.EntryChoiceSelected(OnboardingEntryChoice.CREATE_NEW)) },
+            onImportBackup = { viewModel.onEvent(OnboardingEvent.EntryChoiceSelected(OnboardingEntryChoice.IMPORT_BACKUP)) }
+        )
+
+        OnboardingEntryChoice.IMPORT_BACKUP -> ImportBackupScreen(
+            isImporting = uiState.isImporting,
+            errorText = if (!isPendingImportEncrypted) uiState.importError else null,
+            onChooseFile = { importLauncher.launch("*/*") },
+            onBack = {
+                pendingImportUri = null
+                isPendingImportEncrypted = false
+                viewModel.onEvent(OnboardingEvent.EntryChoiceCleared)
+            }
+        )
+
+        OnboardingEntryChoice.CREATE_NEW -> OnboardingContent(
+            uiState = uiState,
+            onEvent = viewModel::onEvent
+        )
+    }
 }
 
 data class OnboardingActions(
@@ -125,11 +200,228 @@ data class OnboardingActions(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+private fun EntryChoiceScreen(
+    onCreateNew: () -> Unit,
+    onImportBackup: () -> Unit
+) {
+    AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = Color.Transparent
+            ) { paddingValues ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
+                        .padding(paddingValues)
+                        .padding(horizontal = AeonTheme.dimensions.spacingXl)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .size(scaledDp(80f, AeonTheme.uiScale))
+                            .align(Alignment.CenterHorizontally),
+                        shape = CircleShape,
+                        color = AppColors.primary.copy(alpha = 0.1f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            com.osscabinet.ossWallet.ui.components.AppLogo(
+                                modifier = Modifier.size(56.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
+                    Text(
+                        text = "Welcome to OssWallet",
+                        style = AppTextStyles.heroAmount,
+                        color = AppColors.contentPrimary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Let's get you started.",
+                        style = AppTextStyles.listItemTitle,
+                        color = AppColors.contentSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
+
+                    EntryChoiceCard(
+                        icon = Icons.Rounded.PersonAdd,
+                        title = "Create New Profile",
+                        description = "Start fresh and set up your currencies, theme, and preferences.",
+                        onClick = onCreateNew
+                    )
+
+                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
+
+                    EntryChoiceCard(
+                        icon = Icons.Rounded.CloudUpload,
+                        title = "Import from Backup",
+                        description = "Restore your profiles, accounts, and transactions from a backup file.",
+                        onClick = onImportBackup
+                    )
+
+                    Spacer(modifier = Modifier.height(scrollBottomPadding()))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EntryChoiceCard(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = AppColors.cardSurface,
+        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(AeonTheme.dimensions.spacingLg),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = CircleShape,
+                color = AppColors.primary.copy(alpha = 0.1f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = AppColors.primary, modifier = Modifier.size(24.dp))
+                }
+            }
+            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = AppTextStyles.cardSectionTitle, color = AppColors.contentPrimary)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(description, style = AppTextStyles.caption, color = AppColors.contentSecondary.copy(alpha = 0.7f))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ImportBackupScreen(
+    isImporting: Boolean,
+    errorText: String?,
+    onChooseFile: () -> Unit,
+    onBack: () -> Unit
+) {
+    AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = Color.Transparent,
+                topBar = {
+                    AeonTopAppBar(
+                        left = AeonTopBarSection(
+                            content = {
+                                AeonTopBarNavTitlePill(
+                                    title = "Import Backup",
+                                    onBackClick = if (!isImporting) onBack else null
+                                )
+                            }
+                        )
+                    )
+                }
+            ) { paddingValues ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
+                        .padding(paddingValues)
+                        .padding(horizontal = AeonTheme.dimensions.spacingXl)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Surface(
+                        modifier = Modifier.size(scaledDp(120f, AeonTheme.uiScale)),
+                        shape = CircleShape,
+                        color = AppColors.primary.copy(alpha = 0.1f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Rounded.CloudUpload,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = AppColors.primary
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
+                    Text(
+                        "Restore from Backup",
+                        style = AppTextStyles.heroAmount,
+                        color = AppColors.contentPrimary,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Choose a backup file (.sqlite or encrypted) exported from OssWallet. Restoring will replace any data created during this setup and restart the app.",
+                        style = AppTextStyles.listItemTitle,
+                        color = AppColors.contentSecondary,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
+
+                    Button(
+                        onClick = onChooseFile,
+                        enabled = !isImporting,
+                        modifier = Modifier.height(56.dp),
+                        shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AppColors.primary,
+                            contentColor = AppColors.onPrimary
+                        )
+                    ) {
+                        if (isImporting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = AppColors.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(Modifier.width(AeonTheme.dimensions.spacingSm))
+                            Text("RESTORING…")
+                        } else {
+                            Text("CHOOSE BACKUP FILE")
+                        }
+                    }
+
+                    if (errorText != null) {
+                        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
+                        Text(
+                            stringResource(R.string.backup_import_failed, errorText),
+                            color = MaterialTheme.colorScheme.error,
+                            style = AppTextStyles.caption,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(scrollBottomPadding()))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun OnboardingContent(
     uiState: OnboardingState,
     onEvent: (OnboardingEvent) -> Unit,
 ) {
-    val totalSteps = if (uiState.showDebugSeedStep) 6 else 5
+    val totalSteps = if (uiState.showDebugSeedStep) 5 else 4
     val pagerState = rememberPagerState { totalSteps }
     val scope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
@@ -344,13 +636,12 @@ fun OnboardingContent(
                             SeedStep()
                         } else {
                             when (actualPage) {
-                                0 -> WelcomeStep()
-                                1 -> ProfileStep(
+                                0 -> ProfileStep(
                                     userName = uiState.userName,
                                     onNameChanged = { onEvent(OnboardingEvent.UserNameChanged(it)) }
                                 )
 
-                                2 -> ProviderStep(
+                                1 -> ProviderStep(
                                     selectedProviderId = uiState.selectedProviderId,
                                     availableProviders = uiState.availableProviders,
                                     onProviderSelected = {
@@ -362,7 +653,7 @@ fun OnboardingContent(
                                     }
                                 )
 
-                                3 -> CurrenciesStep(
+                                2 -> CurrenciesStep(
                                     selectedCurrency = uiState.selectedCurrency,
                                     shortlistedCurrencies = uiState.shortlistedCurrencies,
                                     availableCurrencies = uiState.availableCurrencies,
@@ -382,7 +673,7 @@ fun OnboardingContent(
                                     }
                                 )
 
-                                4 -> AppearanceStep(
+                                3 -> AppearanceStep(
                                     selectedTheme = uiState.selectedTheme,
                                     onThemeSelected = { onEvent(OnboardingEvent.ThemeSelected(it)) },
                                     selectedPrecision = uiState.decimalPrecision,

@@ -1,12 +1,15 @@
 package com.osscabinet.ossWallet.ui.screens.onboarding
 
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.seed.SeedingConfig
 import com.osscabinet.ossWallet.domain.model.Profile
+import com.osscabinet.ossWallet.domain.repository.BackupRepository
+import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
@@ -15,9 +18,11 @@ import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRatePro
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -26,8 +31,12 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+enum class OnboardingEntryChoice { CREATE_NEW, IMPORT_BACKUP }
 
 data class OnboardingState(
+    val entryChoice: OnboardingEntryChoice? = null,
     val userName: String = "",
     val selectedCurrency: String = "USD",
     val selectedProviderId: String = "exchangerate-api",
@@ -39,10 +48,14 @@ data class OnboardingState(
     val shortlistedCurrencies: Set<String> = emptySet(),
     val isCompleting: Boolean = false,
     val showDebugSeedStep: Boolean = false,
-    val isSeeding: Boolean = false
+    val isSeeding: Boolean = false,
+    val isImporting: Boolean = false,
+    val importError: String? = null
 )
 
 sealed class OnboardingEvent {
+    data class EntryChoiceSelected(val choice: OnboardingEntryChoice) : OnboardingEvent()
+    object EntryChoiceCleared : OnboardingEvent()
     data class UserNameChanged(val name: String) : OnboardingEvent()
     data class CurrencySelected(val currency: String) : OnboardingEvent()
     data class ProviderSelected(val providerId: String) : OnboardingEvent()
@@ -51,6 +64,8 @@ sealed class OnboardingEvent {
     data class ShortlistedCurrenciesChanged(val currencies: Set<String>) : OnboardingEvent()
     object CompleteOnboarding : OnboardingEvent()
     object SeedDataRequested : OnboardingEvent()
+    data class ImportBackupRequested(val uri: Uri, val passphrase: CharArray?) : OnboardingEvent()
+    object ImportErrorDismissed : OnboardingEvent()
 }
 
 @HiltViewModel
@@ -60,6 +75,7 @@ class OnboardingViewModel @Inject constructor(
     private val providerRegistry: ExchangeRateProviderRegistry,
     private val database: AppDatabase,
     private val settingsDataStore: SettingsDataStore,
+    private val backupRepository: BackupRepository,
     @param:ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -90,8 +106,26 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 
+    suspend fun isEncryptedBackup(uri: Uri): Boolean = backupRepository.isEncryptedBackup(uri.toString())
+
     fun onEvent(event: OnboardingEvent) {
         when (event) {
+            is OnboardingEvent.EntryChoiceSelected -> {
+                _uiState.update { it.copy(entryChoice = event.choice, importError = null) }
+            }
+
+            OnboardingEvent.EntryChoiceCleared -> {
+                _uiState.update { it.copy(entryChoice = null, importError = null) }
+            }
+
+            is OnboardingEvent.ImportBackupRequested -> {
+                importBackup(event.uri, event.passphrase)
+            }
+
+            OnboardingEvent.ImportErrorDismissed -> {
+                _uiState.update { it.copy(importError = null) }
+            }
+
             is OnboardingEvent.UserNameChanged -> {
                 _uiState.update { it.copy(userName = event.name) }
             }
@@ -142,6 +176,46 @@ class OnboardingViewModel @Inject constructor(
 
             OnboardingEvent.SeedDataRequested -> {
                 seedData()
+            }
+        }
+    }
+
+    private fun importBackup(uri: Uri, passphrase: CharArray?) {
+        if (_uiState.value.isImporting) return
+        _uiState.update { it.copy(isImporting = true, importError = null) }
+        viewModelScope.launch {
+            try {
+                val check = backupRepository.verifyBackup(uri.toString(), BackupType.SQLITE, passphrase)
+                if (check.isFailure) {
+                    passphrase?.fill('0')
+                    _uiState.update {
+                        it.copy(
+                            isImporting = false,
+                            importError = check.exceptionOrNull()?.message
+                        )
+                    }
+                    return@launch
+                }
+                val result = backupRepository.importData(uri.toString(), BackupType.SQLITE, passphrase)
+                passphrase?.fill('0')
+                if (result.isSuccess) {
+                    // A full SQLite restore replaces the database file underneath the already-open
+                    // connection, so the process is killed and relaunched to pick up the restored
+                    // profiles/settings instead of continuing the onboarding wizard.
+                    withContext(NonCancellable) {
+                        delay(1500)
+                        android.os.Process.killProcess(android.os.Process.myPid())
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isImporting = false,
+                            importError = result.exceptionOrNull()?.message
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isImporting = false, importError = e.message) }
             }
         }
     }

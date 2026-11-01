@@ -10,7 +10,8 @@ AutoName: OssWallet
 RepoType: git
 Repo: https://github.com/appmonster007/OssWallet.git
 
-Binaries: https://github.com/appmonster007/OssWallet/releases/download/fdroid-v%v/OssWallet-fdroid-release.apk
+Binaries:
+  https://github.com/appmonster007/OssWallet/releases/download/fdroid-v%v/OssWallet-fdroid-release.apk
 
 Builds:
   - versionName: '1.0'

@@ -15,7 +15,7 @@ Binaries: https://github.com/appmonster007/OssWallet/releases/download/fdroid-v%
 Builds:
   - versionName: '1.0'
     versionCode: 1
-    commit: f4a0f18126b815f6e81b78964e740fd2864de138
+    commit: fbdfb8e8ab0e731300cff3af5ecad63adf8b72ea
     subdir: app
     gradle:
       - fdroid

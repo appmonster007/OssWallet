@@ -52,6 +52,13 @@ android {
         buildConfigField("boolean", "ENABLE_BUY_ME_A_COFFEE", "$enableBuyMeACoffee")
     }
 
+    // F-Droid's APK scanner flags AGP's SDK Dependency Info signing block as an unexpected
+    // "extra signing block" (it's unrelated to Play distribution for this app).
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
     flavorDimensions += "distribution"
     productFlavors {
         create("full") {

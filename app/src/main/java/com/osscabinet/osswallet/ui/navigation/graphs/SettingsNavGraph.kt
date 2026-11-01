@@ -14,6 +14,7 @@ import com.osscabinet.ossWallet.ui.navigation.CategoryListRoute
 import com.osscabinet.ossWallet.ui.navigation.CsvImportRoute
 import com.osscabinet.ossWallet.ui.navigation.DashboardRoute
 import com.osscabinet.ossWallet.ui.navigation.EnterTransitionSpec
+import com.osscabinet.ossWallet.ui.navigation.ExchangeRatesRoute
 import com.osscabinet.ossWallet.ui.navigation.ExitTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.FilterListRoute
 import com.osscabinet.ossWallet.ui.navigation.OpenInWebRoute
@@ -55,6 +56,9 @@ import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebScreen
 import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.CurrencySettingsActions
 import com.osscabinet.ossWallet.ui.screens.settings.CurrencySettingsScreen
+import com.osscabinet.ossWallet.ui.screens.settings.ExchangeRatesActions
+import com.osscabinet.ossWallet.ui.screens.settings.ExchangeRatesConfig
+import com.osscabinet.ossWallet.ui.screens.settings.ExchangeRatesScreen
 import com.osscabinet.ossWallet.ui.screens.settings.DataManagementActions
 import com.osscabinet.ossWallet.ui.screens.settings.DataManagementScreen
 import com.osscabinet.ossWallet.ui.screens.settings.DisplaySettingsActions
@@ -160,6 +164,24 @@ fun NavGraphBuilder.settingsGraph(
                 onPlannedPaymentClick = { id -> navController.navigate(PlannedPaymentDetailRoute(plannedPaymentId = id)) },
                 onOpenInRecords = { filter -> navController.navigateToRecords(filter) }
             )
+        )
+    }
+
+    composable<ExchangeRatesRoute>(
+        enterTransition = { EnterTransitionSpec },
+        exitTransition = { ExitTransitionSpec },
+        popEnterTransition = { PopEnterTransitionSpec },
+        popExitTransition = { PopExitTransitionSpec }
+    ) {
+        ExchangeRatesScreen(
+            config = ExchangeRatesConfig(
+                isTopLevel = false
+            ),
+            actions = ExchangeRatesActions(
+                onMenuClick = {},
+                onBackClick = { navController.popBackStack() }
+            ),
+            vms = vms
         )
     }
 

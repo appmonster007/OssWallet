@@ -80,6 +80,7 @@ import com.osscabinet.ossWallet.domain.repository.BackupScope
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.RestorableEntity
 import com.osscabinet.ossWallet.domain.service.BackupRunState
+import com.osscabinet.ossWallet.domain.util.backupFilenameTimestamp
 import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonDashedButton
@@ -316,7 +317,7 @@ fun DataManagementScreen(
                 showExportDialog = false
                 pendingExport = PendingExport(
                     BackupType.CSV_ZIP, BackupScope.ALL_PROFILES,
-                    "osswallet_backup_${System.currentTimeMillis()}.zip"
+                    "osswallet_backup_${backupFilenameTimestamp()}.zip"
                 ) { exportZipAllLauncher.launch(it) }
                 showExportEncryptChoice = true
             },
@@ -324,19 +325,19 @@ fun DataManagementScreen(
                 showExportDialog = false
                 pendingExport = PendingExport(
                     BackupType.CSV_ZIP, BackupScope.SINGLE_PROFILE,
-                    "osswallet_profile_${System.currentTimeMillis()}.zip"
+                    "osswallet_profile_${backupFilenameTimestamp()}.zip"
                 ) { exportZipProfileLauncher.launch(it) }
                 showExportEncryptChoice = true
             },
             onExportCsv = {
                 showExportDialog = false
-                exportCsvLauncher.launch("osswallet_transactions_${System.currentTimeMillis()}.csv")
+                exportCsvLauncher.launch("osswallet_transactions_${backupFilenameTimestamp()}.csv")
             },
             onExportSqlite = {
                 showExportDialog = false
                 pendingExport = PendingExport(
                     BackupType.SQLITE, BackupScope.ALL_PROFILES,
-                    "osswallet_db_${System.currentTimeMillis()}.sqlite"
+                    "osswallet_db_${backupFilenameTimestamp()}.sqlite"
                 ) { exportSqliteLauncher.launch(it) }
                 showExportEncryptChoice = true
             }

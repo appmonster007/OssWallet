@@ -60,6 +60,8 @@ import com.osscabinet.ossWallet.ui.components.showAeonSnackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
@@ -830,28 +832,32 @@ fun DashboardScreenLayout(
                     tabs = tabs,
                     fabPaddingBottom = AeonSize.D16.value + navigationBarHeight,
                     isFabExpanded = isFabExpanded,
-                    onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
+                    onFabToggle = { isFabExpanded = it },
                     onFabClick = {
-                        if (!expandableFabEnabled) {
+                        if (expandableFabEnabled) {
+                            isFabExpanded = !isFabExpanded
+                        } else {
                             showQuickAddSheet = true
                         }
                     },
-                    onFabLongPress = if (!expandableFabEnabled) ({
-                        navigate { actions.onAddClick(EntryMode.EXPENSE, null) }
-                    }) else null,
-                    fabMenu = if (expandableFabEnabled) {
-                        {
-                            TransactionFabMenu(
-                                isExpanded = isFabExpanded,
-                                templates = allTemplates,
-                                categories = allCategories,
-                                onAddClick = { type, templateId ->
-                                    isFabExpanded = false
-                                    navigate { actions.onAddClick(type, templateId) }
-                                }
-                            )
+                    onFabLongPress = {
+                        if (expandableFabEnabled) {
+                            showQuickAddSheet = true
+                        } else {
+                            isFabExpanded = true
                         }
-                    } else null
+                    },
+                    fabMenu = {
+                        TransactionFabMenu(
+                            isExpanded = isFabExpanded,
+                            templates = allTemplates,
+                            categories = allCategories,
+                            onAddClick = { type, templateId ->
+                                isFabExpanded = false
+                                navigate { actions.onAddClick(type, templateId) }
+                            }
+                        )
+                    }
                 )
 
                 // 4. Snackbar Layer (above FAB)
@@ -955,9 +961,45 @@ fun DashboardContent(
 ) {
     val pillHeight = AeonSize.D64.value
 
+    // Discrete handoff: dragging past the Glance tab's left boundary (no previous page to
+    // scroll to) keeps accumulating the leftover drag the pager couldn't consume; once that
+    // crosses a threshold it opens the drawer, same gesture-direction as the edge swipe. Not a
+    // continuous drag-follow — DrawerState's own drag offset is internal to material3, so this
+    // is a one-shot trigger, then the drawer's normal open animation takes over.
+    val density = LocalDensity.current
+    val openDrawerOverscrollThresholdPx = remember(density) { with(density) { 96.dp.toPx() } }
+    val drawerOverscrollAmount = remember { floatArrayOf(0f) }
+    val pagerToDrawerNestedScrollConnection = remember(pagerState, onMenuClick) {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                if (pagerState.currentPage == 0 && !pagerState.canScrollBackward && available.x > 0f) {
+                    drawerOverscrollAmount[0] += available.x
+                    if (drawerOverscrollAmount[0] >= openDrawerOverscrollThresholdPx) {
+                        drawerOverscrollAmount[0] = 0f
+                        onMenuClick()
+                    }
+                } else {
+                    drawerOverscrollAmount[0] = 0f
+                }
+                return Offset.Zero
+            }
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                drawerOverscrollAmount[0] = 0f
+                return Velocity.Zero
+            }
+        }
+    }
+
     HorizontalPager(
         state = pagerState,
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .nestedScroll(pagerToDrawerNestedScrollConnection),
         beyondViewportPageCount = 1,
         verticalAlignment = Alignment.Top
     ) { page ->

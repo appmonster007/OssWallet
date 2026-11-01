@@ -42,8 +42,6 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.SyncAlt
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -186,62 +184,37 @@ fun UnifiedPillNavigation(
                     )
 
                     val haptic = LocalHapticFeedback.current
-                    if (onFabLongPress != null) {
-                        // Quick-add mode: tap → quick sheet, long press → full entry screen.
-                        // We build the FAB appearance manually so combinedClickable is the only
-                        // gesture handler (FloatingActionButton's internal Surface would consume
-                        // the click before combinedClickable could see it).
-                        @OptIn(ExperimentalFoundationApi::class)
-                        androidx.compose.material3.Surface(
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .size(48.dp)
-                                .graphicsLayer { rotationZ = rotation }
-                                .border(1.dp, AppColors.onPrimary.copy(alpha = 0.20f), CircleShape)
-                                .combinedClickable(
-                                    onClick = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                        onFabClick()
-                                    },
-                                    onLongClick = {
+                    // Tap and long-press both always have a meaning, with which one opens
+                    // the menu vs. the quick-add sheet flipped depending on caller-supplied
+                    // mode. We build the FAB appearance manually so combinedClickable is the
+                    // only gesture handler (FloatingActionButton's internal Surface would
+                    // consume the click before combinedClickable could see it).
+                    @OptIn(ExperimentalFoundationApi::class)
+                    androidx.compose.material3.Surface(
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .size(48.dp)
+                            .graphicsLayer { rotationZ = rotation }
+                            .border(1.dp, AppColors.onPrimary.copy(alpha = 0.20f), CircleShape)
+                            .combinedClickable(
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    onFabClick()
+                                },
+                                onLongClick = onFabLongPress?.let { longPress ->
+                                    {
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        onFabLongPress()
+                                        longPress()
                                     }
-                                ),
-                            shape = CircleShape,
-                            color = AppColors.primary,
-                            contentColor = AppColors.onPrimary,
-                            shadowElevation = 6.dp,
-                            tonalElevation = 0.dp
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = fabIcon,
-                                    contentDescription = "Add New",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                    } else {
-                        // Normal mode: FAB menu toggle (or direct navigate if no menu).
-                        FloatingActionButton(
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                if (fabMenu != null) onFabToggle(!isFabExpanded) else onFabClick()
-                            },
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .size(48.dp)
-                                .graphicsLayer { rotationZ = rotation }
-                                .border(1.dp, AppColors.onPrimary.copy(alpha = 0.20f), CircleShape),
-                            containerColor = AppColors.primary,
-                            contentColor = AppColors.onPrimary,
-                            shape = CircleShape,
-                            elevation = FloatingActionButtonDefaults.elevation(
-                                defaultElevation = 6.dp,
-                                pressedElevation = 2.dp
-                            )
-                        ) {
+                                }
+                            ),
+                        shape = CircleShape,
+                        color = AppColors.primary,
+                        contentColor = AppColors.onPrimary,
+                        shadowElevation = 6.dp,
+                        tonalElevation = 0.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = fabIcon,
                                 contentDescription = if (isFabExpanded) "Close Menu" else "Add New",

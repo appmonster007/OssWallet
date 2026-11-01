@@ -160,15 +160,13 @@ fun AppDrawerContent(
                 DrawerHairline()
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
 
-                // ── Primary navigation ───────────────────────────────────
-                val navItems = listOf(
+                // ── Primary navigation: sibling tabs (saved/restored back stack) ─
+                val topLevelNavItems = listOf(
                     Triple("DASHBOARD", "dashboard", Icons.Default.Dashboard),
                     Triple("RECORDS", "transaction_list", Icons.AutoMirrored.Filled.ListAlt),
-                    Triple("SEARCH", "search", Icons.Default.Search),
-                    Triple("ANALYTICS", "analytics", Icons.Default.AutoGraph),
-                    Triple("EXCHANGE RATES", "exchange_rates", Icons.Default.CurrencyExchange)
+                    Triple("ANALYTICS", "analytics", Icons.Default.AutoGraph)
                 )
-                navItems.forEach { (label, route, icon) ->
+                topLevelNavItems.forEach { (label, route, icon) ->
                     NavigationDrawerItem(
                         label = { Text(label, style = AppTextStyles.listSectionHeader) },
                         selected = selectedDestination == route,
@@ -176,8 +174,40 @@ fun AppDrawerContent(
                             when (route) {
                                 "dashboard" -> onDashboardClick()
                                 "transaction_list" -> onRecordsClick()
-                                "search" -> onSearchClick()
                                 "analytics" -> onAnalyticsClick()
+                            }
+                        },
+                        icon = {
+                            Icon(
+                                icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RectangleShape,
+                        colors = drawerItemColors
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXs))
+                DrawerHairline()
+                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXs))
+
+                // ── Leaf dispatchers: ordinary hierarchical push, no saved state ─
+                val leafNavItems = listOf(
+                    Triple("SEARCH", "search", Icons.Default.Search),
+                    Triple("EXCHANGE RATES", "exchange_rates", Icons.Default.CurrencyExchange)
+                )
+                leafNavItems.forEach { (label, route, icon) ->
+                    NavigationDrawerItem(
+                        label = { Text(label, style = AppTextStyles.listSectionHeader) },
+                        selected = false,
+                        onClick = {
+                            when (route) {
+                                "search" -> onSearchClick()
                                 "exchange_rates" -> onExchangeRatesClick()
                             }
                         },

@@ -115,6 +115,11 @@ private fun backupMimeType(backup: BackupMeta): String =
     if (backup.encrypted) "application/octet-stream"
     else if (backupTypeOf(backup) == BackupType.SQLITE) "application/x-sqlite3" else "application/zip"
 
+/** Filename-safe timestamp, e.g. "20261101_143022_+0530" — numeric offset, no colon. */
+private fun backupFilenameTimestamp(): String =
+    java.time.ZonedDateTime.now()
+        .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_Z"))
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataManagementScreen(
@@ -316,7 +321,7 @@ fun DataManagementScreen(
                 showExportDialog = false
                 pendingExport = PendingExport(
                     BackupType.CSV_ZIP, BackupScope.ALL_PROFILES,
-                    "osswallet_backup_${System.currentTimeMillis()}.zip"
+                    "osswallet_backup_${backupFilenameTimestamp()}.zip"
                 ) { exportZipAllLauncher.launch(it) }
                 showExportEncryptChoice = true
             },
@@ -324,19 +329,19 @@ fun DataManagementScreen(
                 showExportDialog = false
                 pendingExport = PendingExport(
                     BackupType.CSV_ZIP, BackupScope.SINGLE_PROFILE,
-                    "osswallet_profile_${System.currentTimeMillis()}.zip"
+                    "osswallet_profile_${backupFilenameTimestamp()}.zip"
                 ) { exportZipProfileLauncher.launch(it) }
                 showExportEncryptChoice = true
             },
             onExportCsv = {
                 showExportDialog = false
-                exportCsvLauncher.launch("osswallet_transactions_${System.currentTimeMillis()}.csv")
+                exportCsvLauncher.launch("osswallet_transactions_${backupFilenameTimestamp()}.csv")
             },
             onExportSqlite = {
                 showExportDialog = false
                 pendingExport = PendingExport(
                     BackupType.SQLITE, BackupScope.ALL_PROFILES,
-                    "osswallet_db_${System.currentTimeMillis()}.sqlite"
+                    "osswallet_db_${backupFilenameTimestamp()}.sqlite"
                 ) { exportSqliteLauncher.launch(it) }
                 showExportEncryptChoice = true
             }

@@ -125,6 +125,11 @@ class BackupRepositoryImpl @Inject constructor(
             override fun write(b: Int) {}
             override fun write(b: ByteArray, off: Int, len: Int) {}
         }
+
+        /** Filename-safe timestamp, e.g. "20261101_143022_+0530" — numeric offset, no colon. */
+        private fun backupFilenameTimestamp(): String =
+            java.time.ZonedDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_Z"))
     }
 
     override suspend fun exportData(
@@ -1639,7 +1644,7 @@ class BackupRepositoryImpl @Inject constructor(
                             "Re-enter the backup passphrase in Data Management."
                     )
                 } else null
-                val finalName = "osswallet_backup_${System.currentTimeMillis()}" +
+                val finalName = "osswallet_backup_${backupFilenameTimestamp()}" +
                     "${if (scope == BackupScope.SINGLE_PROFILE) "_profile" else "_all"}.zip" +
                     if (encrypt) ENCRYPTED_SUFFIX else ""
                 // Written under a .part name first: a crash mid-write (not just a thrown exception)
@@ -1680,7 +1685,7 @@ class BackupRepositoryImpl @Inject constructor(
                     ?: throw IOException("The chosen folder is no longer accessible")
                 if (!docFolder.canWrite()) throw IOException("The chosen folder is no longer writable")
 
-                val finalName = "osswallet_backup_${System.currentTimeMillis()}" +
+                val finalName = "osswallet_backup_${backupFilenameTimestamp()}" +
                     "${if (scope == BackupScope.SINGLE_PROFILE) "_profile" else "_all"}.zip" +
                     if (encrypt) ENCRYPTED_SUFFIX else ""
                 val mime = if (encrypt) "application/octet-stream" else "application/zip"

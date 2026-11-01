@@ -5,11 +5,11 @@ import kotlinx.serialization.Serializable
 // ── Primary tabs ──────────────────────────────────────────────────────────────
 
 /**
- * Marks a route as a drawer-reachable sibling tab switch (Dashboard/Records/Analytics/Exchange
- * Rates) rather than a hierarchical drill-down. Single source of truth for route category —
- * [AppNavigator] derives its default [androidx.navigation.NavOptions] from this, and the nav
- * graph files derive their transition-spec choice (fade vs slide) from it too, replacing what
- * used to be three independently hand-maintained lists that had to be kept in sync by convention.
+ * Marks a route as a drawer-reachable sibling tab switch (Dashboard/Records/Analytics) rather
+ * than a hierarchical drill-down. Single source of truth for route category — [AppNavigator]
+ * derives its default [androidx.navigation.NavOptions] from this, and the nav graph files derive
+ * their transition-spec choice (fade vs slide) from it too, replacing what used to be three
+ * independently hand-maintained lists that had to be kept in sync by convention.
  */
 interface TopLevelRoute
 
@@ -29,9 +29,6 @@ data class TransactionListRoute(
 
 @Serializable
 data object AnalyticsRoute : TopLevelRoute
-
-@Serializable
-data object ExchangeRatesRoute : TopLevelRoute
 
 // ── Transactions ──────────────────────────────────────────────────────────────
 
@@ -122,6 +119,9 @@ data object GoalListRoute
 
 @Serializable
 data object SearchRoute
+
+@Serializable
+data object ExchangeRatesRoute
 
 @Serializable
 data object ReportsRoute

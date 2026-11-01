@@ -14,7 +14,6 @@ import com.osscabinet.ossWallet.ui.navigation.BudgetDetailRoute
 import com.osscabinet.ossWallet.ui.navigation.BudgetListRoute
 import com.osscabinet.ossWallet.ui.navigation.DashboardRoute
 import com.osscabinet.ossWallet.ui.navigation.EnterTransitionSpec
-import com.osscabinet.ossWallet.ui.navigation.ExchangeRatesRoute
 import com.osscabinet.ossWallet.ui.navigation.ExitTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.FadeEnterTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.FadeExitTransitionSpec
@@ -36,9 +35,6 @@ import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsScreen
 import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardActions
 import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardConfig
 import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardScreen
-import com.osscabinet.ossWallet.ui.screens.settings.ExchangeRatesActions
-import com.osscabinet.ossWallet.ui.screens.settings.ExchangeRatesConfig
-import com.osscabinet.ossWallet.ui.screens.settings.ExchangeRatesScreen
 import com.osscabinet.ossWallet.ui.screens.transactions.list.TransactionListActions
 import com.osscabinet.ossWallet.ui.screens.transactions.list.TransactionListConfig
 import com.osscabinet.ossWallet.ui.screens.transactions.list.TransactionListScreen
@@ -130,7 +126,7 @@ fun NavGraphBuilder.primaryTabsGraph(
 
     // TransactionListRoute is dual-purpose: a drawer sibling tab when topLevel, and a pushed
     // detail screen when opened from a card/filter. As a sibling tab it gets the same short fade
-    // as Dashboard/Analytics/ExchangeRates — a 350ms slide there was both the wrong motion
+    // as Dashboard/Analytics — a 350ms slide there was both the wrong motion
     // (lateral switch, not a drill-down) and the longest window during which Navigation Compose's
     // RESUMED-gate makes a rapid switch-back wait. Pushed, it keeps the expressive slide.
     composable<TransactionListRoute>(
@@ -228,24 +224,6 @@ fun NavGraphBuilder.primaryTabsGraph(
                     vms.transactionViewModel.setSplitTransactionId(id)
                     navController.navigate(TransactionEntryRoute())
                 },
-            ),
-            vms = vms
-        )
-    }
-
-    composable<ExchangeRatesRoute>(
-        enterTransition = { FadeEnterTransitionSpec },
-        exitTransition = { FadeExitTransitionSpec },
-        popEnterTransition = { FadeEnterTransitionSpec },
-        popExitTransition = { FadeExitTransitionSpec }
-    ) {
-        ExchangeRatesScreen(
-            config = ExchangeRatesConfig(
-                isTopLevel = true
-            ),
-            actions = ExchangeRatesActions(
-                onMenuClick = { scope.launch { drawerState.open() } },
-                onBackClick = { navController.popBackStack() }
             ),
             vms = vms
         )

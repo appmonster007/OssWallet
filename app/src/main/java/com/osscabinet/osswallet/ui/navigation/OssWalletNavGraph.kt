@@ -205,7 +205,6 @@ fun OssWalletNavGraph(
     val isTopLevelDestination = when {
         currentDest?.hasRoute(DashboardRoute::class) == true          -> true
         currentDest?.hasRoute(AnalyticsRoute::class) == true          -> true
-        currentDest?.hasRoute(ExchangeRatesRoute::class) == true      -> true
         currentDest?.hasRoute(TransactionListRoute::class) == true    ->
             navBackStackEntry?.toRoute<TransactionListRoute>()?.topLevel == true
         else                                                           -> false
@@ -215,7 +214,6 @@ fun OssWalletNavGraph(
         currentDest?.hasRoute(DashboardRoute::class) == true          -> "dashboard"
         currentDest?.hasRoute(TransactionListRoute::class) == true    -> "transaction_list"
         currentDest?.hasRoute(AnalyticsRoute::class) == true          -> "analytics"
-        currentDest?.hasRoute(ExchangeRatesRoute::class) == true      -> "exchange_rates"
         currentDest?.hasRoute(SettingsRoute::class) == true           -> "settings"
         currentDest?.hasRoute(PlannedPaymentListRoute::class) == true -> "planned_payment_list"
         currentDest?.hasRoute(BudgetListRoute::class) == true         -> "budget_list"
@@ -226,7 +224,6 @@ fun OssWalletNavGraph(
     // Back on any non-Dashboard top-level screen → navigate to Dashboard (never exit from those tabs)
     val isOnNonDashboardTopLevel = when {
         currentDest?.hasRoute(AnalyticsRoute::class) == true     -> true
-        currentDest?.hasRoute(ExchangeRatesRoute::class) == true -> true
         currentDest?.hasRoute(TransactionListRoute::class) == true -> {
             navBackStackEntry?.toRoute<TransactionListRoute>()?.topLevel == true
         }

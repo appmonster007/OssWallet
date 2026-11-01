@@ -593,7 +593,7 @@ fun MainDisplaySettings(
                             )
                             EntrySwitchRow(
                                 label = "Expandable Action Button",
-                                subtitle = if (expandableFabEnabled) "Show quick templates and actions" else "Simple button for new entries",
+                                subtitle = if (expandableFabEnabled) "Tap for quick templates and actions, hold for quick add" else "Tap for quick add, hold for templates and actions",
                                 icon = if (expandableFabEnabled) Icons.Rounded.GridView else Icons.Rounded.AddCircleOutline,
                                 checked = expandableFabEnabled,
                                 onCheckedChange = { viewModel.setExpandableFabEnabled(it) },

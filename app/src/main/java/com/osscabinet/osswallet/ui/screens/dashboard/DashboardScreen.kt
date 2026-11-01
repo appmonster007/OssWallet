@@ -830,28 +830,32 @@ fun DashboardScreenLayout(
                     tabs = tabs,
                     fabPaddingBottom = AeonSize.D16.value + navigationBarHeight,
                     isFabExpanded = isFabExpanded,
-                    onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
+                    onFabToggle = { isFabExpanded = it },
                     onFabClick = {
-                        if (!expandableFabEnabled) {
+                        if (expandableFabEnabled) {
+                            isFabExpanded = !isFabExpanded
+                        } else {
                             showQuickAddSheet = true
                         }
                     },
-                    onFabLongPress = if (!expandableFabEnabled) ({
-                        navigate { actions.onAddClick(EntryMode.EXPENSE, null) }
-                    }) else null,
-                    fabMenu = if (expandableFabEnabled) {
-                        {
-                            TransactionFabMenu(
-                                isExpanded = isFabExpanded,
-                                templates = allTemplates,
-                                categories = allCategories,
-                                onAddClick = { type, templateId ->
-                                    isFabExpanded = false
-                                    navigate { actions.onAddClick(type, templateId) }
-                                }
-                            )
+                    onFabLongPress = {
+                        if (expandableFabEnabled) {
+                            showQuickAddSheet = true
+                        } else {
+                            isFabExpanded = true
                         }
-                    } else null
+                    },
+                    fabMenu = {
+                        TransactionFabMenu(
+                            isExpanded = isFabExpanded,
+                            templates = allTemplates,
+                            categories = allCategories,
+                            onAddClick = { type, templateId ->
+                                isFabExpanded = false
+                                navigate { actions.onAddClick(type, templateId) }
+                            }
+                        )
+                    }
                 )
 
                 // 4. Snackbar Layer (above FAB)

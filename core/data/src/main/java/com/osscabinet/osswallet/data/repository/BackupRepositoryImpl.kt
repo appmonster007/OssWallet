@@ -84,6 +84,7 @@ import com.osscabinet.ossWallet.data.local.entity.GoalEntity
 import com.osscabinet.ossWallet.domain.repository.BackupPassphraseRequiredException
 import com.osscabinet.ossWallet.domain.repository.BackupVerification
 import com.osscabinet.ossWallet.domain.service.security.BackupCrypto
+import com.osscabinet.ossWallet.domain.util.backupFilenameTimestamp
 import java.io.BufferedInputStream
 import java.util.zip.ZipOutputStream
 
@@ -125,11 +126,6 @@ class BackupRepositoryImpl @Inject constructor(
             override fun write(b: Int) {}
             override fun write(b: ByteArray, off: Int, len: Int) {}
         }
-
-        /** Filename-safe timestamp, e.g. "20261101_143022_+0530" — numeric offset, no colon. */
-        private fun backupFilenameTimestamp(): String =
-            java.time.ZonedDateTime.now()
-                .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_Z"))
     }
 
     override suspend fun exportData(

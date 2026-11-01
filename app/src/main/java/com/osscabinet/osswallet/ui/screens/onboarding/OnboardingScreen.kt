@@ -140,6 +140,9 @@ fun OnboardingScreen(
             pendingImportUri = uri
             scope.launch {
                 val encrypted = viewModel.isEncryptedBackup(uri)
+                // The user may have tapped Back (which clears pendingImportUri) while this was
+                // in flight — don't resurrect a dialog or kick off an import for a pick they left.
+                if (pendingImportUri != uri) return@launch
                 isPendingImportEncrypted = encrypted
                 if (encrypted) {
                     showPassphraseDialog = true
@@ -869,76 +872,6 @@ private fun SeedStep() {
 }
 
 @Composable
-private fun WelcomeStep() {
-    val configuration = LocalConfiguration.current
-    val isSmallScreen = configuration.screenWidthDp < 360
-    val uiScale = AeonTheme.uiScale
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(
-            modifier = Modifier.height(
-                if (isSmallScreen) scaledDp(16f, uiScale) else scaledDp(
-                    32f,
-                    uiScale
-                )
-            )
-        )
-        Surface(
-            modifier = Modifier.size(
-                if (isSmallScreen) scaledDp(80f, uiScale) else scaledDp(
-                    120f,
-                    uiScale
-                )
-            ),
-            shape = CircleShape,
-            color = AppColors.primary.copy(alpha = 0.1f)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                com.osscabinet.ossWallet.ui.components.AppLogo(
-                    modifier = Modifier.size(if (isSmallScreen) 56.dp else 84.dp)
-                )
-            }
-        }
-        Spacer(
-            modifier = Modifier.height(
-                if (isSmallScreen) scaledDp(32f, uiScale) else scaledDp(
-                    48f,
-                    uiScale
-                )
-            )
-        )
-        Text(
-            text = "Welcome to OssWallet",
-            style = if (isSmallScreen) AppTextStyles.heroAmount else AppTextStyles.heroAmountDisplay,
-            color = AppColors.contentPrimary,
-            textAlign = TextAlign.Center
-        )
-        Spacer(
-            modifier = Modifier.height(
-                if (isSmallScreen) scaledDp(
-                    8f,
-                    uiScale
-                ) else scaledDp(16f, uiScale)
-            )
-        )
-        Text(
-            text = "Your simple and secure personal finance manager. Let's get you set up in a few quick steps.",
-            style = if (isSmallScreen) AppTextStyles.caption else AppTextStyles.listItemTitle,
-            color = AppColors.contentSecondary,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = scaledDp(16f, uiScale))
-        )
-        Spacer(modifier = Modifier.height(scrollBottomPadding()))
-    }
-}
-
-@Composable
 private fun ProfileStep(
     userName: String,
     onNameChanged: (String) -> Unit
@@ -1613,16 +1546,6 @@ private fun AppearanceStep(
 
 @Preview(showBackground = true)
 @Composable
-fun WelcomeStepPreview() {
-    OssWalletTheme {
-        Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
-            WelcomeStep()
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
 fun ProfileStepPreview() {
     OssWalletTheme {
         Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
@@ -1697,20 +1620,6 @@ fun AppearanceStepPreview() {
                 selectedPrecision = 2,
                 onPrecisionSelected = {}
             )
-        }
-    }
-}
-
-@Preview(
-    name = "Small Screen Onboarding - Welcome",
-    device = "spec:width=320dp,height=533dp",
-    showBackground = true
-)
-@Composable
-fun OnboardingSmallScreenWelcomePreview() {
-    OssWalletTheme {
-        Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
-            WelcomeStep()
         }
     }
 }

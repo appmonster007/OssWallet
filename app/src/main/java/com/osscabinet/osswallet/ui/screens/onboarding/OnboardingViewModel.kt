@@ -216,9 +216,19 @@ class OnboardingViewModel @Inject constructor(
                         // A CSV/ZIP restore writes straight into the live database without touching
                         // DataStore settings, so onboarding-completion and the active profile have to
                         // be set explicitly here from whatever the backup just restored.
-                        val restoredProfileId = profileRepository.getAllProfiles().first()
-                            .firstOrNull()?.id ?: 1
-                        settingsRepository.saveCurrentProfileId(restoredProfileId)
+                        val restoredProfile = profileRepository.getAllProfiles().first().firstOrNull()
+                        if (restoredProfile == null) {
+                            // No fallback to a hardcoded id: that would point settings at a profile
+                            // that doesn't exist in the restored database.
+                            _uiState.update {
+                                it.copy(
+                                    isImporting = false,
+                                    importError = "Backup restored no profiles"
+                                )
+                            }
+                            return@launch
+                        }
+                        settingsRepository.saveCurrentProfileId(restoredProfile.id)
                         settingsRepository.saveOnboardingCompleted(true)
                         _uiState.update { it.copy(isImporting = false) }
                         _onboardingCompleted.emit(Unit)

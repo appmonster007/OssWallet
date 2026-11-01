@@ -80,6 +80,7 @@ import com.osscabinet.ossWallet.domain.repository.BackupScope
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.RestorableEntity
 import com.osscabinet.ossWallet.domain.service.BackupRunState
+import com.osscabinet.ossWallet.domain.util.backupFilenameTimestamp
 import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonDashedButton
@@ -114,11 +115,6 @@ private fun backupTypeOf(backup: BackupMeta): BackupType =
 private fun backupMimeType(backup: BackupMeta): String =
     if (backup.encrypted) "application/octet-stream"
     else if (backupTypeOf(backup) == BackupType.SQLITE) "application/x-sqlite3" else "application/zip"
-
-/** Filename-safe timestamp, e.g. "20261101_143022_+0530" — numeric offset, no colon. */
-private fun backupFilenameTimestamp(): String =
-    java.time.ZonedDateTime.now()
-        .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_Z"))
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

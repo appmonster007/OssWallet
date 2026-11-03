@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.domain.service.mlkit
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.nl.entityextraction.DateTimeEntity
+import com.google.mlkit.nl.entityextraction.Entity
 import com.google.mlkit.nl.entityextraction.EntityExtraction
 import com.google.mlkit.nl.entityextraction.EntityExtractionParams
 import com.google.mlkit.nl.entityextraction.EntityExtractorOptions
@@ -70,23 +71,41 @@ class MlKitTransactionDecoderInstrumentedTest {
         )
     }
 
+    // ML Kit only: these call the extractor directly and never reach the decoder's regex fallback.
+
     @Test
-    fun mlKit_extractsMoneyEntity_fromRealModel() = runBlocking {
-        val extractor = EntityExtraction.getClient(
-            EntityExtractorOptions.Builder(EntityExtractorOptions.ENGLISH).build()
-        )
-        try {
-            Tasks.await(extractor.downloadModelIfNeeded())
-            val annotations = Tasks.await(
-                extractor.annotate(EntityExtractionParams.Builder("Paid \$25.00 for Groceries").build())
-            )
-            val money = annotations.flatMap { it.entities }.filterIsInstance<MoneyEntity>()
-            assertTrue("ML Kit returned no MoneyEntity", money.isNotEmpty())
-            assertEquals(25, money.first().integerPart)
-        } finally {
-            extractor.close()
-        }
+    fun mlKit_moneyEntity_usdWholeDollars() = assertMoney("Paid \$25.00 for Groceries", 25, 0)
+
+    @Test
+    fun mlKit_moneyEntity_usdCents() = assertMoney("Debit alert: \$45.50 spent at Starbucks.", 45, 50)
+
+    @Test
+    fun mlKit_moneyEntity_usdThousands() = assertMoney("Credited \$1200.00 from Salary deposit.", 1200, 0)
+
+    @Test
+    fun mlKit_moneyEntity_inrGroupedThousands() =
+        assertMoney("Hi! Your txn of ₹9,936.51 at Dsb App Taastrup Dk.", 9936, 51)
+
+    @Test
+    fun mlKit_moneyEntity_gbp() = assertMoney("Paid £89.99 for Groceries at Tesco.", 89, 99)
+
+    @Test
+    fun mlKit_moneyEntity_aedCode() = assertMoney("Purchase alert: AED 350.00 charged at Dubai Mall.", 350, 0)
+
+    @Test
+    fun mlKit_moneyEntity_europeanFormat() = assertMoney("Bank alert: €1.250,50 debited at Berlin Store.", 1250, 50)
+
+    @Test
+    fun mlKit_returnsNoMoneyEntity_whenTextHasNoAmount() {
+        val money = annotate("Your balance is unchanged and the card is active.").filterIsInstance<MoneyEntity>()
+        assertTrue("ML Kit found a MoneyEntity in text with no amount: $money", money.isEmpty())
     }
+
+    @Test
+    fun mlKit_dateTimeEntity_longFormDate() = assertDate("Debit alert: \$45.50 spent on March 12, 2026.", LocalDate.of(2026, 3, 12))
+
+    @Test
+    fun mlKit_dateTimeEntity_isoDate() = assertDate("Payment received on 2026-03-12 at Starbucks.", LocalDate.of(2026, 3, 12))
 
     @Test
     fun decodeText_parsesDebitExpense_withMlKit() = runBlocking {
@@ -122,26 +141,6 @@ class MlKitTransactionDecoderInstrumentedTest {
     }
 
     @Test
-    fun mlKit_extractsDateTimeEntity_fromRealModel() = runBlocking {
-        val extractor = EntityExtraction.getClient(
-            EntityExtractorOptions.Builder(EntityExtractorOptions.ENGLISH).build()
-        )
-        try {
-            Tasks.await(extractor.downloadModelIfNeeded())
-            val annotations = Tasks.await(
-                extractor.annotate(
-                    EntityExtractionParams.Builder("Debit alert: \$45.50 spent at Starbucks on March 12, 2026.").build()
-                )
-            )
-            val dateTime = annotations.flatMap { it.entities }.filterIsInstance<DateTimeEntity>().firstOrNull()
-            assertNotNull("ML Kit returned no DateTimeEntity", dateTime)
-            assertEquals(LocalDate.of(2026, 3, 12), localDateOf(dateTime!!.timestampMillis))
-        } finally {
-            extractor.close()
-        }
-    }
-
-    @Test
     fun decodeText_usesMlKitDateTime_forTransactionDate() = runBlocking {
         // Today is not March 12 2026, so this only passes if ML Kit's date is used, not the fallback clock.
         val result = decoder.decodeText(
@@ -153,6 +152,33 @@ class MlKitTransactionDecoderInstrumentedTest {
         assertNull("ML Kit failed; decoder fell back to regex", decoder.lastMlKitError)
         assertTrue("ML Kit found no entities; decoder used regex only", decoder.lastMlKitEntityCount > 0)
         assertEquals(LocalDate.of(2026, 3, 12), localDateOf(requireNotNull(result.timestamp)))
+    }
+
+    private fun assertMoney(text: String, integerPart: Int, fractionalPart: Int) {
+        val money = annotate(text).filterIsInstance<MoneyEntity>()
+        assertTrue("ML Kit found no MoneyEntity in: $text", money.isNotEmpty())
+        assertEquals(integerPart, money.first().integerPart)
+        assertEquals(fractionalPart, money.first().fractionalPart)
+    }
+
+    private fun assertDate(text: String, expected: LocalDate) {
+        val dateTime = annotate(text).filterIsInstance<DateTimeEntity>().firstOrNull()
+        assertNotNull("ML Kit found no DateTimeEntity in: $text", dateTime)
+        assertEquals(expected, localDateOf(dateTime!!.timestampMillis))
+    }
+
+    /** Runs the ML Kit extractor directly, bypassing [MlKitTransactionDecoder] and its regex fallback. */
+    private fun annotate(text: String): List<Entity> {
+        val extractor = EntityExtraction.getClient(
+            EntityExtractorOptions.Builder(EntityExtractorOptions.ENGLISH).build()
+        )
+        try {
+            Tasks.await(extractor.downloadModelIfNeeded())
+            return Tasks.await(extractor.annotate(EntityExtractionParams.Builder(text).build()))
+                .flatMap { it.entities }
+        } finally {
+            extractor.close()
+        }
     }
 
     private fun localDateOf(millis: Long): LocalDate =

@@ -952,12 +952,25 @@ object CardAggregationService {
     }
 
     private fun TransactionFilter.toBalanceFilter(): TransactionFilter {
+        // Every display-only dimension a card's own filter could set must be stripped here -
+        // a balance may only ever depend on account scope + time window. transactionTypes and
+        // amount range used to be missed, which meant a card filtered to e.g. "Expenses only" or
+        // an amount range would drop the excluded rows' amounts from the balance it computes.
         val baseFilter = this.copy(
             categoryIds = emptySet(),
             tags = emptySet(),
             currencies = emptySet(),
             paymentMethods = emptySet(),
-            statuses = emptySet()
+            statuses = emptySet(),
+            transactionTypes = emptySet(),
+            minAmount = null,
+            maxAmount = null,
+            hasWarranty = null,
+            warrantyExpirationStart = null,
+            warrantyExpirationEnd = null,
+            linkedTransactionIds = emptySet(),
+            queryNote = null,
+            queryPayee = null
         )
         return when (val range = baseFilter.timelineRange) {
             is TimelineRange.AllTime -> baseFilter

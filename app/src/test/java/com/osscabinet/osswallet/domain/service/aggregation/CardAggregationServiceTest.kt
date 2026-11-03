@@ -330,6 +330,46 @@ class CardAggregationServiceTest {
     }
 
     @Test
+    fun `computeAccountsCard balance ignores the card's own transaction-type and amount filters`() = runBlocking {
+        // A card filtered to "Expenses only" (or an amount range) must still report the account's
+        // real balance, not a balance summed over only the matching rows - toBalanceFilter() must
+        // strip transactionTypes/minAmount/maxAmount exactly like it strips categoryIds/tags.
+        val config = AccountsCardConfig(
+            cardId = "t",
+            filter = TransactionFilter(
+                timelineRange = TimelineRange.AllTime(),
+                transactionTypes = setOf(TransactionType.EXPENSE),
+                minAmount = BigDecimal("10.00")
+            )
+        )
+        val input = CardInput(
+            profileId = profileId,
+            targetCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            filter = TransactionFilter(timelineRange = TimelineRange.AllTime()),
+            accounts = listOf(sampleAccount),
+            categories = emptyList()
+        )
+
+        // The balance call (card filter stripped of type/amount) sees the TRUE balance.
+        coEvery {
+            TransactionAggregationService.getSummaryByAccountAndCurrency(
+                any(), any(), match { f -> f.transactionTypes.isEmpty() && f.minAmount == null }, any()
+            )
+        } returns Result.success(mapOf("acc1" to mapOf("USD" to fs(income = "5000.00"))))
+        // The period call (card filter untouched) sees only what the card's own filter allows.
+        coEvery {
+            TransactionAggregationService.getSummaryByAccountAndCurrency(
+                any(), any(), match { f -> f.transactionTypes == setOf(TransactionType.EXPENSE) }, any()
+            )
+        } returns Result.success(mapOf("acc1" to mapOf("USD" to fs(expense = "-50.00"))))
+
+        val result = CardAggregationService.computeAccountsCard(queryService, profileId, input, config)
+
+        assertEquals(0, BigDecimal("5000.00").compareTo(result.accountSummaries["acc1"]!!.balance))
+    }
+
+    @Test
     fun `computeAccountHeroCard reports lifetime balance and current period flow`() = runBlocking {
         val config = AccountHeroCardConfig(cardId = "t", showComparison = false)
         val input = baseInput(

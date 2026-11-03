@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.isPicked
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
@@ -157,7 +158,10 @@ fun TransactionFormBody(
             AeonImpactHeaderCard(
                 transactionType = state.entryMode,
                 onTypeSelected = { onEvent(TransactionEntryEvent.SetTransactionType(it)) },
-                allowedTypes = state.allowedEntryModes,
+                // Not state.allowedEntryModes: an initial balance/adjustment row only allows
+                // Transfer there, but the toggle must still show Income/Expense so the user can
+                // tap them - the ViewModel reassigns the category to Others when they do.
+                allowedTypes = EntryMode.entries.toSet(),
                 source = AeonAmountData(
                     value = state.amount,
                     currency = state.selectedCurrency,

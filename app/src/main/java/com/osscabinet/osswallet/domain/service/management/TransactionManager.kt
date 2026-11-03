@@ -137,10 +137,19 @@ class TransactionManager(
         val targetAccountId = request.targetAccountId
         val amount = request.amount.abs()
 
-        val baseCategory = Category.SYSTEM_TRANSFER
+        // Ordinary transfers always pass SYSTEM_TRANSFER themselves; this also lets opening-balance
+        // and reconciliation-adjustment rows (system categories saved via EntryMode.TRANSFER) keep
+        // their own category through the single-leg Outside Wallet path below.
+        val baseCategory = request.categoryId
 
         val isSourceWallet = sourceAccountId != null && sourceAccountId.isNotBlank()
         val isTargetWallet = targetAccountId != null && targetAccountId.isNotBlank()
+
+        // Opening balances and adjustments never have a real other side - only a single-leg
+        // Outside Wallet shape is valid for them.
+        require(!(Category.isSystemManaged(baseCategory) && isSourceWallet && isTargetWallet)) {
+            "Category $baseCategory cannot be saved as a two-sided transfer"
+        }
 
         return when {
             // Outflow: Wallet -> Outside
@@ -153,7 +162,10 @@ class TransactionManager(
                     targetCurrency = request.targetCurrency
                 )
                 if (existingTransaction != null) {
-                    transactionUseCases.clearTransactionLinks(existingTransaction.id)
+                    // Opening balances/adjustments never have links, so leave them alone on edit.
+                    if (!Category.isSystemManaged(baseCategory)) {
+                        transactionUseCases.clearTransactionLinks(existingTransaction.id)
+                    }
                     transactionUseCases.updateTransaction(existingTransaction, tx, profileId)
                     existingTransaction.id
                 } else {
@@ -172,7 +184,10 @@ class TransactionManager(
                     targetCurrency = request.currency
                 )
                 if (existingTransaction != null) {
-                    transactionUseCases.clearTransactionLinks(existingTransaction.id)
+                    // Opening balances/adjustments never have links, so leave them alone on edit.
+                    if (!Category.isSystemManaged(baseCategory)) {
+                        transactionUseCases.clearTransactionLinks(existingTransaction.id)
+                    }
                     transactionUseCases.updateTransaction(existingTransaction, tx, profileId)
                     existingTransaction.id
                 } else {
@@ -371,8 +386,9 @@ class TransactionManager(
         return true
     }
 
-    // Opening balances are income/expense rows; adjustments are transfer legs. Anything else
-    // would silently change the row's type on save, so reject it instead.
+    // Opening balances and adjustments may only be saved as transfer legs. A save that would
+    // silently change the row's type to something else is rejected instead - the only way to make
+    // one a real income/expense row is to reassign it to an ordinary category first.
     private fun requireAllowedEntryMode(request: TransactionRequest) {
         require(request.entryMode in Category.allowedEntryModes(request.categoryId)) {
             "Category ${request.categoryId} cannot be saved as ${request.entryMode}"

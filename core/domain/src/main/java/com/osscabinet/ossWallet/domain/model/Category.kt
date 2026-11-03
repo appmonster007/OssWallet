@@ -46,9 +46,15 @@ data class Category(
         /** System-managed categories: never offered in the picker for ordinary transactions. */
         fun isSystemManaged(id: Long) = isInitialBalance(id) || id == SYSTEM_RECONCILIATION_ADJUSTMENT
 
-        /** Entry modes a row in this category may be saved as. */
+        /**
+         * Entry modes a row in this category may be saved as. Opening balances and reconciliation
+         * adjustments are transfer legs against Outside Wallet - they affect the account balance
+         * but must never count as real income/expense in reports and budgets. The only way to turn
+         * one into real income/expense is to reassign it to an ordinary category first, which lifts
+         * this restriction since allowedEntryModes is keyed on the (possibly just-changed) category.
+         */
         fun allowedEntryModes(id: Long): Set<EntryMode> = when {
-            isSystemManaged(id) -> setOf(EntryMode.INCOME, EntryMode.EXPENSE)
+            isSystemManaged(id) -> setOf(EntryMode.TRANSFER)
             else -> EntryMode.entries.toSet()
         }
 

@@ -53,7 +53,7 @@ class AccountUseCasesTest {
         amount = BigDecimal(amount),
         timestamp = timestamp,
         currency = "USD",
-        transactionType = if (BigDecimal(amount).signum() < 0) TransactionType.EXPENSE else TransactionType.INCOME,
+        transactionType = if (BigDecimal(amount).signum() < 0) TransactionType.TRANSFER_OUTFLOW else TransactionType.TRANSFER_INFLOW,
         accountId = accountId,
         categoryId = Category.SYSTEM_INITIAL_BALANCE
     )
@@ -77,10 +77,10 @@ class AccountUseCasesTest {
         transactionManager.handleSaveTransaction(any(), any(), any(), any(), any(), any(), any())
     }
 
-    // ── Balance adjustments: stored like an opening balance, on the reconciliation category ──
+    // ── Balance adjustments: stored as a transfer leg against Outside Wallet, like an opening balance ──
 
     @Test
-    fun `gain adjustment is saved as income on the reconciliation category`() = runTest {
+    fun `gain adjustment is saved as a transfer inflow on the reconciliation category`() = runTest {
         val request = slot<TransactionRequest>()
 
         useCases.createBalanceAdjustment(accountId, "USD", BigDecimal("50.00"), profileId)
@@ -88,15 +88,16 @@ class AccountUseCasesTest {
         coVerify {
             transactionManager.handleSaveTransaction(null, capture(request), profileId, any(), any(), any(), any())
         }
-        assertEquals(EntryMode.INCOME, request.captured.entryMode)
-        assertEquals(accountId, request.captured.accountId)
-        assertEquals(null, request.captured.targetAccountId)
+        assertEquals(EntryMode.TRANSFER, request.captured.entryMode)
+        // Positive delta = Outside Wallet -> account: accountId blank, targetAccountId is the account
+        assertEquals(null, request.captured.accountId)
+        assertEquals(accountId, request.captured.targetAccountId)
         assertEquals(Category.SYSTEM_RECONCILIATION_ADJUSTMENT, request.captured.categoryId)
         assertEquals(0, BigDecimal("50").compareTo(request.captured.amount))
     }
 
     @Test
-    fun `loss adjustment is saved as expense with positive magnitude`() = runTest {
+    fun `loss adjustment is saved as a transfer outflow with positive magnitude`() = runTest {
         val request = slot<TransactionRequest>()
 
         useCases.createBalanceAdjustment(accountId, "USD", BigDecimal("-30.00"), profileId)
@@ -104,8 +105,10 @@ class AccountUseCasesTest {
         coVerify {
             transactionManager.handleSaveTransaction(null, capture(request), profileId, any(), any(), any(), any())
         }
-        assertEquals(EntryMode.EXPENSE, request.captured.entryMode)
+        assertEquals(EntryMode.TRANSFER, request.captured.entryMode)
+        // Negative delta = account -> Outside Wallet: accountId is the account, targetAccountId blank
         assertEquals(accountId, request.captured.accountId)
+        assertEquals(null, request.captured.targetAccountId)
         assertEquals(Category.SYSTEM_RECONCILIATION_ADJUSTMENT, request.captured.categoryId)
         assertEquals(0, BigDecimal("30").compareTo(request.captured.amount))
     }
@@ -221,7 +224,7 @@ class AccountUseCasesTest {
     // ── Create path ──────────────────────────────────────────────────────────
 
     @Test
-    fun `create with positive balance saves income opening balance dated a day before now`() = runTest {
+    fun `create with positive balance saves a transfer inflow opening balance dated a day before now`() = runTest {
         val request = slot<TransactionRequest>()
         val before = System.currentTimeMillis()
 
@@ -235,26 +238,30 @@ class AccountUseCasesTest {
         coVerify {
             transactionManager.handleSaveTransaction(null, capture(request), profileId, any(), any(), any(), any())
         }
-        assertEquals(EntryMode.INCOME, request.captured.entryMode)
+        assertEquals(EntryMode.TRANSFER, request.captured.entryMode)
+        assertEquals(null, request.captured.accountId)
+        assertTrue(request.captured.targetAccountId != null)
         assertEquals(0, BigDecimal("1000").compareTo(request.captured.amount))
         assertEquals(Category.SYSTEM_INITIAL_BALANCE, request.captured.categoryId)
         assertTrue(request.captured.timestamp in (before - dayMillis)..(after - dayMillis))
     }
 
     @Test
-    fun `create with negative balance saves expense opening balance with positive magnitude`() = runTest {
+    fun `create with negative balance saves a transfer outflow opening balance with positive magnitude`() = runTest {
         val request = slot<TransactionRequest>()
 
         useCases.createAccountWithInitialBalances(
             name = "Card", initialBalances = mapOf("USD" to "-300.00"), currency = "USD",
             structureType = AccountStructureType.CREDIT, colorHex = "#000000", icon = "ic",
-            allowedCurrencies = listOf("USD"), profileId = profileId
+            allowedCurrencies = listOf("USD"), profileId = profileId, accountId = accountId
         )
 
         coVerify {
             transactionManager.handleSaveTransaction(null, capture(request), profileId, any(), any(), any(), any())
         }
-        assertEquals(EntryMode.EXPENSE, request.captured.entryMode)
+        assertEquals(EntryMode.TRANSFER, request.captured.entryMode)
+        assertEquals(accountId, request.captured.accountId)
+        assertEquals(null, request.captured.targetAccountId)
         assertEquals(0, BigDecimal("300").compareTo(request.captured.amount))
     }
 
@@ -359,7 +366,7 @@ class AccountUseCasesTest {
     // ── Upsert: amount handling ──────────────────────────────────────────────
 
     @Test
-    fun `sign flip from income to expense is saved as expense with positive magnitude`() = runTest {
+    fun `sign flip from inflow to outflow is saved as a transfer outflow with positive magnitude`() = runTest {
         stubEarliest(1_700_000_000_000L)
         stubExisting(existingOpening("500.00", timestamp = 1_000L))
         val request = slot<TransactionRequest>()
@@ -369,7 +376,9 @@ class AccountUseCasesTest {
         coVerify {
             transactionManager.handleSaveTransaction(any(), capture(request), profileId, any(), any(), any(), any())
         }
-        assertEquals(EntryMode.EXPENSE, request.captured.entryMode)
+        assertEquals(EntryMode.TRANSFER, request.captured.entryMode)
+        assertEquals(accountId, request.captured.accountId)
+        assertEquals(null, request.captured.targetAccountId)
         assertEquals(0, BigDecimal("500").compareTo(request.captured.amount))
     }
 

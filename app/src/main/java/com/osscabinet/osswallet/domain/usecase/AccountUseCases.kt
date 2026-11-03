@@ -49,12 +49,12 @@ class AccountUseCases(
         initialBalances.forEach { (curr, balance) ->
             val amount = balance.toBigDecimalOrNull() ?: BigDecimal.ZERO
             if (amount.signum() != 0) {
-                val entryMode = if (amount.signum() >= 0) EntryMode.INCOME else EntryMode.EXPENSE
                 val request = TransactionRequest(
                     name = "Initial Balance",
                     amount = amount.abs(),
-                    entryMode = entryMode,
-                    accountId = accountId,
+                    entryMode = EntryMode.TRANSFER,
+                    accountId = outsideWalletAccountId(amount, accountId),
+                    targetAccountId = outsideWalletTargetId(amount, accountId),
                     currency = curr,
                     categoryId = Category.SYSTEM_INITIAL_BALANCE,
                     note = "Initial Balance",
@@ -89,8 +89,8 @@ class AccountUseCases(
     }
 
     /**
-     * A recorded change in balance. Stored like an opening balance: an income for a gain, an
-     * expense for a loss, on the reconciliation category.
+     * A recorded change in balance. Stored as a transfer leg against Outside Wallet, like an
+     * opening balance - it moves the account's balance without counting as real income/expense.
      */
     suspend fun createBalanceAdjustment(
         accountId: String,
@@ -99,12 +99,12 @@ class AccountUseCases(
         profileId: Int
     ) {
         if (delta.signum() == 0) return
-        val entryMode = if (delta.signum() > 0) EntryMode.INCOME else EntryMode.EXPENSE
         val request = TransactionRequest(
             name = "Balance Adjustment",
             amount = delta.abs(),
-            entryMode = entryMode,
-            accountId = accountId,
+            entryMode = EntryMode.TRANSFER,
+            accountId = outsideWalletAccountId(delta, accountId),
+            targetAccountId = outsideWalletTargetId(delta, accountId),
             currency = currency,
             categoryId = Category.SYSTEM_RECONCILIATION_ADJUSTMENT,
             note = "Balance adjustment",
@@ -136,12 +136,12 @@ class AccountUseCases(
                     existing.timestamp == timestamp
                 ) return
 
-                val entryMode = if (amount.signum() >= 0) EntryMode.INCOME else EntryMode.EXPENSE
                 val request = TransactionRequest(
                     name = "Initial Balance",
                     amount = amount.abs(),
-                    entryMode = entryMode,
-                    accountId = accountId,
+                    entryMode = EntryMode.TRANSFER,
+                    accountId = outsideWalletAccountId(amount, accountId),
+                    targetAccountId = outsideWalletTargetId(amount, accountId),
                     currency = currency,
                     categoryId = Category.SYSTEM_INITIAL_BALANCE,
                     note = "Initial Balance",
@@ -151,6 +151,14 @@ class AccountUseCases(
             }
         }
     }
+
+    // A gain is Outside Wallet -> account (source blank, so TransactionManager treats it as the
+    // inflow leg); a loss is account -> Outside Wallet (target blank, the outflow leg).
+    private fun outsideWalletAccountId(signedAmount: BigDecimal, accountId: String): String? =
+        if (signedAmount.signum() >= 0) null else accountId
+
+    private fun outsideWalletTargetId(signedAmount: BigDecimal, accountId: String): String? =
+        if (signedAmount.signum() >= 0) accountId else null
 
     // Every currency that holds an opening balance must be allowed, or the edit screen cannot show or remove it.
     private fun withBalanceCurrencies(allowed: List<String>, initialBalances: Map<String, String>): List<String> {

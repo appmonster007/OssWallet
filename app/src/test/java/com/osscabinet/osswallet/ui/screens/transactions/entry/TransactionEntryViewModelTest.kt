@@ -375,30 +375,33 @@ class TransactionEntryViewModelTest {
     }
 
     @Test
-    fun `balance adjustment on the reconciliation category opens and saves as income, keeping its category`() = runTest(testDispatcher) {
-        openExisting(storedRow(11, "50.00", TransactionType.INCOME, Category.SYSTEM_RECONCILIATION_ADJUSTMENT))
+    fun `balance adjustment on the reconciliation category opens and saves as a transfer, keeping its category`() = runTest(testDispatcher) {
+        openExisting(storedRow(11, "50.00", TransactionType.TRANSFER_INFLOW, Category.SYSTEM_RECONCILIATION_ADJUSTMENT))
 
-        assertEquals(EntryMode.INCOME, viewModel.state.value.entryMode)
+        assertEquals(EntryMode.TRANSFER, viewModel.state.value.entryMode)
         val request = saveAndCaptureRequest()
 
-        assertEquals(EntryMode.INCOME, request.entryMode)
-        assertFalse(request.isTransfer)
+        assertEquals(EntryMode.TRANSFER, request.entryMode)
+        assertTrue(request.isTransfer)
         assertEquals(Category.SYSTEM_RECONCILIATION_ADJUSTMENT, request.categoryId)
         assertEquals(0, BigDecimal("50").compareTo(request.amount))
+        assertNull(request.accountId)
+        assertEquals("acc1", request.targetAccountId)
     }
 
     @Test
-    fun `opening balance and adjustment cannot be switched to transfer mode`() = runTest(testDispatcher) {
-        openExisting(storedRow(12, "50.00", TransactionType.INCOME, Category.SYSTEM_RECONCILIATION_ADJUSTMENT))
-        viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.TRANSFER))
+    fun `switching an initial balance or adjustment row away from transfer reassigns it to Others`() = runTest(testDispatcher) {
+        openExisting(storedRow(12, "50.00", TransactionType.TRANSFER_INFLOW, Category.SYSTEM_RECONCILIATION_ADJUSTMENT))
+        viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.INCOME))
         advanceUntilIdle()
         assertEquals(EntryMode.INCOME, viewModel.state.value.entryMode)
-        assertEquals(setOf(EntryMode.INCOME, EntryMode.EXPENSE), viewModel.state.value.allowedEntryModes)
+        assertEquals(Category.SYSTEM_OTHERS, viewModel.state.value.selectedCategoryId)
 
-        openExisting(storedRow(13, "1000.00", TransactionType.INCOME, Category.SYSTEM_INITIAL_BALANCE))
-        viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.TRANSFER))
+        openExisting(storedRow(13, "1000.00", TransactionType.TRANSFER_OUTFLOW, Category.SYSTEM_INITIAL_BALANCE))
+        viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.EXPENSE))
         advanceUntilIdle()
-        assertEquals(EntryMode.INCOME, viewModel.state.value.entryMode)
+        assertEquals(EntryMode.EXPENSE, viewModel.state.value.entryMode)
+        assertEquals(Category.SYSTEM_OTHERS, viewModel.state.value.selectedCategoryId)
     }
 
     // ── Opening balances and balance adjustments must open and save with their own sign ──
@@ -430,7 +433,10 @@ class TransactionEntryViewModelTest {
         backgroundScope.launch { viewModel.initialize(transactionId = row.id) }
         backgroundScope.launch { viewModel.state.collect {} }
         advanceUntilIdle()
-        awaitState { it.isEditMode && it.accounts.isNotEmpty() }
+        // Keyed on this row's own id, not just "some edit-mode state" - a prior openExisting() call
+        // in the same test can leave state that already satisfies a looser predicate, racing ahead
+        // of this row's own load.
+        awaitState { it.isEditMode && it.accounts.isNotEmpty() && it.transactionId == row.id }
     }
 
     /** Saves the open form and returns the request handed to the TransactionManager. */
@@ -445,39 +451,43 @@ class TransactionEntryViewModelTest {
     }
 
     @Test
-    fun `income opening balance opens as income, not transfer out`() = runTest(testDispatcher) {
-        openExisting(storedRow(7, "1000.00", TransactionType.INCOME, Category.SYSTEM_INITIAL_BALANCE))
+    fun `gain opening balance opens as a transfer inflow from Outside Wallet`() = runTest(testDispatcher) {
+        openExisting(storedRow(7, "1000.00", TransactionType.TRANSFER_INFLOW, Category.SYSTEM_INITIAL_BALANCE))
 
         val state = viewModel.state.value
-        assertEquals(EntryMode.INCOME, state.entryMode)
-        assertEquals("acc1", state.source.account.toDbTransferSide())
-        assertEquals("1000", state.source.amount)
-        assertNull(state.destination.account.toDbTransferSide())
+        assertEquals(EntryMode.TRANSFER, state.entryMode)
+        assertEquals("acc1", state.destination.account.toDbTransferSide())
+        assertEquals("1000", state.destination.amount)
+        assertNull(state.source.account.toDbTransferSide())
     }
 
     @Test
-    fun `saving untouched income opening balance keeps it positive income with its date`() = runTest(testDispatcher) {
-        openExisting(storedRow(7, "1000.00", TransactionType.INCOME, Category.SYSTEM_INITIAL_BALANCE, timestamp = 555L))
+    fun `saving an untouched gain opening balance keeps it a positive transfer inflow with its date`() = runTest(testDispatcher) {
+        openExisting(storedRow(7, "1000.00", TransactionType.TRANSFER_INFLOW, Category.SYSTEM_INITIAL_BALANCE, timestamp = 555L))
 
         val request = saveAndCaptureRequest()
 
-        assertEquals(EntryMode.INCOME, request.entryMode)
-        assertFalse(request.isTransfer)
+        assertEquals(EntryMode.TRANSFER, request.entryMode)
+        assertTrue(request.isTransfer)
         assertEquals(0, BigDecimal("1000").compareTo(request.amount))
         assertEquals(Category.SYSTEM_INITIAL_BALANCE, request.categoryId)
         assertEquals(555L, request.timestamp)
+        assertNull(request.accountId)
+        assertEquals("acc1", request.targetAccountId)
     }
 
     @Test
-    fun `expense opening balance opens and saves as expense with the same magnitude`() = runTest(testDispatcher) {
-        openExisting(storedRow(8, "-250.00", TransactionType.EXPENSE, Category.SYSTEM_INITIAL_BALANCE))
+    fun `loss opening balance opens and saves as a transfer outflow with the same magnitude`() = runTest(testDispatcher) {
+        openExisting(storedRow(8, "-250.00", TransactionType.TRANSFER_OUTFLOW, Category.SYSTEM_INITIAL_BALANCE))
 
-        assertEquals(EntryMode.EXPENSE, viewModel.state.value.entryMode)
+        assertEquals(EntryMode.TRANSFER, viewModel.state.value.entryMode)
         val request = saveAndCaptureRequest()
 
-        assertEquals(EntryMode.EXPENSE, request.entryMode)
-        assertFalse(request.isTransfer)
+        assertEquals(EntryMode.TRANSFER, request.entryMode)
+        assertTrue(request.isTransfer)
         assertEquals(0, BigDecimal("250").compareTo(request.amount))
+        assertEquals("acc1", request.accountId)
+        assertNull(request.targetAccountId)
     }
 
     @Test

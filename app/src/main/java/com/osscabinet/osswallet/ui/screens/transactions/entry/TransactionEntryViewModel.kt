@@ -213,8 +213,8 @@ class TransactionEntryViewModel @Inject constructor(
         accounts: List<Account>,
         linkedTxs: List<Transaction>
     ) {
-        // Decide by the row's type, not its category: opening balances and balance adjustments
-        // carry transfer-category ids but are INCOME/EXPENSE rows and must open as such.
+        // Opening balances and balance adjustments are themselves TRANSFER_INFLOW/OUTFLOW rows
+        // (single-leg, against Outside Wallet), so this already opens them as EntryMode.TRANSFER.
         val txType = when {
             transaction.transactionType.isTransfer -> EntryMode.TRANSFER
             else -> transaction.transactionType.toEntryMode()
@@ -259,8 +259,14 @@ class TransactionEntryViewModel @Inject constructor(
                             transaction.transferRate
                         )
             }
-            // Semantic Normalization: Unified category for both sides
-            categoryId = Category.SYSTEM_TRANSFER
+            // Semantic Normalization: unified category for both sides of an ordinary transfer -
+            // but an opening balance/adjustment keeps its own category, so the toggle stays locked
+            // to Transfer and the category picker can still show it's a system row.
+            categoryId = if (Category.isSystemManaged(transaction.categoryId)) {
+                transaction.categoryId
+            } else {
+                Category.SYSTEM_TRANSFER
+            }
         } else {
             amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
         }
@@ -495,34 +501,47 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetTransactionStatus -> update { it.copy(transactionStatus = event.status) }
-            // Rows with a fixed shape (opening balances, adjustments) ignore modes they cannot take.
-            is TransactionEntryEvent.SetTransactionType -> if (event.type in _state.value.allowedEntryModes) {
-                val oldMode = _state.value.entryMode
-                val newMode = event.type
+            is TransactionEntryEvent.SetTransactionType -> {
+                val s = _state.value
+                // An initial-balance/adjustment row is normally locked to Transfer, but the user may
+                // still choose to turn it into a real income/expense row directly from the toggle -
+                // that choice also reassigns it off its system category, onto the generic "Others"
+                // bucket, since Category.allowedEntryModes would otherwise reject saving it this way.
+                val convertingAwayFromSystemCategory =
+                    Category.isSystemManaged(s.selectedCategoryId) && event.type != EntryMode.TRANSFER
+                if (event.type in s.allowedEntryModes || convertingAwayFromSystemCategory) {
+                    val oldMode = s.entryMode
+                    val newMode = event.type
 
-                _state.update { state ->
-                    val result =
-                        TransactionEntryService.transitionType(
-                            oldMode = oldMode,
-                            newMode = newMode,
-                            currentSource = state.source,
-                            currentDestination = state.destination,
-                            isSplitMode = state.isSplitMode
+                    _state.update { state ->
+                        val result =
+                            TransactionEntryService.transitionType(
+                                oldMode = oldMode,
+                                newMode = newMode,
+                                currentSource = state.source,
+                                currentDestination = state.destination,
+                                isSplitMode = state.isSplitMode
+                            )
+                        val source = if (convertingAwayFromSystemCategory) {
+                            result.source.copy(categoryId = Category.SYSTEM_OTHERS)
+                        } else {
+                            result.source
+                        }
+
+                        state.copy(
+                            entryMode = result.newMode,
+                            source = source,
+                            destination = result.destination,
+                            isSplitMode = result.isSplitModeAllowed,
+                            showSplitSheet = if (result.newMode == EntryMode.TRANSFER) false else state.showSplitSheet,
+                            isRateFixed = false
                         )
+                    }
 
-                    state.copy(
-                        entryMode = result.newMode,
-                        source = result.source,
-                        destination = result.destination,
-                        isSplitMode = result.isSplitModeAllowed,
-                        showSplitSheet = if (result.newMode == EntryMode.TRANSFER) false else state.showSplitSheet,
-                        isRateFixed = false
-                    )
-                }
-
-                // Recalculate exchange rate if switching to/from transfer
-                if (newMode == EntryMode.TRANSFER) {
-                    recalculateExchangeRate()
+                    // Recalculate exchange rate if switching to/from transfer
+                    if (newMode == EntryMode.TRANSFER) {
+                        recalculateExchangeRate()
+                    }
                 }
             }
 

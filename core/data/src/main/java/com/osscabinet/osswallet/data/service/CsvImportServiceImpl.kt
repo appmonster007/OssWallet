@@ -310,7 +310,7 @@ class CsvImportServiceImpl @Inject constructor(
                                             amount = amount,
                                             timestamp = System.currentTimeMillis(),
                                             currency = currency,
-                                            transactionType = if (amount.signum() >= 0) TransactionType.INCOME else TransactionType.EXPENSE,
+                                            transactionType = if (amount.signum() >= 0) TransactionType.TRANSFER_INFLOW else TransactionType.TRANSFER_OUTFLOW,
                                             accountId = id,
                                             categoryId = Category.SYSTEM_INITIAL_BALANCE,
                                             tags = emptySet(),

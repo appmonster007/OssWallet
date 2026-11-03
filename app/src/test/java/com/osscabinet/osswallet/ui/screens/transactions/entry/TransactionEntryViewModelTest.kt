@@ -374,6 +374,33 @@ class TransactionEntryViewModelTest {
         assertTrue(viewModel.state.value.isSplitMode) // Should NOT revert
     }
 
+    @Test
+    fun `balance adjustment on the reconciliation category opens and saves as income, keeping its category`() = runTest(testDispatcher) {
+        openExisting(storedRow(11, "50.00", TransactionType.INCOME, Category.SYSTEM_RECONCILIATION_ADJUSTMENT))
+
+        assertEquals(EntryMode.INCOME, viewModel.state.value.entryMode)
+        val request = saveAndCaptureRequest()
+
+        assertEquals(EntryMode.INCOME, request.entryMode)
+        assertFalse(request.isTransfer)
+        assertEquals(Category.SYSTEM_RECONCILIATION_ADJUSTMENT, request.categoryId)
+        assertEquals(0, BigDecimal("50").compareTo(request.amount))
+    }
+
+    @Test
+    fun `opening balance and adjustment cannot be switched to transfer mode`() = runTest(testDispatcher) {
+        openExisting(storedRow(12, "50.00", TransactionType.INCOME, Category.SYSTEM_RECONCILIATION_ADJUSTMENT))
+        viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.TRANSFER))
+        advanceUntilIdle()
+        assertEquals(EntryMode.INCOME, viewModel.state.value.entryMode)
+        assertEquals(setOf(EntryMode.INCOME, EntryMode.EXPENSE), viewModel.state.value.allowedEntryModes)
+
+        openExisting(storedRow(13, "1000.00", TransactionType.INCOME, Category.SYSTEM_INITIAL_BALANCE))
+        viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.TRANSFER))
+        advanceUntilIdle()
+        assertEquals(EntryMode.INCOME, viewModel.state.value.entryMode)
+    }
+
     // ── Opening balances and balance adjustments must open and save with their own sign ──
 
     private fun storedRow(

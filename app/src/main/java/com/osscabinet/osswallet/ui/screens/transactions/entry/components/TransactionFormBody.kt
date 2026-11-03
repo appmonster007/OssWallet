@@ -157,6 +157,7 @@ fun TransactionFormBody(
             AeonImpactHeaderCard(
                 transactionType = state.entryMode,
                 onTypeSelected = { onEvent(TransactionEntryEvent.SetTransactionType(it)) },
+                allowedTypes = state.allowedEntryModes,
                 source = AeonAmountData(
                     value = state.amount,
                     currency = state.selectedCurrency,
@@ -456,7 +457,7 @@ fun TransactionFormBody(
 
         state.showSplitCategorySheet?.let { splitIndex ->
             val editableCategories =
-                remember(state.categories) { state.categories.filter { !Category.isInitialBalance(it.id) } }
+                remember(state.categories) { state.categories.filter { !Category.isSystemManaged(it.id) } }
             AeonCategorySelection(
                 categories = editableCategories,
                 selectedCategoryIds = state.splits.getOrNull(splitIndex)?.categoryId?.let { setOf(it) }

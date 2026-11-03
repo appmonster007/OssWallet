@@ -158,6 +158,7 @@ fun AeonImpactHeaderCard(
     nameIcon: ImageVector = Icons.Rounded.Title,
     showAmount: Boolean = true,
     showTypeSelector: Boolean = true,
+    allowedTypes: Set<EntryMode> = EntryMode.entries.toSet(),
     targetAccountId: String? = null,
     transferRate: BigDecimal = BigDecimal.ONE,
     isRateFixed: Boolean = false,
@@ -194,7 +195,7 @@ fun AeonImpactHeaderCard(
         else -> Color(transferColorHex.toColorInt())
     }
 
-    val types = EntryMode.entries.map {
+    val types = EntryMode.entries.filter { it in allowedTypes }.map {
         Triple(
             when (it) {
                 EntryMode.EXPENSE -> Icons.Rounded.Remove

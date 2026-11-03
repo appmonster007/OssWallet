@@ -40,7 +40,17 @@ data class Category(
 
         fun isSystemCategory(id: Long) = SystemCategory.entries.any { it.id == id }
         fun isInitialBalance(id: Long) = id == SYSTEM_INITIAL_BALANCE
-        fun isTransfer(id: Long) = id == SYSTEM_TRANSFER || isInitialBalance(id)
+        fun isTransfer(id: Long) =
+            id == SYSTEM_TRANSFER || isInitialBalance(id) || id == SYSTEM_RECONCILIATION_ADJUSTMENT
+
+        /** System-managed categories: never offered in the picker for ordinary transactions. */
+        fun isSystemManaged(id: Long) = isInitialBalance(id) || id == SYSTEM_RECONCILIATION_ADJUSTMENT
+
+        /** Entry modes a row in this category may be saved as. */
+        fun allowedEntryModes(id: Long): Set<EntryMode> = when {
+            isSystemManaged(id) -> setOf(EntryMode.INCOME, EntryMode.EXPENSE)
+            else -> EntryMode.entries.toSet()
+        }
 
         // Ids below this are permanently reserved for system + seeded default categories
         // (currently 1000-1157). User-created categories always start at this floor, so

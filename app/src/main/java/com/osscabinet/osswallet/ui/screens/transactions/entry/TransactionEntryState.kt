@@ -132,6 +132,7 @@ data class TransactionEntryState(
     val targetAccount: Account? get() = destination.account.resolve(accounts)
     val targetCurrency: String get() = destination.currency
     val selectedCategory: Category? get() = categories.find { it.id == selectedCategoryId }
+    val allowedEntryModes: Set<EntryMode> get() = Category.allowedEntryModes(selectedCategoryId)
     val linkedTransactionIdSet: Set<Long> get() = linkedTransactionIds.toHashSet()
 
     val isIncome: Boolean get() = entryMode == EntryMode.INCOME

@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
@@ -35,6 +36,7 @@ class TransactionManager(
         sourcePlannedPaymentId: Long? = null,
         scheduledDate: Long? = null
     ): Long = andRefresh {
+        requireAllowedEntryMode(request)
         transactionUseCases.runAtomically {
             val newId =
                 if (request.isTransfer) handleTransferSave(existingTransaction, request, profileId)
@@ -114,12 +116,9 @@ class TransactionManager(
     ): Long {
         val updated = request.toNormalTransaction(existingTransaction)
         return if (existingTransaction != null) {
-            if (Category.isTransfer(existingTransaction.categoryId) && !Category.isTransfer(request.categoryId)) {
-                // Conversion Logic: If it was a linked transfer and is now becoming Normal
-                // 1. Delink bidirectionally. Counterparts automatically become standalone transfers.
-                transactionUseCases.clearTransactionLinks(existingTransaction.id)
-            } else if (Category.isTransfer(existingTransaction.categoryId)) {
-                // If it's still a transfer (maybe just account change), clear links to be rebuilt if needed
+            // Only a transfer-type leg has links. Opening balances and adjustments never do, so
+            // a plain save of them leaves any links alone.
+            if (existingTransaction.transactionType.isTransfer) {
                 transactionUseCases.clearTransactionLinks(existingTransaction.id)
             }
             transactionUseCases.updateTransaction(existingTransaction, updated, profileId)
@@ -138,8 +137,7 @@ class TransactionManager(
         val targetAccountId = request.targetAccountId
         val amount = request.amount.abs()
 
-        val baseCategory = if (Category.isInitialBalance(request.categoryId))
-            Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
+        val baseCategory = Category.SYSTEM_TRANSFER
 
         val isSourceWallet = sourceAccountId != null && sourceAccountId.isNotBlank()
         val isTargetWallet = targetAccountId != null && targetAccountId.isNotBlank()
@@ -371,6 +369,14 @@ class TransactionManager(
         )
         widgetRefreshTrigger.trigger()
         return true
+    }
+
+    // Opening balances are income/expense rows; adjustments are transfer legs. Anything else
+    // would silently change the row's type on save, so reject it instead.
+    private fun requireAllowedEntryMode(request: TransactionRequest) {
+        require(request.entryMode in Category.allowedEntryModes(request.categoryId)) {
+            "Category ${request.categoryId} cannot be saved as ${request.entryMode}"
+        }
     }
 
     // Maps a TransactionRequest onto a Transaction, reusing an existing row's identity

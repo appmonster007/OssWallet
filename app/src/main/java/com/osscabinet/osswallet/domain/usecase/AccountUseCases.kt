@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.domain.usecase
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.CreditCardDetails
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
@@ -27,9 +28,10 @@ class AccountUseCases(
         colorHex: String,
         icon: String,
         allowedCurrencies: List<String>,
-        profileId: Int
-    ): String {
-        val accountId = UUID.randomUUID().toString()
+        profileId: Int,
+        accountId: String = UUID.randomUUID().toString(),
+        creditDetails: CreditCardDetails? = null
+    ): String = transactionManager.transactionUseCases.runAtomically {
         accountRepository.insertAccount(
             Account(
                 id = accountId,
@@ -42,6 +44,7 @@ class AccountUseCases(
             ),
             profileId
         )
+        creditDetails?.let { accountRepository.saveCreditCardDetails(it) }
 
         initialBalances.forEach { (curr, balance) ->
             val amount = balance.toBigDecimalOrNull() ?: BigDecimal.ZERO
@@ -60,9 +63,35 @@ class AccountUseCases(
                 transactionManager.handleSaveTransaction(null, request, profileId)
             }
         }
-        return accountId
+        accountId
     }
 
+    /**
+     * Writes all of an account edit as one unit, so a failure part-way leaves nothing behind.
+     */
+    suspend fun saveAccountEdits(
+        account: Account,
+        creditDetails: CreditCardDetails?,
+        openingBalances: Map<String, BigDecimal>,
+        pendingAdjustments: Map<String, BigDecimal>,
+        profileId: Int
+    ) {
+        transactionManager.transactionUseCases.runAtomically {
+            accountRepository.updateAccount(account, profileId)
+            creditDetails?.let { accountRepository.saveCreditCardDetails(it) }
+            pendingAdjustments.forEach { (currency, delta) ->
+                createBalanceAdjustment(account.id, currency, delta, profileId)
+            }
+            openingBalances.forEach { (currency, amount) ->
+                upsertInitialBalance(account.id, currency, amount, profileId)
+            }
+        }
+    }
+
+    /**
+     * A recorded change in balance. Stored like an opening balance: an income for a gain, an
+     * expense for a loss, on the reconciliation category.
+     */
     suspend fun createBalanceAdjustment(
         accountId: String,
         currency: String,
@@ -77,7 +106,7 @@ class AccountUseCases(
             entryMode = entryMode,
             accountId = accountId,
             currency = currency,
-            categoryId = Category.SYSTEM_TRANSFER,
+            categoryId = Category.SYSTEM_RECONCILIATION_ADJUSTMENT,
             note = "Balance adjustment",
             timestamp = System.currentTimeMillis()
         )

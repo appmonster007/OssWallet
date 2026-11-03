@@ -1,7 +1,9 @@
 package com.osscabinet.ossWallet.domain.usecase
 
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.CreditCardDetails
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
@@ -35,6 +37,10 @@ class AccountUseCasesTest {
     @Before
     fun setup() {
         every { transactionManager.transactionUseCases } returns transactionUseCases
+        // Run the atomic blocks inline; the atomicity itself is covered by the instrumented rollback test.
+        coEvery { transactionUseCases.runAtomically<Any?>(any()) } coAnswers {
+            firstArg<suspend () -> Any?>().invoke()
+        }
         coEvery { transactionUseCases.getInitialBalanceTransaction(any(), any(), any()) } returns null
         coEvery { transactionUseCases.getEarliestNonInitialBalanceTimestamp(any(), any()) } returns null
         coEvery { transactionManager.deleteTransaction(any(), any()) } returns Unit
@@ -69,6 +75,129 @@ class AccountUseCasesTest {
 
     private suspend fun verifyNoSave() = coVerify(exactly = 0) {
         transactionManager.handleSaveTransaction(any(), any(), any(), any(), any(), any(), any())
+    }
+
+    // ── Balance adjustments: stored like an opening balance, on the reconciliation category ──
+
+    @Test
+    fun `gain adjustment is saved as income on the reconciliation category`() = runTest {
+        val request = slot<TransactionRequest>()
+
+        useCases.createBalanceAdjustment(accountId, "USD", BigDecimal("50.00"), profileId)
+
+        coVerify {
+            transactionManager.handleSaveTransaction(null, capture(request), profileId, any(), any(), any(), any())
+        }
+        assertEquals(EntryMode.INCOME, request.captured.entryMode)
+        assertEquals(accountId, request.captured.accountId)
+        assertEquals(null, request.captured.targetAccountId)
+        assertEquals(Category.SYSTEM_RECONCILIATION_ADJUSTMENT, request.captured.categoryId)
+        assertEquals(0, BigDecimal("50").compareTo(request.captured.amount))
+    }
+
+    @Test
+    fun `loss adjustment is saved as expense with positive magnitude`() = runTest {
+        val request = slot<TransactionRequest>()
+
+        useCases.createBalanceAdjustment(accountId, "USD", BigDecimal("-30.00"), profileId)
+
+        coVerify {
+            transactionManager.handleSaveTransaction(null, capture(request), profileId, any(), any(), any(), any())
+        }
+        assertEquals(EntryMode.EXPENSE, request.captured.entryMode)
+        assertEquals(accountId, request.captured.accountId)
+        assertEquals(Category.SYSTEM_RECONCILIATION_ADJUSTMENT, request.captured.categoryId)
+        assertEquals(0, BigDecimal("30").compareTo(request.captured.amount))
+    }
+
+    @Test
+    fun `zero adjustment saves nothing`() = runTest {
+        useCases.createBalanceAdjustment(accountId, "USD", BigDecimal.ZERO, profileId)
+
+        verifyNoSave()
+    }
+
+    @Test
+    fun `saving an account edit writes everything inside one atomic block`() = runTest {
+        val account = Account(
+            id = accountId,
+            name = "Cash",
+            currencyCode = "USD",
+            structureType = AccountStructureType.CASH,
+            colorHex = "#000000",
+            icon = "ic",
+            allowedCurrencies = listOf("USD")
+        )
+
+        useCases.saveAccountEdits(
+            account = account,
+            creditDetails = null,
+            openingBalances = mapOf("USD" to BigDecimal("500")),
+            pendingAdjustments = mapOf("USD" to BigDecimal("25")),
+            profileId = profileId
+        )
+
+        coVerify(exactly = 1) { transactionUseCases.runAtomically<Any?>(any()) }
+        coVerify { accountRepository.updateAccount(account, profileId) }
+        coVerify {
+            transactionManager.handleSaveTransaction(null, any(), profileId, any(), any(), any(), any())
+        }
+    }
+
+    // ── Issue 7: account writes are one atomic unit ─────────────────────────
+
+    @Test
+    fun `create writes the account, credit details and opening balance in one atomic block`() = runTest {
+        val credit = CreditCardDetails(
+            accountId = "new-id",
+            creditLimit = BigDecimal("5000"),
+            statementClosingDay = 5,
+            paymentDueDay = 25,
+            interestRateApr = 18f
+        )
+
+        val id = useCases.createAccountWithInitialBalances(
+            name = "Card", initialBalances = mapOf("USD" to "100"), currency = "USD",
+            structureType = AccountStructureType.CREDIT, colorHex = "#000000", icon = "ic",
+            allowedCurrencies = listOf("USD"), profileId = profileId,
+            accountId = "new-id", creditDetails = credit
+        )
+
+        assertEquals("new-id", id)
+        coVerify(exactly = 1) { transactionUseCases.runAtomically<Any?>(any()) }
+        coVerify { accountRepository.insertAccount(match { it.id == "new-id" }, profileId) }
+        coVerify { accountRepository.saveCreditCardDetails(credit) }
+        coVerify { transactionManager.handleSaveTransaction(null, any(), profileId, any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `a failure part-way through an account edit propagates so the atomic block rolls back`() = runTest {
+        val account = Account(
+            id = accountId,
+            name = "Cash",
+            currencyCode = "USD",
+            structureType = AccountStructureType.CASH,
+            colorHex = "#000000",
+            icon = "ic",
+            allowedCurrencies = listOf("USD")
+        )
+        coEvery {
+            transactionManager.handleSaveTransaction(any(), any(), any(), any(), any(), any(), any())
+        } throws IllegalStateException("disk full")
+
+        val failure = runCatching {
+            useCases.saveAccountEdits(
+                account = account,
+                creditDetails = null,
+                openingBalances = mapOf("USD" to BigDecimal("500")),
+                pendingAdjustments = emptyMap(),
+                profileId = profileId
+            )
+        }.exceptionOrNull()
+
+        // The real rollback is verified by the instrumented test; here we check the error escapes the block.
+        assertTrue(failure is IllegalStateException)
+        coVerify(exactly = 1) { transactionUseCases.runAtomically<Any?>(any()) }
     }
 
     // ── Create path ──────────────────────────────────────────────────────────

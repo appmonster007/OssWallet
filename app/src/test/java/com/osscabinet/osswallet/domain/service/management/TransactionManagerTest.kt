@@ -7,8 +7,10 @@ import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import io.mockk.*
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import java.math.BigDecimal
@@ -75,7 +77,7 @@ class TransactionManagerTest {
     }
 
     @Test
-    fun `handleTransferSave initial balance inflow is positive`() = runTest {
+    fun `opening balance cannot be saved as a transfer`() = runTest {
         val request = TransactionRequest(
             name = "Initial Balance",
             amount = BigDecimal("500.00"),
@@ -87,37 +89,51 @@ class TransactionManagerTest {
             timestamp = 123456789L
         )
 
-        val txSlot = slot<Transaction>()
-        coEvery { transactionUseCases.insertTransaction(capture(txSlot), any()) } returns 1L
-
-        transactionManager.handleSaveTransaction(null, request, 1)
-
-        assertEquals(0, BigDecimal("500.00").compareTo(txSlot.captured.amount))
-        assertEquals("ACC_1", txSlot.captured.accountId)
-        assertEquals(Category.SYSTEM_INITIAL_BALANCE, txSlot.captured.categoryId)
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking { transactionManager.handleSaveTransaction(null, request, 1) }
+        }
+        coVerify(exactly = 0) { transactionUseCases.insertTransaction(any(), any()) }
+        coVerify(exactly = 0) { transactionUseCases.saveTransfer(any(), any(), any()) }
     }
 
     @Test
-    fun `handleTransferSave initial balance outflow is negative`() = runTest {
+    fun `balance adjustment cannot be saved as a transfer`() = runTest {
         val request = TransactionRequest(
-            name = "Initial Balance",
-            amount = BigDecimal("300.00"),
+            name = "Balance Adjustment",
+            amount = BigDecimal("30.00"),
             entryMode = EntryMode.TRANSFER,
             accountId = "ACC_1",
             targetAccountId = null,
             currency = "USD",
-            categoryId = Category.SYSTEM_INITIAL_BALANCE,
+            categoryId = Category.SYSTEM_RECONCILIATION_ADJUSTMENT,
             timestamp = 123456789L
         )
 
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking { transactionManager.handleSaveTransaction(null, request, 1) }
+        }
+        coVerify(exactly = 0) { transactionUseCases.insertTransaction(any(), any()) }
+    }
+
+    @Test
+    fun `balance adjustment saved as expense keeps the reconciliation category`() = runTest {
+        val request = TransactionRequest(
+            name = "Balance Adjustment",
+            amount = BigDecimal("30.00"),
+            entryMode = EntryMode.EXPENSE,
+            accountId = "ACC_1",
+            currency = "USD",
+            categoryId = Category.SYSTEM_RECONCILIATION_ADJUSTMENT,
+            timestamp = 123456789L
+        )
         val txSlot = slot<Transaction>()
         coEvery { transactionUseCases.insertTransaction(capture(txSlot), any()) } returns 1L
 
         transactionManager.handleSaveTransaction(null, request, 1)
 
-        assertEquals(0, BigDecimal("-300.00").compareTo(txSlot.captured.amount))
-        assertEquals("ACC_1", txSlot.captured.accountId)
-        assertEquals(Category.SYSTEM_INITIAL_BALANCE, txSlot.captured.categoryId)
+        assertEquals(0, BigDecimal("-30.00").compareTo(txSlot.captured.amount))
+        assertEquals(TransactionType.EXPENSE, txSlot.captured.transactionType)
+        assertEquals(Category.SYSTEM_RECONCILIATION_ADJUSTMENT, txSlot.captured.categoryId)
     }
 
     @Test
@@ -178,6 +194,104 @@ class TransactionManagerTest {
         assertEquals(0, BigDecimal("135.00").compareTo(updatedTarget.captured.amount))
         assertEquals("ACC_3", updatedTarget.captured.accountId)
         assertEquals("ACC_1", updatedTarget.captured.targetAccountId)
+    }
+
+    // ── Issue 5: one rule per category, enforced on every save ──
+
+    @Test
+    fun `opening balance is rejected as a transfer even when both accounts are set`() = runTest {
+        val request = TransactionRequest(
+            name = "Initial Balance",
+            amount = BigDecimal("500.00"),
+            entryMode = EntryMode.TRANSFER,
+            accountId = "ACC_1",
+            targetAccountId = "ACC_2",
+            currency = "USD",
+            categoryId = Category.SYSTEM_INITIAL_BALANCE,
+            timestamp = 123456789L
+        )
+
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking { transactionManager.handleSaveTransaction(null, request, 1) }
+        }
+        coVerify(exactly = 0) { transactionUseCases.saveTransfer(any(), any(), any()) }
+    }
+
+    @Test
+    fun `balance adjustment is accepted as income on the reconciliation category`() = runTest {
+        val request = TransactionRequest(
+            name = "Balance Adjustment",
+            amount = BigDecimal("50.00"),
+            entryMode = EntryMode.INCOME,
+            accountId = "ACC_1",
+            currency = "USD",
+            categoryId = Category.SYSTEM_RECONCILIATION_ADJUSTMENT,
+            timestamp = 123456789L
+        )
+        val txSlot = slot<Transaction>()
+        coEvery { transactionUseCases.insertTransaction(capture(txSlot), any()) } returns 1L
+
+        transactionManager.handleSaveTransaction(null, request, 1)
+
+        assertEquals(TransactionType.INCOME, txSlot.captured.transactionType)
+        assertEquals(0, BigDecimal("50.00").compareTo(txSlot.captured.amount))
+    }
+
+    // ── Issue 6: only a transfer-type leg owns links ──
+
+    @Test
+    fun `saving an opening balance never clears its links`() = runTest {
+        val existing = Transaction(
+            id = 5L,
+            name = "Initial Balance",
+            amount = BigDecimal("1000.00"),
+            timestamp = 42L,
+            currency = "USD",
+            transactionType = TransactionType.INCOME,
+            accountId = "ACC_1",
+            categoryId = Category.SYSTEM_INITIAL_BALANCE
+        )
+        coEvery { transactionUseCases.clearTransactionLinks(any()) } just Runs
+        coEvery { transactionUseCases.updateTransaction(any(), any(), any()) } just Runs
+        coEvery { transactionUseCases.getLinkedTransactionIds(any()) } returns flowOf(emptyList())
+
+        transactionManager.handleSaveTransaction(
+            existing, openingBalanceRequest(EntryMode.INCOME, "1000.00"), 1
+        )
+
+        coVerify(exactly = 0) { transactionUseCases.clearTransactionLinks(any()) }
+        coVerify { transactionUseCases.updateTransaction(existing, any(), 1) }
+    }
+
+    @Test
+    fun `saving a transfer leg as a normal row clears its links`() = runTest {
+        val existing = Transaction(
+            id = 7L,
+            name = "Transfer",
+            amount = BigDecimal("-100.00"),
+            timestamp = 42L,
+            currency = "USD",
+            transactionType = TransactionType.TRANSFER_OUTFLOW,
+            accountId = "ACC_1",
+            targetAccountId = "ACC_2",
+            categoryId = Category.SYSTEM_TRANSFER
+        )
+        val request = TransactionRequest(
+            name = "Groceries",
+            amount = BigDecimal("100.00"),
+            entryMode = EntryMode.EXPENSE,
+            accountId = "ACC_1",
+            currency = "USD",
+            categoryId = Category.SYSTEM_UNKNOWN,
+            timestamp = 42L
+        )
+        coEvery { transactionUseCases.clearTransactionLinks(any()) } just Runs
+        coEvery { transactionUseCases.updateTransaction(any(), any(), any()) } just Runs
+        coEvery { transactionUseCases.getLinkedTransactionIds(any()) } returns flowOf(emptyList())
+
+        transactionManager.handleSaveTransaction(existing, request, 1)
+
+        coVerify(exactly = 1) { transactionUseCases.clearTransactionLinks(7L) }
     }
 
     // ── Opening balances saved as income/expense must never take the transfer path ──

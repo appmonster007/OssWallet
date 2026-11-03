@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.util.UUID
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -42,6 +43,8 @@ class AccountEntryViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(AccountEntryState())
     val state: StateFlow<AccountEntryState> = _state.asStateFlow()
+
+    private var isSaveInFlight = false
 
     init {
         loadInitialData()
@@ -73,10 +76,14 @@ class AccountEntryViewModel @Inject constructor(
                 val now = System.currentTimeMillis()
 
                 if (accountId == null) {
+                    // No stored balance yet, so the opening balances being typed are the closing balances.
                     _state.update {
                         it.copy(
                             defaultCurrency = defaultCurrency,
-                            exchangeRates = exchangeRatesSnapshot.rates
+                            exchangeRates = exchangeRatesSnapshot.rates,
+                            systemClosingBalances = state.initialBalances.mapValues { (_, value) ->
+                                value.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                            }
                         )
                     }
                     return@combine
@@ -261,7 +268,9 @@ class AccountEntryViewModel @Inject constructor(
                         balanceUpdateCurrency = currency,
                         balanceUpdateInputAmount = currentProjectedTotal.stripTrailingZeros()
                             .toPlainString(),
-                        balanceUpdateMode = BalanceUpdateMode.RECORD
+                        // Before the account exists there is no history to record against
+                        balanceUpdateMode = if (it.accountId == null) BalanceUpdateMode.INITIAL_BALANCE
+                        else BalanceUpdateMode.RECORD
                     )
                 }
             }
@@ -295,7 +304,8 @@ class AccountEntryViewModel @Inject constructor(
                     val currentProjectedTotal = s.systemClosingBalances[currency] ?: BigDecimal.ZERO
                     val totalAdjustmentNeeded = newUserTotal - currentProjectedTotal
 
-                    if (s.balanceUpdateMode == BalanceUpdateMode.INITIAL_BALANCE) {
+                    // Create/draft mode has no history, so a recorded amount is the opening balance.
+                    if (s.balanceUpdateMode == BalanceUpdateMode.INITIAL_BALANCE || s.accountId == null) {
                         val currentInitial =
                             s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
                         val newOpening = currentInitial + totalAdjustmentNeeded
@@ -348,58 +358,61 @@ class AccountEntryViewModel @Inject constructor(
                 )
             }
 
-            is AccountEntryEvent.ShowAdjustmentDialog -> _state.update {
-                it.copy(
-                    showCalculator = false,
-                    showAdjustmentDialog = true,
-                    adjustmentDialogCurrency = event.currency,
-                    adjustmentDialogNewValue = event.newValue
-                )
-            }
-
-            is AccountEntryEvent.DismissAdjustmentDialog -> _state.update {
-                val orig = it.calculatorOriginalValue
-                val currency = it.adjustmentDialogCurrency
-                val revertedBalances = if (orig != null && currency != null)
-                    it.initialBalances.toMutableMap().apply { put(currency, orig) }
-                else it.initialBalances
-                it.copy(
-                    showAdjustmentDialog = false,
-                    adjustmentDialogCurrency = null,
-                    adjustmentDialogNewValue = null,
-                    activeBalanceCurrency = null,
-                    calculatorOriginalValue = null,
-                    initialBalances = revertedBalances
-                )
-            }
-
-            is AccountEntryEvent.ConfirmAsNewTransaction -> {
-                val origBD = event.originalValue.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                val delta = (event.newValue.toBigDecimalOrNull() ?: BigDecimal.ZERO) - origBD
-                _state.update {
-                    it.copy(
-                        showAdjustmentDialog = false,
-                        adjustmentDialogCurrency = null,
-                        adjustmentDialogNewValue = null,
-                        activeBalanceCurrency = null,
-                        calculatorOriginalValue = null,
-                        initialBalances = it.initialBalances.toMutableMap().apply {
-                            put(event.currency, event.originalValue)
-                        },
-                        pendingAdjustmentDeltas = it.pendingAdjustmentDeltas + (event.currency to delta)
-                    )
-                }
-            }
-
-            is AccountEntryEvent.ConfirmAsInitialBalanceUpdate -> _state.update {
-                it.copy(
-                    showAdjustmentDialog = false,
-                    adjustmentDialogCurrency = null,
-                    adjustmentDialogNewValue = null,
-                    activeBalanceCurrency = null,
-                    calculatorOriginalValue = null
-                )
-            }
+            // TODO(delete): dead adjustment-dialog handlers (issue 9, option A). Nothing dispatches
+            // these events and nothing renders showAdjustmentDialog. Delete them together with the
+            // matching events in AccountEntryEvent and the state fields in AccountEntryState.
+            // is AccountEntryEvent.ShowAdjustmentDialog -> _state.update {
+            //     it.copy(
+            //         showCalculator = false,
+            //         showAdjustmentDialog = true,
+            //         adjustmentDialogCurrency = event.currency,
+            //         adjustmentDialogNewValue = event.newValue
+            //     )
+            // }
+            //
+            // is AccountEntryEvent.DismissAdjustmentDialog -> _state.update {
+            //     val orig = it.calculatorOriginalValue
+            //     val currency = it.adjustmentDialogCurrency
+            //     val revertedBalances = if (orig != null && currency != null)
+            //         it.initialBalances.toMutableMap().apply { put(currency, orig) }
+            //     else it.initialBalances
+            //     it.copy(
+            //         showAdjustmentDialog = false,
+            //         adjustmentDialogCurrency = null,
+            //         adjustmentDialogNewValue = null,
+            //         activeBalanceCurrency = null,
+            //         calculatorOriginalValue = null,
+            //         initialBalances = revertedBalances
+            //     )
+            // }
+            //
+            // is AccountEntryEvent.ConfirmAsNewTransaction -> {
+            //     val origBD = event.originalValue.toBigDecimalOrNull() ?: BigDecimal.ZERO
+            //     val delta = (event.newValue.toBigDecimalOrNull() ?: BigDecimal.ZERO) - origBD
+            //     _state.update {
+            //         it.copy(
+            //             showAdjustmentDialog = false,
+            //             adjustmentDialogCurrency = null,
+            //             adjustmentDialogNewValue = null,
+            //             activeBalanceCurrency = null,
+            //             calculatorOriginalValue = null,
+            //             initialBalances = it.initialBalances.toMutableMap().apply {
+            //                 put(event.currency, event.originalValue)
+            //             },
+            //             pendingAdjustmentDeltas = it.pendingAdjustmentDeltas + (event.currency to delta)
+            //         )
+            //     }
+            // }
+            //
+            // is AccountEntryEvent.ConfirmAsInitialBalanceUpdate -> _state.update {
+            //     it.copy(
+            //         showAdjustmentDialog = false,
+            //         adjustmentDialogCurrency = null,
+            //         adjustmentDialogNewValue = null,
+            //         activeBalanceCurrency = null,
+            //         calculatorOriginalValue = null
+            //     )
+            // }
 
             is AccountEntryEvent.TriggerNavigation -> _state.update {
                 val accountId = (event.result as? AccountEntryResult.Persisted)?.accountId
@@ -437,62 +450,67 @@ class AccountEntryViewModel @Inject constructor(
             return
         }
 
+        // A second tap before the first save finishes would repeat its adjustments or create a duplicate account
+        if (isSaveInFlight) return
+        isSaveInFlight = true
+
         viewModelScope.launch {
-            val profileId = settingsRepository.currentProfileId.first()
-            val savedAccountId: String
-            if (s.isEditMode && s.existingAccount != null) {
-                accountRepository.updateAccount(
-                    s.existingAccount.copy(
-                        name = s.accountName,
-                        structureType = s.structureType,
-                        currencyCode = s.primaryCurrency,
-                        allowedCurrencies = s.allowedCurrencies.toList(),
-                        colorHex = s.accentColorHex,
-                        icon = s.selectedIconName
-                    ),
-                    profileId
-                )
-                s.pendingAdjustmentDeltas.forEach { (currency, delta) ->
-                    accountUseCases.createBalanceAdjustment(
-                        s.accountId!!,
-                        currency,
-                        delta,
-                        profileId
+            try {
+                val profileId = settingsRepository.currentProfileId.first()
+                val savedAccountId: String
+                if (s.isEditMode && s.existingAccount != null) {
+                    val accountId = s.accountId!!
+                    accountUseCases.saveAccountEdits(
+                        account = s.existingAccount.copy(
+                            name = s.accountName,
+                            structureType = s.structureType,
+                            currencyCode = s.primaryCurrency,
+                            allowedCurrencies = s.allowedCurrencies.toList(),
+                            colorHex = s.accentColorHex,
+                            icon = s.selectedIconName
+                        ),
+                        creditDetails = creditDetailsFor(s, accountId),
+                        openingBalances = s.allowedCurrencies.associateWith { currency ->
+                            s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                        },
+                        pendingAdjustments = s.pendingAdjustmentDeltas,
+                        profileId = profileId
                     )
+                    savedAccountId = accountId
+                } else {
+                    val newAccountId = UUID.randomUUID().toString()
+                    accountUseCases.createAccountWithInitialBalances(
+                        name = s.accountName,
+                        initialBalances = s.initialBalances,
+                        currency = s.primaryCurrency,
+                        structureType = s.structureType,
+                        colorHex = s.accentColorHex,
+                        icon = s.selectedIconName,
+                        allowedCurrencies = s.allowedCurrencies.toList(),
+                        profileId = profileId,
+                        accountId = newAccountId,
+                        creditDetails = creditDetailsFor(s, newAccountId)
+                    )
+                    savedAccountId = newAccountId
                 }
-                s.allowedCurrencies.forEach { currency ->
-                    val signed =
-                        s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    accountUseCases.upsertInitialBalance(s.accountId!!, currency, signed, profileId)
-                }
-                savedAccountId = s.accountId!!
-            } else {
-                savedAccountId = accountUseCases.createAccountWithInitialBalances(
-                    name = s.accountName,
-                    initialBalances = s.initialBalances,
-                    currency = s.primaryCurrency,
-                    structureType = s.structureType,
-                    colorHex = s.accentColorHex,
-                    icon = s.selectedIconName,
-                    allowedCurrencies = s.allowedCurrencies.toList(),
-                    profileId = profileId
-                )
-            }
 
-            val creditLimitBD = s.creditLimitInput.toBigDecimalOrNull()
-            if (s.structureType == AccountStructureType.CREDIT && creditLimitBD != null) {
-                val creditDetails = CreditCardDetails(
-                    accountId = savedAccountId,
-                    creditLimit = creditLimitBD,
-                    statementClosingDay = s.statementClosingDayInput.toIntOrNull(),
-                    paymentDueDay = s.paymentDueDayInput.toIntOrNull(),
-                    interestRateApr = s.interestRateAprInput.toFloatOrNull()
-                )
-                accountRepository.saveCreditCardDetails(creditDetails)
+                onSuccess(AccountEntryResult.Persisted(savedAccountId))
+            } finally {
+                isSaveInFlight = false
             }
-
-            onSuccess(AccountEntryResult.Persisted(savedAccountId))
         }
+    }
+
+    private fun creditDetailsFor(s: AccountEntryState, accountId: String): CreditCardDetails? {
+        val creditLimit = s.creditLimitInput.toBigDecimalOrNull()
+        if (s.structureType != AccountStructureType.CREDIT || creditLimit == null) return null
+        return CreditCardDetails(
+            accountId = accountId,
+            creditLimit = creditLimit,
+            statementClosingDay = s.statementClosingDayInput.toIntOrNull(),
+            paymentDueDay = s.paymentDueDayInput.toIntOrNull(),
+            interestRateApr = s.interestRateAprInput.toFloatOrNull()
+        )
     }
 
     fun deleteAccount(onSuccess: () -> Unit) {

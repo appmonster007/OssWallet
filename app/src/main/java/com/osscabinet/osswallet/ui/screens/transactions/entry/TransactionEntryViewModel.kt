@@ -260,8 +260,7 @@ class TransactionEntryViewModel @Inject constructor(
                         )
             }
             // Semantic Normalization: Unified category for both sides
-            categoryId = if (Category.isInitialBalance(transaction.categoryId))
-                Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
+            categoryId = Category.SYSTEM_TRANSFER
         } else {
             amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
         }
@@ -375,11 +374,9 @@ class TransactionEntryViewModel @Inject constructor(
             amountBD = preFlipTarget
             targetAmtBD = preFlipSource
 
-            categoryId = if (Category.isInitialBalance(prefill.categoryId))
-                Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
+            categoryId = Category.SYSTEM_TRANSFER
         } else if (txType == EntryMode.TRANSFER) {
-            categoryId = if (Category.isInitialBalance(prefill.categoryId))
-                Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
+            categoryId = Category.SYSTEM_TRANSFER
         }
 
         // After a receiver flip the stored rate is the inflow inverse; invert it so it reads
@@ -469,7 +466,7 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetCategoryId -> {
-                if (!Category.isInitialBalance(event.id)) update {
+                if (!Category.isSystemManaged(event.id)) update {
                     it.copy(source = it.source.copy(categoryId = event.id))
                 }
             }
@@ -498,7 +495,8 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetTransactionStatus -> update { it.copy(transactionStatus = event.status) }
-            is TransactionEntryEvent.SetTransactionType -> {
+            // Rows with a fixed shape (opening balances, adjustments) ignore modes they cannot take.
+            is TransactionEntryEvent.SetTransactionType -> if (event.type in _state.value.allowedEntryModes) {
                 val oldMode = _state.value.entryMode
                 val newMode = event.type
 

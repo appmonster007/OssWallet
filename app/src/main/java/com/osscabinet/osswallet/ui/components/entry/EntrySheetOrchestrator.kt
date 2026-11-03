@@ -87,7 +87,7 @@ fun EntrySheetOrchestrator(
 
     if (sheetState.showCategory) {
         AeonCategorySelection(
-            categories = categories.filter { !Category.isInitialBalance(it.id) },
+            categories = categories.filter { !Category.isSystemManaged(it.id) },
             selectedCategoryIds = setOf(selectedCategoryId),
             onSelectionChange = { ids -> onCategoryChange(ids.firstOrNull() ?: -1L) },
             onDismiss = { onDismissSheet(EntryField.CATEGORY) }

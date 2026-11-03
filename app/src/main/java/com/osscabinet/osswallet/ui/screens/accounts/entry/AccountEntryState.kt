@@ -40,9 +40,10 @@ data class AccountEntryState(
     val showCalculator: Boolean = false,
     val activeBalanceCurrency: String? = null,
     val calculatorOriginalValue: String? = null,
-    val showAdjustmentDialog: Boolean = false,
-    val adjustmentDialogCurrency: String? = null,
-    val adjustmentDialogNewValue: String? = null,
+    // TODO(delete): dead adjustment-dialog fields (issue 9, option A). See AccountEntryViewModel.
+    // val showAdjustmentDialog: Boolean = false,
+    // val adjustmentDialogCurrency: String? = null,
+    // val adjustmentDialogNewValue: String? = null,
     val pendingAdjustmentDeltas: Map<String, BigDecimal> = emptyMap(),
     val isEditMode: Boolean = false,
     val accountId: String? = null,

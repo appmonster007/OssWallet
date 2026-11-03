@@ -139,8 +139,10 @@ fun AccountEntrySheets(
                 tonalElevation = 12.dp
             ) {
                 val currentBaseTotal = state.systemClosingBalances[currency] ?: BigDecimal.ZERO
-                val modes = listOf(
-                    Triple(Icons.Rounded.Add, "By Record", BalanceUpdateMode.RECORD),
+                // Before the account exists there is no history to record against, so only "By Initial" applies
+                val modes = listOfNotNull(
+                    Triple(Icons.Rounded.Add, "By Record", BalanceUpdateMode.RECORD)
+                        .takeIf { state.accountId != null },
                     Triple(Icons.Rounded.Refresh, "By Initial", BalanceUpdateMode.INITIAL_BALANCE)
                 )
                 val selectedColor = if (state.balanceUpdateMode == BalanceUpdateMode.RECORD)

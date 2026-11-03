@@ -347,6 +347,38 @@ class CardAggregationServiceTest {
     }
 
     @Test
+    fun `computeAccountHeroCard balance history deltas ignore the card's own category filter`() = runBlocking {
+        // A category/tag/type filter set on this card instance must never reach the daily-delta
+        // query behind the sparkline - otherwise a filtered-out transaction's amount would
+        // silently vanish from the running balance it seeds, same bug as the fixed call sites.
+        val config = AccountHeroCardConfig(
+            cardId = "t",
+            showComparison = false,
+            filter = TransactionFilter(categoryIds = setOf(999L))
+        )
+        val input = baseInput(
+            filter = TransactionFilter(
+                accountIds = setOf("acc1"),
+                timelineRange = TimelineRange.CustomRange(start = 0L, end = 86_400_000L)
+            )
+        )
+        coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
+            Result.success(mapOf("USD" to fs(income = "5200.00", expense = "-200.00")))
+        coEvery { queryService.getMinTransactionTimestamp(any()) } returns 0L
+        coEvery { queryService.aggregate(any(), any(), any(), any(), any(), any(), any()) } returns Result.success(emptyList())
+        coEvery { TransactionAggregationService.getSummaryByCurrencyByDay(any(), any(), any(), any()) } returns
+            Result.success(emptyMap())
+
+        CardAggregationService.computeAccountHeroCard(queryService, profileId, input, config)
+
+        coVerify {
+            TransactionAggregationService.getSummaryByCurrencyByDay(
+                any(), any(), withArg { filter: TransactionFilter -> assertEquals(emptySet<Long>(), filter.categoryIds) }, any()
+            )
+        }
+    }
+
+    @Test
     fun `computeRecentBalances accumulates running balance per account from starting balance`() {
         val t1 = Transaction(
             id = 1, name = "Salary", amount = BigDecimal("100.00"), timestamp = 1L,

@@ -905,9 +905,13 @@ object CardAggregationService {
                 .netFlow
         }
 
+        // The per-bucket deltas must come from every transaction in the window, not just the
+        // ones this card instance's own category/tag/type filter leaves in `periodFilter` -
+        // otherwise a filtered-out row's amount silently vanishes from the running total it
+        // seeds. Use the same unfiltered basis computeNetWorthTrend already uses for this.
         val dailyData = TransactionAggregationService.getSummaryByCurrencyByDay(
             queryService, profileId,
-            periodFilter.copy(timelineRange = TimelineRange.CustomRange(start, end)),
+            periodFilter.toBalanceFilter().copy(timelineRange = TimelineRange.CustomRange(start, end)),
             excludeInternal
         ).getOrDefault(emptyMap())
 

@@ -44,7 +44,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -68,7 +67,6 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.color
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.icon
-import com.osscabinet.ossWallet.ui.util.toColorInt
 import java.math.BigDecimal
 
 @Composable
@@ -79,11 +77,6 @@ fun AccountFormBody(
     contentPadding: PaddingValues = PaddingValues(),
     onDeleteClick: (() -> Unit)? = null,
 ) {
-    val accentColor = try {
-        Color(state.accentColorHex.toColorInt())
-    } catch (_: Exception) {
-        AppColors.primary
-    }
     var showTypeSelector by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
@@ -297,13 +290,17 @@ fun AccountFormBody(
                                             color = AppColors.contentSecondary
                                         )
                                         Text(
-                                            text = formatCurrency(
+                                            text = (if (isNegative) "-" else "") + formatCurrency(
                                                 amount = displayBalance.abs(),
                                                 currencyCode = currencyCode,
                                                 spec = CurrencyDisplaySpec(shortenThreshold = -1)
                                             ),
                                             style = AppTextStyles.heroAmount.copy(fontSize = 24.sp),
-                                            color = if (isNegative) AppColors.negative else accentColor
+                                            // Not accentColor: the account's own color is free-form
+                                            // and can land on or near AppColors.negative (e.g. a red
+                                            // account), making a positive balance indistinguishable
+                                            // from a negative one by color alone.
+                                            color = if (isNegative) AppColors.negative else AppColors.positive
                                         )
                                     }
 

@@ -419,7 +419,6 @@ object TimelineService {
         exchangeRates: ExchangeRateSnapshot,
         plannedPayments: List<UpcomingPaymentItem> = emptyList(),
         linkedTransactionIds: Map<Long, List<Long>> = emptyMap(),
-        initialBalances: Map<String, BigDecimal> = emptyMap(),
         precision: Int = this.precision,
         allTxnBreakdown: Boolean = true,
     ): List<TransactionGroup> {
@@ -509,9 +508,9 @@ object TimelineService {
 
         val openingBalancesMap = mutableMapOf<String, Map<String, BigDecimal>>()
         val closingBalancesMap = mutableMapOf<String, Map<String, BigDecimal>>()
+        // Running balances start at zero; an account's opening balance is already one of its history rows.
         val currentAccountBalances =
-            accounts.associate { it.id to (initialBalances[it.id] ?: BigDecimal.ZERO) }
-                .toMutableMap()
+            accounts.associate { it.id to BigDecimal.ZERO }.toMutableMap()
 
         fun captureBalances(): Map<String, BigDecimal> {
             val balancesByCurrency = mutableMapOf<String, BigDecimal>()

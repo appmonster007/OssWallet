@@ -399,8 +399,7 @@ class DashboardViewModel @Inject constructor(
                                 allTags = emptyList(),
                                 baseCurrency = snapshot.currency.baseCode,
                                 exchangeRates = snapshot.currency.rates,
-                                linkedTransactionIds = snapshot.links,
-                                initialBalances = emptyMap()
+                                linkedTransactionIds = snapshot.links
                             )
                             StructuralState(
                                 snapshot,

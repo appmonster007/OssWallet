@@ -210,12 +210,6 @@ class AccountDetailViewModel @Inject constructor(
                                 config.filter
                             )
 
-                        val initialBalancesPerGroup = domain.accounts.associate { acc ->
-                            val earliestTx =
-                                absoluteTransactionsWithBalance.findLast { it.transaction.accountId == acc.id }
-                            acc.id to (earliestTx?.balanceBefore ?: BigDecimal.ZERO)
-                        }
-
                         val listState = TimelineService.getGroupedData(
                             transactions = filteredTransactionsWithBalance,
                             absoluteHistory = absoluteTransactionsWithBalance,
@@ -225,8 +219,7 @@ class AccountDetailViewModel @Inject constructor(
                             allTags = domain.tags,
                             baseCurrency = config.baseCurrency,
                             exchangeRates = config.rates,
-                            linkedTransactionIds = domain.links,
-                            initialBalances = initialBalancesPerGroup
+                            linkedTransactionIds = domain.links
                         ).let { TransactionListState(groups = it, isEmpty = it.isEmpty()) }
 
                         AccountDetailUiState.Success(

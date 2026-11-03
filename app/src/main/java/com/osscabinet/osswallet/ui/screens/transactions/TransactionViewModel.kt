@@ -342,12 +342,6 @@ class TransactionViewModel @Inject constructor(
                 return@combine TransactionListUiState()
             }
 
-            val initialBalances = structural.accounts.associate { acc ->
-                val earliestTx =
-                    structural.absoluteHistory.findLast { it.transaction.accountId == acc.id }
-                acc.id to (earliestTx?.balanceBefore ?: BigDecimal.ZERO)
-            }
-
             val domainGroups = TimelineService.getGroupedData(
                 transactions = structural.filteredTransactions,
                 absoluteHistory = structural.absoluteHistory,
@@ -359,7 +353,6 @@ class TransactionViewModel @Inject constructor(
                 exchangeRates = config.exchangeRates,
                 plannedPayments = metadata.upcomingPayments,
                 linkedTransactionIds = structural.links,
-                initialBalances = initialBalances,
                 allTxnBreakdown = config.settings.allTxnBreakdown,
             )
 

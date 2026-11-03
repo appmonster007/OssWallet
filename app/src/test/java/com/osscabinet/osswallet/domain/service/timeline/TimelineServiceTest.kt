@@ -105,6 +105,67 @@ class TimelineServiceTest {
     }
 
     @Test
+    fun `running balances start at zero and carry the opening balance row forward`() {
+        val day1 = 1_700_000_000_000L
+        val day2 = day1 + 2 * 24 * 60 * 60 * 1000L
+        val account = com.osscabinet.ossWallet.domain.model.Account(
+            id = "acc1",
+            name = "Cash",
+            currencyCode = "USD",
+            structureType = com.osscabinet.ossWallet.domain.model.AccountStructureType.CASH,
+            colorHex = "#000000",
+            icon = "ic"
+        )
+        // balanceAfter is the running balance the repository computes from the account's first row
+        fun row(
+            id: Long,
+            amount: String,
+            after: String,
+            ts: Long,
+            type: com.osscabinet.ossWallet.domain.model.TransactionType,
+            category: Long
+        ) =
+            com.osscabinet.ossWallet.domain.model.TransactionWithBalance(
+                transaction = com.osscabinet.ossWallet.domain.model.Transaction(
+                    id = id,
+                    name = "row$id",
+                    amount = BigDecimal(amount),
+                    timestamp = ts,
+                    currency = "USD",
+                    transactionType = type,
+                    accountId = "acc1",
+                    categoryId = category
+                ),
+                balanceBefore = BigDecimal.ZERO,
+                balanceAfter = BigDecimal(after)
+            )
+        val history = listOf(
+            row(1L, "1000", "1000", day1, com.osscabinet.ossWallet.domain.model.TransactionType.INCOME,
+                com.osscabinet.ossWallet.domain.model.Category.SYSTEM_INITIAL_BALANCE),
+            row(2L, "-200", "800", day2, com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE,
+                com.osscabinet.ossWallet.domain.model.Category.SYSTEM_OTHERS)
+        )
+
+        val groups = TimelineService.getGroupedData(
+            transactions = history,
+            absoluteHistory = history,
+            groupingType = TransactionGroupingType.BY_DAY,
+            accounts = listOf(account),
+            categories = emptyList(),
+            baseCurrency = "USD",
+            exchangeRates = ExchangeRateSnapshot.EMPTY
+        )
+
+        val openingDay = groups.single { it.headerData.incomeBase.signum() != 0 }.headerData
+        assertEquals(0, BigDecimal.ZERO.compareTo(openingDay.openingBalancesByCurrency["USD"]))
+        assertEquals(0, BigDecimal("1000").compareTo(openingDay.closingBalancesByCurrency["USD"]))
+
+        val expenseDay = groups.single { it.headerData.expenseBase.signum() != 0 }.headerData
+        assertEquals(0, BigDecimal("1000").compareTo(expenseDay.openingBalancesByCurrency["USD"]))
+        assertEquals(0, BigDecimal("800").compareTo(expenseDay.closingBalancesByCurrency["USD"]))
+    }
+
+    @Test
     fun `getRangeForThis BIWEEKLY returns 14-day window`() {
         val now = System.currentTimeMillis()
         val (start, end) = TimelineService.getRangeForThis(

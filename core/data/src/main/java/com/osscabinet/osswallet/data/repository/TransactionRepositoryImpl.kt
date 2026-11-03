@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.model.CurrencySummary
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.balanceBasis
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
@@ -265,6 +266,14 @@ class TransactionRepositoryImpl @Inject constructor(
         )?.toDomain()
     }
 
+    override suspend fun getInitialBalanceCurrencies(accountId: String, profileId: Int): List<String> {
+        return transactionDao.getCurrenciesForCategory(
+            accountId,
+            com.osscabinet.ossWallet.domain.model.Category.SYSTEM_INITIAL_BALANCE,
+            profileId
+        )
+    }
+
     override suspend fun getEarliestNonInitialBalanceTimestamp(
         accountId: String,
         profileId: Int
@@ -403,14 +412,18 @@ class TransactionRepositoryImpl @Inject constructor(
         exchangeRates: ExchangeRateSnapshot,
         limit: Int?
     ): Flow<Result<List<TransactionWithBalance>>> {
-        return getFilteredTransactions(profileId, filter).flatMapLatest { transactions ->
+        // The balance basis is account scope + time window ONLY — never category, tag, status,
+        // currency, amount, etc. Those are display-only and must be applied to the result of the
+        // balance computation, not to its input, or every balance after an excluded row is wrong.
+        val basisFilter = filter.balanceBasis()
+        return getFilteredTransactionsBasis(profileId, basisFilter).flatMapLatest { basisTransactions ->
             kotlinx.coroutines.flow.flow {
                 val accounts = accountDao.getAllAccountsSync(profileId).map { it.toDomain() }
                 val exchangeRateSnapshot = exchangeRates
 
-                // 1. Fetch starting balances (Anchor)
-                val startingBalancesResult = if (transactions.isNotEmpty()) {
-                    val windowStart = transactions.minOf { it.timestamp }
+                // 1. Fetch starting balances (Anchor), scoped the same way the basis rows are.
+                val startingBalancesResult = if (basisTransactions.isNotEmpty()) {
+                    val windowStart = basisTransactions.minOf { it.timestamp }
                     com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService.getSummaryByAccountAndCurrency(
                         databaseQueryService, profileId,
                         TransactionFilter(
@@ -433,15 +446,15 @@ class TransactionRepositoryImpl @Inject constructor(
                 } else Result.success(emptyMap<String, BigDecimal>())
 
                 startingBalancesResult.onSuccess { startingBalances ->
-                    // 2. Compute Delta balances
+                    // 2. Compute the ledger from the UNFILTERED basis rows, per account.
                     val accountMap = accounts.associateBy { it.id }
-                    val result = transactions.sortedBy { it.timestamp }
+                    val balanceById = basisTransactions
                         .groupBy { it.accountId }
                         .flatMap { (accId, accountTransactions) ->
                             val accountCurrency = accountMap[accId]?.currencyCode ?: baseCurrency
-                            var runningBalance = startingBalances[accId ?: ""] ?: BigDecimal.ZERO
+                            val startingBalance = startingBalances[accId ?: ""] ?: BigDecimal.ZERO
 
-                            accountTransactions.map { transaction ->
+                            val ledgerRows = accountTransactions.map { transaction ->
                                 val txAmountInAccountCurrency =
                                     com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
                                         amount = transaction.amount,
@@ -450,17 +463,34 @@ class TransactionRepositoryImpl @Inject constructor(
                                         exchangeRates = exchangeRates,
                                         precision = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision + 4
                                     )
+                                com.osscabinet.ossWallet.domain.service.ledger.LedgerRow(
+                                    id = transaction.id,
+                                    timestamp = transaction.timestamp,
+                                    amount = txAmountInAccountCurrency
+                                )
+                            }
 
-                                val balanceBefore = runningBalance
-                                runningBalance = runningBalance.add(txAmountInAccountCurrency)
+                            com.osscabinet.ossWallet.domain.service.ledger.LedgerService.rebuild(
+                                ledgerRows,
+                                startingBalance
+                            )
+                        }
+                        .associateBy { it.id }
 
+                    // 3. Resolve the ORIGINAL (display) filter the normal way (reusing the
+                    // existing, already-correct filtering SQL rather than re-implementing it),
+                    // then attach each row's balance from the unfiltered ledger above.
+                    val displayTransactions = getFilteredTransactionsSync(profileId, filter)
+                    val result = displayTransactions
+                        .mapNotNull { transaction ->
+                            balanceById[transaction.id]?.let { entry ->
                                 TransactionWithBalance(
                                     transaction = transaction,
-                                    balanceBefore = balanceBefore.setScale(
+                                    balanceBefore = entry.balanceBefore.setScale(
                                         com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
                                         RoundingMode.HALF_UP
                                     ),
-                                    balanceAfter = runningBalance.setScale(
+                                    balanceAfter = entry.balanceAfter.setScale(
                                         com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
                                         RoundingMode.HALF_UP
                                     )
@@ -476,6 +506,15 @@ class TransactionRepositoryImpl @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun getFilteredTransactionsBasis(
+        profileId: Int,
+        basisFilter: TransactionFilter
+    ): Flow<List<Transaction>> {
+        val (query, args) = buildFilteredQuery(profileId, basisFilter)
+        val sqliteQuery = SimpleSQLiteQuery(query, args.toTypedArray())
+        return transactionDao.getFilteredTransactions(sqliteQuery).mapToDomain { it.toDomain() }
     }
 
     override suspend fun getUniquePayees(profileId: Int): List<String> {

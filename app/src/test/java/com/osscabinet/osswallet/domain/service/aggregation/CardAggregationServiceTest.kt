@@ -349,11 +349,11 @@ class CardAggregationServiceTest {
     @Test
     fun `computeRecentBalances accumulates running balance per account from starting balance`() {
         val t1 = Transaction(
-            name = "Salary", amount = BigDecimal("100.00"), timestamp = 1L,
+            id = 1, name = "Salary", amount = BigDecimal("100.00"), timestamp = 1L,
             currency = "USD", transactionType = TransactionType.INCOME, accountId = "acc1", categoryId = 1L
         )
         val t2 = Transaction(
-            name = "Coffee", amount = BigDecimal("-30.00"), timestamp = 2L,
+            id = 2, name = "Coffee", amount = BigDecimal("-30.00"), timestamp = 2L,
             currency = "USD", transactionType = TransactionType.EXPENSE, accountId = "acc1", categoryId = 1L
         )
 
@@ -536,7 +536,7 @@ class CardAggregationServiceTest {
             Result.success(mapOf("acc1" to mapOf("USD" to fs(total = "1000.00"))))
         every {
             TimelineService.getGroupedData(
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()
             )
         } returns emptyList()
 
@@ -545,5 +545,57 @@ class CardAggregationServiceTest {
         assertEquals(baseCurrency, result.currency)
         assertEquals(true, result.listState.isEmpty)
         verify { queryService.observeFilteredTransactions(any(), any(), any()) }
+    }
+
+    @Test
+    fun `computeRecentActivitiesCard balance is not corrupted by the card's own category filter`() = runBlocking {
+        // id4 (Food, -50) and id10 (Food, -25) pass the card's "Food only" filter; id5
+        // (Salary, +200) is excluded from display but must still count toward the balance of
+        // the row after it. Naive filtered-then-summed math would land id10 on 925; correct is 1125.
+        val food = 2001L
+        val id4 = Transaction(
+            id = 4, name = "row4", amount = BigDecimal("-50"), timestamp = 1L,
+            currency = "USD", transactionType = TransactionType.EXPENSE, accountId = "acc1", categoryId = food
+        )
+        val id5 = Transaction(
+            id = 5, name = "row5", amount = BigDecimal("200"), timestamp = 1L,
+            currency = "USD", transactionType = TransactionType.INCOME, accountId = "acc1", categoryId = 1L
+        )
+        val id10 = Transaction(
+            id = 10, name = "row10", amount = BigDecimal("-25"), timestamp = 1L,
+            currency = "USD", transactionType = TransactionType.EXPENSE, accountId = "acc1", categoryId = food
+        )
+        val config = RecentActivitiesCardConfig(
+            cardId = "t",
+            filter = TransactionFilter(timelineRange = TimelineRange.AllTime(), categoryIds = setOf(food))
+        )
+
+        // Display query (card's own filter: Food only) returns id4 and id10.
+        every {
+            queryService.observeFilteredTransactions(any(), match { f -> f.categoryIds == setOf(food) }, eq(200))
+        } returns flowOf(listOf(id4, id10))
+        // Basis query (account+time only) returns all three, including the excluded id5.
+        every {
+            queryService.observeFilteredTransactions(any(), match { f -> f.categoryIds.isEmpty() }, isNull())
+        } returns flowOf(listOf(id4, id5, id10))
+        coEvery { TransactionAggregationService.getSummaryByAccountAndCurrency(any(), any(), any(), any()) } returns
+            Result.success(mapOf("acc1" to mapOf("USD" to fs(income = "1000.00"))))
+        every {
+            TimelineService.getGroupedData(
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()
+            )
+        } returns emptyList()
+
+        CardAggregationService.computeRecentActivitiesCard(queryService, profileId, baseInput(), config)
+
+        verify {
+            TimelineService.getGroupedData(
+                withArg { list ->
+                    val last = list.maxByOrNull { it.transaction.id }!!
+                    assertEquals(0, BigDecimal("1125").compareTo(last.balanceAfter))
+                },
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()
+            )
+        }
     }
 }

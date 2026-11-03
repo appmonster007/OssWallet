@@ -537,7 +537,22 @@ object CardAggregationService {
             }
         } else emptyMap()
 
-        val transactionsWithBalance = computeRecentBalances(txs, input.accounts, input.targetCurrency, input.exchangeRates, startingBalances)
+        // The running balance must be computed from every row in the window, not just the ones
+        // this card's own category/tag/etc. filters leave in `txs` - otherwise an excluded row's
+        // amount silently vanishes from every balance after it. Fetch the unfiltered basis for
+        // the same window, compute balances from that, then keep only the rows `txs` selected.
+        val basisTxs = if (txs.isNotEmpty()) {
+            val windowStart = txs.minOf { it.timestamp }
+            val basisFilter = effectiveFilter.toBalanceFilter().copy(
+                timelineRange = TimelineRange.CustomRange(start = windowStart)
+            )
+            queryService.observeFilteredTransactions(profileId, basisFilter, limit = null).first()
+        } else emptyList()
+
+        val balanceById = computeRecentBalances(basisTxs, input.accounts, input.targetCurrency, input.exchangeRates, startingBalances)
+            .associateBy { it.transaction.id }
+        val transactionsWithBalance = txs.mapNotNull { balanceById[it.id] }
+            .sortedByDescending { it.transaction.timestamp }
 
         val groups = TimelineService.getGroupedData(
             transactions = transactionsWithBalance.take(20),
@@ -673,34 +688,36 @@ object CardAggregationService {
         startingBalances: Map<String, BigDecimal> = emptyMap()
     ): List<TransactionWithBalance> {
         val accountById = accounts.associateBy { it.id }
-        return transactions.asSequence()
-            .sortedBy { it.timestamp }
+        val transactionById = transactions.associateBy { it.id }
+        return transactions
             .groupBy { it.accountId }
-            .flatMap { entry ->
-                val (accId, accountTransactions) = entry
-                val account = accountById[accId]
-                val accountCurrency = account?.currencyCode ?: baseCurrency
+            .flatMap { (accId, accountTransactions) ->
+                val accountCurrency = accountById[accId]?.currencyCode ?: baseCurrency
+                val startingBalance = startingBalances[accId] ?: BigDecimal.ZERO
 
-                var runningBalance = startingBalances[accId] ?: BigDecimal.ZERO
-                accountTransactions.map { transaction ->
-                    val txAmountInAccountCurrency = CurrencyService.convertAmount(
-                        amount = transaction.amount,
-                        fromCurrency = transaction.currency,
-                        toCurrency = accountCurrency,
-                        exchangeRates = rates
-                    )
-
-                    val balanceBefore = runningBalance
-                    runningBalance = runningBalance.add(txAmountInAccountCurrency)
-                    TransactionWithBalance(
-                        transaction = transaction,
-                        balanceBefore = balanceBefore.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                        balanceAfter = runningBalance.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
+                val ledgerRows = accountTransactions.map { transaction ->
+                    com.osscabinet.ossWallet.domain.service.ledger.LedgerRow(
+                        id = transaction.id,
+                        timestamp = transaction.timestamp,
+                        amount = CurrencyService.convertAmount(
+                            amount = transaction.amount,
+                            fromCurrency = transaction.currency,
+                            toCurrency = accountCurrency,
+                            exchangeRates = rates
+                        )
                     )
                 }
+
+                com.osscabinet.ossWallet.domain.service.ledger.LedgerService.rebuild(ledgerRows, startingBalance)
+                    .map { entry ->
+                        TransactionWithBalance(
+                            transaction = transactionById[entry.id]!!,
+                            balanceBefore = entry.balanceBefore.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                            balanceAfter = entry.balanceAfter.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
+                        )
+                    }
             }
             .sortedByDescending { it.transaction.timestamp }
-            .toList()
     }
 
     private suspend fun computeAccountStats(

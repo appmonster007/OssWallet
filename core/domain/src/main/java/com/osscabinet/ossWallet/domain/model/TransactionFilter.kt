@@ -70,6 +70,15 @@ private fun <T> mergeSets(base: Set<T>, other: Set<T>): Set<T> {
 }
 
 /**
+ * Strips every display-only criterion (category, tag, status, currency, amount, payment
+ * method, warranty, note/payee query, linked ids) down to just account scope + time window —
+ * the only two dimensions a running balance may legally depend on. Use this to fetch the rows
+ * a balance is computed from; apply the original filter to the *result* to decide what to show.
+ */
+fun TransactionFilter.balanceBasis(): TransactionFilter =
+    TransactionFilter(timelineRange = this.timelineRange, accountIds = this.accountIds)
+
+/**
  * Creates a filter for a specific account.
  */
 fun TransactionFilter.forAccount(accountId: String): TransactionFilter =

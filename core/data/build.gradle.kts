@@ -14,6 +14,7 @@ android {
     defaultConfig {
         minSdk = 26
         consumerProguardFiles("consumer-rules.pro")
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -79,4 +80,9 @@ dependencies {
 
     // Work (for BackupSchedulerImpl)
     implementation(libs.androidx.work.runtime.ktx)
+
+    // Instrumentation test runner - no androidTest sources yet, but connectedAndroidTest needs
+    // this on the classpath to install the test APK at all.
+    androidTestImplementation(libs.androidx.runner)
+    androidTestImplementation(libs.androidx.junit)
 }

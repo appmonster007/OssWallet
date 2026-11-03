@@ -7,6 +7,7 @@ import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import java.math.BigDecimal
 import org.junit.Before
 import org.junit.Test
 
@@ -15,6 +16,11 @@ class MlKitTransactionDecoderTest {
     private lateinit var decoder: MlKitTransactionDecoder
     private lateinit var sampleAccounts: List<Account>
     private lateinit var sampleCategories: List<Category>
+
+    // Scale-insensitive: "45.50" and "45.5" are the same amount.
+    private fun assertAmount(expected: String, actual: String) {
+        assertEquals(0, BigDecimal(expected).compareTo(BigDecimal(actual)))
+    }
 
     @Before
     fun setUp() {
@@ -64,7 +70,7 @@ class MlKitTransactionDecoderTest {
         val smsText = "Debit alert: $45.50 spent at Starbucks on Chase Checking account."
         val result = decoder.decodeText(smsText, sampleAccounts, sampleCategories)
 
-        assertEquals("45.5", result.amount)
+        assertAmount("45.5", result.amount)
         assertEquals(EntryMode.EXPENSE, result.entryMode)
         assertEquals("USD", result.currency)
         assertEquals("acc-chase", result.accountId)
@@ -76,7 +82,7 @@ class MlKitTransactionDecoderTest {
         val smsText = "Credited $1200.00 from Salary deposit into Chase Checking."
         val result = decoder.decodeText(smsText, sampleAccounts, sampleCategories)
 
-        assertEquals("1200.0", result.amount)
+        assertAmount("1200.0", result.amount)
         assertEquals(EntryMode.INCOME, result.entryMode)
         assertEquals("USD", result.currency)
     }
@@ -86,7 +92,7 @@ class MlKitTransactionDecoderTest {
         val smsText = "Transfer alert: $200 moved to Savings account."
         val result = decoder.decodeText(smsText, sampleAccounts, sampleCategories)
 
-        assertEquals("200", result.amount)
+        assertAmount("200", result.amount)
         assertEquals(EntryMode.TRANSFER, result.entryMode)
     }
 
@@ -103,7 +109,7 @@ class MlKitTransactionDecoderTest {
         val smsText = "Hi! Your txn of ₹9,936.51 at Dsb App Taastrup Dk on your Scapia Federal Visa credit card was successful. Not you? Go to Scapia support on the app.- Federal Bank"
         val result = decoder.decodeText(smsText, sampleAccounts, sampleCategories)
 
-        assertEquals("9936.51", result.amount)
+        assertAmount("9936.51", result.amount)
         assertEquals(EntryMode.EXPENSE, result.entryMode)
         assertEquals("INR", result.currency)
         assertEquals("acc-scapia-4321", result.accountId)
@@ -115,7 +121,7 @@ class MlKitTransactionDecoderTest {
         val smsText = "Hi! Your txn of ₹242.70 at Kantinen I Mate Aarhus C  on your Scapia Federal Visa credit card was successful. Not you? Go to Scapia support on the app.- Federal Bank"
         val result = decoder.decodeText(smsText, sampleAccounts, sampleCategories)
 
-        assertEquals("242.7", result.amount)
+        assertAmount("242.7", result.amount)
         assertEquals(EntryMode.EXPENSE, result.entryMode)
         assertEquals("INR", result.currency)
         assertEquals("acc-scapia-4321", result.accountId)
@@ -127,7 +133,7 @@ class MlKitTransactionDecoderTest {
         val smsText = "Bank alert: €1.250,50 debited at Berlin Store using Visa card."
         val result = decoder.decodeText(smsText, sampleAccounts, sampleCategories)
 
-        assertEquals("1250.50", result.amount)
+        assertAmount("1250.50", result.amount)
         assertEquals("EUR", result.currency)
         assertEquals(EntryMode.EXPENSE, result.entryMode)
         assertEquals("Berlin Store", result.payee)
@@ -138,7 +144,7 @@ class MlKitTransactionDecoderTest {
         val smsText = "Purchase alert: AED 350.00 charged at Dubai Mall."
         val result = decoder.decodeText(smsText, sampleAccounts, sampleCategories)
 
-        assertEquals("350.00", result.amount)
+        assertAmount("350.00", result.amount)
         assertEquals("AED", result.currency)
         assertEquals("Dubai Mall", result.payee)
     }
@@ -148,7 +154,7 @@ class MlKitTransactionDecoderTest {
         val smsText = "Paid £89.99 for Groceries at Tesco on credit card."
         val result = decoder.decodeText(smsText, sampleAccounts, sampleCategories)
 
-        assertEquals("89.99", result.amount)
+        assertAmount("89.99", result.amount)
         assertEquals("GBP", result.currency)
         assertEquals("Tesco", result.payee)
         assertEquals(101L, result.categoryId)

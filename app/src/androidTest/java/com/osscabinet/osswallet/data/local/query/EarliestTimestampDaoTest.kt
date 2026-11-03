@@ -53,12 +53,12 @@ class EarliestTimestampDaoTest {
         dao.getEarliestTimestampExcluding(accountId, listOf(Category.SYSTEM_INITIAL_BALANCE), profile)
 
     @Test
-    fun `returns null when the account has no rows`() = runBlocking<Unit> {
+    fun returnsNull_whenTheAccountHasNoRows() = runBlocking<Unit> {
         assertNull(earliest())
     }
 
     @Test
-    fun `ignores opening balance rows when finding the earliest`() = runBlocking<Unit> {
+    fun ignoresOpeningBalanceRows_whenFindingTheEarliest() = runBlocking<Unit> {
         add("acc1", ts = 100, category = Category.SYSTEM_INITIAL_BALANCE, type = TransactionType.INCOME)
         add("acc1", ts = 500, category = Category.SYSTEM_INITIAL_BALANCE, type = TransactionType.INCOME)
         add("acc1", ts = 900)
@@ -68,14 +68,14 @@ class EarliestTimestampDaoTest {
     }
 
     @Test
-    fun `returns null when only opening balance rows exist`() = runBlocking<Unit> {
+    fun returnsNull_whenOnlyOpeningBalanceRowsExist() = runBlocking<Unit> {
         add("acc1", ts = 100, category = Category.SYSTEM_INITIAL_BALANCE, type = TransactionType.INCOME)
 
         assertNull(earliest())
     }
 
     @Test
-    fun `counts balance adjustments, which are not opening balances`() = runBlocking<Unit> {
+    fun countsBalanceAdjustments_whichAreNotOpeningBalances() = runBlocking<Unit> {
         add("acc1", ts = 300, category = Category.SYSTEM_TRANSFER, type = TransactionType.INCOME)
         add("acc1", ts = 800)
 
@@ -83,7 +83,7 @@ class EarliestTimestampDaoTest {
     }
 
     @Test
-    fun `only looks at the requested account`() = runBlocking<Unit> {
+    fun onlyLooksAt_theRequestedAccount() = runBlocking<Unit> {
         add("acc2", ts = 50)
         add("acc1", ts = 400)
 
@@ -91,7 +91,7 @@ class EarliestTimestampDaoTest {
     }
 
     @Test
-    fun `is isolated by profile`() = runBlocking<Unit> {
+    fun isIsolated_byProfile() = runBlocking<Unit> {
         add("acc1", ts = 50, profile = 2)
         add("acc1", ts = 400, profile = 1)
 

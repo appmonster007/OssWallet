@@ -121,16 +121,12 @@ class MlKitTransactionDecoder @Inject constructor() {
         }
     }
 
-    private fun isValidIsoCurrency(code: String): Boolean {
-        return try {
-            Currency.getInstance(code) != null
-        } catch (_: Exception) {
-            false
-        }
-    }
+    // Currency.getInstance() accepts some non-ISO words (e.g. "TXN"), so check the real ISO list.
+    private fun isValidIsoCurrency(code: String): Boolean =
+        Currency.getAvailableCurrencies().any { it.currencyCode == code }
 
     private fun parseUniversalAmount(rawText: String): BigDecimal? {
-        val regex = Regex("""(?:Rs\.?|INR|₹|\$|€|£|¥|USD|EUR|GBP|AED|SAR|CHF|AUD|CAD)?\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{1,2})?|[0-9]+(?:[.,][0-9]{1,2})?)""")
+        val regex = Regex("""(?:Rs\.?|INR|₹|\$|€|£|¥|USD|EUR|GBP|AED|SAR|CHF|AUD|CAD)?\s*([0-9]{1,3}(?:[.,][0-9]{3})+(?:[.,][0-9]{1,2})?|[0-9]+(?:[.,][0-9]{1,2})?)""")
         val match = regex.find(rawText) ?: return null
         val numStr = match.groupValues[1]
 
@@ -155,7 +151,8 @@ class MlKitTransactionDecoder @Inject constructor() {
     }
 
     private fun classifyIntent(rawText: String): EntryMode {
-        val lowerText = rawText.lowercase()
+        // "credit card" names a payment method, not an inflow.
+        val lowerText = rawText.lowercase().replace("credit card", "card")
 
         val incomeKeywords = listOf(
             "credit", "credited", "received", "deposit", "deposited", "added",
@@ -177,6 +174,8 @@ class MlKitTransactionDecoder @Inject constructor() {
 
     private fun extractPayee(rawText: String): String {
         val patterns = listOf(
+            // "at <merchant>" is the strongest payee signal, so it wins over "for <item>" etc.
+            Regex("""\bat\s+([A-Za-z0-9\s&.\-]{2,35})""", RegexOption.IGNORE_CASE),
             Regex("""(?:at|to|from|for|vpa|info[:\s]+|merchant[:\s]+|vendor[:\s]+)\s+([A-Za-z0-9\s&.\-]{2,35})""", RegexOption.IGNORE_CASE),
             Regex("""paid\s+([A-Za-z0-9\s&.\-]{2,35})""", RegexOption.IGNORE_CASE)
         )
@@ -185,7 +184,7 @@ class MlKitTransactionDecoder @Inject constructor() {
             val match = pattern.find(rawText)
             if (match != null) {
                 val candidate = match.groupValues[1].trim()
-                    .split(Regex("""\s+(on|at|ref|txn|a/c|card|ending|bal|balance|with|via|was|is|not|go|to|support|bank)\b""", RegexOption.IGNORE_CASE))[0]
+                    .split(Regex("""\s+(on|at|ref|txn|a/c|card|ending|bal|balance|with|via|was|is|not|go|to|support|bank|using)\b""", RegexOption.IGNORE_CASE))[0]
                     .trim()
                     .removeSuffix(".")
                 if (candidate.length in 2..35) {

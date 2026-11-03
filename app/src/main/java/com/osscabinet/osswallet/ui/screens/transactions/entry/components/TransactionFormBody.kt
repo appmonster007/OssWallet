@@ -158,9 +158,10 @@ fun TransactionFormBody(
             AeonImpactHeaderCard(
                 transactionType = state.entryMode,
                 onTypeSelected = { onEvent(TransactionEntryEvent.SetTransactionType(it)) },
-                // Not state.allowedEntryModes: an initial balance/adjustment row only allows
-                // Transfer there, but the toggle must still show Income/Expense so the user can
-                // tap them - the ViewModel reassigns the category to Others when they do.
+                // Always show all three: an initial balance/adjustment row otherwise only allows
+                // Transfer (Category.allowedEntryModes), but the toggle must still show Income/
+                // Expense so the user can tap them - the ViewModel reassigns the category to
+                // Others when they do.
                 allowedTypes = EntryMode.entries.toSet(),
                 source = AeonAmountData(
                     value = state.amount,

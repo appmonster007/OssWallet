@@ -509,39 +509,37 @@ class TransactionEntryViewModel @Inject constructor(
                 // bucket, since Category.allowedEntryModes would otherwise reject saving it this way.
                 val convertingAwayFromSystemCategory =
                     Category.isSystemManaged(s.selectedCategoryId) && event.type != EntryMode.TRANSFER
-                if (event.type in s.allowedEntryModes || convertingAwayFromSystemCategory) {
-                    val oldMode = s.entryMode
-                    val newMode = event.type
+                val oldMode = s.entryMode
+                val newMode = event.type
 
-                    _state.update { state ->
-                        val result =
-                            TransactionEntryService.transitionType(
-                                oldMode = oldMode,
-                                newMode = newMode,
-                                currentSource = state.source,
-                                currentDestination = state.destination,
-                                isSplitMode = state.isSplitMode
-                            )
-                        val source = if (convertingAwayFromSystemCategory) {
-                            result.source.copy(categoryId = Category.SYSTEM_OTHERS)
-                        } else {
-                            result.source
-                        }
-
-                        state.copy(
-                            entryMode = result.newMode,
-                            source = source,
-                            destination = result.destination,
-                            isSplitMode = result.isSplitModeAllowed,
-                            showSplitSheet = if (result.newMode == EntryMode.TRANSFER) false else state.showSplitSheet,
-                            isRateFixed = false
+                _state.update { state ->
+                    val result =
+                        TransactionEntryService.transitionType(
+                            oldMode = oldMode,
+                            newMode = newMode,
+                            currentSource = state.source,
+                            currentDestination = state.destination,
+                            isSplitMode = state.isSplitMode
                         )
+                    val source = if (convertingAwayFromSystemCategory) {
+                        result.source.copy(categoryId = Category.SYSTEM_OTHERS)
+                    } else {
+                        result.source
                     }
 
-                    // Recalculate exchange rate if switching to/from transfer
-                    if (newMode == EntryMode.TRANSFER) {
-                        recalculateExchangeRate()
-                    }
+                    state.copy(
+                        entryMode = result.newMode,
+                        source = source,
+                        destination = result.destination,
+                        isSplitMode = result.isSplitModeAllowed,
+                        showSplitSheet = if (result.newMode == EntryMode.TRANSFER) false else state.showSplitSheet,
+                        isRateFixed = false
+                    )
+                }
+
+                // Recalculate exchange rate if switching to/from transfer
+                if (newMode == EntryMode.TRANSFER) {
+                    recalculateExchangeRate()
                 }
             }
 

@@ -183,7 +183,10 @@ class FakeTransactionRepository : TransactionRepository {
     override suspend fun deleteTransaction(id: Long, profileId: Int) {}
     override suspend fun updateTransaction(oldTransaction: Transaction, newTransaction: Transaction, profileId: Int) {}
     override fun getTransactionsByAccount(accountId: String, profileId: Int): Flow<List<Transaction>> = txFlow
-    override suspend fun getTransactionById(id: Long, profileId: Int): Transaction? = null
+    /** Rows returned by [getTransactionById]; seed this in a test to open an existing transaction. */
+    val transactionsById = mutableMapOf<Long, Transaction>()
+
+    override suspend fun getTransactionById(id: Long, profileId: Int): Transaction? = transactionsById[id]
     override suspend fun addTransactionLink(transactionId: Long, linkedTransactionId: Long) {}
     override suspend fun removeTransactionLink(transactionId: Long, linkedTransactionId: Long) {}
     override suspend fun clearTransactionLinks(transactionId: Long) {}
@@ -210,6 +213,7 @@ class FakeTransactionRepository : TransactionRepository {
     override suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary> = emptyList()
     override suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<CurrencySummary> = emptyList()
     override suspend fun getInitialBalanceTransaction(accountId: String, currency: String, profileId: Int): Transaction? = null
+    override suspend fun getEarliestNonInitialBalanceTimestamp(accountId: String, profileId: Int): Long? = null
     override suspend fun <T> runAtomically(block: suspend () -> T): T = block()
 }
 

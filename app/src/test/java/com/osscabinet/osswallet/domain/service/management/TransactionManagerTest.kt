@@ -179,4 +179,87 @@ class TransactionManagerTest {
         assertEquals("ACC_3", updatedTarget.captured.accountId)
         assertEquals("ACC_1", updatedTarget.captured.targetAccountId)
     }
+
+    // ── Opening balances saved as income/expense must never take the transfer path ──
+
+    private fun openingBalanceRequest(entryMode: EntryMode, amount: String) = TransactionRequest(
+        name = "Initial Balance",
+        amount = BigDecimal(amount),
+        entryMode = entryMode,
+        accountId = "ACC_1",
+        currency = "USD",
+        categoryId = Category.SYSTEM_INITIAL_BALANCE,
+        note = "Initial Balance",
+        timestamp = 42L
+    )
+
+    @Test
+    fun `new income opening balance is inserted as positive income, not a transfer outflow`() = runTest {
+        coEvery { transactionUseCases.insertTransaction(any(), any()) } returns 5L
+        val inserted = slot<Transaction>()
+
+        transactionManager.handleSaveTransaction(
+            null, openingBalanceRequest(EntryMode.INCOME, "1000.00"), 1
+        )
+
+        coVerify { transactionUseCases.insertTransaction(capture(inserted), 1) }
+        coVerify(exactly = 0) { transactionUseCases.saveTransfer(any(), any(), any()) }
+        assertEquals(0, BigDecimal("1000").compareTo(inserted.captured.amount))
+        assertEquals(TransactionType.INCOME, inserted.captured.transactionType)
+        assertEquals(Category.SYSTEM_INITIAL_BALANCE, inserted.captured.categoryId)
+    }
+
+    @Test
+    fun `editing an income opening balance keeps it positive income and its timestamp`() = runTest {
+        val existing = Transaction(
+            id = 5L,
+            name = "Initial Balance",
+            amount = BigDecimal("1000.00"),
+            timestamp = 42L,
+            currency = "USD",
+            transactionType = TransactionType.INCOME,
+            accountId = "ACC_1",
+            categoryId = Category.SYSTEM_INITIAL_BALANCE
+        )
+        coEvery { transactionUseCases.clearTransactionLinks(any()) } just Runs
+        coEvery { transactionUseCases.updateTransaction(any(), any(), any()) } just Runs
+        coEvery { transactionUseCases.getLinkedTransactionIds(any()) } returns flowOf(emptyList())
+        val updated = slot<Transaction>()
+
+        transactionManager.handleSaveTransaction(
+            existing, openingBalanceRequest(EntryMode.INCOME, "1000.00"), 1
+        )
+
+        coVerify { transactionUseCases.updateTransaction(existing, capture(updated), 1) }
+        coVerify(exactly = 0) { transactionUseCases.saveTransfer(any(), any(), any()) }
+        assertEquals(0, BigDecimal("1000").compareTo(updated.captured.amount))
+        assertEquals(TransactionType.INCOME, updated.captured.transactionType)
+        assertEquals(42L, updated.captured.timestamp)
+    }
+
+    @Test
+    fun `editing an expense opening balance keeps it negative expense`() = runTest {
+        val existing = Transaction(
+            id = 6L,
+            name = "Initial Balance",
+            amount = BigDecimal("-250.00"),
+            timestamp = 42L,
+            currency = "USD",
+            transactionType = TransactionType.EXPENSE,
+            accountId = "ACC_1",
+            categoryId = Category.SYSTEM_INITIAL_BALANCE
+        )
+        coEvery { transactionUseCases.clearTransactionLinks(any()) } just Runs
+        coEvery { transactionUseCases.updateTransaction(any(), any(), any()) } just Runs
+        coEvery { transactionUseCases.getLinkedTransactionIds(any()) } returns flowOf(emptyList())
+        val updated = slot<Transaction>()
+
+        transactionManager.handleSaveTransaction(
+            existing, openingBalanceRequest(EntryMode.EXPENSE, "250.00"), 1
+        )
+
+        coVerify { transactionUseCases.updateTransaction(existing, capture(updated), 1) }
+        assertEquals(0, BigDecimal("-250").compareTo(updated.captured.amount))
+        assertEquals(TransactionType.EXPENSE, updated.captured.transactionType)
+    }
 }

@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
@@ -54,7 +55,7 @@ class AccountUseCases(
                     currency = curr,
                     categoryId = Category.SYSTEM_INITIAL_BALANCE,
                     note = "Initial Balance",
-                    timestamp = System.currentTimeMillis()
+                    timestamp = openingBalanceTimestamp(accountId, null, profileId)
                 )
                 transactionManager.handleSaveTransaction(null, request, profileId)
             }
@@ -99,6 +100,13 @@ class AccountUseCases(
                 transactionManager.deleteTransaction(existing.id, profileId)
 
             amount.signum() != 0 -> {
+                val timestamp = openingBalanceTimestamp(accountId, existing, profileId)
+                // Skip the write when nothing changed, so unrelated account edits leave the row alone
+                if (existing != null &&
+                    existing.amount.compareTo(amount) == 0 &&
+                    existing.timestamp == timestamp
+                ) return
+
                 val entryMode = if (amount.signum() >= 0) EntryMode.INCOME else EntryMode.EXPENSE
                 val request = TransactionRequest(
                     name = "Initial Balance",
@@ -108,10 +116,31 @@ class AccountUseCases(
                     currency = currency,
                     categoryId = Category.SYSTEM_INITIAL_BALANCE,
                     note = "Initial Balance",
-                    timestamp = System.currentTimeMillis()
+                    timestamp = timestamp
                 )
                 transactionManager.handleSaveTransaction(existing, request, profileId)
             }
         }
+    }
+
+    /**
+     * Opening balances sit one day before the account's earliest non-initial-balance row.
+     * With no other rows, keep the existing date; for a brand-new account, use now minus a day.
+     */
+    private suspend fun openingBalanceTimestamp(
+        accountId: String,
+        existing: Transaction?,
+        profileId: Int
+    ): Long {
+        val earliest = transactionManager.transactionUseCases
+            .getEarliestNonInitialBalanceTimestamp(accountId, profileId)
+        val base = earliest
+            ?: existing?.let { it.timestamp + ONE_DAY_MILLIS }
+            ?: System.currentTimeMillis()
+        return base - ONE_DAY_MILLIS
+    }
+
+    private companion object {
+        const val ONE_DAY_MILLIS = 24L * 60 * 60 * 1000
     }
 }

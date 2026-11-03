@@ -5,8 +5,13 @@ import com.osscabinet.ossWallet.core.util.MainDispatcherRule
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.isOutside
+import com.osscabinet.ossWallet.domain.model.toDbTransferSide
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.usecase.EntryFormDataUseCase
@@ -21,12 +26,14 @@ import com.osscabinet.ossWallet.test.FakeTemplateRepository
 import com.osscabinet.ossWallet.test.FakeTransactionRepository
 import io.mockk.coEvery
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -365,5 +372,114 @@ class TransactionEntryViewModelTest {
         viewModel.onEvent(TransactionEntryEvent.ShowSplitSheet(false))
         advanceUntilIdle()
         assertTrue(viewModel.state.value.isSplitMode) // Should NOT revert
+    }
+
+    // ── Opening balances and balance adjustments must open and save with their own sign ──
+
+    private fun storedRow(
+        id: Long,
+        amount: String,
+        type: TransactionType,
+        category: Long,
+        accountId: String = "acc1",
+        targetAccountId: String? = null,
+        timestamp: Long = 1_000L
+    ) = Transaction(
+        id = id,
+        name = "row",
+        amount = BigDecimal(amount),
+        timestamp = timestamp,
+        currency = "USD",
+        transactionType = type,
+        accountId = accountId,
+        categoryId = category,
+        targetAccountId = targetAccountId,
+        targetCurrency = if (targetAccountId != null) "EUR" else null
+    )
+
+    /** Opens [row] in edit mode and waits until the form is populated. */
+    private suspend fun TestScope.openExisting(row: Transaction) {
+        fakeTx.transactionsById[row.id] = row
+        backgroundScope.launch { viewModel.initialize(transactionId = row.id) }
+        backgroundScope.launch { viewModel.state.collect {} }
+        advanceUntilIdle()
+        awaitState { it.isEditMode && it.accounts.isNotEmpty() }
+    }
+
+    /** Saves the open form and returns the request handed to the TransactionManager. */
+    private fun TestScope.saveAndCaptureRequest(): TransactionRequest {
+        val request = slot<TransactionRequest>()
+        coEvery {
+            transactionManager.handleSaveTransaction(any(), capture(request), any(), any(), any(), any(), any())
+        } returns 1L
+        viewModel.saveTransaction()
+        advanceUntilIdle()
+        return request.captured
+    }
+
+    @Test
+    fun `income opening balance opens as income, not transfer out`() = runTest(testDispatcher) {
+        openExisting(storedRow(7, "1000.00", TransactionType.INCOME, Category.SYSTEM_INITIAL_BALANCE))
+
+        val state = viewModel.state.value
+        assertEquals(EntryMode.INCOME, state.entryMode)
+        assertEquals("acc1", state.source.account.toDbTransferSide())
+        assertEquals("1000", state.source.amount)
+        assertNull(state.destination.account.toDbTransferSide())
+    }
+
+    @Test
+    fun `saving untouched income opening balance keeps it positive income with its date`() = runTest(testDispatcher) {
+        openExisting(storedRow(7, "1000.00", TransactionType.INCOME, Category.SYSTEM_INITIAL_BALANCE, timestamp = 555L))
+
+        val request = saveAndCaptureRequest()
+
+        assertEquals(EntryMode.INCOME, request.entryMode)
+        assertFalse(request.isTransfer)
+        assertEquals(0, BigDecimal("1000").compareTo(request.amount))
+        assertEquals(Category.SYSTEM_INITIAL_BALANCE, request.categoryId)
+        assertEquals(555L, request.timestamp)
+    }
+
+    @Test
+    fun `expense opening balance opens and saves as expense with the same magnitude`() = runTest(testDispatcher) {
+        openExisting(storedRow(8, "-250.00", TransactionType.EXPENSE, Category.SYSTEM_INITIAL_BALANCE))
+
+        assertEquals(EntryMode.EXPENSE, viewModel.state.value.entryMode)
+        val request = saveAndCaptureRequest()
+
+        assertEquals(EntryMode.EXPENSE, request.entryMode)
+        assertFalse(request.isTransfer)
+        assertEquals(0, BigDecimal("250").compareTo(request.amount))
+    }
+
+    @Test
+    fun `income balance adjustment on the transfer category opens and saves as income`() = runTest(testDispatcher) {
+        // Balance adjustments are INCOME/EXPENSE rows that carry the transfer category id.
+        openExisting(storedRow(9, "50.00", TransactionType.INCOME, Category.SYSTEM_TRANSFER))
+
+        assertEquals(EntryMode.INCOME, viewModel.state.value.entryMode)
+        val request = saveAndCaptureRequest()
+
+        assertEquals(EntryMode.INCOME, request.entryMode)
+        assertFalse(request.isTransfer)
+        assertEquals(0, BigDecimal("50").compareTo(request.amount))
+    }
+
+    @Test
+    fun `real transfer leg still opens as transfer and saves with its target`() = runTest(testDispatcher) {
+        openExisting(
+            storedRow(
+                10, "-100.00", TransactionType.TRANSFER_OUTFLOW, Category.SYSTEM_TRANSFER,
+                accountId = "acc1", targetAccountId = "acc2"
+            )
+        )
+
+        assertEquals(EntryMode.TRANSFER, viewModel.state.value.entryMode)
+        val request = saveAndCaptureRequest()
+
+        assertTrue(request.isTransfer)
+        assertEquals("acc2", request.targetAccountId)
+        assertEquals(0, BigDecimal("100").compareTo(request.amount))
     }
 }

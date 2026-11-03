@@ -86,6 +86,9 @@ interface TransactionRepository {
         profileId: Int
     ): Transaction?
 
+    /** Earliest timestamp of any non-initial-balance row on [accountId], or null if none. */
+    suspend fun getEarliestNonInitialBalanceTimestamp(accountId: String, profileId: Int): Long?
+
     /** Executes [block] inside a single database transaction. */
     suspend fun <T> runAtomically(block: suspend () -> T): T
 }

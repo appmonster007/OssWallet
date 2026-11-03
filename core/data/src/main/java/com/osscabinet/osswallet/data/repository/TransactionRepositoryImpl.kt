@@ -265,6 +265,17 @@ class TransactionRepositoryImpl @Inject constructor(
         )?.toDomain()
     }
 
+    override suspend fun getEarliestNonInitialBalanceTimestamp(
+        accountId: String,
+        profileId: Int
+    ): Long? {
+        return transactionDao.getEarliestTimestampExcluding(
+            accountId,
+            listOf(com.osscabinet.ossWallet.domain.model.Category.SYSTEM_INITIAL_BALANCE),
+            profileId
+        )
+    }
+
     override suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary> {
         return transactionDao.getCurrencySummaries(profileId).map { dao ->
             CurrencySummary(

@@ -193,6 +193,10 @@ class TransactionUseCases(
         return repository.getInitialBalanceTransaction(accountId, currency, profileId)
     }
 
+    suspend fun getEarliestNonInitialBalanceTimestamp(accountId: String, profileId: Int): Long? {
+        return repository.getEarliestNonInitialBalanceTimestamp(accountId, profileId)
+    }
+
     suspend fun <T> runAtomically(block: suspend () -> T): T =
         repository.runAtomically(block)
 }

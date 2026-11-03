@@ -63,6 +63,11 @@ abstract class TransactionDao {
         accountId: String, currency: String, categoryIds: List<Long>, profileId: Int
     ): TransactionEntity?
 
+    @Query("SELECT MIN(timestamp) FROM transactions WHERE accountId = :accountId AND profileId = :profileId AND categoryId NOT IN (:excludedCategoryIds)")
+    abstract suspend fun getEarliestTimestampExcluding(
+        accountId: String, excludedCategoryIds: List<Long>, profileId: Int
+    ): Long?
+
     @Query("SELECT * FROM transactions WHERE accountId = :accountId AND profileId = :profileId ORDER BY timestamp DESC")
     abstract fun getTransactionsByAccount(
         accountId: String,

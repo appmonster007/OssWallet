@@ -213,8 +213,10 @@ class TransactionEntryViewModel @Inject constructor(
         accounts: List<Account>,
         linkedTxs: List<Transaction>
     ) {
+        // Decide by the row's type, not its category: opening balances and balance adjustments
+        // carry transfer-category ids but are INCOME/EXPENSE rows and must open as such.
         val txType = when {
-            Category.isTransfer(transaction.categoryId) -> EntryMode.TRANSFER
+            transaction.transactionType.isTransfer -> EntryMode.TRANSFER
             else -> transaction.transactionType.toEntryMode()
         }
 

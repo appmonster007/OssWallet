@@ -66,6 +66,9 @@ abstract class TransactionDao {
     @Query("SELECT DISTINCT currency FROM transactions WHERE accountId = :accountId AND categoryId = :categoryId AND profileId = :profileId")
     abstract suspend fun getCurrenciesForCategory(accountId: String, categoryId: Long, profileId: Int): List<String>
 
+    @Query("SELECT DISTINCT currency FROM transactions WHERE accountId = :accountId AND categoryId IN (:categoryIds) AND profileId = :profileId")
+    abstract suspend fun getCurrenciesForCategories(accountId: String, categoryIds: List<Long>, profileId: Int): List<String>
+
     @Query("SELECT MIN(timestamp) FROM transactions WHERE accountId = :accountId AND profileId = :profileId AND categoryId NOT IN (:excludedCategoryIds)")
     abstract suspend fun getEarliestTimestampExcluding(
         accountId: String, excludedCategoryIds: List<Long>, profileId: Int

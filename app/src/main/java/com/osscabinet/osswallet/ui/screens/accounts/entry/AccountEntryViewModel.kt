@@ -193,10 +193,13 @@ class AccountEntryViewModel @Inject constructor(
             val profileId = settingsRepository.currentProfileId.first()
             accountRepository.getAllAccountsSync(profileId).find { it.id == accountId }
                 ?.let { account ->
-                    // Balances in currencies the account no longer allows are loaded too, so they can be removed
-                    val currencies = (account.allowedCurrencies +
-                        transactionRepository.getInitialBalanceCurrencies(accountId, profileId)).distinct()
-                    val txByCurrency = currencies.mapNotNull { currency ->
+                    // Currencies the account no longer allows but which still hold balance data are
+                    // surfaced too (as orphanedCurrencies), so the user can remove them - but they
+                    // must never silently rejoin allowedCurrencies if the user saves without touching them.
+                    val balanceDataCurrencies =
+                        transactionRepository.getCurrenciesWithBalanceData(accountId, profileId).toSet()
+                    val displayCurrencies = (account.allowedCurrencies + balanceDataCurrencies).distinct()
+                    val txByCurrency = displayCurrencies.mapNotNull { currency ->
                         val tx = transactionRepository.getInitialBalanceTransaction(
                             accountId,
                             currency,
@@ -217,7 +220,8 @@ class AccountEntryViewModel @Inject constructor(
                             accountName = account.name,
                             structureType = account.structureType,
                             primaryCurrency = account.currencyCode,
-                            allowedCurrencies = currencies.toSet(),
+                            allowedCurrencies = account.allowedCurrencies.toSet(),
+                            currenciesWithBalanceData = balanceDataCurrencies,
                             selectedIconName = account.icon,
                             accentColorHex = account.colorHex,
                             initialBalances = initialBalances,
@@ -244,19 +248,26 @@ class AccountEntryViewModel @Inject constructor(
 
             is AccountEntryEvent.SetPrimaryCurrency -> _state.update { it.copy(primaryCurrency = event.currency) }
             is AccountEntryEvent.SetAllowedCurrencies -> {
+                // event.currencies is the new full *displayed* set (allowed + orphaned) after one
+                // chip was added or removed in the UI - never assume it's purely "truly allowed".
                 val s = _state.value
-                val removed = s.allowedCurrencies - event.currencies
-                if (removed.any { s.hasOpeningBalance(it) }) {
-                    // Hold the removal until the user confirms the opening balance goes with it
+                val oldDisplayed = s.displayedCurrencies
+                val removed = oldDisplayed - event.currencies
+                if (removed.any { s.hasExistingBalanceData(it) }) {
+                    // Hold the removal until the user confirms the balance data goes with it
                     _state.update { it.copy(pendingCurrencyRemoval = removed) }
                 } else {
-                    applyAllowedCurrencies(event.currencies, removed)
+                    applyAllowedCurrencies(event.currencies, oldDisplayed, removed)
                 }
             }
 
             is AccountEntryEvent.ConfirmCurrencyRemoval -> {
                 val s = _state.value
-                applyAllowedCurrencies(s.allowedCurrencies - s.pendingCurrencyRemoval, s.pendingCurrencyRemoval)
+                applyAllowedCurrencies(
+                    s.displayedCurrencies - s.pendingCurrencyRemoval,
+                    s.displayedCurrencies,
+                    s.pendingCurrencyRemoval
+                )
             }
 
             is AccountEntryEvent.CancelCurrencyRemoval -> _state.update {
@@ -452,10 +463,16 @@ class AccountEntryViewModel @Inject constructor(
         }
     }
 
-    // Applies a currency change. A removed currency loses its pending adjustments, and any opening
-    // balance it held is set to zero so the save deletes that row.
-    private fun applyAllowedCurrencies(currencies: Set<String>, removed: Set<String>) {
+    // Applies a currency change. newDisplayed is the full displayed set (allowed + orphaned) after
+    // the UI's single add/remove; oldDisplayed is what it replaced, so the delta tells us which
+    // currencies were genuinely added/removed - never promoting an untouched orphan into
+    // allowedCurrencies, and never leaving a removed one counted as still having balance data.
+    // A removed currency loses its pending adjustments, and any opening balance it held is set to
+    // zero so the save deletes that row.
+    private fun applyAllowedCurrencies(newDisplayed: Set<String>, oldDisplayed: Set<String>, removed: Set<String>) {
         _state.update { state ->
+            val added = newDisplayed - oldDisplayed
+            val currencies = (state.allowedCurrencies - removed) + added
             var newPrimary = state.primaryCurrency
             if (currencies.isEmpty()) {
                 newPrimary = ""
@@ -466,6 +483,7 @@ class AccountEntryViewModel @Inject constructor(
             }
             state.copy(
                 allowedCurrencies = currencies,
+                currenciesWithBalanceData = state.currenciesWithBalanceData - removed,
                 primaryCurrency = newPrimary,
                 initialBalances = state.initialBalances +
                     removed.filter { it in state.initialBalances }.associateWith { "0" },

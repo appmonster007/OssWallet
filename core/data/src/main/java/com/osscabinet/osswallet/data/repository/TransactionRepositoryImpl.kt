@@ -274,6 +274,17 @@ class TransactionRepositoryImpl @Inject constructor(
         )
     }
 
+    override suspend fun getCurrenciesWithBalanceData(accountId: String, profileId: Int): List<String> {
+        return transactionDao.getCurrenciesForCategories(
+            accountId,
+            listOf(
+                com.osscabinet.ossWallet.domain.model.Category.SYSTEM_INITIAL_BALANCE,
+                com.osscabinet.ossWallet.domain.model.Category.SYSTEM_RECONCILIATION_ADJUSTMENT
+            ),
+            profileId
+        )
+    }
+
     override suspend fun getEarliestNonInitialBalanceTimestamp(
         accountId: String,
         profileId: Int

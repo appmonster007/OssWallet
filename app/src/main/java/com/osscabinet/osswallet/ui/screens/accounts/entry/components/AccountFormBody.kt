@@ -190,7 +190,7 @@ fun AccountFormBody(
                     CurrencyManagementSection(
                         primaryCurrency = state.primaryCurrency,
                         onPrimaryCurrencyChange = { onEvent(AccountEntryEvent.SetPrimaryCurrency(it)) },
-                        allowedCurrencies = state.allowedCurrencies,
+                        allowedCurrencies = state.displayedCurrencies,
                         onAllowedCurrenciesChange = {
                             onEvent(
                                 AccountEntryEvent.SetAllowedCurrencies(

@@ -219,6 +219,13 @@ class FakeTransactionRepository : TransactionRepository {
         openingBalances["$accountId|$currency"]
     override suspend fun getInitialBalanceCurrencies(accountId: String, profileId: Int): List<String> =
         openingBalances.keys.filter { it.startsWith("$accountId|") }.map { it.substringAfter("|") }
+    /** Keys like "accountId|currency"; seed these to give an account a currency with only an adjustment row. */
+    val adjustmentOnlyCurrencies = mutableSetOf<String>()
+    override suspend fun getCurrenciesWithBalanceData(accountId: String, profileId: Int): List<String> =
+        (openingBalances.keys + adjustmentOnlyCurrencies)
+            .filter { it.startsWith("$accountId|") }
+            .map { it.substringAfter("|") }
+            .distinct()
     override suspend fun getEarliestNonInitialBalanceTimestamp(accountId: String, profileId: Int): Long? = null
     override suspend fun <T> runAtomically(block: suspend () -> T): T = block()
 }

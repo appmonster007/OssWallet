@@ -264,8 +264,42 @@ class AccountEntryViewModelTest {
     fun `an opening balance in a currency the account no longer allows is still shown when editing`() = runTest(testDispatcher) {
         openEditForm()
 
-        assertTrue("EUR" in viewModel.state.value.allowedCurrencies)
+        // EUR must surface for display/removal but never silently rejoin the persisted allowed set.
+        assertTrue("EUR" in viewModel.state.value.displayedCurrencies)
+        assertTrue("EUR" in viewModel.state.value.orphanedCurrencies)
+        assertTrue("EUR" !in viewModel.state.value.allowedCurrencies)
         assertEquals("500", viewModel.state.value.initialBalances["EUR"])
+    }
+
+    @Test
+    fun `saving without touching currencies does not resurrect an orphaned currency`() = runTest(testDispatcher) {
+        openEditForm()
+
+        viewModel.onEvent(AccountEntryEvent.SetName("Savings"))
+        advanceUntilIdle()
+        viewModel.saveAccount {}
+        advanceUntilIdle()
+
+        coVerify {
+            accountUseCases.saveAccountEdits(
+                match { it.allowedCurrencies == listOf("USD") },
+                any(), any(), any(), any()
+            )
+        }
+    }
+
+    @Test
+    fun `a currency with only a balance adjustment also needs confirmation before removal`() = runTest(testDispatcher) {
+        fakeTx.adjustmentOnlyCurrencies += "acc1|GBP"
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.initialize(accountId = "acc1")
+        advanceUntilIdle()
+
+        assertTrue("GBP" in viewModel.state.value.orphanedCurrencies)
+        viewModel.onEvent(AccountEntryEvent.SetAllowedCurrencies(setOf("USD")))
+        advanceUntilIdle()
+
+        assertEquals(setOf("GBP"), viewModel.state.value.pendingCurrencyRemoval)
     }
 
     @Test

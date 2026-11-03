@@ -14,6 +14,9 @@ data class AccountEntryState(
     val structureType: AccountStructureType = AccountStructureType.BANK,
     val primaryCurrency: String = "USD",
     val allowedCurrencies: Set<String> = emptySet(),
+    // Snapshot, taken on load, of every currency (allowed or not) that holds an opening balance or
+    // adjustment row in the DB. Drives orphan detection and the removal-confirmation gate below.
+    val currenciesWithBalanceData: Set<String> = emptySet(),
     val initialBalances: Map<String, String> = emptyMap(),  // signed amounts: positive=inflow, negative=outflow
     val selectedIconName: String = AccountStructureType.BANK.iconKey,
     val accentColorHex: String = AccountStructureType.BANK.colorHex,
@@ -64,12 +67,28 @@ data class AccountEntryState(
     val defaultCurrency: String = "USD",
     val shortlistedCurrencies: List<String> = emptyList()
 ) {
+    /** Currencies holding existing balance data but no longer in allowedCurrencies. */
+    val orphanedCurrencies: Set<String>
+        get() = currenciesWithBalanceData - allowedCurrencies
+
+    /** All currencies shown to the user: truly allowed ones plus orphaned ones awaiting removal. */
+    val displayedCurrencies: Set<String>
+        get() = allowedCurrencies + orphanedCurrencies
+
     /** True when [currency] holds a non-zero opening balance, which removing the currency would delete. */
     fun hasOpeningBalance(currency: String): Boolean =
         (initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO).signum() != 0
 
+    /**
+     * True when removing [currency] would orphan an existing DB row - either a non-zero opening
+     * balance, or a pre-existing balance/adjustment row that isn't reflected in [initialBalances]
+     * (e.g. a currency whose only history is a reconciliation adjustment).
+     */
+    fun hasExistingBalanceData(currency: String): Boolean =
+        hasOpeningBalance(currency) || currency in currenciesWithBalanceData
+
     val pendingRemovalWithBalance: Set<String>
-        get() = pendingCurrencyRemoval.filter { hasOpeningBalance(it) }.toSet()
+        get() = pendingCurrencyRemoval.filter { hasExistingBalanceData(it) }.toSet()
 
     val canSave: Boolean
         get() {

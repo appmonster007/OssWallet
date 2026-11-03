@@ -89,6 +89,13 @@ interface TransactionRepository {
     /** Currencies in which [accountId] has an opening balance, whether or not they are still allowed. */
     suspend fun getInitialBalanceCurrencies(accountId: String, profileId: Int): List<String>
 
+    /**
+     * Currencies in which [accountId] has an opening balance OR a reconciliation adjustment,
+     * whether or not they are still allowed. Removing one of these without first zeroing its
+     * balance would orphan that row.
+     */
+    suspend fun getCurrenciesWithBalanceData(accountId: String, profileId: Int): List<String>
+
     /** Earliest timestamp of any non-initial-balance row on [accountId], or null if none. */
     suspend fun getEarliestNonInitialBalanceTimestamp(accountId: String, profileId: Int): Long?
 

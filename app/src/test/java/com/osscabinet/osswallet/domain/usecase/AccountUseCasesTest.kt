@@ -144,6 +144,24 @@ class AccountUseCasesTest {
         }
     }
 
+    // ── Issue 10: a currency that holds a balance is always allowed on the account ──
+
+    @Test
+    fun `create adds a currency that holds an opening balance to the allowed list`() = runTest {
+        useCases.createAccountWithInitialBalances(
+            name = "Wallet", initialBalances = mapOf("USD" to "100", "EUR" to "50", "GBP" to "0"),
+            currency = "USD", structureType = AccountStructureType.CASH, colorHex = "#000000", icon = "ic",
+            allowedCurrencies = listOf("USD"), profileId = profileId
+        )
+
+        coVerify {
+            accountRepository.insertAccount(
+                match { it.allowedCurrencies.toSet() == setOf("USD", "EUR") },
+                profileId
+            )
+        }
+    }
+
     // ── Issue 7: account writes are one atomic unit ─────────────────────────
 
     @Test

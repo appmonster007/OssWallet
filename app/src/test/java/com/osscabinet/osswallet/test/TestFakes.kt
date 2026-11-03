@@ -212,7 +212,13 @@ class FakeTransactionRepository : TransactionRepository {
     override fun observeUniqueNotes(profileId: Int): Flow<List<String>> = flowOf(emptyList())
     override suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary> = emptyList()
     override suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<CurrencySummary> = emptyList()
-    override suspend fun getInitialBalanceTransaction(accountId: String, currency: String, profileId: Int): Transaction? = null
+    /** Opening-balance rows keyed by "accountId|currency"; seed these to give an account a balance. */
+    val openingBalances = mutableMapOf<String, Transaction>()
+
+    override suspend fun getInitialBalanceTransaction(accountId: String, currency: String, profileId: Int): Transaction? =
+        openingBalances["$accountId|$currency"]
+    override suspend fun getInitialBalanceCurrencies(accountId: String, profileId: Int): List<String> =
+        openingBalances.keys.filter { it.startsWith("$accountId|") }.map { it.substringAfter("|") }
     override suspend fun getEarliestNonInitialBalanceTimestamp(accountId: String, profileId: Int): Long? = null
     override suspend fun <T> runAtomically(block: suspend () -> T): T = block()
 }

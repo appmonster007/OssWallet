@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
@@ -61,18 +63,33 @@ class AccountEntryViewModel @Inject constructor(
         }
     }
 
+    // Only the fields that change the balance drive a recompute. Typing a name or picking an icon
+    // leaves these unchanged, so it does not re-run the queries.
+    private data class ProjectionInputs(
+        val accountId: String?,
+        val initialBalances: Map<String, String>,
+        val pendingAdjustmentDeltas: Map<String, BigDecimal>,
+        val primaryCurrency: String
+    )
+
     private fun loadInitialData() {
         viewModelScope.launch {
+            val inputs = _state
+                .map {
+                    ProjectionInputs(it.accountId, it.initialBalances, it.pendingAdjustmentDeltas, it.primaryCurrency)
+                }
+                .distinctUntilChanged()
+            val versions = settingsRepository.currentProfileId.flatMapLatest { profileId ->
+                transactionRepository.getLatestTransactionVersion(profileId)
+            }
             combine(
                 settingsRepository.currency,
-                settingsRepository.currentProfileId.flatMapLatest { profileId ->
-                    transactionRepository.getLatestTransactionVersion(profileId)
-                },
+                settingsRepository.currentProfileId,
+                versions,
                 computationRepository.exchangeRatesSnapshot,
-                _state
-            ) { defaultCurrency, _, exchangeRatesSnapshot, state ->
+                inputs
+            ) { defaultCurrency, profileId, _, exchangeRatesSnapshot, state ->
                 val accountId = state.accountId
-                val profileId = settingsRepository.currentProfileId.first()
                 val now = System.currentTimeMillis()
 
                 if (accountId == null) {
@@ -176,7 +193,10 @@ class AccountEntryViewModel @Inject constructor(
             val profileId = settingsRepository.currentProfileId.first()
             accountRepository.getAllAccountsSync(profileId).find { it.id == accountId }
                 ?.let { account ->
-                    val txByCurrency = account.allowedCurrencies.mapNotNull { currency ->
+                    // Balances in currencies the account no longer allows are loaded too, so they can be removed
+                    val currencies = (account.allowedCurrencies +
+                        transactionRepository.getInitialBalanceCurrencies(accountId, profileId)).distinct()
+                    val txByCurrency = currencies.mapNotNull { currency ->
                         val tx = transactionRepository.getInitialBalanceTransaction(
                             accountId,
                             currency,
@@ -197,7 +217,7 @@ class AccountEntryViewModel @Inject constructor(
                             accountName = account.name,
                             structureType = account.structureType,
                             primaryCurrency = account.currencyCode,
-                            allowedCurrencies = account.allowedCurrencies.toSet(),
+                            allowedCurrencies = currencies.toSet(),
                             selectedIconName = account.icon,
                             accentColorHex = account.colorHex,
                             initialBalances = initialBalances,
@@ -224,20 +244,23 @@ class AccountEntryViewModel @Inject constructor(
 
             is AccountEntryEvent.SetPrimaryCurrency -> _state.update { it.copy(primaryCurrency = event.currency) }
             is AccountEntryEvent.SetAllowedCurrencies -> {
-                _state.update { state ->
-                    var newPrimary = state.primaryCurrency
-                    if (event.currencies.isEmpty()) {
-                        newPrimary = ""
-                    } else if (event.currencies.size == 1) {
-                        newPrimary = event.currencies.first()
-                    } else if (state.primaryCurrency.isNotEmpty() && !event.currencies.contains(
-                            state.primaryCurrency
-                        )
-                    ) {
-                        newPrimary = event.currencies.first()
-                    }
-                    state.copy(allowedCurrencies = event.currencies, primaryCurrency = newPrimary)
+                val s = _state.value
+                val removed = s.allowedCurrencies - event.currencies
+                if (removed.any { s.hasOpeningBalance(it) }) {
+                    // Hold the removal until the user confirms the opening balance goes with it
+                    _state.update { it.copy(pendingCurrencyRemoval = removed) }
+                } else {
+                    applyAllowedCurrencies(event.currencies, removed)
                 }
+            }
+
+            is AccountEntryEvent.ConfirmCurrencyRemoval -> {
+                val s = _state.value
+                applyAllowedCurrencies(s.allowedCurrencies - s.pendingCurrencyRemoval, s.pendingCurrencyRemoval)
+            }
+
+            is AccountEntryEvent.CancelCurrencyRemoval -> _state.update {
+                it.copy(pendingCurrencyRemoval = emptySet())
             }
 
             is AccountEntryEvent.SetInitialBalance -> {
@@ -429,6 +452,29 @@ class AccountEntryViewModel @Inject constructor(
         }
     }
 
+    // Applies a currency change. A removed currency loses its pending adjustments, and any opening
+    // balance it held is set to zero so the save deletes that row.
+    private fun applyAllowedCurrencies(currencies: Set<String>, removed: Set<String>) {
+        _state.update { state ->
+            var newPrimary = state.primaryCurrency
+            if (currencies.isEmpty()) {
+                newPrimary = ""
+            } else if (currencies.size == 1) {
+                newPrimary = currencies.first()
+            } else if (state.primaryCurrency.isNotEmpty() && !currencies.contains(state.primaryCurrency)) {
+                newPrimary = currencies.first()
+            }
+            state.copy(
+                allowedCurrencies = currencies,
+                primaryCurrency = newPrimary,
+                initialBalances = state.initialBalances +
+                    removed.filter { it in state.initialBalances }.associateWith { "0" },
+                pendingAdjustmentDeltas = state.pendingAdjustmentDeltas - removed,
+                pendingCurrencyRemoval = emptySet()
+            )
+        }
+    }
+
     fun saveAccount(onSuccess: (AccountEntryResult) -> Unit) {
         val s = _state.value
         if (!s.canSave) return
@@ -470,7 +516,8 @@ class AccountEntryViewModel @Inject constructor(
                             icon = s.selectedIconName
                         ),
                         creditDetails = creditDetailsFor(s, accountId),
-                        openingBalances = s.allowedCurrencies.associateWith { currency ->
+                        // Removed currencies are included at zero, so their stored balance is deleted
+                        openingBalances = (s.allowedCurrencies + s.initialBalances.keys).associateWith { currency ->
                             s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
                         },
                         pendingAdjustments = s.pendingAdjustmentDeltas,

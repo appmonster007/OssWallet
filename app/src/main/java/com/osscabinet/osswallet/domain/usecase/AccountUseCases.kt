@@ -40,7 +40,7 @@ class AccountUseCases(
                 structureType = structureType,
                 colorHex = colorHex,
                 icon = icon,
-                allowedCurrencies = allowedCurrencies
+                allowedCurrencies = withBalanceCurrencies(allowedCurrencies + currency, initialBalances)
             ),
             profileId
         )
@@ -150,6 +150,14 @@ class AccountUseCases(
                 transactionManager.handleSaveTransaction(existing, request, profileId)
             }
         }
+    }
+
+    // Every currency that holds an opening balance must be allowed, or the edit screen cannot show or remove it.
+    private fun withBalanceCurrencies(allowed: List<String>, initialBalances: Map<String, String>): List<String> {
+        val withBalance = initialBalances
+            .filterValues { (it.toBigDecimalOrNull() ?: BigDecimal.ZERO).signum() != 0 }
+            .keys
+        return (allowed + withBalance).distinct()
     }
 
     /**

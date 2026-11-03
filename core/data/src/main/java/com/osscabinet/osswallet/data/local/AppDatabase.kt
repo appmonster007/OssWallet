@@ -164,6 +164,7 @@ abstract class AppDatabase : RoomDatabase() {
                             upgradeToFts4(db)
                             ensureSystemCategories(db)
                             ensureSystemTags(db)
+                            ensureOpeningBalanceUniqueness(db)
                             context.applicationContext.assets.open("default_data.sql")
                                 .bufferedReader()
                                 .useLines { lines ->
@@ -177,6 +178,16 @@ abstract class AppDatabase : RoomDatabase() {
                             super.onOpen(db)
                             ensureSystemCategories(db)
                             ensureSystemTags(db)
+                        }
+
+                        // An account has at most one opening balance per currency. Room cannot declare a
+                        // partial index, so it is created here. Only runs when the database is created.
+                        private fun ensureOpeningBalanceUniqueness(db: SupportSQLiteDatabase) {
+                            db.execSQL(
+                                "CREATE UNIQUE INDEX IF NOT EXISTS index_transactions_opening_balance_unique " +
+                                    "ON transactions(profileId, accountId, currency) " +
+                                    "WHERE categoryId = ${com.osscabinet.ossWallet.domain.model.Category.SYSTEM_INITIAL_BALANCE}"
+                            )
                         }
 
                         private fun ensureSystemCategories(db: SupportSQLiteDatabase) {

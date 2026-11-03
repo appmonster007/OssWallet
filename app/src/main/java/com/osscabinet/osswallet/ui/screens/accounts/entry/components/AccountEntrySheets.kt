@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
@@ -68,6 +69,17 @@ fun AccountEntrySheets(
     }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // Removing a currency that still holds an opening balance needs confirmation first
+    val removalWithBalance = state.pendingRemovalWithBalance.sorted().joinToString(", ")
+    AeonConfirmDeleteDialog(
+        show = removalWithBalance.isNotEmpty(),
+        title = "Remove ${state.pendingCurrencyRemoval.sorted().joinToString(", ")}?",
+        message = "The opening balance in $removalWithBalance will be deleted with the currency.",
+        onConfirm = { onEvent(AccountEntryEvent.ConfirmCurrencyRemoval) },
+        onDismiss = { onEvent(AccountEntryEvent.CancelCurrencyRemoval) },
+        confirmButtonText = "Remove"
+    )
 
     if (state.showIconSheet) {
         Dialog(

@@ -86,6 +86,9 @@ interface TransactionRepository {
         profileId: Int
     ): Transaction?
 
+    /** Currencies in which [accountId] has an opening balance, whether or not they are still allowed. */
+    suspend fun getInitialBalanceCurrencies(accountId: String, profileId: Int): List<String>
+
     /** Earliest timestamp of any non-initial-balance row on [accountId], or null if none. */
     suspend fun getEarliestNonInitialBalanceTimestamp(accountId: String, profileId: Int): Long?
 

@@ -45,6 +45,8 @@ data class AccountEntryState(
     // val adjustmentDialogCurrency: String? = null,
     // val adjustmentDialogNewValue: String? = null,
     val pendingAdjustmentDeltas: Map<String, BigDecimal> = emptyMap(),
+    // Currencies the user has asked to remove while they still hold an opening balance; applied only on confirm
+    val pendingCurrencyRemoval: Set<String> = emptySet(),
     val isEditMode: Boolean = false,
     val accountId: String? = null,
     val navTriggered: Boolean = false,
@@ -62,6 +64,13 @@ data class AccountEntryState(
     val defaultCurrency: String = "USD",
     val shortlistedCurrencies: List<String> = emptyList()
 ) {
+    /** True when [currency] holds a non-zero opening balance, which removing the currency would delete. */
+    fun hasOpeningBalance(currency: String): Boolean =
+        (initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO).signum() != 0
+
+    val pendingRemovalWithBalance: Set<String>
+        get() = pendingCurrencyRemoval.filter { hasOpeningBalance(it) }.toSet()
+
     val canSave: Boolean
         get() {
             val isBalanceValid =

@@ -44,3 +44,7 @@ tmp/
 .claude/
 .github/
 _bmad/
+
+# Local data backups (contain real financial data) - never commit
+osswallet_backup*.zip
+*_backup_*.zip

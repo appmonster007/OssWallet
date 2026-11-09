@@ -97,6 +97,36 @@ class TransactionSearchMatcherTest {
         assertEquals(listOf(1L, 3L), result.map { it.transaction.id })
     }
 
+    private fun row(id: Long, note: String) = TransactionWithBalance(tx(id = id, note = note), BigDecimal.ZERO, BigDecimal.ZERO)
+
+    @Test fun `select searches everything when the view has no filter of its own`() {
+        val all = listOf(row(1, "laptop"), row(2, "laptop old"), row(3, "phone"))
+        var viewScopedCalled = false
+        val result = TransactionSearchMatcher.select(
+            SearchQueryParser.parse("laptop"), scopedToFilter = false, all = all,
+            viewScoped = { viewScopedCalled = true; all.take(1) }, categoryNames = emptyMap()
+        )
+        assertEquals(listOf(1L, 2L), result.map { it.transaction.id })
+        assertFalse(viewScopedCalled)
+    }
+
+    @Test fun `select stays inside the view's filter when it has one`() {
+        val all = listOf(row(1, "laptop"), row(2, "laptop old"), row(3, "phone"))
+        val result = TransactionSearchMatcher.select(
+            SearchQueryParser.parse("laptop"), scopedToFilter = true, all = all,
+            viewScoped = { all.take(1) }, categoryNames = emptyMap()
+        )
+        assertEquals(listOf(1L), result.map { it.transaction.id })
+    }
+
+    @Test fun `select with no terms yet returns nothing`() {
+        val all = listOf(row(1, "laptop"))
+        assertTrue(
+            TransactionSearchMatcher.select(null, scopedToFilter = false, all = all, viewScoped = { all }, categoryNames = emptyMap())
+                .isEmpty()
+        )
+    }
+
     @Test fun `filter on an empty query returns nothing`() {
         val rows = listOf(TransactionWithBalance(tx(), BigDecimal.ZERO, BigDecimal.ZERO))
         assertTrue(TransactionSearchMatcher.filter(SearchQueryParser.parse(""), rows, emptyMap()).isEmpty())

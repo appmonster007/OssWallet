@@ -286,11 +286,13 @@ class TransactionViewModel @Inject constructor(
             } else {
                 // Search looks at everything (archived accounts and future entries included) unless this view
                 // was opened with a filter of its own, which then stays in force.
-                val pool = if (search.scopedToFilter) {
-                    TransactionFilterService.filterTransactionsWithBalance(absoluteTxs, effectiveFilter)
-                } else absoluteTxs
-                val terms = search.terms ?: return@combine emptyList()
-                TransactionSearchMatcher.filter(terms, pool, allCategories.associate { it.id to it.name })
+                TransactionSearchMatcher.select(
+                    terms = search.terms,
+                    scopedToFilter = search.scopedToFilter,
+                    all = absoluteTxs,
+                    viewScoped = { TransactionFilterService.filterTransactionsWithBalance(absoluteTxs, effectiveFilter) },
+                    categoryNames = allCategories.associate { it.id to it.name }
+                )
             }
         }.stateIn(
             scope = viewModelScope,

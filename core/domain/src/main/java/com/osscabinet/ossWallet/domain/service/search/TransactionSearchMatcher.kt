@@ -42,6 +42,22 @@ object TransactionSearchMatcher {
         return transactions.filter { matches(parsed, it.transaction, categoryNames[it.transaction.categoryId]) }
     }
 
+    /**
+     * What a search shows: matches among [all] transactions, or, when the view was opened with a filter of its own
+     * ([scopedToFilter]), only among what that view already shows ([viewScoped], evaluated only then).
+     * No terms yet means no matches, so the caller can show its hint instead.
+     */
+    fun select(
+        terms: ParsedSearch?,
+        scopedToFilter: Boolean,
+        all: List<TransactionWithBalance>,
+        viewScoped: () -> List<TransactionWithBalance>,
+        categoryNames: Map<Long, String>
+    ): List<TransactionWithBalance> {
+        if (terms == null) return emptyList()
+        return filter(terms, if (scopedToFilter) viewScoped() else all, categoryNames)
+    }
+
     private fun textMatches(words: List<String>, tx: Transaction, categoryName: String?): Boolean {
         val fields = listOf(tx.name, tx.payee, tx.note, categoryName)
         return words.all { word -> fields.any { it?.contains(word, ignoreCase = true) == true } }

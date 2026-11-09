@@ -58,6 +58,20 @@ class OpeningBalanceUniquenessDaoTest {
         assertTrue(failure is SQLiteConstraintException)
     }
 
+    // Moving an opening balance (when an earlier row is saved or deleted) is an @Upsert of an existing
+    // row: Room inserts first and falls back to an update only on a UNIQUE/PRIMARY KEY failure, so the
+    // guard must not count the row against itself or that save would throw and roll back.
+    @Test
+    fun upsertingAnExistingOpeningBalanceMovesItInsteadOfFailing() = runBlocking<Unit> {
+        openingBalance("USD")
+        val original = dao.getInitialBalanceTransaction("acc1", "USD", listOf(Category.SYSTEM_INITIAL_BALANCE), 1)!!
+
+        dao.insertTransaction(original.copy(timestamp = 500L))
+
+        assertEquals(500L, dao.getTransactionById(original.id, 1)!!.timestamp)
+        assertEquals(listOf("USD"), dao.getCurrenciesForCategory("acc1", Category.SYSTEM_INITIAL_BALANCE, 1))
+    }
+
     @Test
     fun sameCurrencyInAnotherProfileOrAccountIsAllowed() = runBlocking<Unit> {
         openingBalance("USD")

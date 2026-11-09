@@ -6,12 +6,14 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 /**
- * A single row to fold into a running balance.
+ * A single row to fold into a running balance. Rows with the same [timestamp] are applied in
+ * [tieBreaker] order, which defaults to [id].
  */
 data class LedgerRow(
     val id: Long,
     val timestamp: Long,
-    val amount: BigDecimal
+    val amount: BigDecimal,
+    val tieBreaker: Long = id
 )
 
 /**
@@ -43,16 +45,20 @@ object LedgerService {
         scale: Int,
         amountInAccountCurrency: (Transaction) -> BigDecimal
     ): List<TransactionWithBalance> {
-        val transactionById = transactions.associateBy { it.id }
+        // Rows are keyed by their position, not their id: unsaved or projected transactions can share
+        // an id (0), and keying by it would fold them into one.
         return transactions
-            .groupBy { it.accountId }
+            .withIndex()
+            .groupBy { it.value.accountId }
             .flatMap { (accountId, rows) ->
-                val ledgerRows = rows.map { LedgerRow(it.id, it.timestamp, amountInAccountCurrency(it)) }
+                val ledgerRows = rows.map { (index, tx) ->
+                    LedgerRow(index.toLong(), tx.timestamp, amountInAccountCurrency(tx), tieBreaker = tx.id)
+                }
                 rebuild(ledgerRows, startingBalances[accountId ?: ""] ?: BigDecimal.ZERO)
             }
             .map { entry ->
                 TransactionWithBalance(
-                    transaction = transactionById.getValue(entry.id),
+                    transaction = transactions[entry.id.toInt()],
                     balanceBefore = entry.balanceBefore.setScale(scale, RoundingMode.HALF_UP),
                     balanceAfter = entry.balanceAfter.setScale(scale, RoundingMode.HALF_UP)
                 )
@@ -60,7 +66,7 @@ object LedgerService {
     }
 
     fun rebuild(rows: List<LedgerRow>, startingBalance: BigDecimal = BigDecimal.ZERO): List<LedgerEntry> {
-        val ordered = rows.sortedWith(compareBy({ it.timestamp }, { it.id }))
+        val ordered = rows.sortedWith(compareBy({ it.timestamp }, { it.tieBreaker }, { it.id }))
         var running = startingBalance
         return ordered.map { row ->
             val before = running

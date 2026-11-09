@@ -418,15 +418,25 @@ class TransactionManagerTest {
             transactionType = TransactionType.TRANSFER_OUTFLOW, accountId = "ACC_1",
             targetAccountId = "ACC_2", categoryId = Category.SYSTEM_UNKNOWN
         )
+        val counterpart = leg.copy(
+            id = 4L, amount = BigDecimal("10"), transactionType = TransactionType.TRANSFER_INFLOW,
+            accountId = "ACC_2", targetAccountId = "ACC_1"
+        )
+        val updated = slot<Transaction>()
         coEvery { transactionUseCases.getTransactionById(3L, 1) } returns leg
+        coEvery { transactionUseCases.getTransactionById(4L, 1) } returns counterpart
         coEvery { transactionUseCases.getLinkedTransactionIds(3L) } returns flowOf(listOf(4L))
         coEvery { transactionUseCases.removeTransactionLink(any(), any()) } just Runs
+        coEvery { transactionUseCases.updateTransaction(counterpart, capture(updated), 1) } just Runs
         coEvery { transactionUseCases.deleteTransaction(3L, 1) } just Runs
 
         transactionManager.deleteTransaction(3L, 1)
 
         coVerify { transactionUseCases.removeTransactionLink(3L, 4L) }
         coVerify { transactionUseCases.removeTransactionLink(4L, 3L) }
+        // The surviving leg forgets the deleted leg's account, so it is a standalone leg from now on.
+        assertEquals(null, updated.captured.targetAccountId)
+        assertEquals("ACC_2", updated.captured.accountId)
     }
 
     // ── One opening balance per account + currency ──

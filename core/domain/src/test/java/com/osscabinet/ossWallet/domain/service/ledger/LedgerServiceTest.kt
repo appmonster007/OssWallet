@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.domain.service.ledger
 
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.math.BigDecimal
@@ -95,5 +97,21 @@ class LedgerServiceTest {
         val rows = listOf(LedgerRow(6, day2, bd("-100")), LedgerRow(7, day2, bd("100")))
         val entries = LedgerService.rebuild(rows, startingBalance = bd("1625"))
         assertEquals(0, bd("1625").compareTo(entries.last().balanceAfter))
+    }
+
+    @Test
+    fun `withBalances keeps every row when unsaved transactions share an id`() {
+        // Projected or unsaved rows carry id 0; each must still get its own balance.
+        fun tx(amount: String, at: Long) = Transaction(
+            id = 0, name = "t", amount = bd(amount), timestamp = at, currency = "USD",
+            transactionType = TransactionType.EXPENSE, accountId = "A", categoryId = 1000L
+        )
+        val rows = listOf(tx("-10", day0), tx("-20", day1), tx("-30", day2))
+
+        val result = LedgerService.withBalances(rows, mapOf("A" to bd("100")), scale = 2) { it.amount }
+
+        assertEquals(3, result.size)
+        assertEquals(listOf("90.00", "70.00", "40.00"), result.map { it.balanceAfter.toPlainString() })
+        assertEquals(listOf(day0, day1, day2), result.map { it.transaction.timestamp })
     }
 }

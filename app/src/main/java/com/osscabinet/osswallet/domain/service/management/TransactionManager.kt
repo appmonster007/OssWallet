@@ -282,19 +282,29 @@ class TransactionManager(
     }
 
     suspend fun deleteTransaction(id: Long, profileId: Int) = andRefresh {
-        val transaction = transactionUseCases.getTransactionById(id, profileId)
-        if (transaction != null && transaction.transactionType.isTransfer) {
-            // Decouple from linked transfers instead of deleting them.
-            // This converts internal transfers into standalone "Outside Wallet" transfers.
-            val linkedIds = transactionUseCases.getLinkedTransactionIds(id).first()
-            linkedIds.forEach { linkedId ->
-                // Remove bidirectional links
-                transactionUseCases.removeTransactionLink(id, linkedId)
-                transactionUseCases.removeTransactionLink(linkedId, id)
+        transactionUseCases.runAtomically {
+            val transaction = transactionUseCases.getTransactionById(id, profileId)
+            if (transaction != null && transaction.transactionType.isTransfer) {
+                detachCounterparts(transaction, profileId)
+            }
+            transactionUseCases.deleteTransaction(id, profileId)
+            transaction?.accountId?.let { alignOpeningBalances(setOf(it), profileId) }
+        }
+    }
+
+    // Deleting one leg of a transfer keeps the other: it is decoupled and becomes a standalone leg
+    // against Outside Wallet. It must also forget the deleted leg's account, or editing it later would
+    // see a two-sided transfer with no counterpart and quietly re-create the leg that was deleted.
+    private suspend fun detachCounterparts(transaction: Transaction, profileId: Int) {
+        transactionUseCases.getLinkedTransactionIds(transaction.id).first().forEach { linkedId ->
+            transactionUseCases.removeTransactionLink(transaction.id, linkedId)
+            transactionUseCases.removeTransactionLink(linkedId, transaction.id)
+
+            val counterpart = transactionUseCases.getTransactionById(linkedId, profileId)
+            if (counterpart?.targetAccountId != null) {
+                transactionUseCases.updateTransaction(counterpart, counterpart.copy(targetAccountId = null), profileId)
             }
         }
-        transactionUseCases.deleteTransaction(id, profileId)
-        transaction?.accountId?.let { alignOpeningBalances(setOf(it), profileId) }
     }
 
     suspend fun cloneTransaction(transactionId: Long, profileId: Int): Long? {

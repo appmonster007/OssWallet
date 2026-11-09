@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.entry.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,24 +55,32 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.scaledDp
 import com.osscabinet.ossWallet.ui.theme.scaledSp
-import com.osscabinet.ossWallet.ui.util.toColorInt
 import java.math.BigDecimal
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountEntrySheets(
     state: AccountEntryState,
     onEvent: (AccountEntryEvent) -> Unit
 ) {
-    val accentColor = try {
-        Color(state.accentColorHex.toColorInt())
-    } catch (_: Exception) {
-        AppColors.primary
+    RemoveCurrencyDialog(state, onEvent)
+    if (state.showIconSheet) VisualIdentityDialog(state, onEvent)
+
+    val balanceCurrency = state.balanceUpdateCurrency
+    if (state.showBalanceUpdateSheet && balanceCurrency != null) {
+        BalanceUpdateDialog(balanceCurrency, state, onEvent)
     }
 
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val activeCurrency = state.activeBalanceCurrency
+    if (state.showCalculator && activeCurrency != null && !state.showBalanceUpdateSheet) {
+        OpeningBalanceCalculator(activeCurrency, state, onEvent)
+    }
 
-    // Removing a currency that still holds an opening balance needs confirmation first
+    if (state.showCurrencySheet) CurrencyDialog(state, onEvent)
+}
+
+// Removing a currency that still holds an opening balance needs confirmation first.
+@Composable
+private fun RemoveCurrencyDialog(state: AccountEntryState, onEvent: (AccountEntryEvent) -> Unit) {
     val removalWithBalance = state.pendingRemovalWithBalance.sorted().joinToString(", ")
     AeonConfirmDeleteDialog(
         show = removalWithBalance.isNotEmpty(),
@@ -80,327 +90,318 @@ fun AccountEntrySheets(
         onDismiss = { onEvent(AccountEntryEvent.CancelCurrencyRemoval) },
         confirmButtonText = "Remove"
     )
+}
 
-    if (state.showIconSheet) {
-        Dialog(
-            onDismissRequest = { onEvent(AccountEntryEvent.ShowIconSheet(show = false)) },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
+@Composable
+private fun VisualIdentityDialog(state: AccountEntryState, onEvent: (AccountEntryEvent) -> Unit) {
+    val close = { onEvent(AccountEntryEvent.ShowIconSheet(show = false)) }
+    Dialog(
+        onDismissRequest = close,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .wrapContentHeight()
+                .padding(vertical = 16.dp),
+            shape = RoundedCornerShape(32.dp),
+            color = AppColors.cardSurface,
+            tonalElevation = 8.dp
         ) {
-            Surface(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .wrapContentHeight()
-                    .padding(vertical = 16.dp),
-                shape = RoundedCornerShape(32.dp),
-                color = AppColors.cardSurface,
-                tonalElevation = 8.dp
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(28.dp)
             ) {
-                Column(
+                Row(
                     modifier = Modifier
-                        .padding(24.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(28.dp)
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Visual Identity",
-                            style = AppTextStyles.heroAmount.copy(fontSize = 20.sp)
+                    Text(text = "Visual Identity", style = AppTextStyles.heroAmount.copy(fontSize = 20.sp))
+                    IconButton(onClick = close, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = "Close",
+                            modifier = Modifier.size(20.dp),
+                            tint = AppColors.contentSecondary
                         )
-                        IconButton(
-                            onClick = { onEvent(AccountEntryEvent.ShowIconSheet(show = false)) },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                Icons.Rounded.Close,
-                                contentDescription = "Close",
-                                modifier = Modifier.size(20.dp),
-                                tint = AppColors.contentSecondary
-                            )
-                        }
                     }
-
-                    VisualIdentitySection(
-                        selectedIconName = state.selectedIconName,
-                        onIconSelected = { onEvent(AccountEntryEvent.SetIcon(it)) },
-                        accentColorHex = state.accentColorHex,
-                        onColorSelected = { onEvent(AccountEntryEvent.SetColor(it)) }
-                    )
                 }
-            }
-        }
-    }
 
-    if (state.showBalanceUpdateSheet && state.balanceUpdateCurrency != null) {
-        val currency = state.balanceUpdateCurrency
-        Dialog(
-            onDismissRequest = { onEvent(AccountEntryEvent.CloseBalanceUpdate) },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth(0.94f)
-                    .wrapContentHeight(),
-                shape = RoundedCornerShape(32.dp),
-                color = AppColors.cardSurface,
-                tonalElevation = 12.dp
-            ) {
-                val currentBaseTotal = state.systemClosingBalances[currency] ?: BigDecimal.ZERO
-                // Before the account exists there is no history to record against, so only "By Initial" applies
-                val modes = listOfNotNull(
-                    Triple(Icons.Rounded.Add, "By Record", BalanceUpdateMode.RECORD)
-                        .takeIf { state.accountId != null },
-                    Triple(Icons.Rounded.Refresh, "By Initial", BalanceUpdateMode.INITIAL_BALANCE)
+                VisualIdentitySection(
+                    selectedIconName = state.selectedIconName,
+                    onIconSelected = { onEvent(AccountEntryEvent.SetIcon(it)) },
+                    accentColorHex = state.accentColorHex,
+                    onColorSelected = { onEvent(AccountEntryEvent.SetColor(it)) }
                 )
-                val selectedColor = if (state.balanceUpdateMode == BalanceUpdateMode.RECORD)
-                    AppColors.primary else AppColors.tertiary
-
-                Column(modifier = Modifier.padding(vertical = 24.dp)) {
-                    CalculatorNumpad(
-                        amount = state.balanceUpdateInputAmount,
-                        allowSigned = true,
-                        onAmountChange = { onEvent(AccountEntryEvent.SetBalanceUpdateAmount(it)) },
-                        onDone = { onEvent(AccountEntryEvent.ConfirmBalanceUpdate) },
-                        header = { calcState, onSave, onHistory ->
-                            val displayScale = AeonTheme.uiScale
-                            val cardCorner = scaledDp(28f, displayScale, min = 20f)
-                            val cardHPad = scaledDp(20f, displayScale, min = 14f)
-                            val cardVPad = scaledDp(24f, displayScale, min = 16f)
-                            val iconBtnSize = scaledDp(24f, displayScale, min = 18f)
-                            val historyIconSize = scaledDp(18f, displayScale, min = 13f)
-                            val confirmIconSize = scaledDp(20f, displayScale, min = 15f)
-                            val amountFontSize = scaledSp(44f, displayScale, min = 33f)
-                            val deltaFontSize = scaledSp(13f, displayScale, min = 10f)
-                            val captionFontSize = scaledSp(10f, displayScale, min = 9f)
-                            val arrowIconSize = scaledDp(14f, displayScale, min = 11f)
-                            val trendIconSize = scaledDp(11f, displayScale, min = 9f)
-                            val afterHeaderSpacer = scaledDp(12f, displayScale, min = 8f)
-                            val afterAmountSpacer = scaledDp(16f, displayScale, min = 10f)
-                            val columnSpacing = scaledDp(20f, displayScale, min = 14f)
-
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(columnSpacing),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                // 1. Mode Selector
-                                EntryTypeSelector(
-                                    selectedType = state.balanceUpdateMode,
-                                    onTypeSelected = {
-                                        onEvent(
-                                            AccountEntryEvent.SetBalanceUpdateMode(
-                                                it
-                                            )
-                                        )
-                                    },
-                                    types = modes,
-                                    selectedColor = selectedColor,
-                                    itemWidth = 100.dp
-                                )
-
-                                // 2. Projection Card
-                                Surface(
-                                    shape = RoundedCornerShape(cardCorner),
-                                    color = AppColors.recessedSurface,
-                                    border = androidx.compose.foundation.BorderStroke(
-                                        1.dp,
-                                        AppColors.divider.copy(alpha = 0.1f)
-                                    )
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = cardHPad, vertical = cardVPad),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Box(modifier = Modifier.fillMaxWidth()) {
-                                            IconButton(
-                                                onClick = onHistory,
-                                                modifier = Modifier
-                                                    .align(Alignment.TopStart)
-                                                    .size(iconBtnSize)
-                                            ) {
-                                                Icon(
-                                                    Icons.Rounded.History,
-                                                    contentDescription = "History",
-                                                    tint = AppColors.contentSecondary.copy(alpha = 0.4f),
-                                                    modifier = Modifier.size(historyIconSize)
-                                                )
-                                            }
-
-                                            Text(
-                                                text = currency,
-                                                style = AppTextStyles.overlineLabel,
-                                                color = AppColors.contentSecondary,
-                                                modifier = Modifier.align(Alignment.Center)
-                                            )
-
-                                            IconButton(
-                                                onClick = onSave,
-                                                modifier = Modifier
-                                                    .align(Alignment.TopEnd)
-                                                    .size(iconBtnSize)
-                                            ) {
-                                                Icon(
-                                                    Icons.Rounded.Check,
-                                                    contentDescription = "Confirm",
-                                                    tint = selectedColor,
-                                                    modifier = Modifier.size(confirmIconSize)
-                                                )
-                                            }
-                                        }
-
-                                        Spacer(modifier = Modifier.size(afterHeaderSpacer))
-
-                                        // PROJECTED TOTAL
-                                        val inputBD = calcState.display.toBigDecimalOrNull()
-                                            ?: BigDecimal.ZERO
-                                        val isNeg = inputBD.signum() < 0
-
-                                        Text(
-                                            text = inputBD.abs().stripTrailingZeros()
-                                                .toPlainString(),
-                                            style = AppTextStyles.heroAmount.copy(
-                                                fontSize = amountFontSize,
-                                                fontWeight = FontWeight.Bold,
-                                                letterSpacing = (-1.5).sp
-                                            ),
-                                            color = if (isNeg) AppColors.negative else selectedColor,
-                                            textAlign = TextAlign.Center
-                                        )
-
-                                        Spacer(modifier = Modifier.size(afterAmountSpacer))
-
-                                        // CONTEXTUAL DELTA ROW
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(horizontal = 4.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Column(horizontalAlignment = Alignment.Start) {
-                                                Text(
-                                                    text = currentBaseTotal.stripTrailingZeros()
-                                                        .toPlainString(),
-                                                    style = AppTextStyles.chartTooltipValue.copy(
-                                                        fontSize = deltaFontSize
-                                                    ),
-                                                    color = AppColors.contentSecondary
-                                                )
-                                                Text(
-                                                    text = "(Current)",
-                                                    style = AppTextStyles.caption.copy(fontSize = captionFontSize),
-                                                    color = AppColors.contentSecondary.copy(alpha = 0.5f)
-                                                )
-                                            }
-
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(arrowIconSize),
-                                                tint = AppColors.divider.copy(alpha = 0.6f)
-                                            )
-
-                                            val delta = inputBD - currentBaseTotal
-                                            val isGain = delta.signum() >= 0
-                                            Column(horizontalAlignment = Alignment.End) {
-                                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(
-                                                        if (isGain) Icons.AutoMirrored.Rounded.TrendingUp else Icons.AutoMirrored.Rounded.TrendingDown,
-                                                        contentDescription = null,
-                                                        modifier = Modifier.size(trendIconSize),
-                                                        tint = if (isGain) AppColors.positive else AppColors.negative
-                                                    )
-                                                    Spacer(Modifier.size(4.dp))
-                                                    Text(
-                                                        text = (if (isGain) "+" else "") + delta.stripTrailingZeros()
-                                                            .toPlainString(),
-                                                        style = AppTextStyles.chartTooltipValue.copy(
-                                                            fontSize = deltaFontSize
-                                                        ),
-                                                        color = if (isGain) AppColors.positive else AppColors.negative
-                                                    )
-                                                }
-                                                Text(
-                                                    text = "(Adjustment)",
-                                                    style = AppTextStyles.caption.copy(fontSize = captionFontSize),
-                                                    color = AppColors.contentSecondary.copy(alpha = 0.5f)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    )
-                }
             }
         }
     }
+}
 
-    if (state.showCalculator && state.activeBalanceCurrency != null && !state.showBalanceUpdateSheet) {
-        val activeCurrency = state.activeBalanceCurrency
-        ModalBottomSheet(
-            onDismissRequest = { onEvent(AccountEntryEvent.CloseCalculator) },
-            sheetState = sheetState,
-            containerColor = AppColors.cardSurface,
-            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-            dragHandle = { BottomSheetDefaults.DragHandle(color = AppColors.divider.copy(alpha = 0.4f)) }
+/** Sets the balance of one currency, either as a recorded adjustment or by changing the opening balance. */
+@Composable
+private fun BalanceUpdateDialog(
+    currency: String,
+    state: AccountEntryState,
+    onEvent: (AccountEntryEvent) -> Unit
+) {
+    val currentTotal = state.systemClosingBalances[currency] ?: BigDecimal.ZERO
+    // Before the account exists there is no history to record against, so only "By Initial" applies.
+    val modes = listOfNotNull(
+        Triple(Icons.Rounded.Add, "By Record", BalanceUpdateMode.RECORD).takeIf { state.accountId != null },
+        Triple(Icons.Rounded.Refresh, "By Initial", BalanceUpdateMode.INITIAL_BALANCE)
+    )
+    val selectedColor =
+        if (state.balanceUpdateMode == BalanceUpdateMode.RECORD) AppColors.primary else AppColors.tertiary
+
+    Dialog(
+        onDismissRequest = { onEvent(AccountEntryEvent.CloseBalanceUpdate) },
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.94f)
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(32.dp),
+            color = AppColors.cardSurface,
+            tonalElevation = 12.dp
         ) {
-            Box(
+            Column(modifier = Modifier.padding(vertical = 24.dp)) {
+                CalculatorNumpad(
+                    amount = state.balanceUpdateInputAmount,
+                    allowSigned = true,
+                    onAmountChange = { onEvent(AccountEntryEvent.SetBalanceUpdateAmount(it)) },
+                    onDone = { onEvent(AccountEntryEvent.ConfirmBalanceUpdate) },
+                    header = { calcState, onSave, onHistory ->
+                        BalanceUpdateHeader(
+                            currency = currency,
+                            currentTotal = currentTotal,
+                            enteredTotal = calcState.display.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                            modes = modes,
+                            selectedMode = state.balanceUpdateMode,
+                            selectedColor = selectedColor,
+                            onModeSelected = { onEvent(AccountEntryEvent.SetBalanceUpdateMode(it)) },
+                            onSave = onSave,
+                            onHistory = onHistory
+                        )
+                    }
+                )
+            }
+        }
+    }
+}
+
+/** Mode selector plus the projection card: entered total, current total and the adjustment between them. */
+@Composable
+private fun BalanceUpdateHeader(
+    currency: String,
+    currentTotal: BigDecimal,
+    enteredTotal: BigDecimal,
+    modes: List<Triple<ImageVector, String, BalanceUpdateMode>>,
+    selectedMode: BalanceUpdateMode,
+    selectedColor: Color,
+    onModeSelected: (BalanceUpdateMode) -> Unit,
+    onSave: () -> Unit,
+    onHistory: () -> Unit
+) {
+    val scale = AeonTheme.uiScale
+    val cardCorner = scaledDp(28f, scale, min = 20f)
+    val cardHPad = scaledDp(20f, scale, min = 14f)
+    val cardVPad = scaledDp(24f, scale, min = 16f)
+    val iconButtonSize = scaledDp(24f, scale, min = 18f)
+    val historyIconSize = scaledDp(18f, scale, min = 13f)
+    val confirmIconSize = scaledDp(20f, scale, min = 15f)
+    val amountFontSize = scaledSp(44f, scale, min = 33f)
+    val deltaFontSize = scaledSp(13f, scale, min = 10f)
+    val captionFontSize = scaledSp(10f, scale, min = 9f)
+    val arrowIconSize = scaledDp(14f, scale, min = 11f)
+    val trendIconSize = scaledDp(11f, scale, min = 9f)
+    val afterHeaderSpacer = scaledDp(12f, scale, min = 8f)
+    val afterAmountSpacer = scaledDp(16f, scale, min = 10f)
+    val columnSpacing = scaledDp(20f, scale, min = 14f)
+
+    val delta = enteredTotal - currentTotal
+    val isGain = delta.signum() >= 0
+    val deltaColor = if (isGain) AppColors.positive else AppColors.negative
+    val captionStyle = AppTextStyles.caption.copy(fontSize = captionFontSize)
+    val captionColor = AppColors.contentSecondary.copy(alpha = 0.5f)
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(columnSpacing),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        EntryTypeSelector(
+            selectedType = selectedMode,
+            onTypeSelected = onModeSelected,
+            types = modes,
+            selectedColor = selectedColor,
+            itemWidth = 100.dp
+        )
+
+        Surface(
+            shape = RoundedCornerShape(cardCorner),
+            color = AppColors.recessedSurface,
+            border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.1f))
+        ) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp)
+                    .padding(horizontal = cardHPad, vertical = cardVPad),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CalculatorNumpad(
-                    amount = state.initialBalances[activeCurrency] ?: "0",
-                    allowSigned = true,
-                    onAmountChange = { signedValue ->
-                        onEvent(AccountEntryEvent.SetInitialBalance(activeCurrency, signedValue))
-                    },
-                    onDone = {
-                        onEvent(AccountEntryEvent.CloseCalculator)
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    IconButton(
+                        onClick = onHistory,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .size(iconButtonSize)
+                    ) {
+                        Icon(
+                            Icons.Rounded.History,
+                            contentDescription = "History",
+                            tint = AppColors.contentSecondary.copy(alpha = 0.4f),
+                            modifier = Modifier.size(historyIconSize)
+                        )
                     }
+                    Text(
+                        text = currency,
+                        style = AppTextStyles.overlineLabel,
+                        color = AppColors.contentSecondary,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                    IconButton(
+                        onClick = onSave,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(iconButtonSize)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Check,
+                            contentDescription = "Confirm",
+                            tint = selectedColor,
+                            modifier = Modifier.size(confirmIconSize)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.size(afterHeaderSpacer))
+
+                Text(
+                    text = enteredTotal.abs().stripTrailingZeros().toPlainString(),
+                    style = AppTextStyles.heroAmount.copy(
+                        fontSize = amountFontSize,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-1.5).sp
+                    ),
+                    color = if (enteredTotal.signum() < 0) AppColors.negative else selectedColor,
+                    textAlign = TextAlign.Center
                 )
+
+                Spacer(modifier = Modifier.size(afterAmountSpacer))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(horizontalAlignment = Alignment.Start) {
+                        Text(
+                            text = currentTotal.stripTrailingZeros().toPlainString(),
+                            style = AppTextStyles.chartTooltipValue.copy(fontSize = deltaFontSize),
+                            color = AppColors.contentSecondary
+                        )
+                        Text(text = "(Current)", style = captionStyle, color = captionColor)
+                    }
+
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.size(arrowIconSize),
+                        tint = AppColors.divider.copy(alpha = 0.6f)
+                    )
+
+                    Column(horizontalAlignment = Alignment.End) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                if (isGain) Icons.AutoMirrored.Rounded.TrendingUp
+                                else Icons.AutoMirrored.Rounded.TrendingDown,
+                                contentDescription = null,
+                                modifier = Modifier.size(trendIconSize),
+                                tint = deltaColor
+                            )
+                            Spacer(Modifier.size(4.dp))
+                            Text(
+                                text = (if (isGain) "+" else "") + delta.stripTrailingZeros().toPlainString(),
+                                style = AppTextStyles.chartTooltipValue.copy(fontSize = deltaFontSize),
+                                color = deltaColor
+                            )
+                        }
+                        Text(text = "(Adjustment)", style = captionStyle, color = captionColor)
+                    }
+                }
             }
         }
     }
+}
 
-    if (state.showCurrencySheet) {
-        AeonFullScreenDialog(onDismissRequest = { onEvent(AccountEntryEvent.ShowCurrencySheet(show = false)) }) {
-            AeonSelectionScreen(
-                title = "Currencies",
-                onBack = { onEvent(AccountEntryEvent.ShowCurrencySheet(show = false)) }
-            ) { padding ->
-                Column(
-                    modifier = Modifier
-                        .padding(padding)
-                        .verticalScroll(rememberScrollState())
-                        .padding(AeonTheme.dimensions.screenPadding)
-                ) {
-                    CurrencyManagementSection(
-                        primaryCurrency = state.primaryCurrency,
-                        onPrimaryCurrencyChange = { onEvent(AccountEntryEvent.SetPrimaryCurrency(it)) },
-                        allowedCurrencies = state.displayedCurrencies,
-                        onAllowedCurrenciesChange = {
-                            onEvent(
-                                AccountEntryEvent.SetAllowedCurrencies(
-                                    it
-                                )
-                            )
-                        },
-                        accentColorHex = state.accentColorHex,
-                        isEditMode = state.isEditMode,
-                        currencyUsageMap = state.currencyUsageMap,
-                        shortlistedCurrencies = state.shortlistedCurrencies
-                    )
-                }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OpeningBalanceCalculator(
+    currency: String,
+    state: AccountEntryState,
+    onEvent: (AccountEntryEvent) -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = { onEvent(AccountEntryEvent.CloseCalculator) },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = AppColors.cardSurface,
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        dragHandle = { BottomSheetDefaults.DragHandle(color = AppColors.divider.copy(alpha = 0.4f)) }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp)
+        ) {
+            CalculatorNumpad(
+                amount = state.initialBalances[currency] ?: "0",
+                allowSigned = true,
+                onAmountChange = { onEvent(AccountEntryEvent.SetInitialBalance(currency, it)) },
+                onDone = { onEvent(AccountEntryEvent.CloseCalculator) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun CurrencyDialog(state: AccountEntryState, onEvent: (AccountEntryEvent) -> Unit) {
+    val close = { onEvent(AccountEntryEvent.ShowCurrencySheet(show = false)) }
+    AeonFullScreenDialog(onDismissRequest = close) {
+        AeonSelectionScreen(title = "Currencies", onBack = close) { padding ->
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(AeonTheme.dimensions.screenPadding)
+            ) {
+                CurrencyManagementSection(
+                    primaryCurrency = state.primaryCurrency,
+                    onPrimaryCurrencyChange = { onEvent(AccountEntryEvent.SetPrimaryCurrency(it)) },
+                    allowedCurrencies = state.displayedCurrencies,
+                    onAllowedCurrenciesChange = { onEvent(AccountEntryEvent.SetAllowedCurrencies(it)) },
+                    accentColorHex = state.accentColorHex,
+                    isEditMode = state.isEditMode,
+                    currencyUsageMap = state.currencyUsageMap,
+                    shortlistedCurrencies = state.shortlistedCurrencies
+                )
             }
         }
     }

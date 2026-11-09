@@ -11,6 +11,8 @@ import androidx.room.Update
 import androidx.room.Upsert
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
+import com.osscabinet.ossWallet.data.local.entity.TransactionTagCrossRef
+import com.osscabinet.ossWallet.data.local.entity.TransactionWithTags
 import com.osscabinet.ossWallet.domain.model.query.RawAggregateResult
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
@@ -36,7 +38,7 @@ abstract class TransactionDao {
 
     @Transaction
     @Query("SELECT * FROM transactions WHERE profileId = :profileId ORDER BY timestamp DESC")
-    abstract fun getAllTransactionsWithTags(profileId: Int): Flow<List<com.osscabinet.ossWallet.data.local.entity.TransactionWithTags>>
+    abstract fun getAllTransactionsWithTags(profileId: Int): Flow<List<TransactionWithTags>>
 
     @RawQuery(observedEntities = [TransactionEntity::class])
     abstract fun getFilteredTransactions(query: SupportSQLiteQuery): Flow<List<TransactionEntity>>
@@ -68,6 +70,24 @@ abstract class TransactionDao {
 
     @Query("SELECT DISTINCT currency FROM transactions WHERE accountId = :accountId AND categoryId IN (:categoryIds) AND profileId = :profileId")
     abstract suspend fun getCurrenciesForCategories(accountId: String, categoryIds: List<Long>, profileId: Int): List<String>
+
+    /**
+     * Dates every opening balance of [profileId] one day before the earliest real row (not an
+     * opening balance or adjustment) of its account. For bulk loads, such as an import, that create
+     * the opening balance before the rows it must precede.
+     *
+     * The literals are `Category.SYSTEM_INITIAL_BALANCE` (1003), `SYSTEM_RECONCILIATION_ADJUSTMENT`
+     * (1004) and one day in milliseconds; Room needs compile-time constants in the query text.
+     */
+    @Query(
+        "UPDATE transactions SET lastUpdated = :now, timestamp = " +
+            "(SELECT MIN(t.timestamp) FROM transactions t WHERE t.profileId = transactions.profileId " +
+            "AND t.accountId = transactions.accountId AND t.categoryId NOT IN (1003, 1004)) - 86400000 " +
+            "WHERE profileId = :profileId AND categoryId = 1003 AND EXISTS (SELECT 1 FROM transactions t " +
+            "WHERE t.profileId = transactions.profileId AND t.accountId = transactions.accountId " +
+            "AND t.categoryId NOT IN (1003, 1004))"
+    )
+    abstract suspend fun realignOpeningBalances(profileId: Int, now: Long = System.currentTimeMillis())
 
     @Query("SELECT MIN(timestamp) FROM transactions WHERE accountId = :accountId AND profileId = :profileId AND categoryId NOT IN (:excludedCategoryIds)")
     abstract suspend fun getEarliestTimestampExcluding(
@@ -236,7 +256,7 @@ abstract class TransactionDao {
     abstract suspend fun insertTransaction(transaction: TransactionEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun insertTransactionTagCrossRef(crossRef: com.osscabinet.ossWallet.data.local.entity.TransactionTagCrossRef)
+    abstract suspend fun insertTransactionTagCrossRef(crossRef: TransactionTagCrossRef)
 
     @Query("DELETE FROM transaction_tag_cross_ref WHERE transactionId = :transactionId")
     abstract suspend fun deleteTransactionTagCrossRefs(transactionId: Long)

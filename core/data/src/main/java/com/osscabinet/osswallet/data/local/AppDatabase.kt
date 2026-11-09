@@ -44,6 +44,7 @@ import com.osscabinet.ossWallet.data.local.entity.TransactionFtsEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionTagCrossRef
 import com.osscabinet.ossWallet.domain.model.SystemCategory
+import com.osscabinet.ossWallet.domain.model.SystemTag
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Database(
@@ -164,7 +165,6 @@ abstract class AppDatabase : RoomDatabase() {
                             upgradeToFts4(db)
                             ensureSystemCategories(db)
                             ensureSystemTags(db)
-                            ensureOpeningBalanceUniqueness(db)
                             context.applicationContext.assets.open("default_data.sql")
                                 .bufferedReader()
                                 .useLines { lines ->
@@ -178,21 +178,12 @@ abstract class AppDatabase : RoomDatabase() {
                             super.onOpen(db)
                             ensureSystemCategories(db)
                             ensureSystemTags(db)
-                        }
-
-                        // An account has at most one opening balance per currency. Room cannot declare a
-                        // partial index, so it is created here. Only runs when the database is created.
-                        private fun ensureOpeningBalanceUniqueness(db: SupportSQLiteDatabase) {
-                            db.execSQL(
-                                "CREATE UNIQUE INDEX IF NOT EXISTS index_transactions_opening_balance_unique " +
-                                    "ON transactions(profileId, accountId, currency) " +
-                                    "WHERE categoryId = ${com.osscabinet.ossWallet.domain.model.Category.SYSTEM_INITIAL_BALANCE}"
-                            )
+                            OpeningBalanceGuard.install(db)
                         }
 
                         private fun ensureSystemCategories(db: SupportSQLiteDatabase) {
                             SystemCategory.entries.forEach { sc ->
-                                // Using REPLACE to override user changes to system categories
+                                // IGNORE keeps a user's edits to a system category; only a missing one is re-created
                                 db.execSQL(
                                     "INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId, nature) VALUES (?, ?, ?, ?, 1, ?, ?)",
                                     arrayOf<Any?>(
@@ -208,8 +199,8 @@ abstract class AppDatabase : RoomDatabase() {
                         }
 
                         private fun ensureSystemTags(db: SupportSQLiteDatabase) {
-                            com.osscabinet.ossWallet.domain.model.SystemTag.entries.forEach { st ->
-                                // For tags, name is unique.
+                            SystemTag.entries.forEach { st ->
+                                // Tag names are unique, so an existing tag of that name wins.
                                 db.execSQL(
                                     "INSERT OR IGNORE INTO tags (id, name, colorHex) VALUES (?, ?, ?)",
                                     arrayOf<Any?>(st.id, st.tagName, st.colorHex)

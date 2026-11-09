@@ -14,8 +14,10 @@ import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 class TransactionManager(
     internal val transactionUseCases: TransactionUseCases,
@@ -23,9 +25,7 @@ class TransactionManager(
     private val widgetRefreshTrigger: WidgetRefreshTrigger
 ) {
 
-    fun getAllTransactionLinks(): kotlinx.coroutines.flow.Flow<Map<Long, List<Long>>> {
-        return transactionUseCases.getAllTransactionLinks()
-    }
+    fun getAllTransactionLinks(): Flow<Map<Long, List<Long>>> = transactionUseCases.getAllTransactionLinks()
 
     suspend fun handleSaveTransaction(
         existingTransaction: Transaction?,
@@ -34,12 +34,15 @@ class TransactionManager(
         linkedTransactionIds: List<Long> = emptyList(),
         clonedFromId: Long? = null,
         sourcePlannedPaymentId: Long? = null,
-        scheduledDate: Long? = null
+        scheduledDate: Long? = null,
+        replaceExistingInitialBalance: Boolean = false
     ): Long = andRefresh {
-        requireAllowedEntryMode(request)
+        val request = request.normalizedForSave()
         transactionUseCases.runAtomically {
             val newId =
-                if (request.isTransfer) handleTransferSave(existingTransaction, request, profileId)
+                if (request.isTransfer) handleTransferSave(
+                    existingTransaction, request, profileId, replaceExistingInitialBalance
+                )
                 else handleNormalSave(existingTransaction, request, profileId)
 
             // Manage links
@@ -54,6 +57,11 @@ class TransactionManager(
             sourcePlannedPaymentId?.let { paymentId ->
                 confirmPlannedPaymentTransaction(paymentId, newId, scheduledDate ?: request.timestamp)
             }
+
+            alignOpeningBalances(
+                setOfNotNull(existingTransaction?.accountId, request.accountId, request.targetAccountId),
+                profileId
+            )
 
             newId
         }
@@ -79,18 +87,14 @@ class TransactionManager(
                     categoryId = split.categoryId ?: baseRequest.categoryId,
                     note = split.note
                 )
-                // Recursive call for each split record
                 handleNormalSave(null, request, profileId)
             }
 
-            // Link them
-            if (splitIds.size > 1) {
-                for (i in splitIds.indices) {
-                    for (j in i + 1 until splitIds.size) {
-                        transactionUseCases.addTransactionLink(splitIds[i], splitIds[j])
-                    }
-                }
+            splitIds.forEachIndexed { i, first ->
+                splitIds.drop(i + 1).forEach { second -> transactionUseCases.addTransactionLink(first, second) }
             }
+
+            alignOpeningBalances(setOfNotNull(baseRequest.accountId), profileId)
 
             splitIds.firstOrNull() ?: -1L
         }
@@ -131,212 +135,155 @@ class TransactionManager(
     private suspend fun handleTransferSave(
         existingTransaction: Transaction?,
         request: TransactionRequest,
-        profileId: Int
+        profileId: Int,
+        replaceExistingInitialBalance: Boolean
     ): Long {
-        val sourceAccountId = request.accountId
-        val targetAccountId = request.targetAccountId
+        val sourceAccountId = request.accountId?.takeIf { it.isNotBlank() }
+        val targetAccountId = request.targetAccountId?.takeIf { it.isNotBlank() }
         val amount = request.amount.abs()
 
-        // Ordinary transfers always pass SYSTEM_TRANSFER themselves; this also lets opening-balance
-        // and reconciliation-adjustment rows (system categories saved via EntryMode.TRANSFER) keep
-        // their own category through the single-leg Outside Wallet path below.
-        val baseCategory = request.categoryId
-
-        val isSourceWallet = sourceAccountId != null && sourceAccountId.isNotBlank()
-        val isTargetWallet = targetAccountId != null && targetAccountId.isNotBlank()
-
-        // Opening balances and adjustments never have a real other side - only a single-leg
-        // Outside Wallet shape is valid for them.
-        require(!(Category.isSystemManaged(baseCategory) && isSourceWallet && isTargetWallet)) {
-            "Category $baseCategory cannot be saved as a two-sided transfer"
-        }
+        // Transfer mode has no category picker, so the category is derived from the shape: only a
+        // single-leg (Outside Wallet) row can be an opening balance/adjustment; anything that is not
+        // one of the three transfer categories is stored as plain Transfer.
+        val category = Category.transferCategoryFor(
+            request.categoryId,
+            isTwoSided = sourceAccountId != null && targetAccountId != null
+        )
+        val outflow = request.toNormalTransaction(existingTransaction).copy(
+            amount = amount.negate(),
+            transactionType = TransactionType.TRANSFER_OUTFLOW,
+            categoryId = category,
+            targetAccountId = targetAccountId
+        )
 
         return when {
-            // Outflow: Wallet -> Outside
-            isSourceWallet && !isTargetWallet -> {
-                val tx = request.toNormalTransaction(existingTransaction).copy(
-                    amount = amount.negate(),
-                    transactionType = TransactionType.TRANSFER_OUTFLOW,
-                    categoryId = baseCategory,
-                    targetAccountId = null,
-                    targetCurrency = request.targetCurrency
-                )
-                if (existingTransaction != null) {
-                    // Opening balances/adjustments never have links, so leave them alone on edit.
-                    if (!Category.isSystemManaged(baseCategory)) {
-                        transactionUseCases.clearTransactionLinks(existingTransaction.id)
-                    }
-                    transactionUseCases.updateTransaction(existingTransaction, tx, profileId)
-                    existingTransaction.id
-                } else {
-                    transactionUseCases.insertTransaction(tx, profileId)
-                }
-            }
-            // Inflow: Outside -> Wallet
-            !isSourceWallet && isTargetWallet -> {
-                val tx = request.toNormalTransaction(existingTransaction).copy(
+            // Wallet -> Outside
+            sourceAccountId != null && targetAccountId == null -> saveSingleLeg(
+                outflow, existingTransaction, profileId, replaceExistingInitialBalance
+            )
+            // Outside -> Wallet
+            sourceAccountId == null && targetAccountId != null -> saveSingleLeg(
+                outflow.copy(
                     accountId = targetAccountId,
                     amount = amount,
                     transactionType = TransactionType.TRANSFER_INFLOW,
                     currency = request.targetCurrency ?: request.currency,
-                    categoryId = baseCategory,
                     targetAccountId = null,
                     targetCurrency = request.currency
-                )
-                if (existingTransaction != null) {
-                    // Opening balances/adjustments never have links, so leave them alone on edit.
-                    if (!Category.isSystemManaged(baseCategory)) {
-                        transactionUseCases.clearTransactionLinks(existingTransaction.id)
-                    }
-                    transactionUseCases.updateTransaction(existingTransaction, tx, profileId)
-                    existingTransaction.id
-                } else {
-                    transactionUseCases.insertTransaction(tx, profileId)
-                }
-            }
-            // Internal: Wallet -> Wallet
-            isSourceWallet && isTargetWallet -> {
-                // If it's an internal transfer, we force the signs: Source is -ve, Target is +ve
-                val sourceTransaction = request.toNormalTransaction(existingTransaction).copy(
-                    amount = amount.negate(),
-                    transactionType = TransactionType.TRANSFER_OUTFLOW,
-                    categoryId = baseCategory,
-                    targetAccountId = targetAccountId,
-                    targetCurrency = request.targetCurrency
-                )
-
-                // Target inherits all shared metadata from source
-                val targetTransaction = sourceTransaction.copy(
-                    id = 0,
-                    amount = amount.multiply(request.transferRate)
-                        .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros(),
-                    transactionType = TransactionType.TRANSFER_INFLOW,
-                    accountId = targetAccountId,
-                    currency = request.targetCurrency ?: request.currency,
-                    categoryId = baseCategory,
-                    targetAccountId = sourceAccountId,
-                    targetCurrency = request.currency,
-                    transferRate = if (request.transferRate.signum() != 0) BigDecimal.ONE.divide(
-                        request.transferRate,
-                        8,
-                        java.math.RoundingMode.HALF_UP
-                    ).stripTrailingZeros() else BigDecimal.ONE
-                )
-
-                if (existingTransaction != null && Category.isTransfer(existingTransaction.categoryId)) {
-                    // When updating a linked transfer, find the other side and update it too
-                    val linkedIds =
-                        transactionUseCases.getLinkedTransactionIds(existingTransaction.id).first()
-                    
-                    if (linkedIds.isEmpty()) {
-                        // Conversion from Standalone (Outside Wallet) to Internal: Create the missing leg
-                        val targetId = transactionUseCases.insertTransaction(targetTransaction, profileId)
-                        transactionUseCases.addTransactionLink(existingTransaction.id, targetId)
-                        transactionUseCases.addTransactionLink(targetId, existingTransaction.id)
-                    } else {
-                        linkedIds.forEach { linkedId ->
-                            val linkedTx = transactionUseCases.getTransactionById(linkedId, profileId)
-                            if (linkedTx != null && Category.isTransfer(linkedTx.categoryId)) {
-                                // Update the target side to match the new metadata from source
-                                val updatedTarget = targetTransaction.copy(id = linkedId)
-                                transactionUseCases.updateTransaction(
-                                    linkedTx,
-                                    updatedTarget,
-                                    profileId
-                                )
-                            }
-                        }
-                    }
-                    transactionUseCases.updateTransaction(
-                        existingTransaction,
-                        sourceTransaction,
-                        profileId
-                    )
-                    existingTransaction.id
-                } else {
-                    transactionUseCases.saveTransfer(
-                        sourceTransaction,
-                        targetTransaction,
-                        profileId
-                    ).first
-                }
-            }
+                ),
+                existingTransaction, profileId, replaceExistingInitialBalance
+            )
+            // Wallet -> Wallet
+            sourceAccountId != null && targetAccountId != null ->
+                saveInternalTransfer(outflow, request, existingTransaction, profileId)
 
             else -> -1L // Invalid state
         }
+    }
+
+    // A single-leg row never has a counterpart, so any link from a former two-sided shape is dropped.
+    private suspend fun saveSingleLeg(
+        tx: Transaction,
+        existingTransaction: Transaction?,
+        profileId: Int,
+        replaceExistingInitialBalance: Boolean
+    ): Long {
+        resolveInitialBalanceConflict(tx, existingTransaction, profileId, replaceExistingInitialBalance)
+        if (existingTransaction == null) return transactionUseCases.insertTransaction(tx, profileId)
+        transactionUseCases.clearTransactionLinks(existingTransaction.id)
+        transactionUseCases.updateTransaction(existingTransaction, tx, profileId)
+        return existingTransaction.id
+    }
+
+    // Source leg is negative, target leg positive; the target inherits the source's metadata.
+    private suspend fun saveInternalTransfer(
+        sourceTransaction: Transaction,
+        request: TransactionRequest,
+        existingTransaction: Transaction?,
+        profileId: Int
+    ): Long {
+        val targetTransaction = sourceTransaction.copy(
+            id = 0,
+            amount = request.amount.abs().multiply(request.transferRate)
+                .setScale(8, RoundingMode.HALF_UP).stripTrailingZeros(),
+            transactionType = TransactionType.TRANSFER_INFLOW,
+            accountId = sourceTransaction.targetAccountId,
+            currency = request.targetCurrency ?: request.currency,
+            targetAccountId = sourceTransaction.accountId,
+            targetCurrency = request.currency,
+            transferRate = if (request.transferRate.signum() != 0) {
+                BigDecimal.ONE.divide(request.transferRate, 8, RoundingMode.HALF_UP).stripTrailingZeros()
+            } else {
+                BigDecimal.ONE
+            }
+        )
+
+        if (existingTransaction == null || !existingTransaction.transactionType.isTransfer) {
+            return transactionUseCases.saveTransfer(sourceTransaction, targetTransaction, profileId).first
+        }
+
+        val linkedIds = transactionUseCases.getLinkedTransactionIds(existingTransaction.id).first()
+        if (linkedIds.isEmpty()) {
+            // Converting a single-leg row to an internal transfer: create the missing leg.
+            val targetId = transactionUseCases.insertTransaction(targetTransaction, profileId)
+            transactionUseCases.addTransactionLink(existingTransaction.id, targetId)
+            transactionUseCases.addTransactionLink(targetId, existingTransaction.id)
+        } else {
+            linkedIds.forEach { linkedId ->
+                val linkedTx = transactionUseCases.getTransactionById(linkedId, profileId)
+                if (linkedTx != null && linkedTx.transactionType.isTransfer) {
+                    transactionUseCases.updateTransaction(linkedTx, targetTransaction.copy(id = linkedId), profileId)
+                }
+            }
+        }
+        transactionUseCases.updateTransaction(existingTransaction, sourceTransaction, profileId)
+        return existingTransaction.id
     }
 
     suspend fun confirmPlannedPaymentTransaction(
         paymentId: Long,
         transactionId: Long,
         scheduledDate: Long
-    ) {
-        val payment = plannedPaymentRepository.getById(paymentId) ?: return
+    ) = resolveOccurrence(paymentId, scheduledDate, OccurrenceStatus.CONFIRMED, transactionId)
 
-        // Try to find existing occurrence first to update it instead of creating duplicate
-        val existing = plannedPaymentRepository.getOccurrenceForDate(paymentId, scheduledDate)
+    suspend fun skipPlannedPayment(paymentId: Long, scheduledDate: Long) =
+        resolveOccurrence(paymentId, scheduledDate, OccurrenceStatus.SKIPPED, generatedTransactionId = null)
 
-        // Mark occurrence as confirmed
-        val occurrence = PlannedPaymentOccurrence(
-            id = existing?.id ?: 0,
-            plannedPaymentId = paymentId,
-            scheduledDate = scheduledDate,
-            status = OccurrenceStatus.CONFIRMED,
-            generatedTransactionId = transactionId
-        )
-        plannedPaymentRepository.upsertOccurrence(occurrence)
-
-        // Update planned payment next due date
-        val nextDue = PlannedPaymentService.calculateNextDueDate(payment, scheduledDate)
-        if (nextDue == null) {
-            plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
-        } else {
-            plannedPaymentRepository.update(
-                payment.copy(
-                    schedule = payment.schedule.copy(
-                        nextDueDate = nextDue,
-                        lastTriggeredDate = scheduledDate
-                    )
-                )
-            )
-        }
-    }
-
-    suspend fun skipPlannedPayment(
+    // Records the occurrence (updating one that already exists rather than duplicating it), then
+    // moves the planned payment on to its next due date or completes it.
+    private suspend fun resolveOccurrence(
         paymentId: Long,
-        scheduledDate: Long
+        scheduledDate: Long,
+        status: OccurrenceStatus,
+        generatedTransactionId: Long?
     ) {
         val payment = plannedPaymentRepository.getById(paymentId) ?: return
-
-        // Try to find existing occurrence first to update it instead of creating duplicate
         val existing = plannedPaymentRepository.getOccurrenceForDate(paymentId, scheduledDate)
-
-        val occurrence = PlannedPaymentOccurrence(
-            id = existing?.id ?: 0,
-            plannedPaymentId = paymentId,
-            scheduledDate = scheduledDate,
-            status = OccurrenceStatus.SKIPPED
+        plannedPaymentRepository.upsertOccurrence(
+            PlannedPaymentOccurrence(
+                id = existing?.id ?: 0,
+                plannedPaymentId = paymentId,
+                scheduledDate = scheduledDate,
+                status = status,
+                generatedTransactionId = generatedTransactionId
+            )
         )
-        plannedPaymentRepository.upsertOccurrence(occurrence)
 
         val nextDue = PlannedPaymentService.calculateNextDueDate(payment, scheduledDate)
-        if (nextDue == null) {
-            plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
-        } else {
-            plannedPaymentRepository.update(
+        plannedPaymentRepository.update(
+            if (nextDue == null) {
+                payment.copy(status = PlannedPaymentStatus.COMPLETED)
+            } else {
                 payment.copy(
-                    schedule = payment.schedule.copy(
-                        nextDueDate = nextDue,
-                        lastTriggeredDate = scheduledDate
-                    )
+                    schedule = payment.schedule.copy(nextDueDate = nextDue, lastTriggeredDate = scheduledDate)
                 )
-            )
-        }
+            }
+        )
     }
 
     suspend fun deleteTransaction(id: Long, profileId: Int) = andRefresh {
         val transaction = transactionUseCases.getTransactionById(id, profileId)
-        if (transaction != null && Category.isTransfer(transaction.categoryId)) {
+        if (transaction != null && transaction.transactionType.isTransfer) {
             // Decouple from linked transfers instead of deleting them.
             // This converts internal transfers into standalone "Outside Wallet" transfers.
             val linkedIds = transactionUseCases.getLinkedTransactionIds(id).first()
@@ -347,6 +294,7 @@ class TransactionManager(
             }
         }
         transactionUseCases.deleteTransaction(id, profileId)
+        transaction?.accountId?.let { alignOpeningBalances(setOf(it), profileId) }
     }
 
     suspend fun cloneTransaction(transactionId: Long, profileId: Int): Long? {
@@ -360,15 +308,10 @@ class TransactionManager(
         val transaction = transactionUseCases.getTransactionById(transactionId, profileId) ?: return null
         val newStatus = when (transaction.status) {
             TransactionStatus.CLEARED -> TransactionStatus.UNCLEARED
-            TransactionStatus.UNCLEARED -> TransactionStatus.CLEARED
-            TransactionStatus.RECONCILE -> TransactionStatus.CLEARED
+            TransactionStatus.UNCLEARED, TransactionStatus.RECONCILE -> TransactionStatus.CLEARED
         }
-        transactionUseCases.updateTransaction(
-            transaction,
-            transaction.copy(status = newStatus),
-            profileId
-        )
-        return newStatus.also { widgetRefreshTrigger.trigger() }
+        applyStatus(transaction, newStatus, profileId)
+        return newStatus
     }
 
     suspend fun updateStatus(
@@ -377,21 +320,63 @@ class TransactionManager(
         profileId: Int
     ): Boolean {
         val transaction = transactionUseCases.getTransactionById(transactionId, profileId) ?: return false
-        transactionUseCases.updateTransaction(
-            transaction,
-            transaction.copy(status = newStatus),
-            profileId
-        )
-        widgetRefreshTrigger.trigger()
+        applyStatus(transaction, newStatus, profileId)
         return true
     }
 
-    // Opening balances and adjustments may only be saved as transfer legs. A save that would
-    // silently change the row's type to something else is rejected instead - the only way to make
-    // one a real income/expense row is to reassign it to an ordinary category first.
-    private fun requireAllowedEntryMode(request: TransactionRequest) {
-        require(request.entryMode in Category.allowedEntryModes(request.categoryId)) {
-            "Category ${request.categoryId} cannot be saved as ${request.entryMode}"
+    private suspend fun applyStatus(transaction: Transaction, status: TransactionStatus, profileId: Int) {
+        transactionUseCases.updateTransaction(transaction, transaction.copy(status = status), profileId)
+        widgetRefreshTrigger.trigger()
+    }
+
+    // The transfer categories are transfer-typed by definition. An Income/Expense request that
+    // carries one (an import, the API, or a picker choice) is turned into the single-leg transfer
+    // the entry form would have produced: income is an inflow into the account, expense an outflow.
+    private fun TransactionRequest.normalizedForSave(): TransactionRequest {
+        if (isTransfer || !Category.isTransfer(categoryId)) return this
+        return when (entryMode) {
+            EntryMode.INCOME -> copy(
+                entryMode = EntryMode.TRANSFER,
+                accountId = null,
+                targetAccountId = accountId,
+                targetCurrency = currency
+            )
+            else -> copy(entryMode = EntryMode.TRANSFER, targetAccountId = null)
+        }
+    }
+
+    // One opening balance per account+currency. A save that would create a second one either
+    // replaces the first (the caller confirmed) or fails with the row it collides with.
+    private suspend fun resolveInitialBalanceConflict(
+        tx: Transaction,
+        existingTransaction: Transaction?,
+        profileId: Int,
+        replace: Boolean
+    ) {
+        if (!Category.isInitialBalance(tx.categoryId)) return
+        val accountId = tx.accountId ?: return
+        val other = transactionUseCases.getInitialBalanceTransaction(accountId, tx.currency, profileId)
+            ?.takeIf { it.id != existingTransaction?.id } ?: return
+        if (!replace) throw DuplicateInitialBalanceException(other)
+        transactionUseCases.deleteTransaction(other.id, profileId)
+    }
+
+    /**
+     * An opening balance sits one day before the earliest real row of its account, wherever that
+     * row moves to: it follows an earlier backdated entry and falls back when the earliest row is
+     * deleted. Adjustments are not "real" rows here, so they never drag it forward.
+     */
+    internal suspend fun alignOpeningBalances(accountIds: Set<String>, profileId: Int) {
+        accountIds.filter { it.isNotBlank() }.forEach { accountId ->
+            val earliest = transactionUseCases.getEarliestNonInitialBalanceTimestamp(accountId, profileId)
+                ?: return@forEach
+            val target = earliest - ONE_DAY_MILLIS
+            transactionUseCases.getInitialBalanceCurrencies(accountId, profileId).forEach { currency ->
+                val opening = transactionUseCases.getInitialBalanceTransaction(accountId, currency, profileId)
+                if (opening != null && opening.timestamp != target) {
+                    transactionUseCases.updateTransaction(opening, opening.copy(timestamp = target), profileId)
+                }
+            }
         }
     }
 
@@ -441,3 +426,9 @@ class TransactionManager(
     private suspend fun <T> andRefresh(block: suspend () -> T): T =
         block().also { widgetRefreshTrigger.trigger() }
 }
+
+private const val ONE_DAY_MILLIS = 24L * 60 * 60 * 1000
+
+/** Raised when a save would give an account a second opening balance in the same currency. */
+class DuplicateInitialBalanceException(val existing: Transaction) :
+    IllegalStateException("Account already has an opening balance in ${existing.currency}")

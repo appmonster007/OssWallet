@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.entry
 
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.CreditCardDetails
@@ -12,6 +13,7 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
@@ -24,9 +26,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -49,16 +51,12 @@ class AccountEntryViewModel @Inject constructor(
     private var isSaveInFlight = false
 
     init {
-        loadInitialData()
+        observeBalanceProjection()
         viewModelScope.launch {
             effectiveShortlistedCurrencies.collect { currencies ->
-                val popularAssets = setOf(
-                    "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "CNY",
-                    "KRW", "INR", "BRL", "RUB", "MXN", "SGD", "HKD", "TRY",
-                    "SEK", "NOK", "NZD", "ZAR"
-                )
-                val refinedShortlist = currencies.filter { it.uppercase() in popularAssets }
-                _state.update { it.copy(shortlistedCurrencies = refinedShortlist) }
+                _state.update {
+                    it.copy(shortlistedCurrencies = currencies.filter { code -> code.uppercase() in POPULAR_CURRENCIES })
+                }
             }
         }
     }
@@ -72,7 +70,7 @@ class AccountEntryViewModel @Inject constructor(
         val primaryCurrency: String
     )
 
-    private fun loadInitialData() {
+    private fun observeBalanceProjection() {
         viewModelScope.launch {
             val inputs = _state
                 .map {
@@ -88,85 +86,66 @@ class AccountEntryViewModel @Inject constructor(
                 versions,
                 computationRepository.exchangeRatesSnapshot,
                 inputs
-            ) { defaultCurrency, profileId, _, exchangeRatesSnapshot, state ->
-                val accountId = state.accountId
-                val now = System.currentTimeMillis()
-
-                if (accountId == null) {
-                    // No stored balance yet, so the opening balances being typed are the closing balances.
-                    _state.update {
-                        it.copy(
-                            defaultCurrency = defaultCurrency,
-                            exchangeRates = exchangeRatesSnapshot.rates,
-                            systemClosingBalances = state.initialBalances.mapValues { (_, value) ->
-                                value.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                            }
-                        )
-                    }
-                    return@combine
-                }
-
-                // 1. Calculate current database state using SQL aggregation
-                val accountFilter = TransactionFilter(
-                    accountIds = setOf(accountId),
-                    timelineRange = TimelineRange.CustomRange(end = now)
-                )
-
-                val dbSummaries = TransactionAggregationService.getSummaryByCurrency(
-                    queryService,
-                    profileId,
-                    accountFilter
-                ).getOrDefault(emptyMap())
-
-                // 2. Identify the database's "Initial Balance" components
-                val initialBalanceFilter = accountFilter.copy(
-                    categoryIds = setOf(Category.SYSTEM_INITIAL_BALANCE)
-                )
-                val dbInitialBalancesSummaries = TransactionAggregationService.getSummaryByCurrency(
-                    queryService,
-                    profileId,
-                    initialBalanceFilter
-                ).getOrDefault(emptyMap())
-                val dbInitialBalances =
-                    dbInitialBalancesSummaries.mapValues { it.value.totalAmount }
-
-                // 3. Compute projected closing balances for all relevant currencies
-                // Projected = (DB Total) - (DB Initial) + (UI Initial) + (UI Pending Deltas)
-                val allRelevantCurrencies =
-                    (dbSummaries.keys + state.initialBalances.keys + state.pendingAdjustmentDeltas.keys).toSet()
-
-                val projectedClosingBalances = allRelevantCurrencies.associateWith { currency ->
-                    val dbTotal = dbSummaries[currency]?.totalAmount ?: BigDecimal.ZERO
-                    val dbInitial = dbInitialBalances[currency] ?: BigDecimal.ZERO
-                    val uiInitial =
-                        state.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    val uiPending = state.pendingAdjustmentDeltas[currency] ?: BigDecimal.ZERO
-
-                    dbTotal - dbInitial + uiInitial + uiPending
-                }
-
-                // 5. Calculate account-level net balance in primary currency
-                val currentBalance =
-                    CurrencyService.calculateTotalInCurrency(
-                        projectedClosingBalances,
-                        state.primaryCurrency,
-                        exchangeRatesSnapshot
-                    )
-
-                val currencyUsageMap = dbSummaries.mapValues { it.value.transactionCount > 0 }
-
+            ) { defaultCurrency, profileId, _, exchangeRatesSnapshot, input ->
+                val projection = input.accountId?.let { projectStoredBalances(it, input, profileId, exchangeRatesSnapshot) }
                 _state.update {
                     it.copy(
                         defaultCurrency = defaultCurrency,
                         exchangeRates = exchangeRatesSnapshot.rates,
-                        currentBalance = currentBalance,
-                        currencyUsageMap = currencyUsageMap,
-                        systemClosingBalances = projectedClosingBalances
+                        // A new account has no stored balance yet: the opening balances being typed
+                        // are its closing balances.
+                        systemClosingBalances = projection?.closingBalances ?: input.initialBalances.toBigDecimals(),
+                        currentBalance = projection?.currentBalance ?: it.currentBalance,
+                        currencyUsageMap = projection?.currencyUsage ?: it.currencyUsageMap
                     )
                 }
             }.collect()
         }
     }
+
+    private class BalanceProjection(
+        val closingBalances: Map<String, BigDecimal>,
+        val currentBalance: BigDecimal,
+        val currencyUsage: Map<String, Boolean>
+    )
+
+    // Closing balance per currency = stored total - stored opening balance + typed opening balance
+    // + pending adjustment, so the screen previews the balance the save would produce.
+    private suspend fun projectStoredBalances(
+        accountId: String,
+        input: ProjectionInputs,
+        profileId: Int,
+        exchangeRates: ExchangeRateSnapshot
+    ): BalanceProjection {
+        val accountFilter = TransactionFilter(
+            accountIds = setOf(accountId),
+            timelineRange = TimelineRange.CustomRange(end = System.currentTimeMillis())
+        )
+        val stored = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, accountFilter)
+            .getOrDefault(emptyMap())
+        val storedOpening = TransactionAggregationService.getSummaryByCurrency(
+            queryService,
+            profileId,
+            accountFilter.copy(categoryIds = setOf(Category.SYSTEM_INITIAL_BALANCE))
+        ).getOrDefault(emptyMap())
+
+        val typedOpening = input.initialBalances.toBigDecimals()
+        val currencies = stored.keys + typedOpening.keys + input.pendingAdjustmentDeltas.keys
+        val closingBalances = currencies.associateWith { currency ->
+            (stored[currency]?.totalAmount ?: BigDecimal.ZERO) -
+                (storedOpening[currency]?.totalAmount ?: BigDecimal.ZERO) +
+                (typedOpening[currency] ?: BigDecimal.ZERO) +
+                (input.pendingAdjustmentDeltas[currency] ?: BigDecimal.ZERO)
+        }
+        return BalanceProjection(
+            closingBalances = closingBalances,
+            currentBalance = CurrencyService.calculateTotalInCurrency(closingBalances, input.primaryCurrency, exchangeRates),
+            currencyUsage = stored.mapValues { it.value.transactionCount > 0 }
+        )
+    }
+
+    private fun Map<String, String>.toBigDecimals(): Map<String, BigDecimal> =
+        mapValues { (_, value) -> value.toBigDecimalOrNull() ?: BigDecimal.ZERO }
 
     fun initialize(
         accountId: String? = null,
@@ -274,12 +253,8 @@ class AccountEntryViewModel @Inject constructor(
                 it.copy(pendingCurrencyRemoval = emptySet())
             }
 
-            is AccountEntryEvent.SetInitialBalance -> {
-                _state.update {
-                    it.copy(
-                        initialBalances = it.initialBalances.toMutableMap()
-                            .apply { put(event.currency, event.balance) })
-                }
+            is AccountEntryEvent.SetInitialBalance -> _state.update {
+                it.copy(initialBalances = it.initialBalances + (event.currency to event.balance))
             }
 
             is AccountEntryEvent.SetIcon -> _state.update { it.copy(selectedIconName = event.icon) }
@@ -291,86 +266,35 @@ class AccountEntryViewModel @Inject constructor(
             is AccountEntryEvent.SetPaymentDueDay -> _state.update { it.copy(paymentDueDayInput = event.day) }
             is AccountEntryEvent.SetInterestRateApr -> _state.update { it.copy(interestRateAprInput = event.apr) }
 
-            is AccountEntryEvent.OpenBalanceUpdate -> {
-                val currency = event.currency
-                val currentProjectedTotal =
-                    _state.value.systemClosingBalances[currency] ?: BigDecimal.ZERO
-
-                _state.update {
-                    it.copy(
-                        showBalanceUpdateSheet = true,
-                        balanceUpdateCurrency = currency,
-                        balanceUpdateInputAmount = currentProjectedTotal.stripTrailingZeros()
-                            .toPlainString(),
-                        // Before the account exists there is no history to record against
-                        balanceUpdateMode = if (it.accountId == null) BalanceUpdateMode.INITIAL_BALANCE
-                        else BalanceUpdateMode.RECORD
-                    )
-                }
+            is AccountEntryEvent.OpenBalanceUpdate -> _state.update {
+                it.copy(
+                    showBalanceUpdateSheet = true,
+                    balanceUpdateCurrency = event.currency,
+                    balanceUpdateInputAmount = (it.systemClosingBalances[event.currency] ?: BigDecimal.ZERO)
+                        .stripTrailingZeros().toPlainString(),
+                    // Before the account exists there is no history to record against
+                    balanceUpdateMode = if (it.accountId == null) BalanceUpdateMode.INITIAL_BALANCE
+                    else BalanceUpdateMode.RECORD
+                )
             }
 
             is AccountEntryEvent.SetBalanceUpdateMode -> _state.update { it.copy(balanceUpdateMode = event.mode) }
             is AccountEntryEvent.SetBalanceUpdateAmount -> _state.update {
-                it.copy(
-                    balanceUpdateInputAmount = event.amount
-                )
+                it.copy(balanceUpdateInputAmount = event.amount)
             }
 
-            is AccountEntryEvent.OpenCalculatorForUpdate -> {
-                val currency = _state.value.balanceUpdateCurrency
-                if (currency != null) {
-                    _state.update {
-                        it.copy(
-                            showCalculator = true,
-                            activeBalanceCurrency = currency,
-                            calculatorOriginalValue = it.balanceUpdateInputAmount
-                        )
-                    }
-                }
+            is AccountEntryEvent.OpenCalculatorForUpdate -> _state.update { state ->
+                state.balanceUpdateCurrency?.let { currency ->
+                    state.copy(
+                        showCalculator = true,
+                        activeBalanceCurrency = currency,
+                        calculatorOriginalValue = state.balanceUpdateInputAmount
+                    )
+                } ?: state
             }
 
-            is AccountEntryEvent.ConfirmBalanceUpdate -> {
-                val s = _state.value
-                val currency = s.balanceUpdateCurrency
-                if (currency != null) {
-                    val newUserTotal =
-                        s.balanceUpdateInputAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    val currentProjectedTotal = s.systemClosingBalances[currency] ?: BigDecimal.ZERO
-                    val totalAdjustmentNeeded = newUserTotal - currentProjectedTotal
-
-                    // Create/draft mode has no history, so a recorded amount is the opening balance.
-                    if (s.balanceUpdateMode == BalanceUpdateMode.INITIAL_BALANCE || s.accountId == null) {
-                        val currentInitial =
-                            s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                        val newOpening = currentInitial + totalAdjustmentNeeded
-                        _state.update {
-                            it.copy(
-                                initialBalances = it.initialBalances + (currency to newOpening.stripTrailingZeros()
-                                    .toPlainString()),
-                                showBalanceUpdateSheet = false,
-                                balanceUpdateCurrency = null
-                            )
-                        }
-                    } else {
-                        val pendingDelta = s.pendingAdjustmentDeltas[currency] ?: BigDecimal.ZERO
-                        val newPendingDelta = pendingDelta + totalAdjustmentNeeded
-                        _state.update {
-                            it.copy(
-                                pendingAdjustmentDeltas = it.pendingAdjustmentDeltas + (currency to newPendingDelta),
-                                showBalanceUpdateSheet = false,
-                                balanceUpdateCurrency = null
-                            )
-                        }
-                    }
-                }
-            }
-
-            is AccountEntryEvent.CloseBalanceUpdate -> _state.update {
-                it.copy(
-                    showBalanceUpdateSheet = false,
-                    balanceUpdateCurrency = null
-                )
-            }
+            is AccountEntryEvent.ConfirmBalanceUpdate -> _state.update { it.withConfirmedBalanceUpdate() }
+            is AccountEntryEvent.CloseBalanceUpdate -> _state.update { it.withBalanceUpdateClosed() }
 
             is AccountEntryEvent.ShowStructureSheet -> _state.update { it.copy(showStructureSheet = event.show) }
             is AccountEntryEvent.ShowIconSheet -> _state.update { it.copy(showIconSheet = event.show) }
@@ -391,62 +315,6 @@ class AccountEntryViewModel @Inject constructor(
                     calculatorOriginalValue = null
                 )
             }
-
-            // TODO(delete): dead adjustment-dialog handlers (issue 9, option A). Nothing dispatches
-            // these events and nothing renders showAdjustmentDialog. Delete them together with the
-            // matching events in AccountEntryEvent and the state fields in AccountEntryState.
-            // is AccountEntryEvent.ShowAdjustmentDialog -> _state.update {
-            //     it.copy(
-            //         showCalculator = false,
-            //         showAdjustmentDialog = true,
-            //         adjustmentDialogCurrency = event.currency,
-            //         adjustmentDialogNewValue = event.newValue
-            //     )
-            // }
-            //
-            // is AccountEntryEvent.DismissAdjustmentDialog -> _state.update {
-            //     val orig = it.calculatorOriginalValue
-            //     val currency = it.adjustmentDialogCurrency
-            //     val revertedBalances = if (orig != null && currency != null)
-            //         it.initialBalances.toMutableMap().apply { put(currency, orig) }
-            //     else it.initialBalances
-            //     it.copy(
-            //         showAdjustmentDialog = false,
-            //         adjustmentDialogCurrency = null,
-            //         adjustmentDialogNewValue = null,
-            //         activeBalanceCurrency = null,
-            //         calculatorOriginalValue = null,
-            //         initialBalances = revertedBalances
-            //     )
-            // }
-            //
-            // is AccountEntryEvent.ConfirmAsNewTransaction -> {
-            //     val origBD = event.originalValue.toBigDecimalOrNull() ?: BigDecimal.ZERO
-            //     val delta = (event.newValue.toBigDecimalOrNull() ?: BigDecimal.ZERO) - origBD
-            //     _state.update {
-            //         it.copy(
-            //             showAdjustmentDialog = false,
-            //             adjustmentDialogCurrency = null,
-            //             adjustmentDialogNewValue = null,
-            //             activeBalanceCurrency = null,
-            //             calculatorOriginalValue = null,
-            //             initialBalances = it.initialBalances.toMutableMap().apply {
-            //                 put(event.currency, event.originalValue)
-            //             },
-            //             pendingAdjustmentDeltas = it.pendingAdjustmentDeltas + (event.currency to delta)
-            //         )
-            //     }
-            // }
-            //
-            // is AccountEntryEvent.ConfirmAsInitialBalanceUpdate -> _state.update {
-            //     it.copy(
-            //         showAdjustmentDialog = false,
-            //         adjustmentDialogCurrency = null,
-            //         adjustmentDialogNewValue = null,
-            //         activeBalanceCurrency = null,
-            //         calculatorOriginalValue = null
-            //     )
-            // }
 
             is AccountEntryEvent.TriggerNavigation -> _state.update {
                 val accountId = (event.result as? AccountEntryResult.Persisted)?.accountId
@@ -471,20 +339,11 @@ class AccountEntryViewModel @Inject constructor(
     // zero so the save deletes that row.
     private fun applyAllowedCurrencies(newDisplayed: Set<String>, oldDisplayed: Set<String>, removed: Set<String>) {
         _state.update { state ->
-            val added = newDisplayed - oldDisplayed
-            val currencies = (state.allowedCurrencies - removed) + added
-            var newPrimary = state.primaryCurrency
-            if (currencies.isEmpty()) {
-                newPrimary = ""
-            } else if (currencies.size == 1) {
-                newPrimary = currencies.first()
-            } else if (state.primaryCurrency.isNotEmpty() && !currencies.contains(state.primaryCurrency)) {
-                newPrimary = currencies.first()
-            }
+            val currencies = (state.allowedCurrencies - removed) + (newDisplayed - oldDisplayed)
             state.copy(
                 allowedCurrencies = currencies,
                 currenciesWithBalanceData = state.currenciesWithBalanceData - removed,
-                primaryCurrency = newPrimary,
+                primaryCurrency = primaryCurrencyFor(currencies, state.primaryCurrency),
                 initialBalances = state.initialBalances +
                     removed.filter { it in state.initialBalances }.associateWith { "0" },
                 pendingAdjustmentDeltas = state.pendingAdjustmentDeltas - removed,
@@ -493,24 +352,39 @@ class AccountEntryViewModel @Inject constructor(
         }
     }
 
+    // A lone currency is always the primary one; otherwise the current primary survives while allowed.
+    private fun primaryCurrencyFor(allowed: Set<String>, current: String): String = when {
+        allowed.isEmpty() -> ""
+        allowed.size == 1 -> allowed.first()
+        current.isNotEmpty() && current !in allowed -> allowed.first()
+        else -> current
+    }
+
+    // Create/draft mode has no history, so a recorded amount there is the opening balance.
+    private fun AccountEntryState.withConfirmedBalanceUpdate(): AccountEntryState {
+        val currency = balanceUpdateCurrency ?: return this
+        val newTotal = balanceUpdateInputAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        val adjustment = newTotal - (systemClosingBalances[currency] ?: BigDecimal.ZERO)
+
+        val updated = if (balanceUpdateMode == BalanceUpdateMode.INITIAL_BALANCE || accountId == null) {
+            val opening = (initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO) + adjustment
+            copy(initialBalances = initialBalances + (currency to opening.stripTrailingZeros().toPlainString()))
+        } else {
+            val pending = (pendingAdjustmentDeltas[currency] ?: BigDecimal.ZERO) + adjustment
+            copy(pendingAdjustmentDeltas = pendingAdjustmentDeltas + (currency to pending))
+        }
+        return updated.withBalanceUpdateClosed()
+    }
+
+    private fun AccountEntryState.withBalanceUpdateClosed() =
+        copy(showBalanceUpdateSheet = false, balanceUpdateCurrency = null)
+
     fun saveAccount(onSuccess: (AccountEntryResult) -> Unit) {
         val s = _state.value
         if (!s.canSave) return
 
         if (s.isDraftMode) {
-            onSuccess(
-                AccountEntryResult.Draft(
-                    AccountEntryDraft(
-                        name = s.accountName,
-                        structureType = s.structureType.name,
-                        primaryCurrency = s.primaryCurrency,
-                        allowedCurrencies = s.allowedCurrencies.toList(),
-                        initialBalances = s.initialBalances,
-                        iconName = s.selectedIconName,
-                        colorHex = s.accentColorHex
-                    )
-                )
-            )
+            onSuccess(AccountEntryResult.Draft(s.toDraft()))
             return
         }
 
@@ -521,49 +395,65 @@ class AccountEntryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val profileId = settingsRepository.currentProfileId.first()
-                val savedAccountId: String
-                if (s.isEditMode && s.existingAccount != null) {
-                    val accountId = s.accountId!!
-                    accountUseCases.saveAccountEdits(
-                        account = s.existingAccount.copy(
-                            name = s.accountName,
-                            structureType = s.structureType,
-                            currencyCode = s.primaryCurrency,
-                            allowedCurrencies = s.allowedCurrencies.toList(),
-                            colorHex = s.accentColorHex,
-                            icon = s.selectedIconName
-                        ),
-                        creditDetails = creditDetailsFor(s, accountId),
-                        // Removed currencies are included at zero, so their stored balance is deleted
-                        openingBalances = (s.allowedCurrencies + s.initialBalances.keys).associateWith { currency ->
-                            s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                        },
-                        pendingAdjustments = s.pendingAdjustmentDeltas,
-                        profileId = profileId
-                    )
-                    savedAccountId = accountId
+                val existing = s.existingAccount
+                val savedAccountId = if (s.isEditMode && existing != null) {
+                    updateAccount(s, existing, profileId)
                 } else {
-                    val newAccountId = UUID.randomUUID().toString()
-                    accountUseCases.createAccountWithInitialBalances(
-                        name = s.accountName,
-                        initialBalances = s.initialBalances,
-                        currency = s.primaryCurrency,
-                        structureType = s.structureType,
-                        colorHex = s.accentColorHex,
-                        icon = s.selectedIconName,
-                        allowedCurrencies = s.allowedCurrencies.toList(),
-                        profileId = profileId,
-                        accountId = newAccountId,
-                        creditDetails = creditDetailsFor(s, newAccountId)
-                    )
-                    savedAccountId = newAccountId
+                    createAccount(s, profileId)
                 }
-
                 onSuccess(AccountEntryResult.Persisted(savedAccountId))
             } finally {
                 isSaveInFlight = false
             }
         }
+    }
+
+    private fun AccountEntryState.toDraft() = AccountEntryDraft(
+        name = accountName,
+        structureType = structureType.name,
+        primaryCurrency = primaryCurrency,
+        allowedCurrencies = allowedCurrencies.toList(),
+        initialBalances = initialBalances,
+        iconName = selectedIconName,
+        colorHex = accentColorHex
+    )
+
+    private suspend fun updateAccount(s: AccountEntryState, existing: Account, profileId: Int): String {
+        accountUseCases.saveAccountEdits(
+            account = existing.copy(
+                name = s.accountName,
+                structureType = s.structureType,
+                currencyCode = s.primaryCurrency,
+                allowedCurrencies = s.allowedCurrencies.toList(),
+                colorHex = s.accentColorHex,
+                icon = s.selectedIconName
+            ),
+            creditDetails = creditDetailsFor(s, existing.id),
+            // Removed currencies are included at zero, so their stored balance is deleted
+            openingBalances = (s.allowedCurrencies + s.initialBalances.keys).associateWith { currency ->
+                s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+            },
+            pendingAdjustments = s.pendingAdjustmentDeltas,
+            profileId = profileId
+        )
+        return existing.id
+    }
+
+    private suspend fun createAccount(s: AccountEntryState, profileId: Int): String {
+        val accountId = UUID.randomUUID().toString()
+        accountUseCases.createAccountWithInitialBalances(
+            name = s.accountName,
+            initialBalances = s.initialBalances,
+            currency = s.primaryCurrency,
+            structureType = s.structureType,
+            colorHex = s.accentColorHex,
+            icon = s.selectedIconName,
+            allowedCurrencies = s.allowedCurrencies.toList(),
+            profileId = profileId,
+            accountId = accountId,
+            creditDetails = creditDetailsFor(s, accountId)
+        )
+        return accountId
     }
 
     private fun creditDetailsFor(s: AccountEntryState, accountId: String): CreditCardDetails? {
@@ -586,5 +476,12 @@ class AccountEntryViewModel @Inject constructor(
             }
             onSuccess()
         }
+    }
+
+    private companion object {
+        val POPULAR_CURRENCIES = setOf(
+            "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "CNY", "KRW", "INR",
+            "BRL", "RUB", "MXN", "SGD", "HKD", "TRY", "SEK", "NOK", "NZD", "ZAR"
+        )
     }
 }

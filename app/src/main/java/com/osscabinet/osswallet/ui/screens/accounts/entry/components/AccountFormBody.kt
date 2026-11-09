@@ -17,8 +17,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.AccountTree
@@ -36,7 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,17 +57,20 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
 import com.osscabinet.ossWallet.ui.components.entry.EntrySection
+import com.osscabinet.ossWallet.ui.components.icon
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryEvent
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryState
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.color
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.formatCurrency
-import com.osscabinet.ossWallet.ui.components.icon
 import java.math.BigDecimal
+
+/** Height reserved under the form so the inline calculator never covers the last field. */
+private val CALCULATOR_CLEARANCE = 350.dp
 
 @Composable
 fun AccountFormBody(
@@ -75,13 +78,10 @@ fun AccountFormBody(
     onEvent: (AccountEntryEvent) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
-    onDeleteClick: (() -> Unit)? = null,
+    onDeleteClick: (() -> Unit)? = null
 ) {
     var showTypeSelector by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
-
-    val types = AccountStructureType.entries.toTypedArray()
-    val scrollState = rememberScrollState()
 
     if (showDeleteConfirm) {
         AeonConfirmDeleteDialog(
@@ -96,18 +96,15 @@ fun AccountFormBody(
         )
     }
 
-    Box(modifier = modifier
-        .fillMaxSize()
-        .statusBarsPadding()) {
+    Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = AeonTheme.dimensions.screenPadding),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
         ) {
             Spacer(Modifier.height(contentPadding.calculateTopPadding()))
-            // IMPACT: Interactive Hero Identity
             AeonHeroHeader(
                 title = state.accountName,
                 subtitle = null,
@@ -118,283 +115,284 @@ fun AccountFormBody(
                 onIconClick = { onEvent(AccountEntryEvent.ShowIconSheet(show = true)) }
             )
 
-            // CONTEXT: Portfolio Architecture (Consolidated)
-            EntrySection(title = "PORTFOLIO ARCHITECTURE", icon = Icons.Rounded.AccountTree) {
-                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
-                    // Structure Type Dropdown
-                    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
-                        Text(
-                            text = "STRUCTURE TYPE",
-                            style = AppTextStyles.sectionOverline,
-                            color = AppColors.contentSecondary.copy(alpha = 0.5f)
-                        )
+            PortfolioSection(state, onEvent, onStructureTypeClick = { showTypeSelector = true })
+            if (state.structureType == AccountStructureType.CREDIT) CreditSettingsSection(state, onEvent)
+            if (state.allowedCurrencies.isNotEmpty()) BalancesSection(state, onEvent)
+            if (state.isEditMode) DangerZoneSection(onDeleteClick = { showDeleteConfirm = true })
 
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { showTypeSelector = true },
-                            shape = RoundedCornerShape(24.dp),
-                            color = AppColors.recessedSurface,
-                            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                val currentType = state.structureType
-                                Surface(
-                                    shape = CircleShape,
-                                    color = currentType.color.copy(alpha = 0.15f),
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = currentType.icon,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp),
-                                            tint = currentType.color
-                                        )
-                                    }
-                                }
-
-                                Text(
-                                    text = currentType.displayName,
-                                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
-                                    modifier = Modifier.weight(1f)
-                                )
-
-                                Icon(
-                                    Icons.Rounded.KeyboardArrowDown,
-                                    contentDescription = "Select Type",
-                                    tint = AppColors.contentSecondary
-                                )
-                            }
-                        }
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = AeonTheme.dimensions.spacingSm),
-                        thickness = (AeonTheme.dimensions.spacingXs / 8),
-                        color = AppColors.divider.copy(alpha = 0.15f)
-                    )
-
-                    // Asset Management (Currencies)
-                    CurrencyManagementSection(
-                        primaryCurrency = state.primaryCurrency,
-                        onPrimaryCurrencyChange = { onEvent(AccountEntryEvent.SetPrimaryCurrency(it)) },
-                        allowedCurrencies = state.displayedCurrencies,
-                        onAllowedCurrenciesChange = {
-                            onEvent(
-                                AccountEntryEvent.SetAllowedCurrencies(
-                                    it
-                                )
-                            )
-                        },
-                        accentColorHex = state.accentColorHex,
-                        isEditMode = state.isEditMode,
-                        currencyUsageMap = state.currencyUsageMap,
-                        shortlistedCurrencies = state.shortlistedCurrencies
-                    )
-                }
-            }
-
-            // CREDIT SETTINGS (Visible when structure type is Credit)
-            if (state.structureType == AccountStructureType.CREDIT) {
-                EntrySection(title = "CREDIT SETTINGS", icon = Icons.Rounded.CreditCard) {
-                    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
-                        EntryEditorialInput(
-                            value = state.creditLimitInput,
-                            onValueChange = { onEvent(AccountEntryEvent.SetCreditLimit(it)) },
-                            label = "CREDIT LIMIT (${state.primaryCurrency})",
-                            icon = Icons.Rounded.CreditCard,
-                            placeholder = "e.g. 5000.00",
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            iconColor = AppColors.primary,
-                            maxLines = 1
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
-                        ) {
-                            EntryEditorialInput(
-                                value = state.paymentDueDayInput,
-                                onValueChange = { onEvent(AccountEntryEvent.SetPaymentDueDay(it)) },
-                                label = "DUE DAY (1-31)",
-                                icon = Icons.Rounded.Event,
-                                placeholder = "e.g. 25",
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                iconColor = AppColors.primary,
-                                maxLines = 1,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            EntryEditorialInput(
-                                value = state.statementClosingDayInput,
-                                onValueChange = { onEvent(AccountEntryEvent.SetStatementClosingDay(it)) },
-                                label = "CLOSING DAY (1-31)",
-                                icon = Icons.Rounded.CalendarToday,
-                                placeholder = "e.g. 5",
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                iconColor = AppColors.primary,
-                                maxLines = 1,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-
-                        EntryEditorialInput(
-                            value = state.interestRateAprInput,
-                            onValueChange = { onEvent(AccountEntryEvent.SetInterestRateApr(it)) },
-                            label = "INTEREST RATE APR (%)",
-                            icon = Icons.Rounded.Percent,
-                            placeholder = "e.g. 19.99",
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            iconColor = AppColors.primary,
-                            maxLines = 1
-                        )
-                    }
-                }
-            }
-
-            // DETAIL: Closing balances with Update integration
-            if (state.allowedCurrencies.isNotEmpty()) {
-                EntrySection(
-                    title = "ACCOUNT BALANCES",
-                    icon = Icons.Rounded.AccountBalanceWallet
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-                    ) {
-                        state.allowedCurrencies.forEach { currencyCode ->
-                            val displayBalance =
-                                state.systemClosingBalances[currencyCode] ?: BigDecimal.ZERO
-                            val isNegative = displayBalance.signum() < 0
-
-                            Surface(
-                                onClick = { onEvent(AccountEntryEvent.OpenBalanceUpdate(currencyCode)) },
-                                shape = RoundedCornerShape(20.dp),
-                                color = AppColors.recessedSurface,
-                                border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.15f))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = currencyCode,
-                                            style = AppTextStyles.overlineLabel,
-                                            color = AppColors.contentSecondary
-                                        )
-                                        Text(
-                                            text = (if (isNegative) "-" else "") + formatCurrency(
-                                                amount = displayBalance.abs(),
-                                                currencyCode = currencyCode,
-                                                spec = CurrencyDisplaySpec(shortenThreshold = -1)
-                                            ),
-                                            style = AppTextStyles.heroAmount.copy(fontSize = 24.sp),
-                                            // Not accentColor: the account's own color is free-form
-                                            // and can land on or near AppColors.negative (e.g. a red
-                                            // account), making a positive balance indistinguishable
-                                            // from a negative one by color alone.
-                                            color = if (isNegative) AppColors.negative else AppColors.positive
-                                        )
-                                    }
-
-                                    Icon(
-                                        imageVector = Icons.Rounded.Edit,
-                                        contentDescription = "Edit Balance",
-                                        modifier = Modifier.size(20.dp),
-                                        tint = AppColors.contentSecondary.copy(alpha = 0.5f)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // DANGER ZONE: Destruction Management
-            if (state.isEditMode) {
-                EntrySection(title = "DANGER ZONE", icon = Icons.Rounded.DeleteForever) {
-                    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                        Text(
-                            text = "Deleting this account will permanently remove all associated transactions and data. This cannot be undone.",
-                            style = AppTextStyles.caption,
-                            color = AppColors.border
-                        )
-
-                        OutlinedButton(
-                            onClick = { showDeleteConfirm = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.error),
-                            border = BorderStroke(1.dp, AppColors.error.copy(alpha = 0.5f)),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.DeleteForever,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text(
-                                "Delete Account",
-                                style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold)
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (state.showCalculator) {
-                Spacer(modifier = Modifier.height(350.dp))
-            }
-
+            if (state.showCalculator) Spacer(modifier = Modifier.height(CALCULATOR_CLEARANCE))
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacing2xl))
-            Spacer(Modifier.height(contentPadding.calculateTopPadding()))
             Spacer(Modifier.height(contentPadding.calculateBottomPadding()))
         }
 
-        // Selection Screens / Sheets (Kept only for fallback or specific sub-selections if needed)
-        // In this hybrid mode, most sheets are unnecessary, but we'll keep the component for logic safety
-        AccountEntrySheets(
-            state = state,
-            onEvent = onEvent
-        )
+        AccountEntrySheets(state = state, onEvent = onEvent)
 
         if (showTypeSelector) {
-            AeonFullScreenDialog(onDismissRequest = { showTypeSelector = false }) {
-                AeonSelectionScreen(
-                    title = "Select Structure Type",
-                    onBack = { showTypeSelector = false }
-                ) { padding ->
-                    Column(
-                        modifier = Modifier
-                            .padding(padding)
-                            .padding(AeonTheme.dimensions.screenPadding)
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-                    ) {
-                        AeonHybridSelector(
-                            items = types.toList(),
-                            mode = AeonSelectMode.SINGLE,
-                            selectedIds = setOf(state.structureType),
-                            onSelectionChange = { ids ->
-                                ids.firstOrNull()?.let {
-                                    onEvent(AccountEntryEvent.SetStructureType(it))
-                                    showTypeSelector = false
-                                }
-                            },
-                            idMapper = { it },
-                            labelMapper = { it.displayName },
-                            iconMapper = { it.icon },
-                            colorMapper = { it.color }
+            StructureTypeDialog(
+                selected = state.structureType,
+                onSelected = { type ->
+                    onEvent(AccountEntryEvent.SetStructureType(type))
+                    showTypeSelector = false
+                },
+                onDismiss = { showTypeSelector = false }
+            )
+        }
+    }
+}
+
+/** Structure type and the currency set. */
+@Composable
+private fun PortfolioSection(
+    state: AccountEntryState,
+    onEvent: (AccountEntryEvent) -> Unit,
+    onStructureTypeClick: () -> Unit
+) {
+    EntrySection(title = "PORTFOLIO ARCHITECTURE", icon = Icons.Rounded.AccountTree) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
+            StructureTypeField(state.structureType, onClick = onStructureTypeClick)
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = AeonTheme.dimensions.spacingSm),
+                thickness = (AeonTheme.dimensions.spacingXs / 8),
+                color = AppColors.divider.copy(alpha = 0.15f)
+            )
+
+            CurrencyManagementSection(
+                primaryCurrency = state.primaryCurrency,
+                onPrimaryCurrencyChange = { onEvent(AccountEntryEvent.SetPrimaryCurrency(it)) },
+                allowedCurrencies = state.displayedCurrencies,
+                onAllowedCurrenciesChange = { onEvent(AccountEntryEvent.SetAllowedCurrencies(it)) },
+                accentColorHex = state.accentColorHex,
+                isEditMode = state.isEditMode,
+                currencyUsageMap = state.currencyUsageMap,
+                shortlistedCurrencies = state.shortlistedCurrencies
+            )
+        }
+    }
+}
+
+@Composable
+private fun StructureTypeField(type: AccountStructureType, onClick: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
+        Text(
+            text = "STRUCTURE TYPE",
+            style = AppTextStyles.sectionOverline,
+            color = AppColors.contentSecondary.copy(alpha = 0.5f)
+        )
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick),
+            shape = RoundedCornerShape(24.dp),
+            color = AppColors.recessedSurface,
+            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f))
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = type.color.copy(alpha = 0.15f),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = type.icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = type.color
                         )
                     }
                 }
+                Text(
+                    text = type.displayName,
+                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = "Select Type",
+                    tint = AppColors.contentSecondary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CreditSettingsSection(state: AccountEntryState, onEvent: (AccountEntryEvent) -> Unit) {
+    EntrySection(title = "CREDIT SETTINGS", icon = Icons.Rounded.CreditCard) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
+            EntryEditorialInput(
+                value = state.creditLimitInput,
+                onValueChange = { onEvent(AccountEntryEvent.SetCreditLimit(it)) },
+                label = "CREDIT LIMIT (${state.primaryCurrency})",
+                icon = Icons.Rounded.CreditCard,
+                placeholder = "e.g. 5000.00",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                iconColor = AppColors.primary,
+                maxLines = 1
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+            ) {
+                EntryEditorialInput(
+                    value = state.paymentDueDayInput,
+                    onValueChange = { onEvent(AccountEntryEvent.SetPaymentDueDay(it)) },
+                    label = "DUE DAY (1-31)",
+                    icon = Icons.Rounded.Event,
+                    placeholder = "e.g. 25",
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    iconColor = AppColors.primary,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f)
+                )
+                EntryEditorialInput(
+                    value = state.statementClosingDayInput,
+                    onValueChange = { onEvent(AccountEntryEvent.SetStatementClosingDay(it)) },
+                    label = "CLOSING DAY (1-31)",
+                    icon = Icons.Rounded.CalendarToday,
+                    placeholder = "e.g. 5",
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    iconColor = AppColors.primary,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            EntryEditorialInput(
+                value = state.interestRateAprInput,
+                onValueChange = { onEvent(AccountEntryEvent.SetInterestRateApr(it)) },
+                label = "INTEREST RATE APR (%)",
+                icon = Icons.Rounded.Percent,
+                placeholder = "e.g. 19.99",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                iconColor = AppColors.primary,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+/** One tappable card per allowed currency, showing the projected closing balance. */
+@Composable
+private fun BalancesSection(state: AccountEntryState, onEvent: (AccountEntryEvent) -> Unit) {
+    EntrySection(title = "ACCOUNT BALANCES", icon = Icons.Rounded.AccountBalanceWallet) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+        ) {
+            state.allowedCurrencies.forEach { currencyCode ->
+                BalanceCard(
+                    currencyCode = currencyCode,
+                    balance = state.systemClosingBalances[currencyCode] ?: BigDecimal.ZERO,
+                    onClick = { onEvent(AccountEntryEvent.OpenBalanceUpdate(currencyCode)) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BalanceCard(currencyCode: String, balance: BigDecimal, onClick: () -> Unit) {
+    val isNegative = balance.signum() < 0
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = AppColors.recessedSurface,
+        border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.15f))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = currencyCode,
+                    style = AppTextStyles.overlineLabel,
+                    color = AppColors.contentSecondary
+                )
+                Text(
+                    text = (if (isNegative) "-" else "") + formatCurrency(
+                        amount = balance.abs(),
+                        currencyCode = currencyCode,
+                        spec = CurrencyDisplaySpec(shortenThreshold = -1)
+                    ),
+                    style = AppTextStyles.heroAmount.copy(fontSize = 24.sp),
+                    // Not the account's accent color: it is free-form and can land on or near
+                    // AppColors.negative (e.g. a red account), making a positive balance
+                    // indistinguishable from a negative one by color alone.
+                    color = if (isNegative) AppColors.negative else AppColors.positive
+                )
+            }
+            Icon(
+                imageVector = Icons.Rounded.Edit,
+                contentDescription = "Edit Balance",
+                modifier = Modifier.size(20.dp),
+                tint = AppColors.contentSecondary.copy(alpha = 0.5f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun DangerZoneSection(onDeleteClick: () -> Unit) {
+    EntrySection(title = "DANGER ZONE", icon = Icons.Rounded.DeleteForever) {
+        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+            Text(
+                text = "Deleting this account will permanently remove all associated transactions and data. This cannot be undone.",
+                style = AppTextStyles.caption,
+                color = AppColors.border
+            )
+            OutlinedButton(
+                onClick = onDeleteClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.error),
+                border = BorderStroke(1.dp, AppColors.error.copy(alpha = 0.5f)),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.DeleteForever,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.size(8.dp))
+                Text("Delete Account", style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold))
+            }
+        }
+    }
+}
+
+@Composable
+private fun StructureTypeDialog(
+    selected: AccountStructureType,
+    onSelected: (AccountStructureType) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AeonFullScreenDialog(onDismissRequest = onDismiss) {
+        AeonSelectionScreen(title = "Select Structure Type", onBack = onDismiss) { padding ->
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(AeonTheme.dimensions.screenPadding)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+            ) {
+                AeonHybridSelector(
+                    items = AccountStructureType.entries,
+                    mode = AeonSelectMode.SINGLE,
+                    selectedIds = setOf(selected),
+                    onSelectionChange = { ids -> ids.firstOrNull()?.let(onSelected) },
+                    idMapper = { it },
+                    labelMapper = { it.displayName },
+                    iconMapper = { it.icon },
+                    colorMapper = { it.color }
+                )
             }
         }
     }

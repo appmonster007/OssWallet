@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.osscabinet.ossWallet.data.local.AppDatabase
+import com.osscabinet.ossWallet.data.local.OpeningBalanceGuard
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.domain.model.Category
@@ -19,8 +20,8 @@ import org.junit.runner.RunWith
 import java.math.BigDecimal
 
 /**
- * One opening balance per account and currency. The index is created by AppDatabase's create
- * callback, which an in-memory builder does not run, so this test creates the same index itself.
+ * One opening balance per account and currency. The guard triggers are installed by AppDatabase's
+ * open callback, which an in-memory builder does not run, so this test installs them itself.
  */
 @RunWith(AndroidJUnit4::class)
 class OpeningBalanceUniquenessDaoTest {
@@ -35,11 +36,7 @@ class OpeningBalanceUniquenessDaoTest {
             AccountEntity(id = "acc1", name = "Cash", currencyCode = "USD", structureType = "STANDARD",
                 colorHex = "#fff", icon = "bank", allowedCurrencies = "", profileId = 1)
         )
-        db.openHelper.writableDatabase.execSQL(
-            "CREATE UNIQUE INDEX IF NOT EXISTS index_transactions_opening_balance_unique " +
-                "ON transactions(profileId, accountId, currency) " +
-                "WHERE categoryId = ${Category.SYSTEM_INITIAL_BALANCE}"
-        )
+        OpeningBalanceGuard.install(db.openHelper.writableDatabase)
     }
 
     @After

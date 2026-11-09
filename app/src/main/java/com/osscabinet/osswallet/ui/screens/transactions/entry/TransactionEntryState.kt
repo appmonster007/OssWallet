@@ -101,8 +101,13 @@ data class TransactionEntryState(
     val navTriggered: Boolean = false,
     val isSaving: Boolean = false,
 
+    // Opening-balance uniqueness: the existing row this one would collide with (shown as a prompt),
+    // and the row the user agreed to replace.
+    val initialBalanceConflict: Transaction? = null,
+    val replaceInitialBalanceId: Long? = null,
+
     // Profile configuration
-    val baseCurrency: String = "",
+    val baseCurrency: String = ""
 ) {
     val sheetState: FormSheetState
         get() = FormSheetState(
@@ -198,7 +203,3 @@ data class TransactionEntryState(
         isRateFixed = result.isRateFixed
     )
 }
-
-/**
- * Sealed class representing events that can modify the transaction entry state.
- */

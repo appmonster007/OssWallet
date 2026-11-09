@@ -1,6 +1,6 @@
 package com.osscabinet.ossWallet.domain.service.management
 
-import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import kotlinx.coroutines.flow.first
 
@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.first
  */
 suspend fun TransactionUseCases.attachmentTargets(id: Long, profileId: Int): List<Long> {
     val tx = getTransactionById(id, profileId) ?: return listOf(id)
-    if (!Category.isTransfer(tx.categoryId)) return listOf(id)
+    if (!tx.transactionType.isTransfer) return listOf(id)
     val counterparts = getLinkedTransactions(id).first()
-        .filter { Category.isTransfer(it.categoryId) }.map { it.id }
+        .filter { it.transactionType.isTransfer }.map { it.id }
     return listOf(id) + counterparts
 }

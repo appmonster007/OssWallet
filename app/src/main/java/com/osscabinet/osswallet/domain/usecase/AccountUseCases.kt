@@ -46,21 +46,15 @@ class AccountUseCases(
         )
         creditDetails?.let { accountRepository.saveCreditCardDetails(it) }
 
-        initialBalances.forEach { (curr, balance) ->
+        initialBalances.forEach { (currency, balance) ->
             val amount = balance.toBigDecimalOrNull() ?: BigDecimal.ZERO
             if (amount.signum() != 0) {
-                val request = TransactionRequest(
-                    name = "Initial Balance",
-                    amount = amount.abs(),
-                    entryMode = EntryMode.TRANSFER,
-                    accountId = outsideWalletAccountId(amount, accountId),
-                    targetAccountId = outsideWalletTargetId(amount, accountId),
-                    currency = curr,
-                    categoryId = Category.SYSTEM_INITIAL_BALANCE,
-                    note = "Initial Balance",
-                    timestamp = openingBalanceTimestamp(accountId, null, profileId)
+                val timestamp = openingBalanceTimestamp(accountId, null, profileId)
+                transactionManager.handleSaveTransaction(
+                    existingTransaction = null,
+                    request = openingBalanceRequest(accountId, currency, amount, timestamp),
+                    profileId = profileId
                 )
-                transactionManager.handleSaveTransaction(null, request, profileId)
             }
         }
         accountId
@@ -99,15 +93,13 @@ class AccountUseCases(
         profileId: Int
     ) {
         if (delta.signum() == 0) return
-        val request = TransactionRequest(
+        val request = singleLegRequest(
             name = "Balance Adjustment",
-            amount = delta.abs(),
-            entryMode = EntryMode.TRANSFER,
-            accountId = outsideWalletAccountId(delta, accountId),
-            targetAccountId = outsideWalletTargetId(delta, accountId),
-            currency = currency,
-            categoryId = Category.SYSTEM_RECONCILIATION_ADJUSTMENT,
             note = "Balance adjustment",
+            categoryId = Category.SYSTEM_RECONCILIATION_ADJUSTMENT,
+            accountId = accountId,
+            currency = currency,
+            signedAmount = delta,
             timestamp = System.currentTimeMillis()
         )
         transactionManager.handleSaveTransaction(null, request, profileId)
@@ -136,29 +128,55 @@ class AccountUseCases(
                     existing.timestamp == timestamp
                 ) return
 
-                val request = TransactionRequest(
-                    name = "Initial Balance",
-                    amount = amount.abs(),
-                    entryMode = EntryMode.TRANSFER,
-                    accountId = outsideWalletAccountId(amount, accountId),
-                    targetAccountId = outsideWalletTargetId(amount, accountId),
-                    currency = currency,
-                    categoryId = Category.SYSTEM_INITIAL_BALANCE,
-                    note = "Initial Balance",
-                    timestamp = timestamp
+                transactionManager.handleSaveTransaction(
+                    existingTransaction = existing,
+                    request = openingBalanceRequest(accountId, currency, amount, timestamp),
+                    profileId = profileId
                 )
-                transactionManager.handleSaveTransaction(existing, request, profileId)
             }
         }
     }
 
-    // A gain is Outside Wallet -> account (source blank, so TransactionManager treats it as the
-    // inflow leg); a loss is account -> Outside Wallet (target blank, the outflow leg).
-    private fun outsideWalletAccountId(signedAmount: BigDecimal, accountId: String): String? =
-        if (signedAmount.signum() >= 0) null else accountId
+    private fun openingBalanceRequest(
+        accountId: String,
+        currency: String,
+        signedAmount: BigDecimal,
+        timestamp: Long
+    ) = singleLegRequest(
+        name = "Initial Balance",
+        note = "Initial Balance",
+        categoryId = Category.SYSTEM_INITIAL_BALANCE,
+        accountId = accountId,
+        currency = currency,
+        signedAmount = signedAmount,
+        timestamp = timestamp
+    )
 
-    private fun outsideWalletTargetId(signedAmount: BigDecimal, accountId: String): String? =
-        if (signedAmount.signum() >= 0) accountId else null
+    // Opening balances and adjustments are single-leg transfers against Outside Wallet. A gain is
+    // Outside Wallet -> account (source blank, so TransactionManager treats it as the inflow leg);
+    // a loss is account -> Outside Wallet (target blank, the outflow leg).
+    private fun singleLegRequest(
+        name: String,
+        note: String,
+        categoryId: Long,
+        accountId: String,
+        currency: String,
+        signedAmount: BigDecimal,
+        timestamp: Long
+    ): TransactionRequest {
+        val isGain = signedAmount.signum() >= 0
+        return TransactionRequest(
+            name = name,
+            amount = signedAmount.abs(),
+            entryMode = EntryMode.TRANSFER,
+            accountId = if (isGain) null else accountId,
+            targetAccountId = if (isGain) accountId else null,
+            currency = currency,
+            categoryId = categoryId,
+            note = note,
+            timestamp = timestamp
+        )
+    }
 
     // Every currency that holds an opening balance must be allowed, or the edit screen cannot show or remove it.
     private fun withBalanceCurrencies(allowed: List<String>, initialBalances: Map<String, String>): List<String> {

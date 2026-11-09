@@ -390,18 +390,18 @@ class TransactionEntryViewModelTest {
     }
 
     @Test
-    fun `switching an initial balance or adjustment row away from transfer reassigns it to Others`() = runTest(testDispatcher) {
+    fun `switching an initial balance or adjustment row away from transfer resets it to Unknown`() = runTest(testDispatcher) {
         openExisting(storedRow(12, "50.00", TransactionType.TRANSFER_INFLOW, Category.SYSTEM_RECONCILIATION_ADJUSTMENT))
         viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.INCOME))
         advanceUntilIdle()
         assertEquals(EntryMode.INCOME, viewModel.state.value.entryMode)
-        assertEquals(Category.SYSTEM_OTHERS, viewModel.state.value.selectedCategoryId)
+        assertEquals(Category.SYSTEM_UNKNOWN, viewModel.state.value.selectedCategoryId)
 
         openExisting(storedRow(13, "1000.00", TransactionType.TRANSFER_OUTFLOW, Category.SYSTEM_INITIAL_BALANCE))
         viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.EXPENSE))
         advanceUntilIdle()
         assertEquals(EntryMode.EXPENSE, viewModel.state.value.entryMode)
-        assertEquals(Category.SYSTEM_OTHERS, viewModel.state.value.selectedCategoryId)
+        assertEquals(Category.SYSTEM_UNKNOWN, viewModel.state.value.selectedCategoryId)
     }
 
     // ── Opening balances and balance adjustments must open and save with their own sign ──
@@ -443,7 +443,7 @@ class TransactionEntryViewModelTest {
     private fun TestScope.saveAndCaptureRequest(): TransactionRequest {
         val request = slot<TransactionRequest>()
         coEvery {
-            transactionManager.handleSaveTransaction(any(), capture(request), any(), any(), any(), any(), any())
+            transactionManager.handleSaveTransaction(any(), capture(request), any(), any(), any(), any(), any(), any())
         } returns 1L
         viewModel.saveTransaction()
         advanceUntilIdle()
@@ -518,5 +518,156 @@ class TransactionEntryViewModelTest {
         assertTrue(request.isTransfer)
         assertEquals("acc2", request.targetAccountId)
         assertEquals(0, BigDecimal("100").compareTo(request.amount))
+    }
+
+    // ── Transfer categories live in the Income/Expense picker and switch the form to a transfer ──
+
+    private suspend fun TestScope.openNewEntry(initialType: EntryMode = EntryMode.EXPENSE) {
+        backgroundScope.launch { viewModel.initialize(initialType = initialType) }
+        backgroundScope.launch { viewModel.state.collect {} }
+        advanceUntilIdle()
+        awaitState { it.accounts.isNotEmpty() }
+    }
+
+    private fun TestScope.pick(categoryId: Long) {
+        viewModel.onEvent(TransactionEntryEvent.SetCategoryId(categoryId))
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun `picking Initial Balance from the expense list switches to an outflow against Outside Wallet`() = runTest(testDispatcher) {
+        openNewEntry()
+
+        pick(Category.SYSTEM_INITIAL_BALANCE)
+
+        val s = viewModel.state.value
+        assertEquals(EntryMode.TRANSFER, s.entryMode)
+        assertEquals(Category.SYSTEM_INITIAL_BALANCE, s.selectedCategoryId)
+        assertTrue(s.source.account is AccountRef.Wallet)
+        assertTrue(s.destination.account.isOutside)
+    }
+
+    @Test
+    fun `picking Adjustment from the income list switches to an inflow from Outside Wallet`() = runTest(testDispatcher) {
+        openNewEntry()
+        viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.INCOME))
+        advanceUntilIdle()
+
+        pick(Category.SYSTEM_RECONCILIATION_ADJUSTMENT)
+
+        val s = viewModel.state.value
+        assertEquals(EntryMode.TRANSFER, s.entryMode)
+        assertEquals(Category.SYSTEM_RECONCILIATION_ADJUSTMENT, s.selectedCategoryId)
+        assertTrue(s.source.account.isOutside)
+        assertTrue(s.destination.account is AccountRef.Wallet)
+    }
+
+    @Test
+    fun `picking the Transfer category switches to a transfer`() = runTest(testDispatcher) {
+        openNewEntry()
+
+        pick(Category.SYSTEM_TRANSFER)
+
+        assertEquals(EntryMode.TRANSFER, viewModel.state.value.entryMode)
+        assertEquals(Category.SYSTEM_TRANSFER, viewModel.state.value.selectedCategoryId)
+    }
+
+    @Test
+    fun `a new entry opened in transfer mode starts on the Transfer category, not Unknown`() = runTest(testDispatcher) {
+        openNewEntry(EntryMode.TRANSFER)
+
+        assertEquals(EntryMode.TRANSFER, viewModel.state.value.entryMode)
+        assertEquals(Category.SYSTEM_TRANSFER, viewModel.state.value.selectedCategoryId)
+    }
+
+    @Test
+    fun `an ordinary category is just set`() = runTest(testDispatcher) {
+        openNewEntry()
+
+        pick(Category.SYSTEM_OTHERS)
+
+        assertEquals(EntryMode.EXPENSE, viewModel.state.value.entryMode)
+        assertEquals(Category.SYSTEM_OTHERS, viewModel.state.value.selectedCategoryId)
+    }
+
+    @Test
+    fun `choosing a real wallet for the Outside Wallet side makes it a plain transfer again`() = runTest(testDispatcher) {
+        openNewEntry()
+        pick(Category.SYSTEM_INITIAL_BALANCE)
+
+        viewModel.onEvent(TransactionEntryEvent.SetTargetAccountId(mockToAccount.id))
+        advanceUntilIdle()
+
+        assertEquals(EntryMode.TRANSFER, viewModel.state.value.entryMode)
+        assertEquals(Category.SYSTEM_TRANSFER, viewModel.state.value.selectedCategoryId)
+    }
+
+    // ── A second opening balance asks before replacing the first ──
+
+    private fun takenOpeningBalance() = storedRow(
+        99, "900.00", TransactionType.TRANSFER_INFLOW, Category.SYSTEM_INITIAL_BALANCE
+    ).also { fakeTx.openingBalances["acc1|USD"] = it }
+
+    @Test
+    fun `picking Initial Balance on an account that already has one asks to replace it`() = runTest(testDispatcher) {
+        takenOpeningBalance()
+        openNewEntry()
+
+        pick(Category.SYSTEM_INITIAL_BALANCE)
+
+        assertEquals(99L, viewModel.state.value.initialBalanceConflict?.id)
+    }
+
+    @Test
+    fun `keeping the old opening balance saves the row as a plain transfer`() = runTest(testDispatcher) {
+        takenOpeningBalance()
+        openNewEntry()
+        pick(Category.SYSTEM_INITIAL_BALANCE)
+
+        viewModel.onEvent(TransactionEntryEvent.DeclineReplaceInitialBalance)
+        advanceUntilIdle()
+
+        val s = viewModel.state.value
+        assertNull(s.initialBalanceConflict)
+        assertEquals(EntryMode.TRANSFER, s.entryMode)
+        assertEquals(Category.SYSTEM_TRANSFER, s.selectedCategoryId)
+    }
+
+    @Test
+    fun `confirming replaces the old opening balance when the row is saved`() = runTest(testDispatcher) {
+        takenOpeningBalance()
+        openNewEntry()
+        viewModel.onEvent(TransactionEntryEvent.SetAmount("1000"))
+        pick(Category.SYSTEM_INITIAL_BALANCE)
+        viewModel.onEvent(TransactionEntryEvent.ConfirmReplaceInitialBalance)
+        advanceUntilIdle()
+        assertNull(viewModel.state.value.initialBalanceConflict)
+        assertEquals(99L, viewModel.state.value.replaceInitialBalanceId)
+
+        val replace = slot<Boolean>()
+        coEvery {
+            transactionManager.handleSaveTransaction(any(), any(), any(), any(), any(), any(), any(), capture(replace))
+        } returns 1L
+        viewModel.saveTransaction()
+        advanceUntilIdle()
+
+        assertTrue(replace.captured)
+    }
+
+    @Test
+    fun `saving re-checks for an opening balance added after the category was picked`() = runTest(testDispatcher) {
+        openNewEntry()
+        viewModel.onEvent(TransactionEntryEvent.SetAmount("1000"))
+        pick(Category.SYSTEM_INITIAL_BALANCE)
+        assertNull(viewModel.state.value.initialBalanceConflict)
+        takenOpeningBalance()
+
+        viewModel.saveTransaction()
+        advanceUntilIdle()
+
+        assertEquals(99L, viewModel.state.value.initialBalanceConflict?.id)
+        io.mockk.coVerify(exactly = 0) {
+            transactionManager.handleSaveTransaction(any(), any(), any(), any(), any(), any(), any(), any())
+        }
     }
 }

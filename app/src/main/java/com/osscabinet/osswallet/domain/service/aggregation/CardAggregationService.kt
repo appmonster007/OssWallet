@@ -19,6 +19,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.analytics.*
+import com.osscabinet.ossWallet.domain.model.balanceBasis
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
@@ -26,6 +27,7 @@ import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
 import com.osscabinet.ossWallet.domain.service.financial.FinancialMetrics
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
+import com.osscabinet.ossWallet.domain.service.ledger.LedgerService
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
@@ -687,37 +689,15 @@ object CardAggregationService {
         rates: ExchangeRateSnapshot,
         startingBalances: Map<String, BigDecimal> = emptyMap()
     ): List<TransactionWithBalance> {
-        val accountById = accounts.associateBy { it.id }
-        val transactionById = transactions.associateBy { it.id }
-        return transactions
-            .groupBy { it.accountId }
-            .flatMap { (accId, accountTransactions) ->
-                val accountCurrency = accountById[accId]?.currencyCode ?: baseCurrency
-                val startingBalance = startingBalances[accId] ?: BigDecimal.ZERO
-
-                val ledgerRows = accountTransactions.map { transaction ->
-                    com.osscabinet.ossWallet.domain.service.ledger.LedgerRow(
-                        id = transaction.id,
-                        timestamp = transaction.timestamp,
-                        amount = CurrencyService.convertAmount(
-                            amount = transaction.amount,
-                            fromCurrency = transaction.currency,
-                            toCurrency = accountCurrency,
-                            exchangeRates = rates
-                        )
-                    )
-                }
-
-                com.osscabinet.ossWallet.domain.service.ledger.LedgerService.rebuild(ledgerRows, startingBalance)
-                    .map { entry ->
-                        TransactionWithBalance(
-                            transaction = transactionById[entry.id]!!,
-                            balanceBefore = entry.balanceBefore.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                            balanceAfter = entry.balanceAfter.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
-                        )
-                    }
-            }
-            .sortedByDescending { it.transaction.timestamp }
+        val currencyByAccount = accounts.associate { it.id to it.currencyCode }
+        return LedgerService.withBalances(transactions, startingBalances, CurrencyService.precision) { transaction ->
+            CurrencyService.convertAmount(
+                amount = transaction.amount,
+                fromCurrency = transaction.currency,
+                toCurrency = currencyByAccount[transaction.accountId] ?: baseCurrency,
+                exchangeRates = rates
+            )
+        }.sortedByDescending { it.transaction.timestamp }
     }
 
     private suspend fun computeAccountStats(
@@ -952,26 +932,9 @@ object CardAggregationService {
     }
 
     private fun TransactionFilter.toBalanceFilter(): TransactionFilter {
-        // Every display-only dimension a card's own filter could set must be stripped here -
-        // a balance may only ever depend on account scope + time window. transactionTypes and
-        // amount range used to be missed, which meant a card filtered to e.g. "Expenses only" or
-        // an amount range would drop the excluded rows' amounts from the balance it computes.
-        val baseFilter = this.copy(
-            categoryIds = emptySet(),
-            tags = emptySet(),
-            currencies = emptySet(),
-            paymentMethods = emptySet(),
-            statuses = emptySet(),
-            transactionTypes = emptySet(),
-            minAmount = null,
-            maxAmount = null,
-            hasWarranty = null,
-            warrantyExpirationStart = null,
-            warrantyExpirationEnd = null,
-            linkedTransactionIds = emptySet(),
-            queryNote = null,
-            queryPayee = null
-        )
+        // A balance may only depend on account scope + time window, so every display-only criterion
+        // is dropped. The window is then widened to run from the start of time up to its end.
+        val baseFilter = balanceBasis()
         return when (val range = baseFilter.timelineRange) {
             is TimelineRange.AllTime -> baseFilter
             else -> {

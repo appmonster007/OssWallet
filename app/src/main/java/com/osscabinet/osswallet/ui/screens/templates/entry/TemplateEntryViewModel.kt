@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
@@ -34,6 +35,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 @HiltViewModel
 class TemplateEntryViewModel @Inject constructor(
@@ -51,34 +53,24 @@ class TemplateEntryViewModel @Inject constructor(
 
     private var lastInitParams: Pair<Long?, TemplatePrefillDTO?>? = null
 
-    // BaseEntryViewModel abstract overrides
+    // region BaseEntryViewModel hooks
+
     override fun getSourceCurrency() = _state.value.source.currency
     override fun getTargetCurrency() = _state.value.destination.currency
     override fun getIsTransfer() = _state.value.isTransfer
     override fun getIsRateFixed() = _state.value.isRateFixed
     override fun getAmountValue() = _state.value.amountValue
     override fun applyRateUpdate(rate: BigDecimal, targetAmountStr: String) {
-        _state.update {
-            it.copy(
-                exchangeRate = rate,
-                destination = it.destination.copy(amount = targetAmountStr)
-            )
-        }
+        _state.update { it.copy(exchangeRate = rate, destination = it.destination.copy(amount = targetAmountStr)) }
     }
+
+    // endregion
 
     init {
         viewModelScope.launch {
             entryFormSnapshot.collect { snapshot ->
                 _state.update { current ->
-                    val defaultSource = if (!current.isEditMode &&
-                        current.source.account is AccountRef.Unselected &&
-                        snapshot.accounts.isNotEmpty()
-                    ) {
-                        current.source.copy(
-                            account = AccountRef.fromStored(snapshot.accounts.first().id),
-                            currency = snapshot.accounts.first().currencyCode
-                        )
-                    } else current.source
+                    val firstAccount = snapshot.accounts.firstOrNull()
                     current.copy(
                         accounts = snapshot.accounts,
                         categories = snapshot.categories,
@@ -88,7 +80,7 @@ class TemplateEntryViewModel @Inject constructor(
                         shortlistedCurrencies = snapshot.shortlistedCurrencies,
                         fullProviderCurrencies = snapshot.fullProviderCurrencies,
                         exchangeRates = snapshot.exchangeRates,
-                        source = defaultSource,
+                        source = if (current.isEditMode) current.source else current.source.withDefaultAccount(firstAccount),
                         selectedCategory = snapshot.categories.find { it.id == current.selectedCategoryId }
                     )
                 }
@@ -96,277 +88,178 @@ class TemplateEntryViewModel @Inject constructor(
         }
     }
 
+    // region Initialisation
+
     fun initialize(templateId: Long? = null, prefill: TemplatePrefillDTO? = null) {
-        if (lastInitParams == (templateId to prefill)) return
+        val params = templateId to prefill
+        if (lastInitParams == params) return
         if (lastInitParams?.second != null && prefill == null) return
-        lastInitParams = templateId to prefill
+        lastInitParams = params
 
-        if (templateId == null) {
-            if (prefill != null) {
-                _state.update {
-                    it.copy(
-                        isEditMode = false,
-                        templateId = null,
-                        name = prefill.name,
-                        source = TransactionSide(
-                            account = if (prefill.entryMode == EntryMode.TRANSFER) AccountRef.fromTransferSide(
-                                prefill.accountId
-                            )
-                            else AccountRef.fromStored(prefill.accountId),
-                            amount = prefill.amount.abs().stripTrailingZeros().toPlainString(),
-                            currency = prefill.currency ?: "USD",
-                            categoryId = prefill.categoryId
-                        ),
-                        destination = TransactionSide(
-                            amount = prefill.amount.abs().stripTrailingZeros().toPlainString()
-                        ),
-                        entryMode = prefill.entryMode,
-                        note = prefill.note ?: "",
-                        payee = prefill.payee ?: "",
-                        location = prefill.location ?: "",
-                        gpsLocation = prefill.gpsLocation,
-                        warrantyExpirationMillis = prefill.warrantyExpiration
-                            ?: (System.currentTimeMillis() + 31536000000L),
-                        isWarrantyEnabled = prefill.warrantyExpiration != null,
-                        transactionStatus = prefill.status,
-                        paymentMethod = prefill.paymentMethod ?: PaymentMethod.CASH,
-                        selectedTags = prefill.tags
-                    )
-                }
+        when {
+            templateId != null -> loadTemplate(templateId)
+            prefill != null -> {
+                _state.update { it.withPrefill(prefill) }
                 updateCategoryName()
-            } else {
-                _state.update { current ->
-                    val firstAccount = current.accounts.firstOrNull()
-                    current.copy(
-                        isEditMode = false,
-                        templateId = null,
-                        source = if (firstAccount != null && current.source.account is AccountRef.Unselected) {
-                            current.source.copy(
-                                account = AccountRef.fromStored(firstAccount.id),
-                                currency = firstAccount.currencyCode
-                            )
-                        } else current.source
-                    )
-                }
             }
-            return
-        }
-
-        viewModelScope.launch {
-            templateRepository.getTemplateById(templateId)?.let { template ->
-                val isLinked = plannedPaymentRepository.isTemplateUsedInPlannedPayments(templateId)
-
-                val sourceAccId = template.accountId
-                val targetAccId = template.targetAccountId
-                val sourceCurrency = template.currency
-                val targetCurr = template.targetCurrency ?: ""
-                val sourceAmtStr = template.amount.abs().stripTrailingZeros().toPlainString()
-                val targetAmtStr = template.amount.abs().multiply(template.transferRate)
-                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                    .toPlainString()
-                var existingCategoryId = template.categoryId
-
-                if (template.entryMode == EntryMode.TRANSFER) {
-                    // Semantic Normalization: Unified category for both sides
-                    existingCategoryId = if (Category.isInitialBalance(template.categoryId))
-                        Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
-                }
-
-                val sourceRef = if (template.entryMode == EntryMode.TRANSFER)
-                    AccountRef.fromTransferSide(sourceAccId) else AccountRef.fromStored(sourceAccId)
-                val targetRef = if (template.entryMode == EntryMode.TRANSFER)
-                    AccountRef.fromTransferSide(targetAccId) else AccountRef.fromStored(targetAccId)
-
-                _state.update {
-                    it.copy(
-                        templateId = templateId,
-                        isEditMode = true,
-                        isLinkedToPlannedPayment = isLinked,
-                        name = template.name,
-                        source = TransactionSide(
-                            account = sourceRef,
-                            amount = sourceAmtStr,
-                            currency = sourceCurrency,
-                            categoryId = existingCategoryId
-                        ),
-                        destination = TransactionSide(
-                            account = targetRef,
-                            amount = targetAmtStr,
-                            currency = targetCurr
-                        ),
-                        entryMode = template.entryMode,
-                        exchangeRate = template.transferRate,
-                        note = template.note ?: "",
-                        payee = template.payee ?: "",
-                        location = template.location ?: "",
-                        gpsLocation = template.gpsLocation,
-                        warrantyExpirationMillis = template.warrantyExpiration
-                            ?: (System.currentTimeMillis() + 31536000000L),
-                        isWarrantyEnabled = template.warrantyExpiration != null,
-                        transactionStatus = template.transactionStatus,
-                        paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
-                        selectedTags = template.tags
-                    )
-                }
-                updateCategoryName()
+            else -> _state.update {
+                it.copy(
+                    isEditMode = false,
+                    templateId = null,
+                    source = it.source.withDefaultAccount(it.accounts.firstOrNull())
+                )
             }
         }
     }
 
+    // Selects [account] only while the source is still unselected.
+    private fun TransactionSide.withDefaultAccount(account: Account?) =
+        if (account != null && this.account is AccountRef.Unselected) {
+            copy(account = AccountRef.fromStored(account.id), currency = account.currencyCode)
+        } else this
+
+    private fun TemplateEntryState.withPrefill(prefill: TemplatePrefillDTO): TemplateEntryState {
+        val amount = prefill.amount.abs().stripTrailingZeros().toPlainString()
+        return copy(
+            isEditMode = false,
+            templateId = null,
+            name = prefill.name,
+            source = TransactionSide(
+                account = if (prefill.entryMode == EntryMode.TRANSFER) {
+                    AccountRef.fromTransferSide(prefill.accountId)
+                } else {
+                    AccountRef.fromStored(prefill.accountId)
+                },
+                amount = amount,
+                currency = prefill.currency ?: DEFAULT_CURRENCY,
+                categoryId = prefill.categoryId
+            ),
+            destination = TransactionSide(amount = amount),
+            entryMode = prefill.entryMode,
+            note = prefill.note ?: "",
+            payee = prefill.payee ?: "",
+            location = prefill.location ?: "",
+            gpsLocation = prefill.gpsLocation,
+            warrantyExpirationMillis = prefill.warrantyExpiration ?: defaultWarrantyExpiration(),
+            isWarrantyEnabled = prefill.warrantyExpiration != null,
+            transactionStatus = prefill.status,
+            paymentMethod = prefill.paymentMethod ?: PaymentMethod.CASH,
+            selectedTags = prefill.tags
+        )
+    }
+
+    private fun loadTemplate(templateId: Long) {
+        viewModelScope.launch {
+            val template = templateRepository.getTemplateById(templateId) ?: return@launch
+            val isLinked = plannedPaymentRepository.isTemplateUsedInPlannedPayments(templateId)
+            _state.update { it.withTemplate(template, isLinked) }
+            updateCategoryName()
+        }
+    }
+
+    private fun TemplateEntryState.withTemplate(template: Template, isLinked: Boolean): TemplateEntryState {
+        val isTransfer = template.entryMode == EntryMode.TRANSFER
+        fun accountRef(id: String?) = if (isTransfer) AccountRef.fromTransferSide(id) else AccountRef.fromStored(id)
+
+        val sourceAmount = template.amount.abs()
+        return copy(
+            templateId = template.id,
+            isEditMode = true,
+            isLinkedToPlannedPayment = isLinked,
+            name = template.name,
+            source = TransactionSide(
+                account = accountRef(template.accountId),
+                amount = sourceAmount.stripTrailingZeros().toPlainString(),
+                currency = template.currency,
+                // A repeatable row can never be a one-per-currency opening balance/adjustment.
+                categoryId = if (isTransfer) Category.SYSTEM_TRANSFER else template.categoryId
+            ),
+            destination = TransactionSide(
+                account = accountRef(template.targetAccountId),
+                amount = sourceAmount.multiply(template.transferRate)
+                    .setScale(RATE_SCALE, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString(),
+                currency = template.targetCurrency ?: ""
+            ),
+            entryMode = template.entryMode,
+            exchangeRate = template.transferRate,
+            note = template.note ?: "",
+            payee = template.payee ?: "",
+            location = template.location ?: "",
+            gpsLocation = template.gpsLocation,
+            warrantyExpirationMillis = template.warrantyExpiration ?: defaultWarrantyExpiration(),
+            isWarrantyEnabled = template.warrantyExpiration != null,
+            transactionStatus = template.transactionStatus,
+            paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
+            selectedTags = template.tags
+        )
+    }
+
+    private fun defaultWarrantyExpiration(): Long = System.currentTimeMillis() + ONE_YEAR_MILLIS
+
+    // endregion
+
+    // region Events
+
     fun onEvent(event: TemplateEntryEvent) {
         when (event) {
-            is TemplateEntryEvent.SetName -> _state.update { state ->
-                val newNote = when {
-                    state.note.isEmpty() -> "${event.name} - "
-                    state.name.isNotEmpty() && state.note.startsWith("${state.name} - ") -> {
-                        state.note.replaceFirst("${state.name} - ", "${event.name} - ")
-                    }
-
-                    else -> state.note
-                }
-                state.copy(name = event.name, note = newNote)
-            }
-
-            is TemplateEntryEvent.SetAmount -> {
-                _state.update { s ->
-                    s.applyUpdate(
-                        TransactionEntryService.handleAmountChange(
-                            amountStr = event.amount,
-                            currentState = s.toUpdateResult(),
-                            exchangeRates = ExchangeRateSnapshot(s.currency, s.exchangeRates)
-                        )
-                    )
-                }
-            }
-
-            is TemplateEntryEvent.SetTargetAmount -> {
-                _state.update { s ->
-                    s.applyUpdate(
-                        TransactionEntryService.handleTargetAmountChange(
-                            amountStr = event.amount,
-                            currentState = s.toUpdateResult(),
-                            exchangeRates = ExchangeRateSnapshot(s.currency, s.exchangeRates)
-                        )
-                    )
-                }
-            }
-
-            is TemplateEntryEvent.SetTransactionType -> {
-                val oldMode = _state.value.entryMode
-                val newMode = event.type
-                _state.update { state ->
-                    val result = TransactionEntryService.transitionType(
-                        oldMode = oldMode,
-                        newMode = newMode,
-                        currentSource = state.source,
-                        currentDestination = state.destination,
-                        isSplitMode = false // Templates don't support split mode
-                    )
-
-                    state.copy(
-                        entryMode = result.newMode,
-                        source = result.source,
-                        destination = result.destination
-                    )
-                }
-                if (newMode == EntryMode.TRANSFER) {
-                    recalculateExchangeRate()
-                }
-            }
-
-            is TemplateEntryEvent.SetCategoryId -> {
-                if (!Category.isInitialBalance(event.id)) {
-                    _state.update { it.copy(source = it.source.copy(categoryId = event.id)) }
-                    updateCategoryName()
-                }
-            }
-
-            is TemplateEntryEvent.SetAccountId -> {
-                _state.update { s ->
-                    val result = TransactionEntryService.handleAccountSelection(
-                        accountId = event.id,
-                        isSource = true,
+            is TemplateEntryEvent.SetName -> _state.update { it.withName(event.name) }
+            is TemplateEntryEvent.SetAmount -> _state.update { s ->
+                s.applyUpdate(
+                    TransactionEntryService.handleAmountChange(
+                        amountStr = event.amount,
                         currentState = s.toUpdateResult(),
-                        accounts = s.accounts,
-                        baseCurrency = s.accounts.firstOrNull()?.currencyCode ?: "USD"
+                        exchangeRates = ExchangeRateSnapshot(s.currency, s.exchangeRates)
                     )
-                    s.applyUpdate(result)
-                }
-                if (!_state.value.isRateFixed) recalculateExchangeRate()
+                )
             }
 
-            is TemplateEntryEvent.SetTargetAccountId -> {
-                _state.update { s ->
-                    val result = TransactionEntryService.handleAccountSelection(
-                        accountId = event.id,
-                        isSource = false,
+            is TemplateEntryEvent.SetTargetAmount -> _state.update { s ->
+                s.applyUpdate(
+                    TransactionEntryService.handleTargetAmountChange(
+                        amountStr = event.amount,
                         currentState = s.toUpdateResult(),
-                        accounts = s.accounts,
-                        baseCurrency = s.accounts.firstOrNull()?.currencyCode ?: "USD"
+                        exchangeRates = ExchangeRateSnapshot(s.currency, s.exchangeRates)
                     )
-                    s.applyUpdate(result)
-                }
-                if (!_state.value.isRateFixed) recalculateExchangeRate()
+                )
             }
 
+            is TemplateEntryEvent.SetTransactionType -> transitionTo(event.type)
+
+            // The transfer categories are chosen by the entry mode, never from the picker.
+            is TemplateEntryEvent.SetCategoryId -> if (!Category.isTransfer(event.id)) {
+                _state.update { it.copy(source = it.source.copy(categoryId = event.id)) }
+                updateCategoryName()
+            }
+
+            is TemplateEntryEvent.SetAccountId -> selectAccount(event.id, isSource = true)
+            is TemplateEntryEvent.SetTargetAccountId -> selectAccount(event.id, isSource = false)
             is TemplateEntryEvent.SetCurrency -> {
-                _state.update { state ->
-                    val nextTarget = if (state.isTransfer && state.destination.account.isOutside) {
-                        event.currency
-                    } else state.targetCurrency
-
-                    state.copy(
-                        source = state.source.copy(currency = event.currency),
-                        destination = state.destination.copy(currency = nextTarget)
+                _state.update { s ->
+                    val nextTarget = if (s.isTransfer && s.destination.account.isOutside) event.currency else s.targetCurrency
+                    s.copy(
+                        source = s.source.copy(currency = event.currency),
+                        destination = s.destination.copy(currency = nextTarget)
                     )
                 }
-                if (!_state.value.isRateFixed) recalculateExchangeRate()
+                recalculateUnlessRateFixed()
             }
 
             is TemplateEntryEvent.SetTargetCurrency -> {
-                _state.update { state ->
-                    val nextSource = if (state.isTransfer && state.source.account.isOutside) {
-                        event.currency
-                    } else state.currency
-
-                    state.copy(
-                        destination = state.destination.copy(currency = event.currency),
-                        source = state.source.copy(currency = nextSource)
+                _state.update { s ->
+                    val nextSource = if (s.isTransfer && s.source.account.isOutside) event.currency else s.currency
+                    s.copy(
+                        destination = s.destination.copy(currency = event.currency),
+                        source = s.source.copy(currency = nextSource)
                     )
                 }
-                if (!_state.value.isRateFixed) recalculateExchangeRate()
+                recalculateUnlessRateFixed()
             }
 
-            is TemplateEntryEvent.SetExchangeRate -> _state.update {
-                val sync = TransactionEntryService.syncTransferState(
-                    sourceAmount = it.source.amountValue,
-                    targetAmount = TransactionEntryService.calculateTargetAmountValue(
-                        it.source.amountValue,
-                        event.rate
-                    ),
-                    sourceCurrency = it.currency,
-                    targetCurrency = it.targetCurrency,
-                    isFixed = true,
-                    activeSide = AmountEditingSide.SOURCE,
-                    exchangeRates = ExchangeRateSnapshot(it.currency, it.exchangeRates)
-                )
-
-                it.copy(
-                    isRateFixed = true,
-                    exchangeRate = event.rate,
-                    destination = it.destination.copy(
-                        amount = sync.targetAmount.stripTrailingZeros().toPlainString()
-                    )
-                )
-            }
-
+            is TemplateEntryEvent.SetExchangeRate -> _state.update { it.withManualRate(event.rate) }
             is TemplateEntryEvent.SetNote -> _state.update { it.copy(note = event.note) }
             is TemplateEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
             is TemplateEntryEvent.SetLocation -> _state.update {
-                it.copy(
-                    gpsLocation = event.gpsLocation,
-                    location = event.location ?: ""
-                )
+                it.copy(gpsLocation = event.gpsLocation, location = event.location ?: "")
             }
 
             is TemplateEntryEvent.SetWarrantyEnabled -> _state.update { it.copy(isWarrantyEnabled = event.enabled) }
@@ -377,159 +270,163 @@ class TemplateEntryViewModel @Inject constructor(
             is TemplateEntryEvent.SetTransactionStatus -> _state.update { it.copy(transactionStatus = event.status) }
             is TemplateEntryEvent.SetPaymentMethod -> _state.update { it.copy(paymentMethod = event.method) }
             is TemplateEntryEvent.SetTags -> _state.update { it.copy(selectedTags = event.tags) }
-            is TemplateEntryEvent.SetLinkedTransactionIds -> {
-                viewModelScope.launch {
-                    withProfile { profileId ->
-                        val transactions = event.ids.mapNotNull { id ->
-                            transactionUseCases.getTransactionById(id, profileId)
-                        }
-                        _state.update {
-                            it.copy(
-                                displayLinkedTxs = transactions,
-                                linkedTransactionIds = event.ids
-                            )
-                        }
-                    }
-                }
+            is TemplateEntryEvent.SetLinkedTransactionIds -> setLinkedTransactions(event.ids)
+            is TemplateEntryEvent.RemoveLinkedTransaction -> _state.update {
+                it.copy(
+                    displayLinkedTxs = it.displayLinkedTxs.filter { tx -> tx.id != event.targetId },
+                    linkedTransactionIds = it.linkedTransactionIds.filter { id -> id != event.targetId }
+                )
             }
 
-            is TemplateEntryEvent.RemoveLinkedTransaction -> {
-                _state.update { state ->
-                    val newList = state.displayLinkedTxs.filter { it.id != event.targetId }
-                    state.copy(
-                        displayLinkedTxs = newList,
-                        linkedTransactionIds = state.linkedTransactionIds.filter { it != event.targetId }
-                    )
-                }
+            is TemplateEntryEvent.AddTag -> viewModelScope.launch {
+                tagRepository.insertTag(Tag(name = event.name, colorHex = event.color ?: -1))
             }
 
-            is TemplateEntryEvent.AddTag -> {
-                viewModelScope.launch {
-                    tagRepository.insertTag(Tag(name = event.name, colorHex = event.color ?: -1))
-                }
+            is TemplateEntryEvent.UpdateTag -> viewModelScope.launch {
+                tagRepository.updateTag(event.tag.name, event.tag)
             }
 
-            is TemplateEntryEvent.UpdateTag -> {
-                viewModelScope.launch {
-                    tagRepository.updateTag(event.tag.name, event.tag)
-                }
-            }
-
-            is TemplateEntryEvent.DeleteTag -> {
-                viewModelScope.launch {
-                    tagRepository.deleteTag(event.tag)
-                }
-            }
+            is TemplateEntryEvent.DeleteTag -> viewModelScope.launch { tagRepository.deleteTag(event.tag) }
 
             is TemplateEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }
-            is TemplateEntryEvent.ShowTargetAccountSheet -> _state.update {
-                it.copy(
-                    showTargetAccountSheet = event.show
-                )
-            }
-
+            is TemplateEntryEvent.ShowTargetAccountSheet -> _state.update { it.copy(showTargetAccountSheet = event.show) }
             is TemplateEntryEvent.ShowCategorySheet -> _state.update { it.copy(showCategorySheet = event.show) }
-            is TemplateEntryEvent.ShowPaymentMethodSheet -> _state.update {
-                it.copy(
-                    showPaymentMethodSheet = event.show
-                )
-            }
-
+            is TemplateEntryEvent.ShowPaymentMethodSheet -> _state.update { it.copy(showPaymentMethodSheet = event.show) }
             is TemplateEntryEvent.ShowTagSheet -> _state.update { it.copy(showTagSheet = event.show) }
             is TemplateEntryEvent.ShowCurrencySheet -> _state.update { it.copy(showCurrencySheet = event.show) }
-            is TemplateEntryEvent.ShowTargetCurrencySheet -> _state.update {
-                it.copy(
-                    showTargetCurrencySheet = event.show
-                )
-            }
-
-            is TemplateEntryEvent.ShowExchangeRateDialog -> _state.update {
-                it.copy(
-                    showExchangeRateDialog = event.show
-                )
-            }
-
-            is TemplateEntryEvent.ShowWarrantyDatePicker -> _state.update {
-                it.copy(
-                    showWarrantyDatePicker = event.show
-                )
-            }
-
+            is TemplateEntryEvent.ShowTargetCurrencySheet ->
+                _state.update { it.copy(showTargetCurrencySheet = event.show) }
+            is TemplateEntryEvent.ShowExchangeRateDialog -> _state.update { it.copy(showExchangeRateDialog = event.show) }
+            is TemplateEntryEvent.ShowWarrantyDatePicker -> _state.update { it.copy(showWarrantyDatePicker = event.show) }
             is TemplateEntryEvent.ShowLocationSheet -> _state.update { it.copy(showLocationSheet = event.show) }
             is TemplateEntryEvent.ShowStatusSheet -> _state.update { it.copy(showStatusSheet = event.show) }
-            is TemplateEntryEvent.ShowLinkedTransactionSheet -> _state.update {
-                it.copy(
-                    showLinkedTransactionSheet = event.show
-                )
-            }
-
+            is TemplateEntryEvent.ShowLinkedTransactionSheet ->
+                _state.update { it.copy(showLinkedTransactionSheet = event.show) }
             is TemplateEntryEvent.ShowNumpad -> _state.update {
-                it.copy(
-                    isNumpadVisible = event.show,
-                    activeAmountSide = event.side
-                )
+                it.copy(isNumpadVisible = event.show, activeAmountSide = event.side)
             }
-
             is TemplateEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
+            is TemplateEntryEvent.DismissAllSheets -> _state.update { it.withAllSheetsDismissed() }
 
             is TemplateEntryEvent.SwapAccounts -> {
-                _state.update { state ->
-                    if (!state.isTransfer) return@update state
-                    val (newSrc, newDst, newRate) = TransactionEntryService.swapAccounts(
-                        source = state.source,
-                        destination = state.destination,
-                        transferRate = state.exchangeRate
+                _state.update { s ->
+                    if (!s.isTransfer) return@update s
+                    val (newSource, newDestination, newRate) = TransactionEntryService.swapAccounts(
+                        source = s.source,
+                        destination = s.destination,
+                        transferRate = s.exchangeRate
                     )
-                    state.copy(
-                        source = newSrc,
-                        destination = newDst,
-                        exchangeRate = newRate
-                    )
+                    s.copy(source = newSource, destination = newDestination, exchangeRate = newRate)
                 }
-                if (!_state.value.isRateFixed) recalculateExchangeRate()
+                recalculateUnlessRateFixed()
             }
 
             is TemplateEntryEvent.ToggleRateMode -> {
-                _state.update { s ->
-                    val nextFixed = !s.isRateFixed
-                    s.copy(isRateFixed = nextFixed)
-                }
-                if (!_state.value.isRateFixed) {
-                    recalculateExchangeRate()
-                }
-            }
-
-            is TemplateEntryEvent.DismissAllSheets -> _state.update {
-                it.copy(
-                    showAccountSheet = false,
-                    showTargetAccountSheet = false,
-                    showCategorySheet = false,
-                    showPaymentMethodSheet = false,
-                    showStatusSheet = false,
-                    showTagSheet = false,
-                    showCurrencySheet = false,
-                    showTargetCurrencySheet = false,
-                    showExchangeRateDialog = false,
-                    showWarrantyDatePicker = false,
-                    showLocationSheet = false,
-                    showLinkedTransactionSheet = false,
-                )
+                _state.update { it.copy(isRateFixed = !it.isRateFixed) }
+                recalculateUnlessRateFixed()
             }
 
             is TemplateEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
         }
     }
 
-    private fun updateCategoryName() {
-        val categoryId = _state.value.selectedCategoryId
-        val category = _state.value.categories.find { it.id == categoryId }
-        _state.update {
-            it.copy(
-                categoryName = category?.name ?: "Unknown",
-                selectedCategory = category
+    // Keeps the auto-generated "<name> - " note prefix in step with the name until the user edits it.
+    private fun TemplateEntryState.withName(newName: String): TemplateEntryState {
+        val autoPrefix = "$name - "
+        val newNote = when {
+            note.isEmpty() -> "$newName - "
+            name.isNotEmpty() && note.startsWith(autoPrefix) -> note.replaceFirst(autoPrefix, "$newName - ")
+            else -> note
+        }
+        return copy(name = newName, note = newNote)
+    }
+
+    // Setting a rate by hand always pins it.
+    private fun TemplateEntryState.withManualRate(rate: BigDecimal): TemplateEntryState {
+        val sync = TransactionEntryService.syncTransferState(
+            sourceAmount = source.amountValue,
+            targetAmount = TransactionEntryService.calculateTargetAmountValue(source.amountValue, rate),
+            sourceCurrency = currency,
+            targetCurrency = targetCurrency,
+            isFixed = true,
+            activeSide = AmountEditingSide.SOURCE,
+            exchangeRates = ExchangeRateSnapshot(currency, exchangeRates)
+        )
+        return copy(
+            isRateFixed = true,
+            exchangeRate = rate,
+            destination = destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString())
+        )
+    }
+
+    private fun TemplateEntryState.withAllSheetsDismissed() = copy(
+        showAccountSheet = false,
+        showTargetAccountSheet = false,
+        showCategorySheet = false,
+        showPaymentMethodSheet = false,
+        showStatusSheet = false,
+        showTagSheet = false,
+        showCurrencySheet = false,
+        showTargetCurrencySheet = false,
+        showExchangeRateDialog = false,
+        showWarrantyDatePicker = false,
+        showLocationSheet = false,
+        showLinkedTransactionSheet = false
+    )
+
+    private fun transitionTo(newMode: EntryMode) {
+        val oldMode = _state.value.entryMode
+        _state.update { state ->
+            val result = TransactionEntryService.transitionType(
+                oldMode = oldMode,
+                newMode = newMode,
+                currentSource = state.source,
+                currentDestination = state.destination,
+                isSplitMode = false // Templates don't support split mode
+            )
+            state.copy(entryMode = result.newMode, source = result.source, destination = result.destination)
+        }
+        if (newMode == EntryMode.TRANSFER) recalculateExchangeRate()
+    }
+
+    private fun selectAccount(accountId: String?, isSource: Boolean) {
+        _state.update { s ->
+            s.applyUpdate(
+                TransactionEntryService.handleAccountSelection(
+                    accountId = accountId,
+                    isSource = isSource,
+                    currentState = s.toUpdateResult(),
+                    accounts = s.accounts,
+                    baseCurrency = s.accounts.firstOrNull()?.currencyCode ?: DEFAULT_CURRENCY
+                )
             )
         }
+        recalculateUnlessRateFixed()
     }
+
+    private fun recalculateUnlessRateFixed() {
+        if (!_state.value.isRateFixed) recalculateExchangeRate()
+    }
+
+    private fun setLinkedTransactions(ids: List<Long>) {
+        viewModelScope.launch {
+            withProfile { profileId ->
+                val transactions = ids.mapNotNull { transactionUseCases.getTransactionById(it, profileId) }
+                _state.update { it.copy(displayLinkedTxs = transactions, linkedTransactionIds = ids) }
+            }
+        }
+    }
+
+    private fun updateCategoryName() {
+        _state.update { state ->
+            val category = state.categories.find { it.id == state.selectedCategoryId }
+            state.copy(categoryName = category?.name ?: "Unknown", selectedCategory = category)
+        }
+    }
+
+    // endregion
+
+    // region Save, delete, search
 
     fun saveTemplate(onSuccess: () -> Unit) {
         val s = _state.value
@@ -537,13 +434,6 @@ class TemplateEntryViewModel @Inject constructor(
 
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
-            val baseCurrency = settingsRepository.currency.first()
-
-            val templateCategoryId = if (s.isTransfer) {
-                if (Category.isInitialBalance(s.selectedCategoryId)) Category.SYSTEM_INITIAL_BALANCE
-                else Category.SYSTEM_TRANSFER
-            } else s.selectedCategoryId
-
             val request = TransactionEntryService.createRequest(
                 name = s.name,
                 amount = s.amountValue,
@@ -552,7 +442,7 @@ class TemplateEntryViewModel @Inject constructor(
                 sourceCurrency = s.currency,
                 targetAccount = s.destination.account,
                 targetCurrency = s.targetCurrency,
-                categoryId = templateCategoryId,
+                categoryId = if (s.isTransfer) Category.SYSTEM_TRANSFER else s.selectedCategoryId,
                 note = s.note,
                 payee = s.payee,
                 tags = s.selectedTags,
@@ -560,7 +450,7 @@ class TemplateEntryViewModel @Inject constructor(
                 targetAmountOverride = if (s.isTransfer) s.destination.amountValue else null,
                 exchangeRates = ExchangeRateSnapshot(s.currency, s.exchangeRates),
                 accounts = s.accounts,
-                baseCurrency = baseCurrency
+                baseCurrency = settingsRepository.currency.first()
             )
 
             val template = Template(
@@ -585,11 +475,7 @@ class TemplateEntryViewModel @Inject constructor(
                 profileId = profileId
             )
 
-            if (s.isEditMode) {
-                templateRepository.updateTemplate(template)
-            } else {
-                templateRepository.insertTemplate(template)
-            }
+            if (s.isEditMode) templateRepository.updateTemplate(template) else templateRepository.insertTemplate(template)
             onSuccess()
         }
     }
@@ -597,18 +483,22 @@ class TemplateEntryViewModel @Inject constructor(
     fun deleteTemplate() {
         val id = _state.value.templateId ?: return
         viewModelScope.launch {
-            templateRepository.getTemplateById(id)?.let {
-                templateRepository.deleteTemplate(it)
-            }
+            templateRepository.getTemplateById(id)?.let { templateRepository.deleteTemplate(it) }
             _state.update { it.copy(navTriggered = true) }
         }
     }
 
-    /**
-     * Search transactions for linking.
-     */
+    /** Search transactions for linking. */
     fun searchTransactions(query: String): Flow<List<Transaction>> = flow {
         val profileId = settingsRepository.currentProfileId.first()
         emitAll(transactionUseCases.searchTransactions(profileId, query))
+    }
+
+    // endregion
+
+    private companion object {
+        const val DEFAULT_CURRENCY = "USD"
+        const val RATE_SCALE = 8
+        const val ONE_YEAR_MILLIS = 365L * 24 * 60 * 60 * 1000
     }
 }

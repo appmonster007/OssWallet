@@ -96,7 +96,10 @@ interface TransactionRepository {
      */
     suspend fun getCurrenciesWithBalanceData(accountId: String, profileId: Int): List<String>
 
-    /** Earliest timestamp of any non-initial-balance row on [accountId], or null if none. */
+    /**
+     * Earliest timestamp of any row on [accountId] other than an opening balance or reconciliation
+     * adjustment, or null if none. Opening balances are dated one day before this.
+     */
     suspend fun getEarliestNonInitialBalanceTimestamp(accountId: String, profileId: Int): Long?
 
     /** Executes [block] inside a single database transaction. */

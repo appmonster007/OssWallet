@@ -79,6 +79,7 @@ Room (`AppDatabase`) encrypted with **SQLCipher**. Current schema version: **1**
 **Hard rules:**
 - Never use `fallbackToDestructiveMigration()`.
 - Pre-release, there are no real installs to preserve: every schema change keeps `version = 1` (no `Migration` object), plus updates `@Database(entities=[...])`, the abstract DAO accessor, and deletes the stale `core/data/schemas/.../1.json` snapshot so it regenerates. Once the app ships, this flips back to the normal rule — incremented version + a real `Migration` object per change — and `fallbackToDestructiveMigration()` stays forbidden either way.
+- Rules Room cannot declare (such as one opening balance per account+currency) are enforced with triggers installed in `onOpen` (`OpeningBalanceGuard`), which Room's schema validation ignores (an extra `index_*` would fail it).
 - All queries must include `profileId` — missing it leaks data across profiles.
 - Store monetary values as `TEXT` via `BigDecimalConverter`, never as `REAL`.
 

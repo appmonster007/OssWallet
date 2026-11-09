@@ -43,19 +43,22 @@ data class Category(
         fun isTransfer(id: Long) =
             id == SYSTEM_TRANSFER || isInitialBalance(id) || id == SYSTEM_RECONCILIATION_ADJUSTMENT
 
-        /** System-managed categories: never offered in the picker for ordinary transactions. */
+        /**
+         * Opening balance / adjustment. These are always single-leg transfers against Outside
+         * Wallet; a row can only be a wallet-to-wallet transfer under [SYSTEM_TRANSFER].
+         */
         fun isSystemManaged(id: Long) = isInitialBalance(id) || id == SYSTEM_RECONCILIATION_ADJUSTMENT
 
         /**
-         * Entry modes a row in this category may be saved as. Opening balances and reconciliation
-         * adjustments are transfer legs against Outside Wallet - they affect the account balance
-         * but must never count as real income/expense in reports and budgets. The only way to turn
-         * one into real income/expense is to reassign it to an ordinary category first, which lifts
-         * this restriction since allowedEntryModes is keyed on the (possibly just-changed) category.
+         * The category a transfer row is stored under. Transfer mode has no category picker, so a
+         * transfer is always Transfer, Initial Balance or Adjustment; anything else (an unset
+         * "Unknown" default, a stale category from a toggle, an import or API payload) becomes
+         * Transfer. A two-sided transfer is never an opening balance/adjustment either.
          */
-        fun allowedEntryModes(id: Long): Set<EntryMode> = when {
-            isSystemManaged(id) -> setOf(EntryMode.TRANSFER)
-            else -> EntryMode.entries.toSet()
+        fun transferCategoryFor(requested: Long, isTwoSided: Boolean): Long = when {
+            !isTransfer(requested) -> SYSTEM_TRANSFER
+            isTwoSided && isSystemManaged(requested) -> SYSTEM_TRANSFER
+            else -> requested
         }
 
         // Ids below this are permanently reserved for system + seeded default categories

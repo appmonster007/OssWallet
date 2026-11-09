@@ -737,7 +737,7 @@ class CsvImportServiceImpl @Inject constructor(
         totalRows: Int,
         onProgress: (Float) -> Unit
     ): Result<ImportSummary> = try {
-        when (session.sourceApp) {
+        val summary = when (session.sourceApp) {
             ImportSourceApp.BUDGET_BAKERS -> executeBudgetBakersImport(
                 session,
                 inputStream,
@@ -768,6 +768,9 @@ class CsvImportServiceImpl @Inject constructor(
                 onProgress
             )
         }
+        // Opening balances are created before the rows they must precede; date them afterwards.
+        if (summary.isSuccess) transactionDao.realignOpeningBalances(settingsDataStore.currentProfileId.first())
+        summary
     } catch (e: Exception) {
         Result.failure(e)
     }

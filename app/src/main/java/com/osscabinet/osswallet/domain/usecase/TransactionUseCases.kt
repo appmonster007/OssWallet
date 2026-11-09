@@ -8,61 +8,92 @@ import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.domain.service.ledger.LedgerService
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
-import java.math.RoundingMode
 
 class TransactionUseCases(
     private val repository: TransactionRepository,
     private val sharedWalletRepository: SharedWalletRepository
 ) {
-    fun getTransactions(profileId: Int = 1): Flow<List<Transaction>> {
-        return repository.getAllTransactions(profileId)
-    }
+    // region Transactions
 
-    fun getLatestTransactionVersion(profileId: Int): Flow<Long?> {
-        return repository.getLatestTransactionVersion(profileId)
-    }
+    fun getTransactions(profileId: Int = 1): Flow<List<Transaction>> = repository.getAllTransactions(profileId)
 
-    fun getFilteredTransactions(
-        profileId: Int,
-        filter: TransactionFilter
-    ): Flow<List<Transaction>> {
-        return repository.getFilteredTransactions(profileId, filter)
-    }
+    fun getLatestTransactionVersion(profileId: Int): Flow<Long?> = repository.getLatestTransactionVersion(profileId)
 
-    suspend fun insertTransaction(transaction: Transaction, profileId: Int = 1): Long {
-        return repository.insertTransaction(transaction, profileId)
-    }
+    fun getFilteredTransactions(profileId: Int, filter: TransactionFilter): Flow<List<Transaction>> =
+        repository.getFilteredTransactions(profileId, filter)
 
-    suspend fun deleteTransaction(id: Long, profileId: Int) {
-        repository.deleteTransaction(id, profileId)
-    }
+    suspend fun insertTransaction(transaction: Transaction, profileId: Int = 1): Long =
+        repository.insertTransaction(transaction, profileId)
 
-    suspend fun getTransactionById(id: Long, profileId: Int): Transaction? {
-        return repository.getTransactionById(id, profileId)
-    }
+    suspend fun deleteTransaction(id: Long, profileId: Int) = repository.deleteTransaction(id, profileId)
 
-    suspend fun updateTransaction(
-        oldTransaction: Transaction,
-        newTransaction: Transaction,
-        profileId: Int
-    ) {
+    suspend fun getTransactionById(id: Long, profileId: Int): Transaction? =
+        repository.getTransactionById(id, profileId)
+
+    suspend fun updateTransaction(oldTransaction: Transaction, newTransaction: Transaction, profileId: Int) =
         repository.updateTransaction(oldTransaction, newTransaction, profileId)
-    }
 
     suspend fun saveTransfer(
         sourceTransaction: Transaction,
         targetTransaction: Transaction,
         profileId: Int
-    ): Pair<Long, Long> {
-        return repository.saveTransfer(sourceTransaction, targetTransaction, profileId)
-    }
+    ): Pair<Long, Long> = repository.saveTransfer(sourceTransaction, targetTransaction, profileId)
 
-    suspend fun syncTransactions(walletId: String) {
-        sharedWalletRepository.syncTransactions(walletId)
-    }
+    suspend fun syncTransactions(walletId: String) = sharedWalletRepository.syncTransactions(walletId)
 
+    fun searchTransactions(profileId: Int, query: String): Flow<List<Transaction>> =
+        repository.searchTransactions(profileId, query)
+
+    suspend fun getUniquePayees(profileId: Int): List<String> = repository.getUniquePayees(profileId)
+
+    suspend fun getUniqueNotes(profileId: Int): List<String> = repository.getUniqueNotes(profileId)
+
+    suspend fun <T> runAtomically(block: suspend () -> T): T = repository.runAtomically(block)
+
+    // endregion
+
+    // region Links
+
+    suspend fun addTransactionLink(transactionId: Long, linkedTransactionId: Long) =
+        repository.addTransactionLink(transactionId, linkedTransactionId)
+
+    suspend fun removeTransactionLink(transactionId: Long, linkedTransactionId: Long) =
+        repository.removeTransactionLink(transactionId, linkedTransactionId)
+
+    suspend fun clearTransactionLinks(transactionId: Long) = repository.clearTransactionLinks(transactionId)
+
+    fun getAllTransactionLinks(): Flow<Map<Long, List<Long>>> = repository.getAllTransactionLinks()
+
+    fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>> =
+        repository.getLinkedTransactionIds(transactionId)
+
+    fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>> =
+        repository.getLinkedTransactions(transactionId)
+
+    // endregion
+
+    // region Opening balances
+
+    suspend fun getInitialBalanceTransaction(accountId: String, currency: String, profileId: Int): Transaction? =
+        repository.getInitialBalanceTransaction(accountId, currency, profileId)
+
+    suspend fun getInitialBalanceCurrencies(accountId: String, profileId: Int): List<String> =
+        repository.getInitialBalanceCurrencies(accountId, profileId)
+
+    suspend fun getEarliestNonInitialBalanceTimestamp(accountId: String, profileId: Int): Long? =
+        repository.getEarliestNonInitialBalanceTimestamp(accountId, profileId)
+
+    // endregion
+
+    // region Running balances
+
+    /**
+     * Recent activity with running balances: whichever is larger of the last [limit] transactions or
+     * every transaction in the last [days] days. Archived accounts are left out unless [includeArchived].
+     */
     fun getRecentTransactions(
         allTransactions: List<Transaction>,
         accounts: List<Account>,
@@ -74,99 +105,41 @@ class TransactionUseCases(
         includeArchived: Boolean = false,
         startingBalances: Map<String, BigDecimal>
     ): List<TransactionWithBalance> {
-        val accountMap = accounts.associateBy { it.id }
-        val nonArchivedAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
-
         val now = System.currentTimeMillis()
-        val filteredTransactions = if (excludeFuture) {
-            allTransactions.filter { it.timestamp <= now }
-        } else {
-            allTransactions
-        }
+        val candidates = if (excludeFuture) allTransactions.filter { it.timestamp <= now } else allTransactions
+        val activeAccountIds = accounts.filterNot { it.isArchived }.map { it.id }.toSet()
 
-        // Calculate running balances for filtered transactions
-        val transactionsWithBalance = filteredTransactions.sortedBy { it.timestamp }
-            .groupBy { it.accountId }
-            .flatMap { (accId, accountTransactions) ->
-                val account = accountMap[accId]
-                val accountCurrency = account?.currencyCode ?: "USD"
-
-                var runningBalance = startingBalances[accId ?: ""] ?: BigDecimal.ZERO
-                accountTransactions.map { transaction ->
-                    val txAmountInAccountCurrency = CurrencyService.convertAmount(
-                        amount = transaction.amount,
-                        fromCurrency = transaction.currency,
-                        toCurrency = accountCurrency,
-                        exchangeRates = exchangeRates,
-                        precision = precision + 4
-                    )
-
-                    val balanceBefore = runningBalance
-                    // Amount already carries the sign (positive for income, negative for expense)
-                    runningBalance = runningBalance.add(txAmountInAccountCurrency)
-                    TransactionWithBalance(
-                        transaction = transaction,
-                        balanceBefore = balanceBefore.setScale(precision, RoundingMode.HALF_UP),
-                        balanceAfter = runningBalance.setScale(precision, RoundingMode.HALF_UP)
-                    )
-                }
-            }
-            .let { list -> if (includeArchived) list else list.filter { it.transaction.accountId in nonArchivedAccountIds } }
+        val withBalances = withRunningBalances(candidates, accounts, exchangeRates, precision, startingBalances)
+            .filter { includeArchived || it.transaction.accountId in activeAccountIds }
             .sortedByDescending { it.transaction.timestamp }
 
-        if (limit == Int.MAX_VALUE) return transactionsWithBalance
+        if (limit == Int.MAX_VALUE) return withBalances
 
-        // Get transactions from last 7 days
-        val cutoffTime = System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
-        val transactionsFromLastDays =
-            transactionsWithBalance.filter { it.transaction.timestamp >= cutoffTime }
+        val cutoff = now - days * MILLIS_PER_DAY
+        val fromLastDays = withBalances.filter { it.transaction.timestamp >= cutoff }
+        val lastN = withBalances.take(limit)
+        return if (fromLastDays.size > lastN.size) fromLastDays else lastN
+    }
 
-        // Get last 20 transactions
-        val lastLimitTransactions = transactionsWithBalance.take(limit)
-
-        // Return whichever has more transactions
-        return if (transactionsFromLastDays.size > lastLimitTransactions.size) {
-            transactionsFromLastDays
-        } else {
-            lastLimitTransactions
+    // Each account's rows are folded into a ledger in that account's own currency; amounts already
+    // carry their sign (positive for income, negative for expense).
+    private fun withRunningBalances(
+        transactions: List<Transaction>,
+        accounts: List<Account>,
+        exchangeRates: ExchangeRateSnapshot,
+        precision: Int,
+        startingBalances: Map<String, BigDecimal>
+    ): List<TransactionWithBalance> {
+        val currencyByAccount = accounts.associate { it.id to it.currencyCode }
+        return LedgerService.withBalances(transactions, startingBalances, precision) { transaction ->
+            CurrencyService.convertAmount(
+                amount = transaction.amount,
+                fromCurrency = transaction.currency,
+                toCurrency = currencyByAccount[transaction.accountId] ?: DEFAULT_CURRENCY,
+                exchangeRates = exchangeRates,
+                precision = precision + 4
+            )
         }
-    }
-
-    // Link management methods
-    suspend fun addTransactionLink(transactionId: Long, linkedTransactionId: Long) {
-        repository.addTransactionLink(transactionId, linkedTransactionId)
-    }
-
-    suspend fun removeTransactionLink(transactionId: Long, linkedTransactionId: Long) {
-        repository.removeTransactionLink(transactionId, linkedTransactionId)
-    }
-
-    suspend fun clearTransactionLinks(transactionId: Long) {
-        repository.clearTransactionLinks(transactionId)
-    }
-
-    fun getAllTransactionLinks(): Flow<Map<Long, List<Long>>> {
-        return repository.getAllTransactionLinks()
-    }
-
-    fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>> {
-        return repository.getLinkedTransactionIds(transactionId)
-    }
-
-    fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>> {
-        return repository.getLinkedTransactions(transactionId)
-    }
-
-    fun searchTransactions(profileId: Int, query: String): Flow<List<Transaction>> {
-        return repository.searchTransactions(profileId, query)
-    }
-
-    suspend fun getUniquePayees(profileId: Int): List<String> {
-        return repository.getUniquePayees(profileId)
-    }
-
-    suspend fun getUniqueNotes(profileId: Int): List<String> {
-        return repository.getUniqueNotes(profileId)
     }
 
     /**
@@ -179,24 +152,13 @@ class TransactionUseCases(
         baseCurrency: String,
         exchangeRates: ExchangeRateSnapshot,
         limit: Int? = null
-    ): Flow<Result<List<TransactionWithBalance>>> {
-        return repository.observeFilteredTransactionsWithBalance(
-            profileId, filter, baseCurrency, exchangeRates, limit
-        )
-    }
+    ): Flow<Result<List<TransactionWithBalance>>> =
+        repository.observeFilteredTransactionsWithBalance(profileId, filter, baseCurrency, exchangeRates, limit)
 
-    suspend fun getInitialBalanceTransaction(
-        accountId: String,
-        currency: String,
-        profileId: Int
-    ): Transaction? {
-        return repository.getInitialBalanceTransaction(accountId, currency, profileId)
-    }
+    // endregion
 
-    suspend fun getEarliestNonInitialBalanceTimestamp(accountId: String, profileId: Int): Long? {
-        return repository.getEarliestNonInitialBalanceTimestamp(accountId, profileId)
+    private companion object {
+        const val DEFAULT_CURRENCY = "USD"
+        const val MILLIS_PER_DAY = 24 * 60 * 60 * 1000L
     }
-
-    suspend fun <T> runAtomically(block: suspend () -> T): T =
-        repository.runAtomically(block)
 }

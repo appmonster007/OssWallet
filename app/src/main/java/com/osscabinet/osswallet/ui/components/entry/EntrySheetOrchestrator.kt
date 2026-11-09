@@ -24,6 +24,7 @@ fun EntrySheetOrchestrator(
     shortlistedCurrencies: List<String>,
     fullCurrencies: List<String>,
     isTransfer: Boolean,
+    transferCategoriesSelectable: Boolean = false,
     onAmountChange: (String) -> Unit,
     onAccountChange: (String?) -> Unit,
     onTargetAccountChange: (String?) -> Unit,
@@ -87,7 +88,7 @@ fun EntrySheetOrchestrator(
 
     if (sheetState.showCategory) {
         AeonCategorySelection(
-            categories = categories.filter { !Category.isSystemManaged(it.id) },
+            categories = if (transferCategoriesSelectable) categories else categories.filterNot { Category.isTransfer(it.id) },
             selectedCategoryIds = setOf(selectedCategoryId),
             onSelectionChange = { ids -> onCategoryChange(ids.firstOrNull() ?: -1L) },
             onDismiss = { onDismissSheet(EntryField.CATEGORY) }

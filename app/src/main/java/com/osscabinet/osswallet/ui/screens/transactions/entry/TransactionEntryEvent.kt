@@ -25,6 +25,12 @@ sealed class TransactionEntryEvent {
     data class SetPaymentMethod(val method: PaymentMethod) : TransactionEntryEvent()
     data class SetTransactionStatus(val status: TransactionStatus) : TransactionEntryEvent()
     data class SetTransactionType(val type: EntryMode) : TransactionEntryEvent()
+
+    /** The user accepted replacing the account's existing opening balance with this row. */
+    data object ConfirmReplaceInitialBalance : TransactionEntryEvent()
+
+    /** The user kept the existing opening balance; this row falls back to a plain Transfer. */
+    data object DeclineReplaceInitialBalance : TransactionEntryEvent()
     data class SetDate(val millis: Long) : TransactionEntryEvent()
     data class SetPayee(val payee: String) : TransactionEntryEvent()
     data class SetNote(val note: String) : TransactionEntryEvent()

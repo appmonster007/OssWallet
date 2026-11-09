@@ -58,6 +58,9 @@ fun TransactionListScreen(
     val highlightedId by viewModel.highlightedId.collectAsStateWithLifecycle()
     val snackbarMessage by viewModel.snackbarMessage.collectAsStateWithLifecycle()
     val linkedPopupTxs by viewModel.linkedTransactionsPopup.collectAsStateWithLifecycle()
+    val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val hasSearchTerms by viewModel.hasSearchTerms.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -172,7 +175,13 @@ fun TransactionListScreen(
             }
         },
         onAddTag = viewModel::addTag,
-        revealedCardIds = revealedCardIds
+        revealedCardIds = revealedCardIds,
+        isSearching = isSearching,
+        searchQuery = searchQuery,
+        hasSearchTerms = hasSearchTerms,
+        onSearchOpen = viewModel::openSearch,
+        onSearchClose = viewModel::closeSearch,
+        onSearchQueryChange = viewModel::setSearchQuery
     )
 }
 

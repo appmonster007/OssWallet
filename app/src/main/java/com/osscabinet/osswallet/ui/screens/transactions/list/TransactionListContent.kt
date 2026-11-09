@@ -74,7 +74,13 @@ fun TransactionListContent(
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     linkedPopupTxs: List<TransactionListItem>? = null,
     onCloseLinkedPopup: () -> Unit = {},
-    onJumpToLinked: (Long) -> Unit = {}
+    onJumpToLinked: (Long) -> Unit = {},
+    isSearching: Boolean = false,
+    searchQuery: String = "",
+    hasSearchTerms: Boolean = false,
+    onSearchOpen: () -> Unit = {},
+    onSearchClose: () -> Unit = {},
+    onSearchQueryChange: (String) -> Unit = {}
 ) {
     val pillHeight = AeonSize.D64.value
     val lazyListState = rememberLazyListState()
@@ -95,7 +101,17 @@ fun TransactionListContent(
                         }
                     }
             ) {
-                if (listState.isEmpty) {
+                if (isSearching && listState.isEmpty) {
+                    TransactionListEmptyState(
+                        message = if (hasSearchTerms) "Nothing found for “${searchQuery.trim()}”" else "Search your records",
+                        hint = if (hasSearchTerms) "Try fewer words." else
+                            "Words match notes, payees, names and categories. #tag finds a tag; " +
+                                "a number finds that amount (49.99, >100, 20-50).",
+                        modifier = if (!recordsSettings.stickyHeaders) {
+                            Modifier.padding(top = pillHeight)
+                        } else Modifier
+                    )
+                } else if (listState.isEmpty) {
                     TransactionListEmptyState(
                         isFutureExcluded = filter.timelineRange.excludeFuture,
                         onIncludeFutureClick = {
@@ -123,8 +139,9 @@ fun TransactionListContent(
                             bottom = scrollBottomPadding()
                         ),
                         useNoteAsHeader = recordsSettings.useNoteAsHeader,
-                        showHeaderOpeningBalance = recordsSettings.showHeaderOpeningBalance,
-                        showHeaderClosingBalance = recordsSettings.showHeaderClosingBalance,
+                        // Matches span months and accounts, so a group's opening and closing balance would mislead.
+                        showHeaderOpeningBalance = recordsSettings.showHeaderOpeningBalance && !isSearching,
+                        showHeaderClosingBalance = recordsSettings.showHeaderClosingBalance && !isSearching,
                         showItemOpeningBalance = recordsSettings.showItemOpeningBalance,
                         showItemClosingBalance = recordsSettings.showItemClosingBalance,
                         showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
@@ -158,6 +175,13 @@ fun TransactionListContent(
                 onBackClick = onBackClick,
                 onMenuClick = onMenuClick,
                 isTopLevel = isTopLevel,
+                isSearching = isSearching,
+                searchQuery = searchQuery,
+                // A view opened with its own filter searches inside it; the main Records view searches everything.
+                searchPlaceholder = if (isTopLevel) "Search all records…" else "Search these records…",
+                onSearchOpen = onSearchOpen,
+                onSearchClose = onSearchClose,
+                onSearchQueryChange = onSearchQueryChange,
             ) { onFilterEvent(FilterEvent.UpdateSettings(it)) }
 
             // Snackbar Host
@@ -173,8 +197,8 @@ fun TransactionListContent(
             }
 // ...
 
-            // 3. Filter Pill (Layer 4 - if applicable)
-            TransactionFilterPill(
+            // 3. Filter Pill (Layer 4 - if applicable); hidden while searching since search ignores it
+            if (!isSearching) TransactionFilterPill(
                 filter = filter,
                 accounts = accounts,
                 categories = categories,

@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AutoGraph
@@ -78,7 +77,6 @@ fun AppDrawerContent(
     onPlannedPaymentsClick: () -> Unit = {},
     onBudgetsClick: () -> Unit = {},
     onLoansClick: () -> Unit = {},
-    onSearchClick: () -> Unit = {},
 ) {
     val uiScale = AeonTheme.uiScale
     val drawerShape = RoundedCornerShape(
@@ -198,7 +196,6 @@ fun AppDrawerContent(
 
                 // ── Leaf dispatchers: ordinary hierarchical push, no saved state ─
                 val leafNavItems = listOf(
-                    Triple("SEARCH", "search", Icons.Default.Search),
                     Triple("EXCHANGE RATES", "exchange_rates", Icons.Default.CurrencyExchange)
                 )
                 leafNavItems.forEach { (label, route, icon) ->
@@ -207,7 +204,6 @@ fun AppDrawerContent(
                         selected = false,
                         onClick = {
                             when (route) {
-                                "search" -> onSearchClick()
                                 "exchange_rates" -> onExchangeRatesClick()
                             }
                         },

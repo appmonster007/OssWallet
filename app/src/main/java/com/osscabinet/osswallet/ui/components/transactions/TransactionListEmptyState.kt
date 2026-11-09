@@ -2,11 +2,13 @@ package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -17,6 +19,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 fun TransactionListEmptyState(
     modifier: Modifier = Modifier,
     message: String = "No records found",
+    hint: String? = null,
     isFutureExcluded: Boolean = false,
     onIncludeFutureClick: (() -> Unit)? = null
 ) {
@@ -33,6 +36,16 @@ fun TransactionListEmptyState(
                 style = AppTextStyles.listItemTitle,
                 color = AppColors.contentSecondary
             )
+
+            if (hint != null) {
+                Text(
+                    text = hint,
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 32.dp)
+                )
+            }
 
             if (isFutureExcluded && onIncludeFutureClick != null) {
                 androidx.compose.material3.TextButton(onClick = onIncludeFutureClick) {

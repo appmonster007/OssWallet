@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
 import com.osscabinet.ossWallet.domain.model.timeline.DefaultTimeline
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.rounded.CurrencyExchange
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.NotificationsActive
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Portrait
 import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.VerticalAlignBottom
@@ -35,13 +37,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -56,7 +62,9 @@ import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSearchPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
@@ -72,11 +80,39 @@ fun TransactionListTopAppBar(
     onBackClick: () -> Unit,
     onMenuClick: () -> Unit = {},
     isTopLevel: Boolean = true,
+    isSearching: Boolean = false,
+    searchQuery: String = "",
+    searchPlaceholder: String = "Search all records…",
+    onSearchOpen: () -> Unit = {},
+    onSearchClose: () -> Unit = {},
+    onSearchQueryChange: (String) -> Unit = {},
     onUpdateRecordsSettings: (TransactionSectionSettings) -> Unit,
 ) {
     var showSettingsDialog by remember { mutableStateOf(false) }
 
-    AeonTopAppBar(
+    // Back leaves search first, before it would leave the screen.
+    BackHandler(enabled = isSearching, onBack = onSearchClose)
+
+    if (isSearching) {
+        val focusRequester = remember { FocusRequester() }
+        LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
+        AeonTopAppBar(
+            left = AeonTopBarSection(
+                content = { AeonTopBarNavPill(onBackClick = onSearchClose) }
+            ),
+            center = AeonTopBarSection(
+                content = {
+                    AeonTopBarSearchPill(
+                        query = searchQuery,
+                        onQueryChange = onSearchQueryChange,
+                        placeholder = searchPlaceholder,
+                        onClear = { onSearchQueryChange("") },
+                        focusRequester = focusRequester
+                    )
+                }
+            )
+        )
+    } else AeonTopAppBar(
         left = AeonTopBarSection(
             content = {
                 AeonTopBarNavTitlePill(
@@ -91,6 +127,11 @@ fun TransactionListTopAppBar(
         right = AeonTopBarSection(
             content = {
                 AeonTopBarActionPill {
+                    AppBarIconButton(
+                        icon = Icons.Rounded.Search,
+                        onClick = onSearchOpen,
+                        modifier = Modifier.semantics { contentDescription = "Search records" }
+                    )
                     AppBarIconButton(
                         icon = Icons.Default.Settings,
                         onClick = { showSettingsDialog = true }

@@ -1,25 +1,10 @@
 package com.osscabinet.osswallet.domain.service.search
 
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.AccountStructureType
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.EntryMode
-import com.osscabinet.ossWallet.domain.model.Goal
-import com.osscabinet.ossWallet.domain.model.Loan
-import com.osscabinet.ossWallet.domain.model.LoanType
-import com.osscabinet.ossWallet.domain.model.PaymentSchedule
-import com.osscabinet.ossWallet.domain.model.PlannedPayment
-import com.osscabinet.ossWallet.domain.model.RecurrenceRule
-import com.osscabinet.ossWallet.domain.model.RecurrenceType
-import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.search.AmountSpec
 import com.osscabinet.ossWallet.domain.service.search.GlobalSearchService
-import com.osscabinet.ossWallet.domain.service.search.SearchData
 import com.osscabinet.ossWallet.domain.service.search.SearchQueryParser
-import com.osscabinet.ossWallet.domain.service.search.SearchSection
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -111,83 +96,6 @@ class GlobalSearchTest {
         assertTrue(parse("   ").isEmpty)
     }
 
-    // ── Records other than transactions ──────────────────────────────────────
-
-    private fun account(name: String, id: String = name.lowercase()) =
-        Account(id = id, name = name, currencyCode = "USD", structureType = AccountStructureType.BANK, colorHex = "#fff", icon = "x")
-
-    private fun category(id: Long, name: String) = Category(id, name, "x", 0, false, null)
-
-    private fun goal(name: String, target: String = "1200") = Goal(
-        name = name, targetAmount = BigDecimal(target), currency = "USD", profileId = 1, createdAt = 0
-    )
-
-    private fun loan(name: String, who: String, amount: String = "500") = Loan(
-        name = name, principalAmount = BigDecimal(amount), currency = "USD", startDate = 0, lenderOrBorrowerName = who,
-        loanType = LoanType.BORROWED, linkedAccountId = "a", profileId = 1
-    )
-
-    private fun template(name: String, payee: String?, tags: Set<String> = emptySet(), amount: String = "10") = Template(
-        name = name, categoryId = 1, amount = BigDecimal(amount), entryMode = EntryMode.EXPENSE, accountId = "a",
-        payee = payee, currency = "USD", tags = tags
-    )
-
-    private fun planned(name: String, amount: String = "15.99") = PlannedPayment(
-        name = name, categoryId = 1, amount = BigDecimal(amount), entryMode = EntryMode.EXPENSE, currency = "USD",
-        schedule = PaymentSchedule(RecurrenceRule(RecurrenceType.MONTHLY), 0, nextDueDate = 0)
-    )
-
-    private val data = SearchData(
-        accounts = listOf(account("Main Bank"), account("Laptop Fund")),
-        categories = listOf(category(1, "Electronics"), category(2, "Groceries")),
-        tags = listOf(Tag(name = "holiday"), Tag(name = "work")),
-        loans = listOf(loan("Laptop loan", "Sam")),
-        goals = listOf(goal("Laptop")),
-        templates = listOf(template("Coffee", "Starbucks", tags = setOf("Work"))),
-        plannedPayments = listOf(planned("Netflix"))
-    )
-
-    private fun search(q: String) = GlobalSearchService.searchRecords(parse(q), data)
-
-    @Test fun `a word finds matching records across types`() {
-        val r = search("laptop")
-        assertEquals(setOf(SearchSection.ACCOUNTS, SearchSection.LOANS, SearchSection.GOALS), r.keys)
-        assertEquals("Laptop Fund", r[SearchSection.ACCOUNTS]!!.single().title)
-    }
-
-    @Test fun `every word has to match`() {
-        assertTrue(search("laptop sam").keys == setOf(SearchSection.LOANS))
-        assertTrue(search("laptop zzz").isEmpty())
-    }
-
-    @Test fun `a hash tag finds the tag and anything carrying it`() {
-        val r = search("#work")
-        assertEquals(listOf("work"), r[SearchSection.TAGS]!!.map { it.id })
-        assertEquals("Coffee", r[SearchSection.TEMPLATES]!!.single().title)
-        assertFalse(r.containsKey(SearchSection.ACCOUNTS))
-    }
-
-    @Test fun `an amount matches records that have one`() {
-        val r = search("15.99")
-        assertEquals("Netflix", r[SearchSection.PLANNED_PAYMENTS]!!.single().title)
-        assertFalse(r.containsKey(SearchSection.ACCOUNTS))
-    }
-
-    @Test fun `words plus an amount need both`() {
-        assertEquals(setOf(SearchSection.GOALS), search("laptop 1200").keys)
-        assertTrue(search("laptop 99").isEmpty())
-    }
-
-    @Test fun `names starting with the word come first`() {
-        val d = SearchData(accounts = listOf(account("My Savings"), account("Savings Plus")))
-        val r = GlobalSearchService.searchRecords(parse("savings"), d)
-        assertEquals("Savings Plus", r[SearchSection.ACCOUNTS]!!.first().title)
-    }
-
-    @Test fun `an empty query finds nothing`() {
-        assertTrue(search("").isEmpty())
-    }
-
     // ── Transactions ─────────────────────────────────────────────────────────
 
     private fun tx(amount: String, tags: Set<String> = emptySet(), payee: String = "Shop") = Transaction(
@@ -207,29 +115,5 @@ class GlobalSearchTest {
 
     @Test fun `a lone number keeps a text match even if the amount differs`() {
         assertTrue(GlobalSearchService.matchesTransaction(parse("15"), tx("99.00")))
-    }
-
-    @Test fun `transaction hits show the payee, where it was spent, and the category icon`() {
-        val hit = GlobalSearchService.transactionHits(
-            listOf(tx("-5")), mapOf("main bank" to "Main Bank"),
-            mapOf(1L to Category(1, "Electronics", "Devices", 0xFF336699.toInt(), false, null))
-        ).single()
-        assertEquals("Shop", hit.title)
-        assertEquals("Electronics · Main Bank", hit.subtitle)
-        assertEquals("n", hit.detail)
-        assertEquals("Devices", hit.iconName)
-        assertEquals(0xFF336699.toInt(), hit.colorArgb)
-    }
-
-    @Test fun `account hits carry the account icon and colour`() {
-        val d = SearchData(accounts = listOf(account("Main Bank").copy(icon = "bank", colorHex = "#4CAF50")))
-        val hit = GlobalSearchService.searchRecords(parse("main"), d)[SearchSection.ACCOUNTS]!!.single()
-        assertEquals("bank", hit.iconName)
-        assertEquals(0xFF4CAF50.toInt(), hit.colorArgb)
-    }
-
-    @Test fun `a badly formed account colour is simply no colour`() {
-        val d = SearchData(accounts = listOf(account("Main Bank").copy(colorHex = "nonsense")))
-        assertNull(GlobalSearchService.searchRecords(parse("main"), d)[SearchSection.ACCOUNTS]!!.single().colorArgb)
     }
 }

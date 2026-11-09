@@ -267,7 +267,6 @@ fun OssWalletNavGraph(
                     onPlannedPaymentsClick = { navigateFromDrawer(PlannedPaymentListRoute) },
                     onBudgetsClick = { navigateFromDrawer(BudgetListRoute) },
                     onLoansClick = { navigateFromDrawer(LoanListRoute) },
-                    onSearchClick = { navigateFromDrawer(SearchRoute) },
                 )
             }
         ) {

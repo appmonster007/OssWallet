@@ -40,6 +40,9 @@ import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.service.search.ParsedSearch
+import com.osscabinet.ossWallet.domain.service.search.SearchQueryParser
+import com.osscabinet.ossWallet.domain.service.search.TransactionSearchMatcher
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper
@@ -48,7 +51,9 @@ import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiS
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,6 +61,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
@@ -95,6 +101,47 @@ class TransactionViewModel @Inject constructor(
     private val _navigationMode =
         MutableStateFlow<RecordNavigationMode>(RecordNavigationMode.PERSISTENT)
     val navigationMode: StateFlow<RecordNavigationMode> = _navigationMode.asStateFlow()
+
+    /**
+     * Which transactions the list searches while the search field is open: every transaction, or, on a
+     * drilled-in Records view (a category or tag opened from elsewhere), only what that view already shows.
+     * [terms] is null until something searchable has been typed.
+     */
+    private data class SearchScope(val terms: ParsedSearch?, val scopedToFilter: Boolean)
+
+    private val _searchOpen = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _searchOpen.asStateFlow()
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    /** Null while search is closed, so the normal filtered list is shown. */
+    @OptIn(FlowPreview::class)
+    private val searchScope: StateFlow<SearchScope?> = combine(
+        _searchOpen,
+        _searchQuery.debounce(SEARCH_DEBOUNCE_MS).map { SearchQueryParser.parse(it).takeUnless { p -> p.isEmpty } },
+        _navigationMode
+    ) { open, terms, mode ->
+        if (open) SearchScope(terms, scopedToFilter = mode == RecordNavigationMode.TRANSIENT) else null
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    /** True once a search has something to look for; false shows the search hint instead of results. */
+    val hasSearchTerms: StateFlow<Boolean> = searchScope
+        .map { it?.terms != null }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun openSearch() {
+        _searchOpen.value = true
+    }
+
+    fun closeSearch() {
+        _searchOpen.value = false
+        _searchQuery.value = ""
+    }
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val recordsFilter: StateFlow<TransactionFilter> = _navigationMode
@@ -226,13 +273,25 @@ class TransactionViewModel @Inject constructor(
         combine(
             absoluteTransactionsWithBalance,
             recordsFilter,
-            accounts
-        ) { absoluteTxs, currentFilter, allAccounts ->
+            accounts,
+            categories,
+            searchScope
+        ) { absoluteTxs, currentFilter, allAccounts, allCategories, search ->
             val activeIds = allAccounts.filter { !it.isArchived }.map { it.id }.toSet()
             val effectiveFilter = currentFilter.copy(
                 accountIds = currentFilter.accountIds.ifEmpty { activeIds }
             )
-            TransactionFilterService.filterTransactionsWithBalance(absoluteTxs, effectiveFilter)
+            if (search == null) {
+                TransactionFilterService.filterTransactionsWithBalance(absoluteTxs, effectiveFilter)
+            } else {
+                // Search looks at everything (archived accounts and future entries included) unless this view
+                // was opened with a filter of its own, which then stays in force.
+                val pool = if (search.scopedToFilter) {
+                    TransactionFilterService.filterTransactionsWithBalance(absoluteTxs, effectiveFilter)
+                } else absoluteTxs
+                val terms = search.terms ?: return@combine emptyList()
+                TransactionSearchMatcher.filter(terms, pool, allCategories.associate { it.id to it.name })
+            }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -243,8 +302,11 @@ class TransactionViewModel @Inject constructor(
         combine(
             absoluteTransactionsWithBalance,
             recordsFilter.map { it.timelineRange to it.accountIds }.distinctUntilChanged(),
-            accounts
-        ) { absoluteTxs, filterKey, allAccounts ->
+            accounts,
+            searchScope
+        ) { absoluteTxs, filterKey, allAccounts, search ->
+            // Matches can sit in any month or account, so their balances need the whole history.
+            if (search != null && !search.scopedToFilter) return@combine absoluteTxs
             val (timelineRange, accountIds) = filterKey
             val activeIds = allAccounts.filter { !it.isArchived }.map { it.id }.toSet()
             val effectiveAccountIds = accountIds.ifEmpty { activeIds }
@@ -268,9 +330,10 @@ class TransactionViewModel @Inject constructor(
                 )
             },
             recordsFilter,
-            recordsSettings
-        ) { payments, filter, settings ->
-            if (!settings.showPlannedPayments) return@combine emptyList()
+            recordsSettings,
+            searchScope
+        ) { payments, filter, settings, search ->
+            if (!settings.showPlannedPayments || search != null) return@combine emptyList()
 
             val now = System.currentTimeMillis()
             val (startTime, endTime) = TimelineService.getDateRange(filter.timelineRange)
@@ -360,7 +423,7 @@ class TransactionViewModel @Inject constructor(
                 domainState = TransactionListState(groups = domainGroups, isEmpty = false),
                 baseCurrency = config.baseCurrency
             )
-        }.stateIn(
+        }.flowOn(Dispatchers.Default).stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = TransactionListUiState(),
@@ -443,6 +506,11 @@ class TransactionViewModel @Inject constructor(
     }
 
     fun setRecordsMode(transient: Boolean, filter: TransactionFilter? = null) {
+        // This also runs when coming back from an edit screen, where search should stay open.
+        val newMode = if (transient) RecordNavigationMode.TRANSIENT else RecordNavigationMode.PERSISTENT
+        if (newMode != _navigationMode.value ||
+            (filter != null && filter != transientFilterManager.mergedFilter.value)
+        ) closeSearch()
         if (transient) {
             _navigationMode.value = RecordNavigationMode.TRANSIENT
             if (filter != null) {
@@ -872,5 +940,9 @@ class TransactionViewModel @Inject constructor(
 
     fun clearPlannedPaymentPrefill() {
         _plannedPaymentPrefill.value = null
+    }
+
+    private companion object {
+        const val SEARCH_DEBOUNCE_MS = 150L
     }
 }

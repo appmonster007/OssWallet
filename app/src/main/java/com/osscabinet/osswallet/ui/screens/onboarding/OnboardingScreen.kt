@@ -1562,6 +1562,8 @@ fun ProviderStepPreview() {
             override val id = "exchangerate-api"
             override val name = "ExchangeRate-API"
             override val attribution = "Data from ExchangeRate-API"
+            override fun bundledCurrencies() = emptyList<CurrencyMetadata>()
+
             override suspend fun fetchSupportedCurrencies() = emptyList<CurrencyMetadata>()
             override suspend fun fetchRate(base: String, target: String): Result<Double> =
                 Result.success(1.0)
@@ -1690,6 +1692,8 @@ fun OnboardingSmallScreenProviderPreview() {
             override val id = "exchangerate-api"
             override val name = "ExchangeRate-API"
             override val attribution = "Data from ExchangeRate-API"
+            override fun bundledCurrencies() = emptyList<CurrencyMetadata>()
+
             override suspend fun fetchSupportedCurrencies() = emptyList<CurrencyMetadata>()
             override suspend fun fetchRate(base: String, target: String): Result<Double> =
                 Result.success(1.0)
@@ -1750,6 +1754,8 @@ fun OnboardingSmallScreenFullPreview() {
                         override val id = "exchangerate-api"
                         override val name = "ExchangeRate-API"
                         override val attribution = "Data from ExchangeRate-API"
+                        override fun bundledCurrencies() = emptyList<CurrencyMetadata>()
+
                         override suspend fun fetchSupportedCurrencies() =
                             emptyList<CurrencyMetadata>()
 

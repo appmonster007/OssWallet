@@ -19,9 +19,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -96,18 +93,13 @@ class OnboardingViewModel @Inject constructor(
     val onboardingCompleted: SharedFlow<Unit> = _onboardingCompleted.asSharedFlow()
 
     init {
-        viewModelScope.launch {
-            val results = coroutineScope {
-                providerRegistry.getAllProviders().map { provider ->
-                    async { provider.id to provider.fetchSupportedCurrencies() }
-                }.awaitAll().toMap()
-            }
-            _uiState.update { state ->
-                val currencies = results[state.selectedProviderId]
-                    ?: results.values.firstOrNull()
-                    ?: emptyList()
-                state.copy(currenciesPerProvider = results, availableCurrencies = currencies)
-            }
+        // Bundled lists only: nothing goes online until onboarding is finished.
+        val results = providerRegistry.getAllProviders().associate { it.id to it.bundledCurrencies() }
+        _uiState.update { state ->
+            val currencies = results[state.selectedProviderId]
+                ?: results.values.firstOrNull()
+                ?: emptyList()
+            state.copy(currenciesPerProvider = results, availableCurrencies = currencies)
         }
     }
 

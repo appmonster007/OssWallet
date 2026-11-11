@@ -14,7 +14,13 @@ interface ExchangeRateProvider {
     val attribution: String
 
     /**
-     * Returns the list of currencies supported by this provider.
+     * The currencies this provider supports, from a list bundled with the app. Never touches the network, so it is
+     * safe to call before the user has chosen to let the app go online.
+     */
+    fun bundledCurrencies(): List<CurrencyMetadata>
+
+    /**
+     * Returns the list of currencies supported by this provider, asking the provider's server where it offers one.
      */
     suspend fun fetchSupportedCurrencies(): List<CurrencyMetadata>
 

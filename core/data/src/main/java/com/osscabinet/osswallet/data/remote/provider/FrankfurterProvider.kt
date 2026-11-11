@@ -15,6 +15,8 @@ class FrankfurterProvider(
     override val name: String = "Frankfurter"
     override val attribution: String = "Rates by Frankfurter"
 
+    override fun bundledCurrencies(): List<CurrencyMetadata> = SupportedCurrencies.entries.map { it.toMetadata() }
+
     override suspend fun fetchSupportedCurrencies(): List<CurrencyMetadata> {
         return try {
             val response = api.getSupportedCurrencies()

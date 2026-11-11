@@ -1,6 +1,6 @@
 OssWallet is a privacy-first, encrypted, and highly customizable personal finance manager.
 
-All data is stored locally in a SQLCipher-encrypted (256-bit AES) database — nothing leaves your device except optional, user-initiated exchange-rate lookups.
+All data is stored locally in a SQLCipher-encrypted (256-bit AES) database — nothing leaves your device except the network requests listed below.
 
 Features:
 
@@ -12,5 +12,12 @@ Features:
 * Open in Web: an embedded local server to manage your data from a desktop browser on the same network
 * Budgets, loans, and account structures for cash, bank, and credit accounts
 * Currency conversion using live exchange rates (requires internet access; optional)
+
+Network use (the only times the app goes online):
+
+* Exchange rates: once setup is finished, rates for your chosen currency are fetched from the provider you picked (open.er-api.com or api.frankfurter.dev) and cached for 24 hours. Only the currency code is sent. Nothing is contacted during setup.
+* Location picker: when you open the map or search for a place on a transaction, map tiles load from tile.openstreetmap.org and addresses are looked up through nominatim.openstreetmap.org.
+
+AI assistant access (Android 16+) is off by default. If you turn it on in Settings > Security & Privacy, system assistants can read and add transactions, and the assistant may process that data off your device.
 
 OssWallet does not require a Google account, does not use any proprietary Google Play Services APIs in this build, and does not include ads or trackers.

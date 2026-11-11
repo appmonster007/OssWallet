@@ -115,6 +115,7 @@ private class FakeExchangeRateProvider(
     override val id: String = providerId
     override val name: String = "Fake"
     override val attribution: String = "Fake"
+    override fun bundledCurrencies(): List<CurrencyMetadata> = emptyList()
     override suspend fun fetchSupportedCurrencies(): List<CurrencyMetadata> = emptyList()
     override suspend fun fetchRate(base: String, target: String): Result<Double> =
         Result.success(rates[target] ?: 1.0)

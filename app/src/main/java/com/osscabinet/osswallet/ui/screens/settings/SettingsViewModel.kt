@@ -233,8 +233,7 @@ class SettingsViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val providerId = settingsRepository.currencyProvider.first()
-            val provider = providerRegistry.getProvider(providerId)
-            _availableCurrencies.value = provider.fetchSupportedCurrencies()
+            _availableCurrencies.value = providerRegistry.getProvider(providerId).bundledCurrencies()
         }
         viewModelScope.launch { refreshRecentBackups() }
         // A scheduled backup can finish while this screen isn't open; refresh the list whenever
@@ -413,8 +412,7 @@ class SettingsViewModel @Inject constructor(
     fun setCurrencyProvider(providerId: String) {
         viewModelScope.launch {
             settingsRepository.saveCurrencyProvider(providerId)
-            val provider = providerRegistry.getProvider(providerId)
-            _availableCurrencies.value = provider.fetchSupportedCurrencies()
+            _availableCurrencies.value = providerRegistry.getProvider(providerId).bundledCurrencies()
         }
     }
 

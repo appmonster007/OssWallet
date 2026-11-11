@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -61,7 +62,10 @@ class ComputationRepositoryImpl @Inject constructor(
     init {
         // ARC-04: on currency change, fetch rates and surface the failure if it happens.
         // distinctUntilChanged prevents re-fetching the same base on unrelated emissions.
-        settingsRepository.currency
+        // Nothing is fetched until onboarding is complete, i.e. until the user has chosen a provider and currency.
+        settingsRepository.isOnboardingCompleted
+            .distinctUntilChanged()
+            .flatMapLatest { completed -> if (completed) settingsRepository.currency else emptyFlow() }
             .distinctUntilChanged()
             .onEach { currency ->
                 runCatching { currencyRepository.getExchangeRates(currency) }

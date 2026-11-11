@@ -276,7 +276,7 @@ private fun SettingsFooter(attribution: String) {
         )
         Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
         Text(
-            text = "v1.1.0",
+            text = "v${BuildConfig.VERSION_NAME}",
             style = AppTextStyles.metaLabel,
             color = AppColors.contentSecondary.copy(alpha = 0.5f)
         )

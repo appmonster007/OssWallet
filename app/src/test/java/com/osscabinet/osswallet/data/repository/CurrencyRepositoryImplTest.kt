@@ -32,11 +32,12 @@ class CurrencyRepositoryImplTest {
         dao: CurrencyDao,
         provider: ExchangeRateProvider = FakeExchangeRateProvider(),
         currencyProvider: String = "fake",
+        autoUpdateRates: Boolean = true,
         dispatcherProvider: TestDispatcherProvider,
     ) = CurrencyRepositoryImpl(
         providerRegistry = ExchangeRateProviderRegistry(listOf(provider)),
         dao = dao,
-        settingsRepository = FakeSettingsRepository(currencyProvider),
+        settingsRepository = FakeSettingsRepository(currencyProvider, autoUpdateRates),
         dispatcherProvider = dispatcherProvider,
     )
 
@@ -58,6 +59,25 @@ class CurrencyRepositoryImplTest {
         assertEquals(mapOf("EUR" to 0.90, "GBP" to 0.80), result)
         // Cache was valid, so no network fetch happened.
         assertEquals(0, dao.replaceCallCount)
+    }
+
+    @Test
+    fun `getExchangeRates stays offline with stale cache unless auto-update is on or refresh is forced`() = runTest {
+        val staleRow = rateRow("EUR", base = "USD", rate = "0.90", nextUpdate = 0L)
+        val provider = FakeExchangeRateProvider(rates = mapOf("EUR" to 0.95))
+        val dao = FakeCurrencyDao(rates = listOf(staleRow))
+        val repo = repository(
+            dao = dao,
+            provider = provider,
+            autoUpdateRates = false,
+            dispatcherProvider = TestDispatcherProvider(StandardTestDispatcher(testScheduler)),
+        )
+
+        assertEquals(mapOf("EUR" to 0.90), repo.getExchangeRates("USD", forceRefresh = false))
+        assertEquals(0, dao.replaceCallCount)
+
+        assertEquals(mapOf("EUR" to 0.95), repo.getExchangeRates("USD", forceRefresh = true))
+        assertEquals(1, dao.replaceCallCount)
     }
 
     @Test
@@ -128,7 +148,7 @@ private class FakeExchangeRateProvider(
  * Fake [SettingsRepository] exposing only [currencyProvider] (the single field the
  * currency repository reads). All other members are unused by these tests and throw.
  */
-private class FakeSettingsRepository(currencyProviderId: String) : SettingsRepository {
+private class FakeSettingsRepository(currencyProviderId: String, autoUpdate: Boolean = true) : SettingsRepository {
     override val currencyProvider: Flow<String> = MutableStateFlow(currencyProviderId)
 
     private val unused: Nothing get() = throw NotImplementedError("Not needed for CurrencyRepositoryImplTest")
@@ -138,6 +158,7 @@ private class FakeSettingsRepository(currencyProviderId: String) : SettingsRepos
     override val currentProfileId: Flow<Int> get() = unused
     override val decimalPrecision: Flow<Int> get() = unused
     override val autoSaveExchangeRates: Flow<Boolean> get() = unused
+    override val autoUpdateRates: Flow<Boolean> = MutableStateFlow(autoUpdate)
     override val isOnboardingCompleted: Flow<Boolean> get() = unused
     override val cardAnimationEnabled: Flow<Boolean> get() = unused
     override val cardOpenAnimation: Flow<String> get() = unused
@@ -175,6 +196,7 @@ private class FakeSettingsRepository(currencyProviderId: String) : SettingsRepos
     override suspend fun saveCurrentProfileId(profileId: Int) = unused
     override suspend fun saveDecimalPrecision(precision: Int) = unused
     override suspend fun saveAutoSaveExchangeRates(enabled: Boolean) = unused
+    override suspend fun saveAutoUpdateRates(enabled: Boolean) = unused
     override suspend fun saveOnboardingCompleted(completed: Boolean) = unused
     override suspend fun saveCardAnimationEnabled(enabled: Boolean) = unused
     override suspend fun saveCardOpenAnimation(name: String) = unused

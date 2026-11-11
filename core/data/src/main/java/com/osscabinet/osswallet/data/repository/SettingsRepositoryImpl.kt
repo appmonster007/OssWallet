@@ -18,6 +18,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val currentProfileId: Flow<Int> = settingsDataStore.currentProfileId
     override val decimalPrecision: Flow<Int> = settingsDataStore.decimalPrecision
     override val autoSaveExchangeRates: Flow<Boolean> = settingsDataStore.autoSaveExchangeRates
+    override val autoUpdateRates: Flow<Boolean> = settingsDataStore.autoUpdateRates
     override val isOnboardingCompleted: Flow<Boolean> = settingsDataStore.isOnboardingCompleted
     override val cardAnimationEnabled: Flow<Boolean> = settingsDataStore.cardAnimationEnabled
     override val cardOpenAnimation: Flow<String> = settingsDataStore.cardOpenAnimation
@@ -63,6 +64,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun saveDecimalPrecision(precision: Int) =
         settingsDataStore.saveDecimalPrecision(precision)
+
+    override suspend fun saveAutoUpdateRates(enabled: Boolean) =
+        settingsDataStore.saveAutoUpdateRates(enabled)
 
     override suspend fun saveAutoSaveExchangeRates(enabled: Boolean) =
         settingsDataStore.saveAutoSaveExchangeRates(enabled)

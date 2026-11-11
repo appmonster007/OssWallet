@@ -30,6 +30,7 @@ class SettingsDataStore(private val context: Context) {
         val CURRENT_PROFILE_ID_KEY = intPreferencesKey("current_profile_id")
         val DECIMAL_PRECISION_KEY = intPreferencesKey("decimal_precision")
         val AUTO_SAVE_EXCHANGE_RATES_KEY = booleanPreferencesKey("auto_save_exchange_rates")
+        val AUTO_UPDATE_RATES_KEY = booleanPreferencesKey("auto_update_rates")
         val IS_ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("is_onboarding_completed")
         val CARD_ANIMATION_ENABLED_KEY = booleanPreferencesKey("card_animation_enabled")
         val CARD_OPEN_ANIMATION_KEY = stringPreferencesKey("card_open_animation")
@@ -84,6 +85,11 @@ class SettingsDataStore(private val context: Context) {
 
     val autoSaveExchangeRates: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[AUTO_SAVE_EXCHANGE_RATES_KEY] ?: true
+    }
+
+    /** Off until the user turns it on: the app only goes online for rates when they ask. */
+    val autoUpdateRates: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[AUTO_UPDATE_RATES_KEY] ?: false
     }
 
     val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -239,6 +245,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveDecimalPrecision(precision: Int) {
         context.dataStore.edit { preferences ->
             preferences[DECIMAL_PRECISION_KEY] = precision
+        }
+    }
+
+    suspend fun saveAutoUpdateRates(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[AUTO_UPDATE_RATES_KEY] = enabled
         }
     }
 

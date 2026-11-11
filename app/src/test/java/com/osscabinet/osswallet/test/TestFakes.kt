@@ -56,6 +56,7 @@ class FakeSettingsRepository(
     override val theme: Flow<String> = flowOf("DARK")
     override val decimalPrecision: Flow<Int> = flowOf(2)
     override val autoSaveExchangeRates: Flow<Boolean> = flowOf(false)
+    override val autoUpdateRates: Flow<Boolean> = flowOf(false)
     override val isOnboardingCompleted: Flow<Boolean> = flowOf(true)
     override val cardAnimationEnabled: Flow<Boolean> = flowOf(true)
     override val cardOpenAnimation: Flow<String> = flowOf("FLIP")
@@ -91,6 +92,7 @@ class FakeSettingsRepository(
     override suspend fun saveCurrentProfileId(profileId: Int) { currentProfileIdFlow.value = profileId }
     override suspend fun saveDecimalPrecision(precision: Int) {}
     override suspend fun saveAutoSaveExchangeRates(enabled: Boolean) {}
+    override suspend fun saveAutoUpdateRates(enabled: Boolean) {}
     override suspend fun saveOnboardingCompleted(completed: Boolean) {}
     override suspend fun saveCardAnimationEnabled(enabled: Boolean) {}
     override suspend fun saveCardOpenAnimation(name: String) {}

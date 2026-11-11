@@ -15,7 +15,7 @@ Features:
 
 Network use (the only times the app goes online):
 
-* Exchange rates: once setup is finished, rates for your chosen currency are fetched from the provider you picked (open.er-api.com or api.frankfurter.dev) and cached for 24 hours. Only the currency code is sent. Nothing is contacted during setup.
+* Exchange rates: only when you tap refresh in Settings > Currency, or if you turn on "Update Rates Automatically" (off by default). Rates come from the provider you picked (open.er-api.com or api.frankfurter.dev); only the currency code is sent. Nothing is contacted during setup.
 * Location picker: when you open the map or search for a place on a transaction, map tiles load from tile.openstreetmap.org and addresses are looked up through nominatim.openstreetmap.org.
 
 AI assistant access (Android 16+) is off by default. If you turn it on in Settings > Security & Privacy, system assistants can read and add transactions, and the assistant may process that data off your device.

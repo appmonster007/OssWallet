@@ -88,6 +88,11 @@ class CurrencyRepositoryImpl @Inject constructor(
                 return@withContext localRates.associate { it.currencyCode to it.rate.toDouble() }
             }
 
+            // Without an explicit refresh or the user's opt-in, stay offline and use what is stored.
+            if (!forceRefresh && !settingsRepository.autoUpdateRates.first()) {
+                return@withContext localRates.associate { it.currencyCode to it.rate.toDouble() }
+            }
+
             val providerId = settingsRepository.currencyProvider.first()
             val provider = providerRegistry.getProvider(providerId)
 

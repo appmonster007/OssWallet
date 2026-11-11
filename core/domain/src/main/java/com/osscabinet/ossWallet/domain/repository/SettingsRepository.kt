@@ -10,6 +10,9 @@ interface SettingsRepository {
     val currentProfileId: Flow<Int>
     val decimalPrecision: Flow<Int>
     val autoSaveExchangeRates: Flow<Boolean>
+
+    /** Whether the app may fetch exchange rates by itself. Off by default; a manual refresh always works. */
+    val autoUpdateRates: Flow<Boolean>
     val isOnboardingCompleted: Flow<Boolean>
     val cardAnimationEnabled: Flow<Boolean>
     val cardOpenAnimation: Flow<String>
@@ -48,6 +51,8 @@ interface SettingsRepository {
     suspend fun saveCurrentProfileId(profileId: Int)
     suspend fun saveDecimalPrecision(precision: Int)
     suspend fun saveAutoSaveExchangeRates(enabled: Boolean)
+
+    suspend fun saveAutoUpdateRates(enabled: Boolean)
     suspend fun saveOnboardingCompleted(completed: Boolean)
     suspend fun saveCardAnimationEnabled(enabled: Boolean)
     suspend fun saveCardOpenAnimation(name: String)

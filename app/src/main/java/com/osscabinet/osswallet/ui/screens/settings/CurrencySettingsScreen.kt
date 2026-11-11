@@ -89,6 +89,7 @@ fun CurrencySettingsScreen(
     val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
     val numberingSystem by viewModel.numberingSystem.collectAsStateWithLifecycle()
     val autoSaveExchangeRates by viewModel.autoSaveExchangeRates.collectAsStateWithLifecycle()
+    val autoUpdateRates by viewModel.autoUpdateRates.collectAsStateWithLifecycle()
     val use24HourFormat by viewModel.use24HourFormat.collectAsStateWithLifecycle()
     val currencyProviderId by viewModel.currencyProvider.collectAsStateWithLifecycle()
     val availableProviders = viewModel.availableProviders
@@ -422,6 +423,19 @@ fun CurrencySettingsScreen(
                                     ?: "Select Provider",
                                 icon = Icons.Rounded.Api,
                                 onClick = { showProviderDialog = true }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.5f)
+                            )
+                            EntrySwitchRow(
+                                label = "Update Rates Automatically",
+                                subtitle = if (autoUpdateRates) "Goes online to refresh rates when they are out of date" else "Off: rates only update when you refresh them",
+                                icon = Icons.Rounded.Api,
+                                checked = autoUpdateRates,
+                                onCheckedChange = { viewModel.setAutoUpdateRates(it) },
+                                isFlush = false
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),

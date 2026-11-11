@@ -90,6 +90,9 @@ class SettingsViewModel @Inject constructor(
     val autoSaveExchangeRates: StateFlow<Boolean> = settingsRepository.autoSaveExchangeRates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val autoUpdateRates: StateFlow<Boolean> = settingsRepository.autoUpdateRates
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val cardAnimationEnabled: StateFlow<Boolean> = settingsRepository.cardAnimationEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -358,6 +361,12 @@ class SettingsViewModel @Inject constructor(
     fun setNumberingSystem(system: String) {
         viewModelScope.launch {
             settingsRepository.saveNumberingSystem(system)
+        }
+    }
+
+    fun setAutoUpdateRates(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveAutoUpdateRates(enabled)
         }
     }
 
